@@ -44,7 +44,7 @@ const fadeSlide = {
   transition: { duration: 0.22 },
 }
 
-function StepProgress({ step, total = 5 }: { step: BookingStep; total?: number }) {
+function StepProgress({ step, total = 6 }: { step: BookingStep; total?: number }) {
   const current = Math.min(step as number, total)
   const pct = Math.round((current / total) * 100)
 
@@ -81,6 +81,7 @@ export function SchoolPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const sessionId = useRef(generateId('session'))
+  const isFinalizingRef = useRef(false)
 
   const [school, setSchool] = useState<School | null>(null)
   const [schoolMissing, setSchoolMissing] = useState(false)
@@ -128,7 +129,9 @@ export function SchoolPage() {
 
   useEffect(() => {
     if (!selectedSlot) return
+    if (isSubmitting) return
     const refreshLock = () => {
+      if (isFinalizingRef.current) return
       const result = acquireSlotLock(selectedSlot.id, sessionId.current)
       if (!result.ok) {
         setSelectedSlot(null)
@@ -142,7 +145,7 @@ export function SchoolPage() {
     refreshLock()
     const id = window.setInterval(refreshLock, 30_000)
     return () => window.clearInterval(id)
-  }, [selectedSlot, showToast, step])
+  }, [isSubmitting, selectedSlot, showToast, step])
 
   useEffect(() => {
     return () => { releaseSessionLocks(sessionId.current) }
@@ -168,6 +171,24 @@ export function SchoolPage() {
     setSelectedSlot(null)
   }
 
+  function chooseBranch(branch: Branch): void {
+    if (selectedBranch?.id === branch.id) return
+    resetAfterBranch()
+    setSelectedBranch(branch)
+  }
+
+  function chooseInstructor(instructor: Instructor): void {
+    if (selectedInstructor?.id === instructor.id) return
+    resetAfterInstructor()
+    setSelectedInstructor(instructor)
+  }
+
+  function chooseDate(date: string): void {
+    if (selectedDate === date) return
+    resetAfterDate()
+    setSelectedDate(date)
+  }
+
   function validateForm(): boolean {
     const nextErrors: Partial<FormState> = {}
     if (!form.name.trim()) nextErrors.name = 'Введите имя'
@@ -179,7 +200,6 @@ export function SchoolPage() {
 
   async function handleSlotSelect(slot: Slot): Promise<void> {
     if (selectedSlot?.id === slot.id) {
-      setStep(5)
       return
     }
     if (selectedSlot) releaseSlotLock(selectedSlot.id, sessionId.current)
@@ -190,7 +210,7 @@ export function SchoolPage() {
     }
     const freshSlot = db.slots.byId(slot.id)
     setSelectedSlot(freshSlot ?? slot)
-    setStep(5)
+    isFinalizingRef.current = false
   }
 
   async function handleSubmit(): Promise<void> {
@@ -202,6 +222,7 @@ export function SchoolPage() {
       showToast('Проверьте имя и телефон.', 'error')
       return
     }
+    isFinalizingRef.current = true
     setIsSubmitting(true)
     const result = createBooking({
       schoolId: school.id,
@@ -212,8 +233,9 @@ export function SchoolPage() {
       studentPhone: form.phone,
       sessionId: sessionId.current,
     })
-    setIsSubmitting(false)
     if (!result.ok || !result.booking) {
+      isFinalizingRef.current = false
+      setIsSubmitting(false)
       showToast(result.error ?? 'Не удалось создать запись.', 'error')
       if (selectedInstructor && selectedDate) {
         const freshSlot = db.slots.byId(selectedSlot.id)
@@ -225,6 +247,7 @@ export function SchoolPage() {
       return
     }
     releaseSessionLocks(sessionId.current)
+    setSelectedSlot(null)
     showToast('Запись сохранена.', 'success')
     navigate(`/booking/${result.booking.id}`)
   }
@@ -254,7 +277,7 @@ export function SchoolPage() {
 
   if (!school) return null
 
-  const brandColor = school.primaryColor ?? '#1f5b43'
+  const brandColor = school.primaryColor === '#1f5b43' ? '#4455C4' : (school.primaryColor ?? '#4455C4')
   const brandSoft = hexToRgba(brandColor, 0.08)
 
   return (
@@ -290,14 +313,14 @@ export function SchoolPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-xl px-4 py-8 pb-24">
+      <main className="mx-auto max-w-xl px-4 py-6 pb-24 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
           {/* Step card */}
-          <div className="rounded-3xl border border-stone-200 bg-white overflow-hidden">
+          <div className="min-h-[calc(100vh-7rem)] overflow-hidden rounded-3xl border border-stone-200 bg-white sm:min-h-0">
             <StepProgress step={step} />
 
             <div className="px-6 pb-8 pt-4">
@@ -323,19 +346,27 @@ export function SchoolPage() {
                           const cnt = instructors.filter(
                             (i) => i.branchId === branch.id && i.isActive,
                           ).length
+                          const selected = selectedBranch?.id === branch.id
                           return (
                             <button
                               key={branch.id}
-                              onClick={() => {
-                                setSelectedBranch(branch)
-                                resetAfterBranch()
-                                setStep(2)
-                              }}
-                              className="w-full rounded-2xl border-2 border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]"
+                              onClick={() => chooseBranch(branch)}
+                              className={`w-full rounded-2xl border-2 px-5 py-5 text-left transition active:scale-[0.99] ${
+                                selected
+                                  ? 'border-forest-700 bg-forest-50'
+                                  : 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40'
+                              }`}
                             >
-                              <p className="text-lg font-semibold text-stone-900 leading-snug">
-                                {branch.name}
-                              </p>
+                              <div className="flex items-start justify-between gap-4">
+                                <p className="text-lg font-semibold text-stone-900 leading-snug">
+                                  {branch.name}
+                                </p>
+                                {selected ? (
+                                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest-700 text-white">
+                                    <Check size={16} />
+                                  </span>
+                                ) : null}
+                              </div>
                               <p className="mt-2 flex items-center gap-2 text-base text-stone-500">
                                 <MapPin size={16} className="shrink-0 text-stone-400" />
                                 {branch.address}
@@ -356,6 +387,16 @@ export function SchoolPage() {
                         })}
                       </div>
                     )}
+
+                    <Button
+                      size="lg"
+                      className="mt-6 w-full min-h-14 text-lg"
+                      disabled={!selectedBranch}
+                      onClick={() => setStep(2)}
+                    >
+                      Далее
+                      <ArrowRight size={20} />
+                    </Button>
                   </motion.div>
                 ) : null}
 
@@ -377,15 +418,17 @@ export function SchoolPage() {
                       />
                     ) : (
                       <div className="space-y-3">
-                        {branchInstructors.map((instructor) => (
+                        {branchInstructors.map((instructor) => {
+                          const selected = selectedInstructor?.id === instructor.id
+                          return (
                           <button
                             key={instructor.id}
-                            onClick={() => {
-                              setSelectedInstructor(instructor)
-                              resetAfterInstructor()
-                              setStep(3)
-                            }}
-                            className="w-full rounded-2xl border-2 border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]"
+                            onClick={() => chooseInstructor(instructor)}
+                            className={`w-full rounded-2xl border-2 px-5 py-5 text-left transition active:scale-[0.99] ${
+                              selected
+                                ? 'border-forest-700 bg-forest-50'
+                                : 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40'
+                            }`}
                           >
                             <div className="flex items-center gap-4">
                               <Avatar
@@ -411,12 +454,27 @@ export function SchoolPage() {
                                   </p>
                                 ) : null}
                               </div>
-                              <ArrowRight size={20} className="text-stone-300 shrink-0" />
+                              {selected ? (
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-forest-700 text-white">
+                                  <Check size={17} />
+                                </span>
+                              ) : null}
                             </div>
                           </button>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
+
+                    <Button
+                      size="lg"
+                      className="mt-6 w-full min-h-14 text-lg"
+                      disabled={!selectedInstructor}
+                      onClick={() => setStep(3)}
+                    >
+                      Далее
+                      <ArrowRight size={20} />
+                    </Button>
                   </motion.div>
                 ) : null}
 
@@ -442,14 +500,12 @@ export function SchoolPage() {
                           <button
                             key={date}
                             disabled={!available}
-                            onClick={() => {
-                              setSelectedDate(date)
-                              resetAfterDate()
-                              setStep(4)
-                            }}
+                            onClick={() => chooseDate(date)}
                             className={`w-full rounded-2xl border-2 px-5 py-4 text-left transition ${
-                              available
-                                ? 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]'
+                              selectedDate === date
+                                ? 'border-forest-700 bg-forest-50 active:scale-[0.99]'
+                                : available
+                                  ? 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]'
                                 : 'border-stone-100 bg-stone-50 cursor-not-allowed'
                             }`}
                           >
@@ -477,6 +533,16 @@ export function SchoolPage() {
                         )
                       })}
                     </div>
+
+                    <Button
+                      size="lg"
+                      className="mt-6 w-full min-h-14 text-lg"
+                      disabled={!selectedDate}
+                      onClick={() => setStep(4)}
+                    >
+                      Далее
+                      <ArrowRight size={20} />
+                    </Button>
                   </motion.div>
                 ) : null}
 
@@ -530,6 +596,16 @@ export function SchoolPage() {
                         })}
                       </div>
                     )}
+
+                    <Button
+                      size="lg"
+                      className="mt-6 w-full min-h-14 text-lg"
+                      disabled={!selectedSlot}
+                      onClick={() => setStep(5)}
+                    >
+                      Далее
+                      <ArrowRight size={20} />
+                    </Button>
                   </motion.div>
                 ) : null}
 
@@ -578,7 +654,7 @@ export function SchoolPage() {
 
                     <Button
                       size="lg"
-                      className="w-full mt-8"
+                      className="w-full mt-8 min-h-14 text-lg"
                       disabled={!form.name.trim() || !form.phone.trim()}
                       onClick={() => {
                         if (!validateForm()) {
@@ -667,7 +743,7 @@ export function SchoolPage() {
 
                     <Button
                       size="lg"
-                      className="w-full"
+                      className="w-full min-h-14 text-lg"
                       disabled={isSubmitting}
                       style={!isSubmitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined}
                       onClick={() => void handleSubmit()}
