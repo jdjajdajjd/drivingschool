@@ -14,8 +14,13 @@ import { AdminInstructors } from './pages/admin/Instructors'
 import { AdminBranches } from './pages/admin/Branches'
 import { AdminModules } from './pages/admin/Modules'
 import { AdminModuleDetail } from './pages/admin/ModuleDetail'
+import { AdminSettings } from './pages/admin/Settings'
 import { InstructorPage } from './pages/InstructorPage'
-import { SuperAdmin } from './pages/SuperAdmin'
+import { SuperAdminOverview } from './pages/SuperAdmin'
+import { SuperAdminSchools } from './pages/superadmin/Schools'
+import { SuperAdminSchoolNew } from './pages/superadmin/SchoolNew'
+import { SuperAdminSchoolDetail } from './pages/superadmin/SchoolDetail'
+import { SuperAdminLayout } from './components/layout/SuperAdminLayout'
 
 function App() {
   useEffect(() => {
@@ -38,9 +43,15 @@ function App() {
           <Route path="branches" element={<AdminBranches />} />
           <Route path="modules" element={<AdminModules />} />
           <Route path="modules/:moduleId" element={<AdminModuleDetail />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
         <Route path="/instructor/:token" element={<InstructorPage />} />
-        <Route path="/superadmin" element={<SuperAdmin />} />
+        <Route path="/superadmin" element={<SuperAdminLayout />}>
+          <Route index element={<SuperAdminOverview />} />
+          <Route path="schools" element={<SuperAdminSchools />} />
+          <Route path="schools/new" element={<SuperAdminSchoolNew />} />
+          <Route path="schools/:schoolId" element={<SuperAdminSchoolDetail />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

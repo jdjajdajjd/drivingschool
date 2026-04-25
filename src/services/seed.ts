@@ -1,6 +1,6 @@
 import { addDays, format } from 'date-fns'
 import { db } from './storage'
-import type { School, Branch, Instructor, Slot, Booking, Student, SubscriptionModule } from '../types'
+import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule } from '../types'
 
 const SCHOOL_ID = 'school-virazh'
 
@@ -14,8 +14,10 @@ const SCHOOL: School = {
   email: 'info@virazh-school.ru',
   address: 'г. Москва, ул. Ленина, 45',
   createdAt: '2024-01-15T10:00:00Z',
+  primaryColor: '#1f5b43',
   bookingLimitEnabled: true,
   maxActiveBookingsPerStudent: 2,
+  isActive: true,
 }
 
 const BRANCHES: Branch[] = [
@@ -213,27 +215,20 @@ function generateBookings(slots: Slot[]): Booking[] {
   return bookings
 }
 
-const ACTIVE_MODULES: SubscriptionModule[] = [
+const ACTIVE_MODULES: SchoolModule[] = [
   {
-    id: 'submod-telegram',
+    id: 'school-module-telegram',
     schoolId: SCHOOL_ID,
     moduleId: 'telegram',
-    activatedAt: '2024-02-01T10:00:00Z',
-    status: 'active',
+    enabledAt: '2024-02-01T10:00:00Z',
+    status: 'enabled',
   },
   {
-    id: 'submod-analytics',
+    id: 'school-module-branding',
     schoolId: SCHOOL_ID,
-    moduleId: 'analytics',
-    activatedAt: '2024-02-15T10:00:00Z',
-    status: 'active',
-  },
-  {
-    id: 'submod-reminders',
-    schoolId: SCHOOL_ID,
-    moduleId: 'reminders',
-    activatedAt: '2024-03-01T10:00:00Z',
-    status: 'active',
+    moduleId: 'branding',
+    enabledAt: '2024-02-15T10:00:00Z',
+    status: 'enabled',
   },
 ]
 

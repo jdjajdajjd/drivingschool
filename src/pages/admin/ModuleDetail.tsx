@@ -1,189 +1,141 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import {
-  ArrowLeft, CheckCircle2, MessageSquare, Send, Palette, Code2,
-  CreditCard, BarChart3, Users, Bell, FileSpreadsheet, UserPlus, Building2, Puzzle,
-} from 'lucide-react'
-import { db } from '../../services/storage'
-import { getModuleById, CATEGORY_LABELS } from '../../services/modules'
-import { Button } from '../../components/ui/Button'
+import { ArrowLeft, BarChart3, Bell, Building2, Code2, CreditCard, FileSpreadsheet, MessageSquare, Palette, Puzzle, Send, UserPlus, Users } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
-import { generateId } from '../../lib/utils'
-import type { Module, SubscriptionModule } from '../../types'
+import { Button } from '../../components/ui/Button'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { Section } from '../../components/ui/Section'
+import { useToast } from '../../components/ui/Toast'
+import { formatPrice } from '../../lib/utils'
+import { MODULE_CATEGORY_LABELS, disableModule, enableModule, getModuleById, isModuleEnabled } from '../../services/modules'
+import { db } from '../../services/storage'
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  MessageSquare, Send, Palette, Code2, CreditCard, BarChart3,
-  Users, Bell, FileSpreadsheet, UserPlus, Building2,
+  MessageSquare,
+  Send,
+  Palette,
+  Code2,
+  CreditCard,
+  BarChart3,
+  Users,
+  Bell,
+  FileSpreadsheet,
+  UserPlus,
+  Building2,
 }
 
 export function AdminModuleDetail() {
-  const { moduleId } = useParams<{ moduleId: string }>()
   const navigate = useNavigate()
-  const [module, setModule] = useState<Module | null>(null)
-  const [subModule, setSubModule] = useState<SubscriptionModule | null>(null)
+  const { showToast } = useToast()
+  const { moduleId } = useParams<{ moduleId: string }>()
+  const school = db.schools.bySlug('virazh')
+  const module = moduleId ? getModuleById(moduleId) : null
 
-  useEffect(() => {
-    if (!moduleId) return
-    const m = getModuleById(moduleId)
-    setModule(m ?? null)
-
-    const school = db.schools.bySlug('virazh')
-    if (!school) return
-    const sm = db.subModules.bySchool(school.id).find((s) => s.moduleId === moduleId)
-    setSubModule(sm ?? null)
-  }, [moduleId])
-
-  function toggle() {
-    const school = db.schools.bySlug('virazh')
-    if (!school || !module) return
-
-    if (subModule) {
-      db.subModules.remove(subModule.id)
-      setSubModule(null)
-    } else {
-      const newSm: SubscriptionModule = {
-        id: generateId('submod'),
-        schoolId: school.id,
-        moduleId: module.id,
-        activatedAt: new Date().toISOString(),
-        status: 'active',
-      }
-      db.subModules.upsert(newSm)
-      setSubModule(newSm)
-    }
-  }
-
-  if (!module) {
+  if (!school || !module) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-stone-400 mb-4">Модуль не найден</p>
-        <Button onClick={() => navigate('/admin/modules')}>К каталогу</Button>
+      <div className="max-w-5xl p-6 md:p-8">
+        <EmptyState
+          title="Модуль не найден"
+          description="Проверьте ссылку или вернитесь в каталог модулей."
+          action={<Button onClick={() => navigate('/admin/modules')}>К каталогу</Button>}
+        />
       </div>
     )
   }
 
   const Icon = ICON_MAP[module.icon] ?? Puzzle
-  const isActive = !!subModule
+  const currentSchool = school
+  const currentModule = module
+  const enabled = isModuleEnabled(currentSchool.id, currentModule.id)
+  const priceLabel =
+    currentModule.priceType === 'usage'
+      ? currentModule.usageNote ?? 'По факту использования'
+      : currentModule.priceType === 'one_time'
+        ? `${formatPrice(currentModule.oneTimePrice ?? 0)} разово`
+        : `${formatPrice(currentModule.monthlyPrice ?? 0)}/мес`
+
+  function handleToggle(): void {
+    if (enabled) {
+      disableModule(currentSchool.id, currentModule.id)
+      showToast('Модуль отключён', 'success')
+      navigate('/admin/modules')
+      return
+    }
+
+    enableModule(currentSchool.id, currentModule.id)
+    showToast(currentModule.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Модуль подключён', 'success')
+    navigate('/admin/modules')
+  }
 
   return (
-    <div className="p-8 max-w-3xl">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+    <div className="max-w-5xl p-6 md:p-8">
+      <button
+        onClick={() => navigate('/admin/modules')}
+        className="mb-4 inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
       >
-        <button
-          onClick={() => navigate('/admin/modules')}
-          className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-900 transition-colors mb-8"
-        >
-          <ArrowLeft size={16} />
-          Каталог модулей
-        </button>
+        <ArrowLeft size={15} />
+        Назад к каталогу
+      </button>
 
-        <div className="bg-white rounded-3xl border border-stone-100 shadow-card overflow-hidden">
-          {/* Header */}
-          <div className={`px-8 py-10 ${isActive ? 'bg-forest-800' : 'bg-stone-50'} border-b border-stone-100`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isActive ? 'bg-forest-700' : 'bg-white shadow-soft'}`}>
-                  <Icon size={26} className={isActive ? 'text-forest-100' : 'text-stone-600'} />
-                </div>
-                <div>
-                  {module.isPopular && (
-                    <Badge variant={isActive ? 'outline' : 'forest'} size="sm" className={`mb-2 ${isActive ? 'border-forest-600 text-forest-200' : ''}`}>
-                      Популярный
-                    </Badge>
-                  )}
-                  <h1 className={`font-sans text-2xl font-medium ${isActive ? 'text-white' : 'text-stone-900'}`}>
-                    {module.name}
-                  </h1>
-                  <p className={`text-sm mt-1 ${isActive ? 'text-forest-300' : 'text-stone-500'}`}>
-                    {CATEGORY_LABELS[module.category] ?? module.category}
-                  </p>
-                </div>
+      <PageHeader
+        eyebrow={MODULE_CATEGORY_LABELS[module.category]}
+        title={module.name}
+        description={module.description}
+        actions={
+          <Button variant={enabled ? 'secondary' : 'primary'} onClick={handleToggle}>
+            {enabled ? 'Отключить модуль' : module.priceType === 'one_time' ? 'Добавить услугу' : 'Подключить модуль'}
+          </Button>
+        }
+      />
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <Section title="Что даёт модуль" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
+          <div className="flex items-start gap-4 rounded-3xl border border-stone-100 bg-stone-50 px-5 py-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-forest-700 shadow-soft">
+              <Icon size={20} />
+            </div>
+            <div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant={enabled ? 'success' : 'default'}>
+                  {enabled ? 'Подключено' : 'Не подключено'}
+                </Badge>
+                {module.isRecommended ? <Badge variant="outline">Рекомендуем</Badge> : null}
               </div>
-              {isActive && (
-                <div className="flex items-center gap-2 bg-forest-700 px-3 py-1.5 rounded-full">
-                  <CheckCircle2 size={14} className="text-forest-200" />
-                  <span className="text-xs font-medium text-forest-100">Активен</span>
-                </div>
-              )}
+              <p className="mt-3 text-lg font-semibold text-stone-900">{priceLabel}</p>
+              {module.usageNote ? <p className="mt-1 text-sm text-stone-500">{module.usageNote}</p> : null}
             </div>
           </div>
 
-          {/* Price */}
-          <div className="px-8 py-6 border-b border-stone-100">
-            <div className="flex items-baseline gap-2">
-              <span className="font-sans text-5xl font-medium text-stone-900">
-                {module.price === 0 ? '0 ₽' : `${module.price.toLocaleString('ru-RU')} ₽`}
-              </span>
-              <span className="text-stone-400 text-base">
-                {module.priceType === 'monthly' && '/месяц'}
-                {module.priceType === 'one-time' && '— разовый платёж'}
-              </span>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {module.features.map((feature) => (
+              <div key={feature} className="rounded-2xl border border-stone-100 bg-white px-4 py-3 text-sm text-stone-600">
+                {feature}
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Статус" description="Как модуль учитывается в стоимости школы.">
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Категория</p>
+              <p className="mt-1 text-sm font-semibold text-stone-900">{MODULE_CATEGORY_LABELS[module.category]}</p>
             </div>
-            {module.usageNote && (
-              <p className="text-sm text-stone-400 mt-1">{module.usageNote}</p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="px-8 py-6 border-b border-stone-100">
-            <h2 className="font-sans text-lg font-medium text-stone-900 mb-3">О модуле</h2>
-            <p className="text-sm text-stone-500 leading-relaxed">{module.description}</p>
-          </div>
-
-          {/* Features */}
-          <div className="px-8 py-6 border-b border-stone-100">
-            <h2 className="font-sans text-lg font-medium text-stone-900 mb-4">Что входит</h2>
-            <div className="grid sm:grid-cols-2 gap-2.5">
-              {module.features.map((feature) => (
-                <div key={feature} className="flex items-center gap-2.5">
-                  <CheckCircle2 size={15} className="text-forest-600 shrink-0" />
-                  <span className="text-sm text-stone-600">{feature}</span>
-                </div>
-              ))}
+            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Тип цены</p>
+              <p className="mt-1 text-sm font-semibold text-stone-900">
+                {module.priceType === 'monthly' ? 'Ежемесячно' : module.priceType === 'one_time' ? 'Разовая услуга' : 'По использованию'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Режим</p>
+              <p className="mt-1 text-sm font-semibold text-stone-900">
+                {enabled ? 'Уже включён в школу' : 'Можно подключить в один клик'}
+              </p>
             </div>
           </div>
-
-          {/* CTA */}
-          <div className="px-8 py-6 flex gap-3">
-            <Button
-              size="lg"
-              variant={isActive ? 'danger' : 'primary'}
-              onClick={toggle}
-              className="flex-1"
-            >
-              {isActive ? 'Отключить модуль' : 'Подключить модуль'}
-            </Button>
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => navigate('/admin/modules')}
-            >
-              Назад
-            </Button>
-          </div>
-        </div>
-
-        {isActive && subModule && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="mt-4 bg-forest-50 border border-forest-100 rounded-2xl p-5"
-          >
-            <p className="text-sm text-forest-800 font-medium mb-1">Модуль подключён</p>
-            <p className="text-xs text-forest-600">
-              Активирован:{' '}
-              {new Date(subModule.activatedAt).toLocaleDateString('ru-RU', {
-                day: 'numeric', month: 'long', year: 'numeric',
-              })}
-            </p>
-          </motion.div>
-        )}
-      </motion.div>
+        </Section>
+      </div>
     </div>
   )
 }

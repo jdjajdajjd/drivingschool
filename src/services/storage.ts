@@ -6,10 +6,10 @@ import type {
   Slot,
   SlotLock,
   Student,
-  SubscriptionModule,
+  SchoolModule,
 } from '../types'
 
-export const SEED_VERSION = '5'
+export const SEED_VERSION = '6'
 
 const K = {
   SCHOOLS: 'dd:schools',
@@ -18,7 +18,7 @@ const K = {
   SLOTS: 'dd:slots',
   BOOKINGS: 'dd:bookings',
   STUDENTS: 'dd:students',
-  SUB_MODULES: 'dd:sub_modules',
+  SCHOOL_MODULES: 'dd:school_modules',
   SLOT_LOCKS: 'dd:slot_locks',
   SEEDED: 'dd:seeded',
   SEED_VERSION: 'dd:seed_version',
@@ -81,6 +81,7 @@ export const db = {
     bySlug: (slug: string) => readAll<School>(K.SCHOOLS).find((school) => school.slug === slug) ?? null,
     byId: (id: string) => readAll<School>(K.SCHOOLS).find((school) => school.id === id) ?? null,
     upsert: (school: School) => upsert(K.SCHOOLS, school),
+    remove: (id: string) => removeById(K.SCHOOLS, id),
   },
 
   branches: {
@@ -152,16 +153,26 @@ export const db = {
     upsert: (student: Student) => upsert(K.STUDENTS, student),
   },
 
-  subModules: {
-    all: () => readAll<SubscriptionModule>(K.SUB_MODULES),
+  schoolModules: {
+    all: () => readAll<SchoolModule>(K.SCHOOL_MODULES),
     bySchool: (schoolId: string) =>
-      readAll<SubscriptionModule>(K.SUB_MODULES).filter(
+      readAll<SchoolModule>(K.SCHOOL_MODULES).filter(
         (subscription) => subscription.schoolId === schoolId,
       ),
     byId: (id: string) =>
-      readAll<SubscriptionModule>(K.SUB_MODULES).find((subscription) => subscription.id === id) ?? null,
-    upsert: (subscription: SubscriptionModule) => upsert(K.SUB_MODULES, subscription),
-    remove: (id: string) => removeById(K.SUB_MODULES, id),
+      readAll<SchoolModule>(K.SCHOOL_MODULES).find((subscription) => subscription.id === id) ?? null,
+    upsert: (subscription: SchoolModule) => upsert(K.SCHOOL_MODULES, subscription),
+    remove: (id: string) => removeById(K.SCHOOL_MODULES, id),
+  },
+
+  subModules: {
+    all: () => readAll<SchoolModule>(K.SCHOOL_MODULES),
+    bySchool: (schoolId: string) =>
+      readAll<SchoolModule>(K.SCHOOL_MODULES).filter((subscription) => subscription.schoolId === schoolId),
+    byId: (id: string) =>
+      readAll<SchoolModule>(K.SCHOOL_MODULES).find((subscription) => subscription.id === id) ?? null,
+    upsert: (subscription: SchoolModule) => upsert(K.SCHOOL_MODULES, subscription),
+    remove: (id: string) => removeById(K.SCHOOL_MODULES, id),
   },
 
   slotLocks: {

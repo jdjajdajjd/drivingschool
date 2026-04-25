@@ -11,6 +11,7 @@ export interface School {
   primaryColor?: string
   bookingLimitEnabled?: boolean
   maxActiveBookingsPerStudent?: number
+  isActive?: boolean
 }
 
 export interface Branch {
@@ -135,32 +136,56 @@ export interface IntegrityIssue {
   message: string
 }
 
-export type ModulePriceType = 'monthly' | 'one-time' | 'usage'
+export type ModulePriceType = 'monthly' | 'one_time' | 'usage'
 export type ModuleCategory =
   | 'notifications'
-  | 'branding'
   | 'analytics'
   | 'management'
   | 'integrations'
+  | 'sales'
+  | 'limits'
+  | 'one_time'
 
 export interface Module {
   id: string
   name: string
   description: string
-  shortDescription: string
-  price: number
-  priceType: ModulePriceType
-  usageNote?: string
-  features: string[]
-  icon: string
+  shortDescription?: string
   category: ModuleCategory
-  isPopular?: boolean
+  priceType: ModulePriceType
+  monthlyPrice?: number
+  oneTimePrice?: number
+  usageNote?: string
+  icon: string
+  features: string[]
+  isRecommended?: boolean
 }
 
-export interface SubscriptionModule {
+export interface SchoolModule {
   id: string
   schoolId: string
   moduleId: string
-  activatedAt: string
-  status: 'active' | 'paused'
+  enabledAt: string
+  status: 'enabled' | 'disabled'
+}
+
+export interface BillingSummary {
+  baseMonthlyPrice: number
+  modulesMonthlyTotal: number
+  oneTimeTotal: number
+  totalMonthlyPrice: number
+  enabledModulesCount: number
+}
+
+export interface SchoolOverview {
+  school: School
+  branchCount: number
+  instructorCount: number
+  studentCount: number
+  activeBookingsCount: number
+  bookingsLast30Days: number
+  freeSlots7Days: number
+  enabledModulesCount: number
+  billing: BillingSummary
+  integrityWarnings: number
 }

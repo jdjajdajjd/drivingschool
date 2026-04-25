@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
 interface BadgeProps {
@@ -6,6 +6,7 @@ interface BadgeProps {
   size?: 'sm' | 'md'
   children: ReactNode
   className?: string
+  style?: CSSProperties
 }
 
 export function Badge({
@@ -13,9 +14,11 @@ export function Badge({
   size = 'sm',
   children,
   className,
+  style,
 }: BadgeProps) {
   return (
     <span
+      style={style}
       className={cn(
         'inline-flex items-center rounded-full font-sans font-medium',
         {

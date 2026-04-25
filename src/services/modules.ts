@@ -1,229 +1,246 @@
-import type { Module } from '../types'
+import { generateId } from '../lib/utils'
+import type { BillingSummary, Module, ModuleCategory, SchoolModule } from '../types'
+import { db } from './storage'
+
+export const BASE_MONTHLY_PRICE = 4990
 
 export const MODULE_CATALOG: Module[] = [
   {
     id: 'sms',
     name: 'SMS-уведомления',
-    shortDescription: 'Автоматические SMS при записи и напоминаниях',
-    description:
-      'Ученики получают SMS сразу после записи и за час до занятия. Настраиваемые шаблоны, поддержка всех операторов РФ. Платите только за отправленные сообщения — без абонентской платы.',
-    price: 0,
-    priceType: 'usage',
-    usageNote: '+ SMS по факту (~4 ₽/SMS)',
-    features: [
-      'Уведомление при записи',
-      'Напоминание за 24 часа',
-      'Напоминание за 1 час',
-      'Уведомление при отмене',
-      'Настраиваемые шаблоны',
-      'Все операторы РФ',
-    ],
-    icon: 'MessageSquare',
     category: 'notifications',
+    description:
+      'Подтверждения и важные сообщения ученикам через SMS. Стоимость сообщений оплачивается отдельно.',
+    priceType: 'usage',
+    monthlyPrice: 0,
+    usageNote: 'SMS оплачиваются по факту',
+    icon: 'MessageSquare',
+    features: ['Подтверждения записи', 'Сервисные сообщения', 'Оплата по факту отправки'],
   },
   {
     id: 'telegram',
     name: 'Telegram-уведомления',
-    shortDescription: 'Уведомления через Telegram-бота без затрат на SMS',
-    description:
-      'Подключите Telegram-бота и отправляйте уведомления бесплатно. Ученики получают сообщения мгновенно. Поддерживает медиа, кнопки подтверждения и отмены записи прямо в чате.',
-    price: 199,
-    priceType: 'monthly',
-    features: [
-      'Мгновенные уведомления',
-      'Кнопки подтверждения',
-      'Бесплатная отправка',
-      'Напоминания и отмены',
-      'Уведомления инструктору',
-      'Свой Telegram-бот',
-    ],
-    icon: 'Send',
     category: 'notifications',
-    isPopular: true,
+    description: 'Уведомления для администратора о новых записях, отменах и переносах.',
+    priceType: 'monthly',
+    monthlyPrice: 199,
+    icon: 'Send',
+    features: ['Новые записи', 'Отмены и переносы', 'Быстрые уведомления администратору'],
+    isRecommended: true,
   },
   {
     id: 'branding',
     name: 'Брендирование страницы',
-    shortDescription: 'Своё лого, цвета и домен на странице записи',
+    category: 'management',
     description:
-      'Страница записи выглядит как часть вашего сайта: своё лого, фирменные цвета, кастомный домен и скрытое упоминание DriveDesk. Профессиональный вид без лишних затрат.',
-    price: 490,
+      'Расширенные настройки внешнего вида страницы записи: логотип, цвета, тексты и визуальные блоки.',
     priceType: 'monthly',
-    features: [
-      'Загрузка логотипа',
-      'Фирменные цвета',
-      'Кастомный домен',
-      'Скрытие бренда DriveDesk',
-      'Фото школы на странице',
-      'Кастомный текст страницы',
-    ],
+    monthlyPrice: 490,
     icon: 'Palette',
-    category: 'branding',
+    features: ['Логотип', 'Цветовые акценты', 'Тексты и preview публичной страницы'],
   },
   {
     id: 'widget',
     name: 'Виджет записи на сайт',
-    shortDescription: 'Форма записи встраивается на ваш сайт одной строкой',
-    description:
-      'Вставьте iframe или скрипт на свой сайт — и форма записи появится прямо там. Никаких перенаправлений. Полная синхронизация с расписанием. Адаптивный под мобильные.',
-    price: 490,
-    priceType: 'monthly',
-    features: [
-      'iframe и script-embed',
-      'Синхронизация в реальном времени',
-      'Адаптивный дизайн',
-      'Настраиваемый размер',
-      'Фильтр по филиалу',
-      'Фильтр по инструктору',
-    ],
-    icon: 'Code2',
     category: 'integrations',
+    description: 'Встраиваемая кнопка или форма записи для сайта автошколы.',
+    priceType: 'monthly',
+    monthlyPrice: 490,
+    icon: 'Code2',
+    features: ['Кнопка записи', 'Встраиваемая форма', 'Использование на сайте автошколы'],
   },
   {
     id: 'payments',
     name: 'Онлайн-оплата',
-    shortDescription: 'Приём оплаты за занятия прямо при записи',
-    description:
-      'Ученики оплачивают занятие картой при записи. Интеграция с Тинькофф Кассой и ЮKassa. Деньги поступают на расчётный счёт школы на следующий рабочий день.',
-    price: 990,
+    category: 'sales',
+    description: 'Приём предоплаты или оплаты занятий онлайн.',
     priceType: 'monthly',
-    usageNote: '+ комиссия эквайринга ~2.5%',
-    features: [
-      'Оплата картой',
-      'Тинькофф Касса / ЮKassa',
-      'Возврат при отмене',
-      'Выписка транзакций',
-      'Фискальный чек',
-      'Быстрые выплаты',
-    ],
+    monthlyPrice: 990,
+    usageNote: 'Плюс комиссия эквайринга',
     icon: 'CreditCard',
-    category: 'management',
-    isPopular: true,
+    features: ['Предоплата занятий', 'Онлайн-оплата', 'Подготовка к эквайрингу'],
   },
   {
     id: 'analytics',
     name: 'Расширенная аналитика',
-    shortDescription: 'Детальные отчёты по загрузке, конверсии и доходу',
-    description:
-      'Графики по дням и неделям, воронка записей, заполненность по инструкторам и филиалам, топ-ученики, средняя конверсия от просмотра до записи. Экспорт в Excel.',
-    price: 690,
-    priceType: 'monthly',
-    features: [
-      'Графики по периодам',
-      'Заполненность слотов',
-      'Конверсия записей',
-      'Топ инструкторов',
-      'Экспорт в Excel',
-      'Сравнение периодов',
-    ],
-    icon: 'BarChart3',
     category: 'analytics',
+    description: 'Загрузка инструкторов, динамика записей, отмены и отчёты по филиалам.',
+    priceType: 'monthly',
+    monthlyPrice: 690,
+    icon: 'BarChart3',
+    features: ['Загрузка инструкторов', 'Отчёты по филиалам', 'Динамика записей'],
   },
   {
     id: 'roles',
-    name: 'Роли и доп. администраторы',
-    shortDescription: 'Несколько администраторов с разными уровнями доступа',
-    description:
-      'Добавляйте сотрудников с разными правами: полный доступ, только записи, только расписание. У каждого свой логин. Журнал действий для безопасности.',
-    price: 490,
-    priceType: 'monthly',
-    features: [
-      'До 10 администраторов',
-      '3 уровня доступа',
-      'Личный кабинет каждому',
-      'Журнал действий',
-      'Ограничение по филиалу',
-      'Двухфакторная аутентификация',
-    ],
-    icon: 'Users',
+    name: 'Роли и дополнительные админы',
     category: 'management',
+    description: 'Дополнительные пользователи админки, роли и разграничение доступа.',
+    priceType: 'monthly',
+    monthlyPrice: 490,
+    icon: 'Users',
+    features: ['Несколько админов', 'Роли', 'Разграничение доступа'],
   },
   {
     id: 'reminders',
     name: 'Автонапоминания',
-    shortDescription: 'Система автоматических напоминаний без участия администратора',
-    description:
-      'Настройте цепочку напоминаний: за 3 дня, 24 часа, 1 час. Работает сам — администратор не занимается ручными уведомлениями. Доступно для SMS и Telegram.',
-    price: 390,
-    priceType: 'monthly',
-    features: [
-      'Настраиваемые интервалы',
-      'Цепочки напоминаний',
-      'SMS и Telegram',
-      'Шаблоны сообщений',
-      'Отключение для ученика',
-      'Статистика прочтений',
-    ],
-    icon: 'Bell',
     category: 'notifications',
+    description: 'Автоматические напоминания ученикам о занятиях через подключённые каналы.',
+    priceType: 'monthly',
+    monthlyPrice: 390,
+    icon: 'Bell',
+    features: ['Напоминания по расписанию', 'Работа по SMS/Telegram', 'Снижение пропусков'],
   },
   {
     id: 'excel-import',
     name: 'Импорт из Excel',
-    shortDescription: 'Перенос базы учеников и расписания из Excel одним файлом',
-    description:
-      'Загрузите Excel-файл с базой учеников, историей записей или расписанием — система автоматически разберёт и импортирует данные. Разовая настройка при старте.',
-    price: 1490,
-    priceType: 'one-time',
-    features: [
-      'Импорт учеников',
-      'Импорт истории записей',
-      'Импорт расписания',
-      'Валидация данных',
-      'Отчёт об ошибках',
-      'Помощь по шаблону',
-    ],
+    category: 'one_time',
+    description: 'Разовый импорт учеников, инструкторов или расписания из Excel.',
+    priceType: 'one_time',
+    oneTimePrice: 1490,
     icon: 'FileSpreadsheet',
-    category: 'management',
+    features: ['Разовый импорт данных', 'Стартовая загрузка базы', 'Поддержка расписания'],
   },
   {
     id: 'extra-instructor',
     name: 'Дополнительный инструктор',
-    shortDescription: 'Каждый инструктор сверх базы тарифа',
-    description:
-      'База включает 5 инструкторов. Каждый дополнительный инструктор добавляется как отдельный модуль. Без ограничений по количеству.',
-    price: 149,
+    category: 'limits',
+    description: 'Расширение лимита инструкторов сверх базового пакета.',
     priceType: 'monthly',
-    features: [
-      'Личная ссылка инструктора',
-      'Своё расписание',
-      'История занятий',
-      'Уведомления',
-      'Статистика',
-      'Без лимита',
-    ],
+    monthlyPrice: 149,
     icon: 'UserPlus',
-    category: 'management',
+    features: ['Расширение лимита', 'Новые инструкторы сверх базы', 'Гибкий рост команды'],
   },
   {
     id: 'extra-branch',
     name: 'Дополнительный филиал',
-    shortDescription: 'Каждый филиал сверх базы тарифа',
-    description:
-      'База включает 3 филиала. Дополнительные филиалы со своими инструкторами, расписанием и страницей записи. Управление из одной админки.',
-    price: 299,
+    category: 'limits',
+    description: 'Расширение лимита филиалов сверх базового пакета.',
     priceType: 'monthly',
-    features: [
-      'Своё расписание',
-      'Свои инструкторы',
-      'Страница записи',
-      'Статистика по филиалу',
-      'Без лимита',
-      'Одна админка',
-    ],
+    monthlyPrice: 299,
     icon: 'Building2',
-    category: 'management',
+    features: ['Расширение лимита', 'Новый филиал сверх базы', 'Рост сети автошколы'],
   },
 ]
 
-export function getModuleById(id: string): Module | undefined {
-  return MODULE_CATALOG.find((m) => m.id === id)
+export const MODULE_CATEGORY_LABELS: Record<ModuleCategory, string> = {
+  notifications: 'Уведомления',
+  sales: 'Продажи',
+  analytics: 'Аналитика',
+  integrations: 'Интеграции',
+  management: 'Управление',
+  limits: 'Лимиты',
+  one_time: 'Разовые услуги',
 }
 
-export const CATEGORY_LABELS: Record<string, string> = {
-  notifications: 'Уведомления',
-  branding: 'Брендинг',
-  analytics: 'Аналитика',
-  management: 'Управление',
-  integrations: 'Интеграции',
+export const BASE_FEATURES = [
+  'Публичная страница автошколы',
+  'Онлайн-запись ученика',
+  'Выбор филиала',
+  'Выбор инструктора',
+  'Выбор даты и слота',
+  'Админка автошколы',
+  'Управление филиалами',
+  'Управление инструкторами',
+  'Управление слотами',
+  'Список записей',
+  'Отмена и перенос записи',
+  'Личная ссылка инструктора',
+  'Расписание инструктора',
+  'История записей',
+  'История ученика',
+  'Базовая статистика',
+]
+
+export function getModulesCatalog(): Module[] {
+  return MODULE_CATALOG
+}
+
+export function getModuleById(moduleId: string): Module | null {
+  return MODULE_CATALOG.find((module) => module.id === moduleId) ?? null
+}
+
+export function getEnabledModules(schoolId: string): Array<SchoolModule & { module: Module }> {
+  return db.schoolModules
+    .bySchool(schoolId)
+    .filter((schoolModule) => schoolModule.status === 'enabled')
+    .map((schoolModule) => {
+      const module = getModuleById(schoolModule.moduleId)
+      return module ? { ...schoolModule, module } : null
+    })
+    .filter((item): item is SchoolModule & { module: Module } => Boolean(item))
+}
+
+export function isModuleEnabled(schoolId: string, moduleId: string): boolean {
+  return getEnabledModules(schoolId).some((item) => item.moduleId === moduleId)
+}
+
+export function enableModule(schoolId: string, moduleId: string): SchoolModule | null {
+  const module = getModuleById(moduleId)
+  if (!module) {
+    return null
+  }
+
+  const existing = db.schoolModules.bySchool(schoolId).find((item) => item.moduleId === moduleId) ?? null
+
+  const enabledModule: SchoolModule = existing
+    ? {
+        ...existing,
+        status: 'enabled',
+        enabledAt: existing.enabledAt || new Date().toISOString(),
+      }
+    : {
+        id: generateId('school-module'),
+        schoolId,
+        moduleId,
+        enabledAt: new Date().toISOString(),
+        status: 'enabled',
+      }
+
+  db.schoolModules.upsert(enabledModule)
+  return enabledModule
+}
+
+export function disableModule(schoolId: string, moduleId: string): SchoolModule | null {
+  const existing = db.schoolModules.bySchool(schoolId).find((item) => item.moduleId === moduleId) ?? null
+  if (!existing) {
+    return null
+  }
+
+  const disabled: SchoolModule = {
+    ...existing,
+    status: 'disabled',
+  }
+  db.schoolModules.upsert(disabled)
+  return disabled
+}
+
+export function calculateBasePrice(): number {
+  return BASE_MONTHLY_PRICE
+}
+
+export function calculateModulesMonthlyTotal(schoolId: string): number {
+  return getEnabledModules(schoolId)
+    .filter((item) => item.module.priceType === 'monthly')
+    .reduce((sum, item) => sum + (item.module.monthlyPrice ?? 0), 0)
+}
+
+export function calculateOneTimeTotal(schoolId: string): number {
+  return getEnabledModules(schoolId)
+    .filter((item) => item.module.priceType === 'one_time')
+    .reduce((sum, item) => sum + (item.module.oneTimePrice ?? 0), 0)
+}
+
+export function calculateTotalMonthlyPrice(schoolId: string): number {
+  return calculateBasePrice() + calculateModulesMonthlyTotal(schoolId)
+}
+
+export function getBillingSummary(schoolId: string): BillingSummary {
+  const enabledModules = getEnabledModules(schoolId)
+  return {
+    baseMonthlyPrice: calculateBasePrice(),
+    modulesMonthlyTotal: calculateModulesMonthlyTotal(schoolId),
+    oneTimeTotal: calculateOneTimeTotal(schoolId),
+    totalMonthlyPrice: calculateTotalMonthlyPrice(schoolId),
+    enabledModulesCount: enabledModules.length,
+  }
 }

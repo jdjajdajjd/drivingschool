@@ -19,7 +19,7 @@ import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useToast } from '../components/ui/Toast'
-import { formatPhone, generateId, pluralize } from '../lib/utils'
+import { formatPhone, generateId, hexToRgba, pluralize } from '../lib/utils'
 import {
   acquireSlotLock,
   createBooking,
@@ -359,17 +359,24 @@ export function SchoolPage() {
     return null
   }
 
+  const brandColor = school.primaryColor ?? '#1f5b43'
+  const brandSoft = hexToRgba(brandColor, 0.08)
+
   return (
     <div className="min-h-screen bg-[#f7f8fa]">
       <header className="sticky top-0 z-30 border-b border-white/70 bg-stone-50/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-800 shadow-soft">
-              <Car size={18} className="text-white" />
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl shadow-soft" style={{ backgroundColor: brandColor }}>
+              {school.logoUrl ? (
+                <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
+              ) : (
+                <Car size={18} className="text-white" />
+              )}
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-stone-900">DriveDesk</p>
-              <p className="text-xs text-stone-400">Premium booking flow</p>
+              <p className="text-sm font-semibold text-stone-900">{school.name}</p>
+              <p className="text-xs text-stone-400">Онлайн-запись на вождение</p>
             </div>
           </button>
           <div className="hidden text-right sm:block">
@@ -389,7 +396,7 @@ export function SchoolPage() {
           <div className="space-y-6">
             <div className="overflow-hidden rounded-[32px] border border-stone-200 bg-white shadow-card">
               <div className="border-b border-stone-100 px-6 py-6">
-                <Badge variant="forest" size="md">
+                <Badge variant="outline" size="md" className="border-transparent" style={{ backgroundColor: brandSoft, color: brandColor }}>
                   Онлайн-запись
                 </Badge>
                 <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-stone-900 md:text-[2.6rem]">
@@ -742,6 +749,7 @@ export function SchoolPage() {
                       size="lg"
                       className="w-full"
                       disabled={isSubmitting}
+                      style={!isSubmitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined}
                       onClick={() => void handleSubmit()}
                     >
                       {isSubmitting ? 'Сохраняем запись...' : 'Записаться'}

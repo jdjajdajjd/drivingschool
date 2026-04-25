@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MapPin,
   Puzzle,
+  Settings2,
   UserRound,
   Users,
   X,
@@ -21,6 +22,7 @@ const NAV = [
   { to: '/admin/instructors', label: 'Инструкторы', icon: Users },
   { to: '/admin/branches', label: 'Филиалы', icon: MapPin },
   { to: '/admin/modules', label: 'Модули', icon: Puzzle },
+  { to: '/admin/settings', label: 'Настройки', icon: Settings2 },
 ]
 
 interface AdminSidebarProps {
