@@ -1,5 +1,7 @@
+import { addMinutes, endOfDay, format, isAfter, isBefore, isSameDay, parseISO, startOfDay } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { generateId } from '../lib/utils'
-import type { Booking, Slot, Student } from '../types'
+import type { Booking, ResolvedBooking, School, Slot, Student } from '../types'
 import { db } from './storage'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
@@ -8,6 +10,7 @@ export interface BookingMutationResult {
   ok: boolean
   booking?: Booking
   error?: string
+  warning?: string
 }
 
 export interface CreateBookingParams {
@@ -20,8 +23,26 @@ export interface CreateBookingParams {
   sessionId: string
 }
 
-function getSlotDateTime(slot: Slot): Date {
+export interface RescheduleBookingParams {
+  bookingId: string
+  newSlotId: string
+  ignoreLimits?: boolean
+}
+
+export function formatDate(dateValue: string): string {
+  return format(parseISO(dateValue), 'd MMMM', { locale: ru })
+}
+
+export function formatTime(timeValue: string): string {
+  return timeValue.slice(0, 5)
+}
+
+export function getSlotDateTime(slot: Pick<Slot, 'date' | 'time'>): Date {
   return new Date(`${slot.date}T${slot.time}:00`)
+}
+
+export function isSlotInPast(slot: Pick<Slot, 'date' | 'time'>): boolean {
+  return getSlotDateTime(slot).getTime() < Date.now()
 }
 
 function escapeIcsValue(value: string): string {
@@ -37,13 +58,7 @@ function formatUtcDate(date: Date): string {
 }
 
 function formatLocalDate(date: Date): string {
-  const year = String(date.getFullYear())
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}${month}${day}T${hours}${minutes}${seconds}`
+  return format(date, "yyyyMMdd'T'HHmmss")
 }
 
 export function normalizePhone(phone: string): string {
@@ -64,17 +79,18 @@ export function normalizePhone(phone: string): string {
   return digits
 }
 
-export function isValidRussianPhone(phone: string): boolean {
+export function validateRussianPhone(phone: string): boolean {
   return /^7\d{10}$/.test(normalizePhone(phone))
 }
 
+export const isValidRussianPhone = validateRussianPhone
+
+export function getStudentByNormalizedPhone(schoolId: string, normalizedPhone: string): Student | null {
+  return db.students.byNormalizedPhone(schoolId, normalizedPhone)
+}
+
 export function getStudentByPhone(schoolId: string, phone: string): Student | null {
-  const normalizedPhone = normalizePhone(phone)
-  return (
-    db.students
-      .bySchool(schoolId)
-      .find((student) => student.normalizedPhone === normalizedPhone) ?? null
-  )
+  return getStudentByNormalizedPhone(schoolId, normalizePhone(phone))
 }
 
 export function getOrCreateStudent(
@@ -83,19 +99,15 @@ export function getOrCreateStudent(
   phone: string,
 ): Student {
   const normalizedPhone = normalizePhone(phone)
-  const existingStudent = getStudentByPhone(schoolId, normalizedPhone)
+  const existingStudent = getStudentByNormalizedPhone(schoolId, normalizedPhone)
 
   if (existingStudent) {
-    const nextStudent: Student =
-      existingStudent.name !== name.trim() || existingStudent.phone !== normalizedPhone
-        ? {
-            ...existingStudent,
-            name: name.trim(),
-            phone: normalizedPhone,
-            normalizedPhone,
-          }
-        : existingStudent
-
+    const nextStudent: Student = {
+      ...existingStudent,
+      name: name.trim() || existingStudent.name,
+      phone: normalizedPhone,
+      normalizedPhone,
+    }
     db.students.upsert(nextStudent)
     return nextStudent
   }
@@ -118,21 +130,12 @@ export function getStudentActiveFutureBookingsCount(
   schoolId: string,
   normalizedPhone: string,
 ): number {
-  const now = Date.now()
-
   return db.bookings
     .bySchool(schoolId)
+    .filter((booking) => booking.status === 'active' && booking.studentPhone === normalizedPhone)
     .filter((booking) => {
-      if (booking.status !== 'active') {
-        return false
-      }
-
-      if (booking.studentPhone !== normalizedPhone) {
-        return false
-      }
-
       const slot = db.slots.byId(booking.slotId)
-      return slot ? getSlotDateTime(slot).getTime() > now : false
+      return slot ? isAfter(getSlotDateTime(slot), new Date()) : false
     }).length
 }
 
@@ -145,7 +148,11 @@ export function acquireSlotLock(slotId: string, sessionId: string): { ok: boolea
   db.slotLocks.clearExpired()
 
   const slot = db.slots.byId(slotId)
-  if (!slot || slot.status === 'booked') {
+  if (!slot) {
+    return { ok: false, error: 'Слот не найден.' }
+  }
+
+  if (slot.status !== 'available') {
     return { ok: false, error: 'Этот слот уже недоступен.' }
   }
 
@@ -174,20 +181,40 @@ export function releaseSessionLocks(sessionId: string): void {
   db.slotLocks.removeBySession(sessionId)
 }
 
-export function getAvailableSlots(instructorId: string, date: string, sessionId?: string): Slot[] {
+export function getAvailableSlots(
+  instructorId: string,
+  date: string,
+  sessionId?: string,
+): Slot[] {
   db.slotLocks.clearExpired()
 
   return db.slots
     .byInstructorAndDate(instructorId, date)
+    .filter((slot) => slot.status === 'available')
     .filter((slot) => {
-      if (slot.status !== 'available') {
-        return false
-      }
-
       const lock = db.slotLocks.bySlotId(slot.id)
       return !lock || lock.sessionId === sessionId
     })
     .sort((left, right) => left.time.localeCompare(right.time))
+}
+
+function checkBookingLimit(school: School, normalizedPhone: string): string | null {
+  if (!school.bookingLimitEnabled || !school.maxActiveBookingsPerStudent) {
+    return null
+  }
+
+  const activeBookings = getStudentActiveFutureBookingsCount(school.id, normalizedPhone)
+  if (activeBookings >= school.maxActiveBookingsPerStudent) {
+    return `У вас уже есть ${school.maxActiveBookingsPerStudent} активные записи. Чтобы выбрать другое время, отмените одну из текущих записей или обратитесь в автошколу.`
+  }
+
+  return null
+}
+
+function saveBookingAndSlot(booking: Booking, slot: Slot): BookingMutationResult {
+  db.bookings.upsert(booking)
+  db.slots.upsert(slot)
+  return { ok: true, booking }
 }
 
 export function createBooking(params: CreateBookingParams): BookingMutationResult {
@@ -202,18 +229,20 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
     return { ok: false, error: 'Введите имя ученика.' }
   }
 
-  if (!isValidRussianPhone(normalizedPhone)) {
+  if (!validateRussianPhone(normalizedPhone)) {
     return { ok: false, error: 'Введите корректный номер телефона в российском формате.' }
   }
 
   const school = db.schools.byId(params.schoolId)
   const slot = db.slots.byId(params.slotId)
+  const instructor = db.instructors.byId(params.instructorId)
+  const branch = db.branches.byId(params.branchId)
 
-  if (!school || !slot) {
-    return { ok: false, error: 'Не удалось найти данные записи.' }
+  if (!school || !slot || !instructor || !branch) {
+    return { ok: false, error: 'Не удалось найти данные для записи.' }
   }
 
-  if (slot.status === 'booked') {
+  if (slot.status !== 'available') {
     return { ok: false, error: 'Этот слот уже занят. Выберите другое время.' }
   }
 
@@ -227,18 +256,13 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
     return { ok: false, error: lockResult.error }
   }
 
-  if (school.bookingLimitEnabled && school.maxActiveBookingsPerStudent) {
-    const activeBookings = getStudentActiveFutureBookingsCount(params.schoolId, normalizedPhone)
-    if (activeBookings >= school.maxActiveBookingsPerStudent) {
-      return {
-        ok: false,
-        error: `Достигнут лимит активных записей: ${school.maxActiveBookingsPerStudent}.`,
-      }
-    }
+  const limitError = checkBookingLimit(school, normalizedPhone)
+  if (limitError) {
+    releaseSlotLock(slot.id, params.sessionId)
+    return { ok: false, error: limitError }
   }
 
   const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
-
   const booking: Booking = {
     id: generateId('booking'),
     schoolId: params.schoolId,
@@ -251,17 +275,18 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
     studentEmail: student.email,
     status: 'active',
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   }
 
-  db.bookings.upsert(booking)
-  db.slots.upsert({
+  const nextSlot: Slot = {
     ...slot,
     status: 'booked',
     bookingId: booking.id,
-  })
-  releaseSlotLock(slot.id, params.sessionId)
+  }
 
-  return { ok: true, booking }
+  const result = saveBookingAndSlot(booking, nextSlot)
+  releaseSlotLock(slot.id, params.sessionId)
+  return result
 }
 
 export function cancelBooking(bookingId: string): BookingMutationResult {
@@ -274,19 +299,25 @@ export function cancelBooking(bookingId: string): BookingMutationResult {
     return { ok: false, error: 'Отменить можно только активную запись.' }
   }
 
-  const nextBooking: Booking = { ...booking, status: 'cancelled' }
-  db.bookings.upsert(nextBooking)
-
-  const slot = db.slots.byId(booking.slotId)
-  if (slot) {
-    db.slots.upsert({
-      ...slot,
-      status: 'available',
-      bookingId: undefined,
-    })
+  const nextBooking: Booking = {
+    ...booking,
+    status: 'cancelled',
+    updatedAt: new Date().toISOString(),
   }
 
-  return { ok: true, booking: nextBooking }
+  const slot = db.slots.byId(booking.slotId)
+  if (!slot) {
+    db.bookings.upsert(nextBooking)
+    return { ok: true, booking: nextBooking }
+  }
+
+  const nextSlot: Slot = {
+    ...slot,
+    status: 'available',
+    bookingId: undefined,
+  }
+
+  return saveBookingAndSlot(nextBooking, nextSlot)
 }
 
 export function completeBooking(bookingId: string): BookingMutationResult {
@@ -299,29 +330,169 @@ export function completeBooking(bookingId: string): BookingMutationResult {
     return { ok: false, error: 'Провести можно только активную запись.' }
   }
 
-  const nextBooking: Booking = { ...booking, status: 'completed' }
-  db.bookings.upsert(nextBooking)
+  const nextBooking: Booking = {
+    ...booking,
+    status: 'completed',
+    updatedAt: new Date().toISOString(),
+  }
 
+  db.bookings.upsert(nextBooking)
   return { ok: true, booking: nextBooking }
 }
 
-export function generateIcs(bookingId: string): string | null {
+export function rescheduleBooking(params: RescheduleBookingParams): BookingMutationResult {
+  const booking = db.bookings.byId(params.bookingId)
+  if (!booking) {
+    return { ok: false, error: 'Запись не найдена.' }
+  }
+
+  if (booking.status !== 'active') {
+    return { ok: false, error: 'Перенести можно только активную запись.' }
+  }
+
+  const currentSlot = db.slots.byId(booking.slotId)
+  const nextSlot = db.slots.byId(params.newSlotId)
+
+  if (!nextSlot) {
+    return { ok: false, error: 'Новый слот не найден.' }
+  }
+
+  if (nextSlot.status !== 'available') {
+    return { ok: false, error: 'Новый слот уже занят.' }
+  }
+
+  if (isSlotInPast(nextSlot)) {
+    return { ok: false, error: 'Нельзя перенести запись на слот в прошлом.' }
+  }
+
+  const school = db.schools.byId(booking.schoolId)
+  if (school && !params.ignoreLimits && school.bookingLimitEnabled && school.maxActiveBookingsPerStudent) {
+    const futureCount = getStudentActiveFutureBookingsCount(booking.schoolId, booking.studentPhone)
+    const currentSlotIsFuture = currentSlot ? isAfter(getSlotDateTime(currentSlot), new Date()) : false
+    if (!currentSlotIsFuture && futureCount >= school.maxActiveBookingsPerStudent) {
+      return {
+        ok: false,
+        error: `У ученика уже есть ${school.maxActiveBookingsPerStudent} активные записи. Чтобы выбрать другое время, отмените одну из текущих записей или обратитесь в автошколу.`,
+      }
+    }
+  }
+
+  const nextBooking: Booking = {
+    ...booking,
+    slotId: nextSlot.id,
+    branchId: nextSlot.branchId,
+    instructorId: nextSlot.instructorId,
+    updatedAt: new Date().toISOString(),
+    rescheduledAt: new Date().toISOString(),
+  }
+
+  db.bookings.upsert(nextBooking)
+
+  if (currentSlot) {
+    db.slots.upsert({
+      ...currentSlot,
+      status: 'available',
+      bookingId: undefined,
+    })
+  }
+
+  db.slots.upsert({
+    ...nextSlot,
+    status: 'booked',
+    bookingId: booking.id,
+  })
+
+  return {
+    ok: true,
+    booking: nextBooking,
+    warning:
+      school && school.bookingLimitEnabled && school.maxActiveBookingsPerStudent
+        ? 'Перенос выполнен. Администратор может обходить лимит будущих записей.'
+        : undefined,
+  }
+}
+
+export function getBookingById(bookingId: string): ResolvedBooking | null {
   const booking = db.bookings.byId(bookingId)
   if (!booking) {
     return null
   }
 
-  const slot = db.slots.byId(booking.slotId)
-  const instructor = db.instructors.byId(booking.instructorId)
-  const branch = db.branches.byId(booking.branchId)
-  const school = db.schools.byId(booking.schoolId)
+  return {
+    booking,
+    slot: db.slots.byId(booking.slotId),
+    branch: db.branches.byId(booking.branchId),
+    instructor: db.instructors.byId(booking.instructorId),
+    school: db.schools.byId(booking.schoolId),
+    student: booking.studentId ? db.students.byId(booking.studentId) : getStudentByPhone(booking.schoolId, booking.studentPhone),
+  }
+}
 
-  if (!slot || !instructor || !branch || !school) {
+function sortBookingsBySlotDate(bookings: Booking[]): Booking[] {
+  return [...bookings].sort((left, right) => {
+    const leftSlot = db.slots.byId(left.slotId)
+    const rightSlot = db.slots.byId(right.slotId)
+    const leftTime = leftSlot ? getSlotDateTime(leftSlot).getTime() : 0
+    const rightTime = rightSlot ? getSlotDateTime(rightSlot).getTime() : 0
+    return leftTime - rightTime
+  })
+}
+
+export function getBookingsBySchool(schoolId: string): ResolvedBooking[] {
+  return sortBookingsBySlotDate(db.bookings.bySchool(schoolId)).map((booking) => getBookingById(booking.id)).filter((entry): entry is ResolvedBooking => Boolean(entry))
+}
+
+export function getBookingsByInstructor(instructorId: string): ResolvedBooking[] {
+  return sortBookingsBySlotDate(db.bookings.byInstructor(instructorId)).map((booking) => getBookingById(booking.id)).filter((entry): entry is ResolvedBooking => Boolean(entry))
+}
+
+export function getBookingsByStudent(studentId: string): ResolvedBooking[] {
+  const bookings = db.bookings.all().filter((booking) => booking.studentId === studentId)
+  return sortBookingsBySlotDate(bookings).map((booking) => getBookingById(booking.id)).filter((entry): entry is ResolvedBooking => Boolean(entry))
+}
+
+export function getUpcomingBookings(schoolId: string): ResolvedBooking[] {
+  const now = new Date()
+  return getBookingsBySchool(schoolId).filter((entry) =>
+    entry.slot ? isAfter(getSlotDateTime(entry.slot), now) || isSameDay(getSlotDateTime(entry.slot), now) : false,
+  )
+}
+
+export function getPastBookings(schoolId: string): ResolvedBooking[] {
+  const now = new Date()
+  return getBookingsBySchool(schoolId).filter((entry) =>
+    entry.slot ? isBefore(getSlotDateTime(entry.slot), startOfDay(now)) : false,
+  )
+}
+
+export function getTodayBookings(schoolId: string): ResolvedBooking[] {
+  const today = new Date()
+  return getBookingsBySchool(schoolId).filter((entry) => entry.slot ? isSameDay(getSlotDateTime(entry.slot), today) : false)
+}
+
+export function getTomorrowBookings(schoolId: string): ResolvedBooking[] {
+  const tomorrowStart = startOfDay(addMinutes(new Date(), 24 * 60))
+  const tomorrowEnd = endOfDay(tomorrowStart)
+
+  return getBookingsBySchool(schoolId).filter((entry) => {
+    if (!entry.slot) {
+      return false
+    }
+
+    const date = getSlotDateTime(entry.slot)
+    return !isBefore(date, tomorrowStart) && !isAfter(date, tomorrowEnd)
+  })
+}
+
+export function generateIcsFile(bookingId: string): string | null {
+  const resolved = getBookingById(bookingId)
+  if (!resolved || !resolved.slot || !resolved.instructor || !resolved.branch || !resolved.school) {
     return null
   }
 
+  const { booking, slot, instructor, branch, school } = resolved
   const start = getSlotDateTime(slot)
-  const end = new Date(start.getTime() + slot.duration * 60 * 1000)
+  const end = addMinutes(start, slot.duration)
   const transmission =
     instructor.transmission === 'manual'
       ? 'Механика'
@@ -355,3 +526,5 @@ export function generateIcs(bookingId: string): string | null {
     'END:VCALENDAR',
   ].join('\r\n')
 }
+
+export const generateIcs = generateIcsFile

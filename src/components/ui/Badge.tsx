@@ -38,10 +38,10 @@ export function Badge({
   )
 }
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, kind = 'booking' }: { status: string; kind?: 'booking' | 'slot' }) {
   const map: Record<string, { label: string; variant: BadgeProps['variant'] }> = {
     active: { label: 'Активна', variant: 'success' },
-    cancelled: { label: 'Отменена', variant: 'error' },
+    cancelled: { label: kind === 'slot' ? 'Отменено' : 'Отменена', variant: 'error' },
     completed: { label: 'Проведена', variant: 'default' },
     available: { label: 'Свободно', variant: 'forest' },
     booked: { label: 'Занято', variant: 'warning' },

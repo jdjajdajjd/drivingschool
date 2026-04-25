@@ -1,185 +1,236 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowRight, CalendarDays, Clock3, Puzzle, TrendingUp, Users } from 'lucide-react'
-import { Avatar } from '../../components/ui/Avatar'
+import { addDays, format, isAfter, isSameDay, subDays } from 'date-fns'
+import { ru } from 'date-fns/locale'
+import { AlertTriangle, CalendarDays, Clock3, RefreshCw, Users } from 'lucide-react'
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
-import { getModuleById } from '../../services/modules'
+import { getUpcomingBookings } from '../../services/bookingService'
+import { validateDataIntegrity } from '../../services/integrityService'
 import { db } from '../../services/storage'
-import type { Booking, Branch, Instructor } from '../../types'
-import { formatDate } from '../../utils/date'
+import { getStudentsBySchool, getStudentStats } from '../../services/studentService'
+import { getSlotsBySchool } from '../../services/slotService'
+
+function getSchool() {
+  return db.schools.bySlug('virazh')
+}
 
 export function AdminDashboard() {
-  const navigate = useNavigate()
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [instructors, setInstructors] = useState<Instructor[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [activeModules, setActiveModules] = useState<string[]>([])
+  const school = getSchool()
 
-  useEffect(() => {
-    const school = db.schools.bySlug('virazh')
+  const data = useMemo(() => {
     if (!school) {
-      return
+      return null
     }
 
-    setBookings(db.bookings.bySchool(school.id))
-    setInstructors(db.instructors.bySchool(school.id))
-    setBranches(db.branches.bySchool(school.id))
-    setActiveModules(db.subModules.bySchool(school.id).map((subscription) => subscription.moduleId))
-  }, [])
+    const bookings = db.bookings.bySchool(school.id)
+    const slots = db.slots.bySchool(school.id)
+    const instructors = db.instructors.bySchool(school.id)
+    const branches = db.branches.bySchool(school.id)
+    const upcoming = getUpcomingBookings(school.id)
+      .filter((entry) => entry.booking.status === 'active')
+      .slice(0, 8)
+    const today = new Date()
+    const tomorrow = addDays(today, 1)
+    const weekAhead = addDays(today, 7)
 
-  const now = new Date()
-  const thisMonthBookings = bookings.filter((booking) => {
-    const createdAt = new Date(booking.createdAt)
-    return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
-  })
-  const activeBookings = bookings.filter((booking) => booking.status === 'active')
-  const allSlots = db.slots.all()
-  const bookedSlots = allSlots.filter((slot) => slot.status === 'booked')
-  const utilization = allSlots.length > 0 ? Math.round((bookedSlots.length / allSlots.length) * 100) : 0
-  const recentBookings = [...bookings]
-    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
-    .slice(0, 8)
+    const bookingsToday = bookings.filter((booking) => {
+      const slot = db.slots.byId(booking.slotId)
+      return slot ? isSameDay(new Date(`${slot.date}T${slot.time}:00`), today) : false
+    })
+
+    const bookingsTomorrow = bookings.filter((booking) => {
+      const slot = db.slots.byId(booking.slotId)
+      return slot ? isSameDay(new Date(`${slot.date}T${slot.time}:00`), tomorrow) : false
+    })
+
+    const activeBookings = bookings.filter((booking) => booking.status === 'active')
+    const activeInstructors = instructors.filter((instructor) => instructor.isActive)
+    const freeSlots7d = slots.filter((slot) => {
+      const startsAt = new Date(`${slot.date}T${slot.time}:00`)
+      return slot.status === 'available' && isAfter(startsAt, today) && startsAt <= weekAhead
+    })
+
+    const recentCancellations = bookings.filter(
+      (booking) =>
+        booking.status === 'cancelled' &&
+        new Date(booking.updatedAt ?? booking.createdAt) >= subDays(today, 7),
+    )
+
+    const issues = validateDataIntegrity(school.id)
+    const instructorsWithoutSlots = activeInstructors.filter(
+      (instructor) =>
+        slots.filter(
+          (slot) =>
+            slot.instructorId === instructor.id &&
+            slot.status === 'available' &&
+            isAfter(new Date(`${slot.date}T${slot.time}:00`), today),
+        ).length === 0,
+    )
+    const branchesWithoutInstructors = branches.filter(
+      (branch) => instructors.filter((instructor) => instructor.branchId === branch.id).length === 0,
+    )
+    const overLimitStudents = getStudentsBySchool(school.id).filter((student) => getStudentStats(student.id).limitReached)
+
+    return {
+      bookingsToday,
+      bookingsTomorrow,
+      activeBookings,
+      freeSlots7d,
+      activeInstructors,
+      recentCancellations,
+      upcoming,
+      issues: [
+        ...issues,
+        ...(freeSlots7d.length === 0
+          ? [{ id: 'no-free-slots', level: 'warning' as const, message: 'На ближайшие 7 дней нет свободных слотов.' }]
+          : []),
+        ...(instructorsWithoutSlots.length > 0
+          ? [{
+              id: 'instructors-without-slots',
+              level: 'warning' as const,
+              message: `Есть инструкторы без слотов: ${instructorsWithoutSlots.slice(0, 3).map((item) => item.name).join(', ')}.`,
+            }]
+          : []),
+        ...(branchesWithoutInstructors.length > 0
+          ? [{
+              id: 'branches-without-instructors',
+              level: 'warning' as const,
+              message: `Есть филиалы без инструкторов: ${branchesWithoutInstructors.slice(0, 3).map((item) => item.name).join(', ')}.`,
+            }]
+          : []),
+        ...(overLimitStudents.length > 0
+          ? [{
+              id: 'students-over-limit',
+              level: 'warning' as const,
+              message: `Есть ученики с превышением лимита будущих записей: ${overLimitStudents.slice(0, 3).map((item) => item.name).join(', ')}.`,
+            }]
+          : []),
+      ],
+      slotCount: getSlotsBySchool(school.id).length,
+    }
+  }, [school])
+
+  if (!school || !data) {
+    return (
+      <div className="max-w-7xl p-6 md:p-8">
+        <EmptyState title="Школа не найдена" description="Демо-данные не загружены. Попробуйте сбросить localStorage и открыть проект снова." />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-7xl p-6 md:p-8">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <PageHeader
-          eyebrow="Автошкола «Вираж»"
-          title="Обзор"
-          description="Ключевые показатели, последние записи и активные модули без визуального шума."
-        />
-      </motion.div>
+      <PageHeader
+        eyebrow={school.name}
+        title="Обзор"
+        description="Операционная картина по записям, слотам и загрузке школы на ближайшие дни."
+        actions={
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            <RefreshCw size={16} />
+            Обновить
+          </Button>
+        }
+      />
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Записей в этом месяце"
-          value={thisMonthBookings.length}
-          meta={`из ${bookings.length} всего`}
-          icon={<CalendarDays size={18} />}
-        />
-        <StatCard
-          label="Активные записи"
-          value={activeBookings.length}
-          meta="Требуют внимания"
-          icon={<TrendingUp size={18} />}
-        />
-        <StatCard
-          label="Заполненность"
-          value={`${utilization}%`}
-          meta={`${bookedSlots.length} из ${allSlots.length} слотов`}
-          icon={<Clock3 size={18} />}
-        />
-        <StatCard
-          label="Инструкторы"
-          value={instructors.filter((instructor) => instructor.isActive).length}
-          meta={`${branches.length} филиала`}
-          icon={<Users size={18} />}
-        />
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Записей сегодня" value={data.bookingsToday.length} icon={<CalendarDays size={18} />} />
+        <StatCard label="Записей завтра" value={data.bookingsTomorrow.length} icon={<CalendarDays size={18} />} />
+        <StatCard label="Активных записей" value={data.activeBookings.length} icon={<Users size={18} />} />
+        <StatCard label="Свободных слотов на 7 дней" value={data.freeSlots7d.length} icon={<Clock3 size={18} />} />
+        <StatCard label="Активных инструкторов" value={data.activeInstructors.length} icon={<Users size={18} />} />
+        <StatCard label="Отмен за 7 дней" value={data.recentCancellations.length} icon={<AlertTriangle size={18} />} />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }} className="lg:col-span-2">
-          <Section
-            title="Последние записи"
-            description="Последние действия учеников и изменения статусов."
-            actions={
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin/bookings')}>
-                Все записи
-                <ArrowRight size={14} />
-              </Button>
-            }
-          >
-            <div className="divide-y divide-stone-100">
-              {recentBookings.map((booking) => {
-                const instructor = db.instructors.byId(booking.instructorId)
-                const slot = db.slots.byId(booking.slotId)
-                return (
-                  <div key={booking.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                    {instructor ? (
-                      <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
-                    ) : null}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-stone-900">{booking.studentName}</p>
-                      <p className="text-sm text-stone-500">
-                        {instructor?.name.split(' ')[0] ?? 'Инструктор'} · {slot ? `${formatDate(slot.date)}, ${slot.time}` : 'Без слота'}
-                      </p>
-                    </div>
-                    <StatusBadge status={booking.status} />
+      <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+        <Section
+          title="Ближайшие занятия"
+          description="Только активные записи. Ближайшие слоты наверху."
+          actions={
+            <Button variant="ghost" size="sm" onClick={() => (window.location.href = '/admin/bookings')}>
+              Все записи
+            </Button>
+          }
+        >
+          {data.upcoming.length === 0 ? (
+            <EmptyState title="Ближайших занятий пока нет" description="Когда появятся активные записи, они будут показаны здесь." />
+          ) : (
+            <div className="space-y-3">
+              {data.upcoming.map((entry) => (
+                <Link
+                  key={entry.booking.id}
+                  to={`/booking/${entry.booking.id}`}
+                  className="flex flex-col gap-3 rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4 transition hover:border-stone-200 hover:bg-white md:flex-row md:items-center"
+                >
+                  <div className="min-w-[140px]">
+                    <p className="text-sm font-semibold text-stone-900">
+                      {entry.slot
+                        ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMMM, HH:mm', { locale: ru })
+                        : 'Не найдено'}
+                    </p>
+                    <p className="text-xs text-stone-500">{entry.branch?.name ?? 'Филиал не найден'}</p>
                   </div>
-                )
-              })}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-stone-900">{entry.booking.studentName}</p>
+                    <p className="truncate text-sm text-stone-500">
+                      {entry.instructor?.name ?? 'Инструктор не найден'}
+                    </p>
+                  </div>
+                  <StatusBadge status={entry.booking.status} />
+                </Link>
+              ))}
             </div>
-          </Section>
-        </motion.div>
+          )}
+        </Section>
 
         <div className="space-y-6">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-            <Section
-              title="Инструкторы"
-              actions={
-                <Button variant="ghost" size="sm" onClick={() => navigate('/admin/instructors')}>
-                  <ArrowRight size={14} />
-                </Button>
-              }
-            >
+          <Section title="Сегодня" description="Короткая сводка по текущему дню.">
+            <div className="grid gap-3">
+              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+                <p className="text-sm text-stone-500">Занятия сегодня</p>
+                <p className="mt-2 text-2xl font-semibold text-stone-900">{data.bookingsToday.length}</p>
+              </div>
+              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+                <p className="text-sm text-stone-500">Отмены сегодня</p>
+                <p className="mt-2 text-2xl font-semibold text-stone-900">
+                  {data.bookingsToday.filter((booking) => booking.status === 'cancelled').length}
+                </p>
+              </div>
+              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+                <p className="text-sm text-stone-500">Свободные слоты сегодня</p>
+                <p className="mt-2 text-2xl font-semibold text-stone-900">
+                  {db.slots.bySchool(school.id).filter((slot) => slot.status === 'available' && slot.date === format(new Date(), 'yyyy-MM-dd')).length}
+                </p>
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Проблемы и диагностика" description="Только простые операционные сигналы, без сложной аналитики.">
+            {data.issues.length === 0 ? (
+              <EmptyState
+                icon={<AlertTriangle size={20} />}
+                title="Критичных сигналов нет"
+                description={`Данные выглядят аккуратно: ${data.slotCount} слотов и активная запись работы школы.`}
+              />
+            ) : (
               <div className="space-y-3">
-                {instructors.map((instructor) => {
-                  const count = bookings.filter((booking) => booking.instructorId === instructor.id).length
-                  return (
-                    <div key={instructor.id} className="flex items-center gap-3">
-                      <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-stone-900">
-                          {instructor.name.split(' ').slice(0, 2).join(' ')}
-                        </p>
-                      </div>
-                      <span className="text-xs text-stone-400">{count} зап.</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </Section>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }}>
-            <Section
-              title="Модули"
-              actions={
-                <Button variant="ghost" size="sm" onClick={() => navigate('/admin/modules')}>
-                  <Puzzle size={14} />
-                  <ArrowRight size={14} />
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                {activeModules.map((moduleId) => {
-                  const module = getModuleById(moduleId)
-                  if (!module) {
-                    return null
-                  }
-
-                  return (
-                    <div key={moduleId} className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-forest-500" />
-                      <span className="text-sm text-stone-700">{module.name}</span>
-                      <Badge variant="forest" size="sm" className="ml-auto">
-                        Активен
+                {data.issues.map((issue) => (
+                  <div key={issue.id} className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+                    <div className="flex items-start gap-3">
+                      <Badge variant={issue.level === 'error' ? 'error' : 'warning'}>
+                        {issue.level === 'error' ? 'Ошибка' : 'Внимание'}
                       </Badge>
+                      <p className="text-sm leading-relaxed text-stone-600">{issue.message}</p>
                     </div>
-                  )
-                })}
-
-                {activeModules.length === 0 ? (
-                  <p className="text-sm text-stone-500">Пока нет подключённых модулей.</p>
-                ) : null}
+                  </div>
+                ))}
               </div>
-            </Section>
-          </motion.div>
+            )}
+          </Section>
         </div>
       </div>
     </div>

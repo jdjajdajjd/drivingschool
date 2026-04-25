@@ -8,6 +8,8 @@ import { BookingConfirmation } from './pages/BookingConfirmation'
 import { AdminDashboard } from './pages/admin/Dashboard'
 import { AdminBookings } from './pages/admin/Bookings'
 import { AdminSlots } from './pages/admin/Slots'
+import { AdminStudents } from './pages/admin/Students'
+import { AdminStudentDetail } from './pages/admin/StudentDetail'
 import { AdminInstructors } from './pages/admin/Instructors'
 import { AdminBranches } from './pages/admin/Branches'
 import { AdminModules } from './pages/admin/Modules'
@@ -30,6 +32,8 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="bookings" element={<AdminBookings />} />
           <Route path="slots" element={<AdminSlots />} />
+          <Route path="students" element={<AdminStudents />} />
+          <Route path="students/:studentId" element={<AdminStudentDetail />} />
           <Route path="instructors" element={<AdminInstructors />} />
           <Route path="branches" element={<AdminBranches />} />
           <Route path="modules" element={<AdminModules />} />

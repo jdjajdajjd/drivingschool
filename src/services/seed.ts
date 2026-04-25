@@ -152,12 +152,14 @@ function generateSlots(): Slot[] {
       for (const time of timesForDay) {
         slots.push({
           id: `slot-${instructor.id}-${date}-${time.replace(':', '')}`,
+          schoolId: SCHOOL_ID,
           instructorId: instructor.id,
           branchId: instructor.branchId,
           date,
           time,
           duration: 90,
           status: 'available',
+          createdAt: new Date().toISOString(),
         })
       }
     }
@@ -238,7 +240,6 @@ const ACTIVE_MODULES: SubscriptionModule[] = [
 export function seedIfNeeded(): void {
   if (db.isSeeded()) return
 
-  // Clear stale data before reseeding
   db.reset()
 
   db.schools.upsert(SCHOOL)
@@ -254,4 +255,9 @@ export function seedIfNeeded(): void {
   ACTIVE_MODULES.forEach((sm) => db.subModules.upsert(sm))
 
   db.markSeeded()
+}
+
+export function resetDemoData(): void {
+  db.reset()
+  seedIfNeeded()
 }

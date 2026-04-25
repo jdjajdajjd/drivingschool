@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MapPin,
   Puzzle,
+  UserRound,
   Users,
   X,
 } from 'lucide-react'
@@ -16,6 +17,7 @@ const NAV = [
   { to: '/admin', label: 'Обзор', icon: LayoutDashboard, end: true },
   { to: '/admin/bookings', label: 'Записи', icon: CalendarDays },
   { to: '/admin/slots', label: 'Слоты', icon: Clock3 },
+  { to: '/admin/students', label: 'Ученики', icon: UserRound },
   { to: '/admin/instructors', label: 'Инструкторы', icon: Users },
   { to: '/admin/branches', label: 'Филиалы', icon: MapPin },
   { to: '/admin/modules', label: 'Модули', icon: Puzzle },

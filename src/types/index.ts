@@ -22,6 +22,8 @@ export interface Branch {
   isActive: boolean
 }
 
+export type Transmission = 'manual' | 'auto'
+
 export interface Instructor {
   id: string
   schoolId: string
@@ -37,20 +39,22 @@ export interface Instructor {
   avatarInitials: string
   avatarColor: string
   car?: string
-  transmission?: 'manual' | 'auto'
+  transmission?: Transmission
 }
 
-export type SlotStatus = 'available' | 'booked'
+export type SlotStatus = 'available' | 'booked' | 'cancelled'
 
 export interface Slot {
   id: string
+  schoolId: string
   instructorId: string
   branchId: string
-  date: string   // YYYY-MM-DD
-  time: string   // HH:MM
-  duration: number // minutes
+  date: string
+  time: string
+  duration: number
   status: SlotStatus
   bookingId?: string
+  createdAt?: string
 }
 
 export type BookingStatus = 'active' | 'cancelled' | 'completed'
@@ -67,6 +71,8 @@ export interface Booking {
   studentEmail: string
   status: BookingStatus
   createdAt: string
+  updatedAt?: string
+  rescheduledAt?: string
   notes?: string
   comment?: string
 }
@@ -85,6 +91,48 @@ export interface SlotLock {
   slotId: string
   sessionId: string
   expiresAt: string
+}
+
+export interface StudentStats {
+  totalBookings: number
+  activeFutureBookings: number
+  completedBookings: number
+  cancelledBookings: number
+  cancellationsCount: number
+  lastBooking: Booking | null
+  nextBooking: Booking | null
+  limitReached: boolean
+}
+
+export interface ResolvedBooking {
+  booking: Booking
+  slot: Slot | null
+  branch: Branch | null
+  instructor: Instructor | null
+  school: School | null
+  student: Student | null
+}
+
+export interface ResolvedSlot {
+  slot: Slot
+  branch: Branch | null
+  instructor: Instructor | null
+  booking: Booking | null
+  student: Student | null
+}
+
+export interface BulkSlotCreateResult {
+  created: Slot[]
+  createdCount: number
+  skippedDuplicates: number
+  skippedPast: number
+  skippedInactiveInstructor: number
+}
+
+export interface IntegrityIssue {
+  id: string
+  level: 'warning' | 'error'
+  message: string
 }
 
 export type ModulePriceType = 'monthly' | 'one-time' | 'usage'

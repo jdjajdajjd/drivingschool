@@ -1,259 +1,511 @@
-import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { CheckCircle2, Search, XCircle } from 'lucide-react'
+import { addDays, endOfWeek, isAfter, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
+import { CheckCircle2, RotateCcw, Search, XCircle } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { FormField } from '../../components/ui/FormField'
+import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatPhone } from '../../lib/utils'
-import { cancelBooking, completeBooking } from '../../services/bookingService'
+import {
+  cancelBooking,
+  completeBooking,
+  getBookingsBySchool,
+  getSlotDateTime,
+  rescheduleBooking,
+} from '../../services/bookingService'
 import { db } from '../../services/storage'
-import type { Booking, Branch, Instructor, School, Slot } from '../../types'
-import { formatDateFull } from '../../utils/date'
+import { getAvailableSlots } from '../../services/slotService'
 
-type BookingFilter = 'all' | 'active' | 'cancelled' | 'completed'
+type StatusFilter = 'all' | 'active' | 'cancelled' | 'completed'
+type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
 
-interface BookingRow {
-  booking: Booking
-  slot: Slot | null
-  branch: Branch | null
-  instructor: Instructor | null
-}
-
-function sortRows(left: BookingRow, right: BookingRow): number {
-  const leftValue = left.slot ? `${left.slot.date}T${left.slot.time}` : left.booking.createdAt
-  const rightValue = right.slot ? `${right.slot.date}T${right.slot.time}` : right.booking.createdAt
-  return rightValue.localeCompare(leftValue)
+function selectClassName() {
+  return 'h-11 w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 outline-none transition focus:border-forest-300 focus:ring-4 focus:ring-forest-100'
 }
 
 export function AdminBookings() {
+  const school = db.schools.bySlug('virazh')
   const { showToast } = useToast()
-  const [school, setSchool] = useState<School | null>(null)
-  const [rows, setRows] = useState<BookingRow[]>([])
-  const [filter, setFilter] = useState<BookingFilter>('all')
   const [search, setSearch] = useState('')
+  const [date, setDate] = useState('')
+  const [branchId, setBranchId] = useState('all')
+  const [instructorId, setInstructorId] = useState('all')
+  const [status, setStatus] = useState<StatusFilter>('all')
+  const [period, setPeriod] = useState<PeriodFilter>('all')
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null)
+  const [completeBookingId, setCompleteBookingId] = useState<string | null>(null)
+  const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null)
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleBranchId, setRescheduleBranchId] = useState('all')
+  const [rescheduleInstructorId, setRescheduleInstructorId] = useState('all')
+  const [selectedNewSlotId, setSelectedNewSlotId] = useState('')
 
-  useEffect(() => {
-    const currentSchool = db.schools.bySlug('virazh')
-    if (!currentSchool) {
-      return
+  const branches = school ? db.branches.bySchool(school.id) : []
+  const instructors = school ? db.instructors.bySchool(school.id) : []
+  const allBookings = school ? getBookingsBySchool(school.id) : []
+
+  const filteredBookings = useMemo(() => {
+    const now = new Date()
+    const query = search.trim().toLowerCase()
+
+    return [...allBookings]
+      .filter((entry) => {
+        const slotDate = entry.slot ? getSlotDateTime(entry.slot) : null
+
+        const matchesSearch = !query
+          ? true
+          : entry.booking.studentName.toLowerCase().includes(query) ||
+            entry.booking.studentPhone.includes(query.replace(/\D/g, ''))
+
+        const matchesDate = date ? entry.slot?.date === date : true
+        const matchesBranch = branchId === 'all' ? true : entry.booking.branchId === branchId
+        const matchesInstructor = instructorId === 'all' ? true : entry.booking.instructorId === instructorId
+        const matchesStatus = status === 'all' ? true : entry.booking.status === status
+
+        const matchesPeriod = (() => {
+          if (!slotDate || period === 'all') {
+            return true
+          }
+
+          if (period === 'today') return isSameDay(slotDate, now)
+          if (period === 'tomorrow') return isSameDay(slotDate, addDays(now, 1))
+          if (period === 'week') {
+            const weekStart = startOfWeek(now, { weekStartsOn: 1 })
+            const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
+            return !isBefore(slotDate, weekStart) && !isAfter(slotDate, weekEnd)
+          }
+          if (period === 'future') return !isBefore(slotDate, startOfDay(now))
+          if (period === 'past') return isBefore(slotDate, startOfDay(now))
+          return true
+        })()
+
+        return matchesSearch && matchesDate && matchesBranch && matchesInstructor && matchesStatus && matchesPeriod
+      })
+      .sort((left, right) => {
+        const leftTime = left.slot ? getSlotDateTime(left.slot).getTime() : 0
+        const rightTime = right.slot ? getSlotDateTime(right.slot).getTime() : 0
+        const leftPast = left.slot ? isBefore(getSlotDateTime(left.slot), startOfDay(now)) : false
+        const rightPast = right.slot ? isBefore(getSlotDateTime(right.slot), startOfDay(now)) : false
+
+        if (leftPast !== rightPast) {
+          return leftPast ? 1 : -1
+        }
+
+        return leftTime - rightTime
+      })
+  }, [allBookings, search, date, branchId, instructorId, status, period])
+
+  const rescheduleCandidates = useMemo(() => {
+    if (!rescheduleBookingId) {
+      return []
     }
 
-    setSchool(currentSchool)
-
-    setRows(
-      db.bookings
-        .bySchool(currentSchool.id)
-        .map((booking) => ({
-          booking,
-          slot: db.slots.byId(booking.slotId),
-          branch: db.branches.byId(booking.branchId),
-          instructor: db.instructors.byId(booking.instructorId),
-        }))
-        .sort(sortRows),
+    return getAvailableSlots(
+      rescheduleInstructorId === 'all' ? undefined : rescheduleInstructorId,
+      rescheduleDate || undefined,
+      rescheduleBranchId === 'all' ? undefined : rescheduleBranchId,
     )
-  }, [])
+  }, [rescheduleBookingId, rescheduleDate, rescheduleBranchId, rescheduleInstructorId])
 
-  const counts = useMemo(
-    () => ({
-      all: rows.length,
-      active: rows.filter((row) => row.booking.status === 'active').length,
-      cancelled: rows.filter((row) => row.booking.status === 'cancelled').length,
-      completed: rows.filter((row) => row.booking.status === 'completed').length,
-    }),
-    [rows],
-  )
-
-  const filteredRows = useMemo(() => {
-    const searchValue = search.trim().toLowerCase()
-
-    return rows.filter((row) => {
-      if (filter !== 'all' && row.booking.status !== filter) {
-        return false
-      }
-
-      if (!searchValue) {
-        return true
-      }
-
-      return [
-        row.booking.studentName,
-        row.booking.studentPhone,
-        row.branch?.name ?? '',
-        row.instructor?.name ?? '',
-        row.instructor?.car ?? '',
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(searchValue)
-    })
-  }, [filter, rows, search])
-
-  function updateRow(nextBooking: Booking): void {
-    setRows((current) =>
-      current.map((row) => (row.booking.id === nextBooking.id ? { ...row, booking: nextBooking } : row)).sort(sortRows),
-    )
+  function refreshRescheduleDefaults(bookingId: string): void {
+    const entry = allBookings.find((item) => item.booking.id === bookingId)
+    setRescheduleBranchId(entry?.booking.branchId ?? 'all')
+    setRescheduleInstructorId(entry?.booking.instructorId ?? 'all')
+    setRescheduleDate(entry?.slot?.date ?? '')
+    setSelectedNewSlotId('')
   }
 
-  function handleCancel(bookingId: string): void {
-    const result = cancelBooking(bookingId)
-    if (!result.ok || !result.booking) {
+  function handleCancelConfirm(): void {
+    if (!cancelBookingId) {
+      return
+    }
+    const result = cancelBooking(cancelBookingId)
+    setCancelBookingId(null)
+    if (!result.ok) {
       showToast(result.error ?? 'Не удалось отменить запись.', 'error')
       return
     }
-
-    updateRow(result.booking)
     showToast('Запись отменена. Слот снова доступен.', 'success')
   }
 
-  function handleComplete(bookingId: string): void {
-    const result = completeBooking(bookingId)
-    if (!result.ok || !result.booking) {
-      showToast(result.error ?? 'Не удалось отметить запись как проведённую.', 'error')
+  function handleCompleteConfirm(): void {
+    if (!completeBookingId) {
+      return
+    }
+    const result = completeBooking(completeBookingId)
+    setCompleteBookingId(null)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось отметить запись проведённой.', 'error')
+      return
+    }
+    showToast('Занятие отмечено проведённым.', 'success')
+  }
+
+  function handleRescheduleConfirm(): void {
+    if (!rescheduleBookingId || !selectedNewSlotId) {
+      showToast('Выберите новый свободный слот.', 'error')
       return
     }
 
-    updateRow(result.booking)
-    showToast('Запись отмечена как проведённая.', 'success')
+    const result = rescheduleBooking({
+      bookingId: rescheduleBookingId,
+      newSlotId: selectedNewSlotId,
+      ignoreLimits: true,
+    })
+
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось перенести запись.', 'error')
+      return
+    }
+
+    setRescheduleBookingId(null)
+    setSelectedNewSlotId('')
+    showToast(result.warning ?? 'Запись перенесена.', 'success')
+  }
+
+  if (!school) {
+    return (
+      <div className="max-w-7xl p-6 md:p-8">
+        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-[1320px] p-6 md:p-8">
+    <div className="max-w-7xl p-6 md:p-8">
       <PageHeader
-        eyebrow="Admin"
+        eyebrow={school.name}
         title="Записи"
-        description={school ? `${school.name} · все бронирования, статусы и быстрые действия в одном месте.` : 'Все бронирования и статусы.'}
+        description="Поиск, фильтры, отмена, проведение и перенос занятий без выхода из панели."
       />
 
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full max-w-md">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Ученик, телефон, филиал, инструктор..."
-            className="h-11 w-full rounded-2xl border border-stone-200 bg-white pl-10 pr-4 text-sm text-stone-900 outline-none transition focus:border-forest-300 focus:ring-4 focus:ring-forest-100"
-          />
-        </div>
+      <div className="mt-8 space-y-6">
+        <Section title="Фильтры" description="Ищите по ученику, телефону, периоду и статусу.">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <FormField label="Поиск">
+              <div className="relative">
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Ученик или телефон"
+                  className="h-11 w-full rounded-2xl border border-stone-200 bg-white pl-10 pr-3.5 text-[15px] text-stone-900 outline-none transition focus:border-forest-300 focus:ring-4 focus:ring-forest-100"
+                />
+              </div>
+            </FormField>
 
-        <div className="flex flex-wrap gap-2">
-          {([
-            ['all', 'Все'],
-            ['active', 'Активные'],
-            ['completed', 'Проведены'],
-            ['cancelled', 'Отменены'],
-          ] as Array<[BookingFilter, string]>).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                filter === key
-                  ? 'border-forest-700 bg-forest-700 text-white'
-                  : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-900'
-              }`}
-            >
-              {label} · {counts[key]}
-            </button>
-          ))}
-        </div>
-      </div>
+            <FormField label="Дата">
+              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={selectClassName()} />
+            </FormField>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.05 }}
-        className="mt-6 overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-soft"
-      >
-        <div className="hidden grid-cols-[1.1fr_0.7fr_1fr_0.9fr_0.95fr_1fr_0.95fr_0.8fr_1.1fr] gap-4 border-b border-stone-100 bg-stone-50 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400 xl:grid">
-          <span>Дата</span>
-          <span>Время</span>
-          <span>Ученик</span>
-          <span>Телефон</span>
-          <span>Филиал</span>
-          <span>Инструктор</span>
-          <span>Машина</span>
-          <span>Статус</span>
-          <span>Действия</span>
-        </div>
+            <FormField label="Филиал">
+              <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
+                <option value="all">Все филиалы</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
-        {filteredRows.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              title="Записи не найдены"
-              description="Попробуйте изменить фильтр или строку поиска."
-            />
+            <FormField label="Инструктор">
+              <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className={selectClassName()}>
+                <option value="all">Все инструкторы</option>
+                {instructors.map((instructor) => (
+                  <option key={instructor.id} value={instructor.id}>
+                    {instructor.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            <FormField label="Статус">
+              <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)} className={selectClassName()}>
+                <option value="all">Все</option>
+                <option value="active">Активные</option>
+                <option value="cancelled">Отменённые</option>
+                <option value="completed">Проведённые</option>
+              </select>
+            </FormField>
+
+            <FormField label="Период">
+              <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodFilter)} className={selectClassName()}>
+                <option value="all">Все</option>
+                <option value="today">Сегодня</option>
+                <option value="tomorrow">Завтра</option>
+                <option value="week">Эта неделя</option>
+                <option value="future">Будущие</option>
+                <option value="past">Прошедшие</option>
+              </select>
+            </FormField>
           </div>
-        ) : (
-          <div className="divide-y divide-stone-100">
-            {filteredRows.map((row) => {
-              const active = row.booking.status === 'active'
-              const car = row.instructor?.car
-                ? `${row.instructor.car}${row.instructor.transmission ? ` · ${row.instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}`
-                : 'Не указано'
+        </Section>
 
-              return (
-                <div key={row.booking.id} className="px-6 py-5">
-                  <div className="hidden grid-cols-[1.1fr_0.7fr_1fr_0.9fr_0.95fr_1fr_0.95fr_0.8fr_1.1fr] items-center gap-4 xl:grid">
-                    <div className="text-sm font-medium text-stone-900">{row.slot ? formatDateFull(row.slot.date) : 'Нет даты'}</div>
-                    <div className="text-sm text-stone-600">{row.slot?.time ?? '—'}</div>
-                    <div className="text-sm font-semibold text-stone-900">{row.booking.studentName}</div>
-                    <div className="text-sm text-stone-600">{formatPhone(row.booking.studentPhone)}</div>
-                    <div className="text-sm text-stone-600">{row.branch?.name ?? '—'}</div>
-                    <div className="text-sm text-stone-600">{row.instructor?.name ?? '—'}</div>
-                    <div className="text-sm text-stone-600">{car}</div>
-                    <div>
-                      <StatusBadge status={row.booking.status} />
+        <Section
+          title="Все записи"
+          description={`Найдено ${filteredBookings.length} записей.`}
+        >
+          {filteredBookings.length === 0 ? (
+            <EmptyState title="Записей не найдено" description="Измените фильтры или создайте новую запись на публичной странице." />
+          ) : (
+            <>
+              <div className="hidden overflow-hidden rounded-3xl border border-stone-200 xl:block">
+                <table className="min-w-full divide-y divide-stone-200">
+                  <thead className="bg-stone-50">
+                    <tr className="text-left text-xs uppercase tracking-[0.14em] text-stone-500">
+                      <th className="px-4 py-3">Дата</th>
+                      <th className="px-4 py-3">Ученик</th>
+                      <th className="px-4 py-3">Филиал</th>
+                      <th className="px-4 py-3">Инструктор</th>
+                      <th className="px-4 py-3">Статус</th>
+                      <th className="px-4 py-3">Создана</th>
+                      <th className="px-4 py-3 text-right">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100 bg-white">
+                    {filteredBookings.map((entry) => (
+                      <tr key={entry.booking.id} className="align-top text-sm text-stone-600">
+                        <td className="px-4 py-4">
+                          <p className="font-medium text-stone-900">
+                            {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
+                          </p>
+                        </td>
+                        <td className="px-4 py-4">
+                          {entry.student ? (
+                            <Link to={`/admin/students/${entry.student.id}`} className="font-medium text-stone-900 hover:text-forest-700">
+                              {entry.booking.studentName}
+                            </Link>
+                          ) : (
+                            <p className="font-medium text-stone-900">{entry.booking.studentName}</p>
+                          )}
+                          <p className="text-stone-500">{formatPhone(entry.booking.studentPhone)}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-medium text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
+                          <p className="text-stone-500">{entry.branch?.address ?? 'Без адреса'}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-medium text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
+                          <p className="text-stone-500">
+                            {entry.instructor?.car ?? 'Машина не указана'}
+                            {entry.instructor?.transmission
+                              ? ` · ${entry.instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}`
+                              : ''}
+                          </p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <StatusBadge status={entry.booking.status} />
+                        </td>
+                        <td className="px-4 py-4 text-stone-500">
+                          {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={entry.booking.status !== 'active'}
+                              onClick={() => {
+                                setRescheduleBookingId(entry.booking.id)
+                                refreshRescheduleDefaults(entry.booking.id)
+                              }}
+                            >
+                              <RotateCcw size={14} />
+                              Перенести
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={entry.booking.status !== 'active'}
+                              onClick={() => setCompleteBookingId(entry.booking.id)}
+                            >
+                              <CheckCircle2 size={14} />
+                              Проведена
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              disabled={entry.booking.status !== 'active'}
+                              onClick={() => setCancelBookingId(entry.booking.id)}
+                            >
+                              <XCircle size={14} />
+                              Отменить
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid gap-4 xl:hidden">
+                {filteredBookings.map((entry) => (
+                  <div key={entry.booking.id} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-base font-semibold text-stone-900">{entry.booking.studentName}</p>
+                        <p className="text-sm text-stone-500">{formatPhone(entry.booking.studentPhone)}</p>
+                      </div>
+                      <StatusBadge status={entry.booking.status} />
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" disabled={!active} onClick={() => handleComplete(row.booking.id)}>
-                        <CheckCircle2 size={14} />
-                        Проведено
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Занятие</p>
+                        <p className="mt-1 text-sm font-medium text-stone-900">
+                          {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Инструктор</p>
+                        <p className="mt-1 text-sm font-medium text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Филиал</p>
+                        <p className="mt-1 text-sm font-medium text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Создана</p>
+                        <p className="mt-1 text-sm font-medium text-stone-900">
+                          {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={entry.booking.status !== 'active'}
+                        onClick={() => {
+                          setRescheduleBookingId(entry.booking.id)
+                          refreshRescheduleDefaults(entry.booking.id)
+                        }}
+                      >
+                        Перенести
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={entry.booking.status !== 'active'}
+                        onClick={() => setCompleteBookingId(entry.booking.id)}
+                      >
+                        Проведена
                       </Button>
                       <Button
                         size="sm"
                         variant="danger"
-                        disabled={!active}
-                        onClick={() => handleCancel(row.booking.id)}
+                        disabled={entry.booking.status !== 'active'}
+                        onClick={() => setCancelBookingId(entry.booking.id)}
                       >
-                        <XCircle size={14} />
                         Отменить
                       </Button>
                     </div>
                   </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Section>
+      </div>
 
-                  <div className="space-y-4 xl:hidden">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-stone-900">{row.booking.studentName}</p>
-                        <p className="mt-1 text-sm text-stone-500">{formatPhone(row.booking.studentPhone)}</p>
-                      </div>
-                      <StatusBadge status={row.booking.status} />
-                    </div>
+      <ConfirmDialog
+        open={Boolean(cancelBookingId)}
+        title="Отменить запись"
+        description="Запись перейдёт в статус «Отменена», а слот снова станет доступным для выбора."
+        confirmLabel="Отменить запись"
+        onClose={() => setCancelBookingId(null)}
+        onConfirm={handleCancelConfirm}
+        danger
+      />
 
-                    <div className="grid gap-2 text-sm text-stone-500 md:grid-cols-2">
-                      <p>Дата: {row.slot ? formatDateFull(row.slot.date) : '—'}</p>
-                      <p>Время: {row.slot?.time ?? '—'}</p>
-                      <p>Филиал: {row.branch?.name ?? '—'}</p>
-                      <p>Инструктор: {row.instructor?.name ?? '—'}</p>
-                      <p>Машина: {car}</p>
-                    </div>
+      <ConfirmDialog
+        open={Boolean(completeBookingId)}
+        title="Отметить проведённой"
+        description="Запись перейдёт в статус «Проведена». Слот останется занятым."
+        confirmLabel="Отметить проведённой"
+        onClose={() => setCompleteBookingId(null)}
+        onConfirm={handleCompleteConfirm}
+      />
 
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" className="flex-1" disabled={!active} onClick={() => handleComplete(row.booking.id)}>
-                        Проведено
-                      </Button>
-                      <Button size="sm" variant="danger" className="flex-1" disabled={!active} onClick={() => handleCancel(row.booking.id)}>
-                        Отменить
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+      <Modal open={Boolean(rescheduleBookingId)} onClose={() => setRescheduleBookingId(null)} title="Перенести запись" size="lg">
+        <div className="space-y-6 px-6 pb-6">
+          <div className="rounded-3xl border border-amber-100 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+            Администратор может перенести запись даже при лимите будущих записей у ученика. Если лимит превышен, это будет отмечено в уведомлении.
           </div>
-        )}
-      </motion.div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <FormField label="Филиал">
+              <select value={rescheduleBranchId} onChange={(event) => setRescheduleBranchId(event.target.value)} className={selectClassName()}>
+                <option value="all">Все филиалы</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Инструктор">
+              <select value={rescheduleInstructorId} onChange={(event) => setRescheduleInstructorId(event.target.value)} className={selectClassName()}>
+                <option value="all">Все инструкторы</option>
+                {instructors.map((instructor) => (
+                  <option key={instructor.id} value={instructor.id}>
+                    {instructor.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Дата">
+              <input type="date" value={rescheduleDate} onChange={(event) => setRescheduleDate(event.target.value)} className={selectClassName()} />
+            </FormField>
+          </div>
+
+          {rescheduleCandidates.length === 0 ? (
+            <EmptyState title="Свободных слотов не найдено" description="Измените фильтры или создайте новые слоты в разделе «Слоты»." />
+          ) : (
+            <div className="grid max-h-[360px] gap-3 overflow-y-auto sm:grid-cols-2">
+              {rescheduleCandidates.map((slot) => {
+                const instructor = db.instructors.byId(slot.instructorId)
+                const branch = db.branches.byId(slot.branchId)
+                const selected = selectedNewSlotId === slot.id
+
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => setSelectedNewSlotId(slot.id)}
+                    className={`rounded-3xl border px-4 py-4 text-left transition ${
+                      selected
+                        ? 'border-forest-700 bg-forest-50'
+                        : 'border-stone-200 bg-white hover:border-stone-300'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-stone-900">
+                      {slot.date} · {slot.time}
+                    </p>
+                    <p className="mt-1 text-sm text-stone-500">{branch?.name ?? 'Филиал не найден'}</p>
+                    <p className="mt-1 text-sm text-stone-500">{instructor?.name ?? 'Инструктор не найден'}</p>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button className="flex-1" onClick={handleRescheduleConfirm} disabled={!selectedNewSlotId}>
+              Подтвердить перенос
+            </Button>
+            <Button variant="secondary" className="flex-1" onClick={() => setRescheduleBookingId(null)}>
+              Закрыть
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

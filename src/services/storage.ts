@@ -9,7 +9,7 @@ import type {
   SubscriptionModule,
 } from '../types'
 
-export const SEED_VERSION = '4'
+export const SEED_VERSION = '5'
 
 const K = {
   SCHOOLS: 'dd:schools',
@@ -108,8 +108,12 @@ export const db = {
 
   slots: {
     all: () => readAll<Slot>(K.SLOTS),
+    bySchool: (schoolId: string) =>
+      readAll<Slot>(K.SLOTS).filter((slot) => slot.schoolId === schoolId),
     byInstructor: (instructorId: string) =>
       readAll<Slot>(K.SLOTS).filter((slot) => slot.instructorId === instructorId),
+    byBranch: (branchId: string) =>
+      readAll<Slot>(K.SLOTS).filter((slot) => slot.branchId === branchId),
     byInstructorAndDate: (instructorId: string, date: string) =>
       readAll<Slot>(K.SLOTS).filter(
         (slot) => slot.instructorId === instructorId && slot.date === date,
@@ -141,6 +145,10 @@ export const db = {
     bySchool: (schoolId: string) =>
       readAll<Student>(K.STUDENTS).filter((student) => student.schoolId === schoolId),
     byId: (id: string) => readAll<Student>(K.STUDENTS).find((student) => student.id === id) ?? null,
+    byNormalizedPhone: (schoolId: string, normalizedPhone: string) =>
+      readAll<Student>(K.STUDENTS).find(
+        (student) => student.schoolId === schoolId && student.normalizedPhone === normalizedPhone,
+      ) ?? null,
     upsert: (student: Student) => upsert(K.STUDENTS, student),
   },
 

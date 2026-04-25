@@ -1,88 +1,206 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Building2, MapPin, Phone, Users } from 'lucide-react'
+import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { Input } from '../../components/ui/Input'
+import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
-import { formatPhone } from '../../lib/utils'
+import { Section } from '../../components/ui/Section'
+import { useToast } from '../../components/ui/Toast'
+import { createBranch, deleteBranchSafe, getBranchesBySchool, updateBranch } from '../../services/branchService'
 import { db } from '../../services/storage'
-import type { Branch, Instructor } from '../../types'
+
+const initialForm = {
+  name: '',
+  address: '',
+  phone: '',
+  isActive: true,
+}
 
 export function AdminBranches() {
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [instructorCounts, setInstructorCounts] = useState<Map<string, number>>(new Map())
+  const school = db.schools.bySlug('virazh')
+  const { showToast } = useToast()
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [form, setForm] = useState(initialForm)
 
-  useEffect(() => {
-    const school = db.schools.bySlug('virazh')
-    if (!school) {
+  const branches = school ? getBranchesBySchool(school.id) : []
+  const rows = useMemo(
+    () =>
+      branches.map((branch) => ({
+        branch,
+        instructorCount: db.instructors.byBranch(branch.id).length,
+        futureBookings: db.bookings
+          .all()
+          .filter((booking) => booking.branchId === branch.id && booking.status === 'active').length,
+        freeSlots7d: db.slots
+          .byBranch(branch.id)
+          .filter((slot) => slot.status === 'available' && new Date(`${slot.date}T${slot.time}:00`).getTime() <= Date.now() + 7 * 24 * 60 * 60 * 1000)
+          .length,
+      })),
+    [branches],
+  )
+
+  function openCreate(): void {
+    setEditingId(null)
+    setForm(initialForm)
+    setModalOpen(true)
+  }
+
+  function openEdit(branchId: string): void {
+    const branch = branches.find((item) => item.id === branchId)
+    if (!branch) return
+    setEditingId(branch.id)
+    setForm({
+      name: branch.name,
+      address: branch.address,
+      phone: branch.phone,
+      isActive: branch.isActive,
+    })
+    setModalOpen(true)
+  }
+
+  function handleSubmit(): void {
+    if (!school) return
+
+    const result = editingId
+      ? updateBranch(editingId, form)
+      : createBranch({
+          schoolId: school.id,
+          ...form,
+        })
+
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось сохранить филиал.', 'error')
       return
     }
 
-    setBranches(db.branches.bySchool(school.id))
+    setModalOpen(false)
+    showToast(editingId ? 'Филиал обновлён.' : 'Филиал создан.', 'success')
+  }
 
-    const counts = new Map<string, number>()
-    const instructors: Instructor[] = db.instructors.bySchool(school.id)
-    instructors.forEach((instructor) => counts.set(instructor.branchId, (counts.get(instructor.branchId) ?? 0) + 1))
-    setInstructorCounts(counts)
-  }, [])
+  function handleDelete(): void {
+    if (!deleteId) return
+    const result = deleteBranchSafe(deleteId)
+    setDeleteId(null)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось удалить филиал.', 'error')
+      return
+    }
+    showToast('Филиал удалён.', 'success')
+  }
+
+  if (!school) {
+    return (
+      <div className="max-w-7xl p-6 md:p-8">
+        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-7xl p-6 md:p-8">
       <PageHeader
-        eyebrow="Admin"
+        eyebrow={school.name}
         title="Филиалы"
-        description="Читаемый список филиалов, адресов и нагрузки по инструкторам."
+        description="Простое управление адресами, активностью филиалов и связанными данными."
         actions={
-          <Button>
-            <Building2 size={16} />
-            Добавить
+          <Button onClick={openCreate}>
+            <Plus size={16} />
+            Создать филиал
           </Button>
         }
       />
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {branches.map((branch, index) => {
-          const count = instructorCounts.get(branch.id) ?? 0
-          return (
-            <motion.div key={branch.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: index * 0.05 }}>
-              <Card padding="md">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-forest-700">
-                    <Building2 size={18} />
+      <div className="mt-8">
+        <Section title="Все филиалы" description={`В школе ${rows.length} филиалов.`}>
+          {rows.length === 0 ? (
+            <EmptyState title="Филиалов пока нет" description="Создайте первый филиал, чтобы привязать к нему инструкторов и слоты." />
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {rows.map(({ branch, instructorCount, futureBookings, freeSlots7d }) => (
+                <div key={branch.id} className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-stone-500">
+                        <MapPin size={18} />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-lg font-semibold text-stone-900">{branch.name}</p>
+                          <Badge variant={branch.isActive ? 'success' : 'default'}>
+                            {branch.isActive ? 'Активен' : 'Выключен'}
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-sm text-stone-500">{branch.address || 'Адрес не указан'}</p>
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant={branch.isActive ? 'success' : 'default'}>
-                    {branch.isActive ? 'Активен' : 'Закрыт'}
-                  </Badge>
-                </div>
 
-                <h3 className="mt-5 text-lg font-semibold text-stone-900">{branch.name}</h3>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Инструкторы</p>
+                      <p className="mt-1 text-sm font-semibold text-stone-900">{instructorCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Будущие записи</p>
+                      <p className="mt-1 text-sm font-semibold text-stone-900">{futureBookings}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Свободные слоты 7 дней</p>
+                      <p className="mt-1 text-sm font-semibold text-stone-900">{freeSlots7d}</p>
+                    </div>
+                  </div>
 
-                <div className="mt-5 space-y-3 text-sm text-stone-500">
-                  <div className="flex items-start gap-2">
-                    <MapPin size={14} className="mt-0.5 text-stone-400" />
-                    <span>{branch.address}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone size={14} className="text-stone-400" />
-                    <span>{formatPhone(branch.phone)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users size={14} className="text-stone-400" />
-                    <span>{count} инструкторов</span>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <Button variant="secondary" size="sm" onClick={() => openEdit(branch.id)}>
+                      <Pencil size={14} />
+                      Редактировать
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => setDeleteId(branch.id)}>
+                      <Trash2 size={14} />
+                      Удалить
+                    </Button>
                   </div>
                 </div>
-
-                <div className="mt-6 border-t border-stone-100 pt-4">
-                  <Button variant="secondary" size="sm" className="w-full">
-                    Редактировать
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          )
-        })}
+              ))}
+            </div>
+          )}
+        </Section>
       </div>
+
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Редактировать филиал' : 'Новый филиал'}>
+        <div className="space-y-4 px-6 pb-6">
+          <Input label="Название" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+          <Input label="Адрес" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />
+          <Input label="Телефон" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
+          <label className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
+            <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />
+            Филиал активен
+          </label>
+          <div className="flex gap-3">
+            <Button className="flex-1" onClick={handleSubmit}>
+              {editingId ? 'Сохранить изменения' : 'Создать филиал'}
+            </Button>
+            <Button variant="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
+              Закрыть
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deleteId)}
+        title="Удалить филиал"
+        description="Если у филиала есть связанные инструкторы, слоты или записи, удаление будет запрещено."
+        confirmLabel="Удалить филиал"
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        danger
+      />
     </div>
   )
 }
