@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Phone, Users, Building2 } from 'lucide-react'
-import { db } from '../../services/storage'
-import { Button } from '../../components/ui/Button'
+import { Building2, MapPin, Phone, Users } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { formatPhone } from '../../lib/utils'
+import { db } from '../../services/storage'
 import type { Branch, Instructor } from '../../types'
 
 export function AdminBranches() {
@@ -13,79 +15,70 @@ export function AdminBranches() {
 
   useEffect(() => {
     const school = db.schools.bySlug('virazh')
-    if (!school) return
+    if (!school) {
+      return
+    }
+
     setBranches(db.branches.bySchool(school.id))
 
-    const instructors: Instructor[] = db.instructors.bySchool(school.id)
     const counts = new Map<string, number>()
-    instructors.forEach((i) => counts.set(i.branchId, (counts.get(i.branchId) ?? 0) + 1))
+    const instructors: Instructor[] = db.instructors.bySchool(school.id)
+    instructors.forEach((instructor) => counts.set(instructor.branchId, (counts.get(instructor.branchId) ?? 0) + 1))
     setInstructorCounts(counts)
   }, [])
 
   return (
-    <div className="p-8 max-w-7xl">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="flex items-start justify-between mb-8"
-      >
-        <div>
-          <p className="text-xs text-stone-400 uppercase tracking-wide font-medium mb-1">
-            Управление
-          </p>
-          <h1 className="font-display text-3xl font-medium text-stone-900">Филиалы</h1>
-        </div>
-        <Button>
-          <Building2 size={16} />
-          Добавить
-        </Button>
-      </motion.div>
+    <div className="max-w-7xl p-6 md:p-8">
+      <PageHeader
+        eyebrow="Admin"
+        title="Филиалы"
+        description="Читаемый список филиалов, адресов и нагрузки по инструкторам."
+        actions={
+          <Button>
+            <Building2 size={16} />
+            Добавить
+          </Button>
+        }
+      />
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {branches.map((branch, idx) => {
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {branches.map((branch, index) => {
           const count = instructorCounts.get(branch.id) ?? 0
           return (
-            <motion.div
-              key={branch.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: idx * 0.05 }}
-              className="bg-white rounded-2xl border border-stone-100 shadow-card p-6"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 bg-forest-50 rounded-xl flex items-center justify-center">
-                  <Building2 size={18} className="text-forest-700" />
+            <motion.div key={branch.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: index * 0.05 }}>
+              <Card padding="md">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-forest-700">
+                    <Building2 size={18} />
+                  </div>
+                  <Badge variant={branch.isActive ? 'success' : 'default'}>
+                    {branch.isActive ? 'Активен' : 'Закрыт'}
+                  </Badge>
                 </div>
-                <Badge variant={branch.isActive ? 'success' : 'default'} size="sm">
-                  {branch.isActive ? 'Активен' : 'Закрыт'}
-                </Badge>
-              </div>
 
-              <h3 className="font-display text-lg font-medium text-stone-900 mb-3">
-                {branch.name}
-              </h3>
+                <h3 className="mt-5 text-lg font-semibold text-stone-900">{branch.name}</h3>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-stone-500">
-                  <MapPin size={13} className="text-stone-400 shrink-0" />
-                  {branch.address}
+                <div className="mt-5 space-y-3 text-sm text-stone-500">
+                  <div className="flex items-start gap-2">
+                    <MapPin size={14} className="mt-0.5 text-stone-400" />
+                    <span>{branch.address}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone size={14} className="text-stone-400" />
+                    <span>{formatPhone(branch.phone)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users size={14} className="text-stone-400" />
+                    <span>{count} инструкторов</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-stone-500">
-                  <Phone size={13} className="text-stone-400 shrink-0" />
-                  {formatPhone(branch.phone)}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-stone-500">
-                  <Users size={13} className="text-stone-400 shrink-0" />
-                  {count} инструктор{count === 1 ? '' : count < 5 ? 'а' : 'ов'}
-                </div>
-              </div>
 
-              <div className="flex gap-2 pt-4 border-t border-stone-100">
-                <Button variant="secondary" size="sm" className="flex-1">
-                  Редактировать
-                </Button>
-              </div>
+                <div className="mt-6 border-t border-stone-100 pt-4">
+                  <Button variant="secondary" size="sm" className="w-full">
+                    Редактировать
+                  </Button>
+                </div>
+              </Card>
             </motion.div>
           )
         })}

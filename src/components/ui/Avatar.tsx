@@ -11,7 +11,7 @@ export function Avatar({ initials, color = '#2A6E4C', size = 'md', className }: 
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-display font-medium text-white shrink-0',
+        'rounded-full flex items-center justify-center font-sans font-medium text-white shrink-0',
         {
           sm: 'w-8 h-8 text-xs',
           md: 'w-10 h-10 text-sm',

@@ -36,7 +36,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             >
               {title && (
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-stone-100">
-                  <h2 className="font-display text-xl font-medium text-stone-900">{title}</h2>
+                  <h2 className="font-sans text-xl font-medium text-stone-900">{title}</h2>
                   <button
                     onClick={onClose}
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"

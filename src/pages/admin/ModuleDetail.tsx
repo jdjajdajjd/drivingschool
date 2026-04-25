@@ -95,7 +95,7 @@ export function AdminModuleDetail() {
                       Популярный
                     </Badge>
                   )}
-                  <h1 className={`font-display text-2xl font-medium ${isActive ? 'text-white' : 'text-stone-900'}`}>
+                  <h1 className={`font-sans text-2xl font-medium ${isActive ? 'text-white' : 'text-stone-900'}`}>
                     {module.name}
                   </h1>
                   <p className={`text-sm mt-1 ${isActive ? 'text-forest-300' : 'text-stone-500'}`}>
@@ -115,7 +115,7 @@ export function AdminModuleDetail() {
           {/* Price */}
           <div className="px-8 py-6 border-b border-stone-100">
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-5xl font-medium text-stone-900">
+              <span className="font-sans text-5xl font-medium text-stone-900">
                 {module.price === 0 ? '0 ₽' : `${module.price.toLocaleString('ru-RU')} ₽`}
               </span>
               <span className="text-stone-400 text-base">
@@ -130,13 +130,13 @@ export function AdminModuleDetail() {
 
           {/* Description */}
           <div className="px-8 py-6 border-b border-stone-100">
-            <h2 className="font-display text-lg font-medium text-stone-900 mb-3">О модуле</h2>
+            <h2 className="font-sans text-lg font-medium text-stone-900 mb-3">О модуле</h2>
             <p className="text-sm text-stone-500 leading-relaxed">{module.description}</p>
           </div>
 
           {/* Features */}
           <div className="px-8 py-6 border-b border-stone-100">
-            <h2 className="font-display text-lg font-medium text-stone-900 mb-4">Что входит</h2>
+            <h2 className="font-sans text-lg font-medium text-stone-900 mb-4">Что входит</h2>
             <div className="grid sm:grid-cols-2 gap-2.5">
               {module.features.map((feature) => (
                 <div key={feature} className="flex items-center gap-2.5">

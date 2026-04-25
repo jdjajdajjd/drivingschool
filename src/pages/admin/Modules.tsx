@@ -2,25 +2,40 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  MessageSquare, Send, Palette, Code2, CreditCard, BarChart3,
-  Users, Bell, FileSpreadsheet, UserPlus, Building2,
-  CheckCircle2, ArrowRight, Puzzle,
+  BarChart3,
+  Bell,
+  Building2,
+  Code2,
+  CreditCard,
+  FileSpreadsheet,
+  MessageSquare,
+  Palette,
+  Puzzle,
+  Send,
+  UserPlus,
+  Users,
 } from 'lucide-react'
-import { db } from '../../services/storage'
-import { MODULE_CATALOG, CATEGORY_LABELS, getModuleById } from '../../services/modules'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { formatPrice, generateId } from '../../lib/utils'
+import { MODULE_CATALOG, CATEGORY_LABELS, getModuleById } from '../../services/modules'
+import { db } from '../../services/storage'
 import type { Module, SubscriptionModule } from '../../types'
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  MessageSquare, Send, Palette, Code2, CreditCard, BarChart3,
-  Users, Bell, FileSpreadsheet, UserPlus, Building2,
-}
-
-const stagger = {
-  container: { hidden: {}, show: { transition: { staggerChildren: 0.05 } } },
-  item: { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } },
+  MessageSquare,
+  Send,
+  Palette,
+  Code2,
+  CreditCard,
+  BarChart3,
+  Users,
+  Bell,
+  FileSpreadsheet,
+  UserPlus,
+  Building2,
 }
 
 export function AdminModules() {
@@ -30,200 +45,148 @@ export function AdminModules() {
 
   useEffect(() => {
     const school = db.schools.bySlug('virazh')
-    if (!school) return
+    if (!school) {
+      return
+    }
     setActiveModules(db.subModules.bySchool(school.id))
   }, [])
 
-  function isActive(moduleId: string) {
-    return activeModules.some((sm) => sm.moduleId === moduleId && sm.status === 'active')
+  function isActive(moduleId: string): boolean {
+    return activeModules.some((subscription) => subscription.moduleId === moduleId && subscription.status === 'active')
   }
 
-  function toggle(module: Module) {
+  function toggle(module: Module): void {
     const school = db.schools.bySlug('virazh')
-    if (!school) return
+    if (!school) {
+      return
+    }
 
     if (isActive(module.id)) {
-      const sm = activeModules.find((m) => m.moduleId === module.id)
-      if (sm) {
-        db.subModules.remove(sm.id)
-        setActiveModules((prev) => prev.filter((m) => m.moduleId !== module.id))
+      const subscription = activeModules.find((item) => item.moduleId === module.id)
+      if (!subscription) {
+        return
       }
-    } else {
-      const newSm: SubscriptionModule = {
-        id: generateId('submod'),
-        schoolId: school.id,
-        moduleId: module.id,
-        activatedAt: new Date().toISOString(),
-        status: 'active',
-      }
-      db.subModules.upsert(newSm)
-      setActiveModules((prev) => [...prev, newSm])
+
+      db.subModules.remove(subscription.id)
+      setActiveModules((current) => current.filter((item) => item.moduleId !== module.id))
+      return
     }
+
+    const nextSubscription: SubscriptionModule = {
+      id: generateId('submod'),
+      schoolId: school.id,
+      moduleId: module.id,
+      activatedAt: new Date().toISOString(),
+      status: 'active',
+    }
+
+    db.subModules.upsert(nextSubscription)
+    setActiveModules((current) => [...current, nextSubscription])
   }
 
-  const categories = ['all', ...Array.from(new Set(MODULE_CATALOG.map((m) => m.category)))]
-
-  const filtered =
-    filter === 'all' ? MODULE_CATALOG : MODULE_CATALOG.filter((m) => m.category === filter)
-
+  const categories = ['all', ...Array.from(new Set(MODULE_CATALOG.map((module) => module.category)))]
+  const filteredModules = filter === 'all' ? MODULE_CATALOG : MODULE_CATALOG.filter((module) => module.category === filter)
   const totalMonthly = activeModules
-    .map((sm) => getModuleById(sm.moduleId))
+    .map((subscription) => getModuleById(subscription.moduleId))
     .filter(Boolean)
-    .filter((m) => m!.priceType === 'monthly')
-    .reduce((acc, m) => acc + m!.price, 0)
+    .filter((module) => module?.priceType === 'monthly')
+    .reduce((sum, module) => sum + (module?.price ?? 0), 0)
 
   return (
-    <div className="p-8 max-w-7xl">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8"
-      >
-        <p className="text-xs text-stone-400 uppercase tracking-wide font-medium mb-1">
-          Платформа
-        </p>
-        <h1 className="font-sans text-3xl font-medium text-stone-900">Каталог модулей</h1>
-      </motion.div>
+    <div className="max-w-7xl p-6 md:p-8">
+      <PageHeader
+        eyebrow="Платформа"
+        title="Каталог модулей"
+        description="Подключаемые возможности без тарифной перегрузки: выбираете только то, что реально нужно школе."
+      />
 
-      {/* Active summary */}
-      {activeModules.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05 }}
-          className="bg-forest-800 rounded-2xl p-5 mb-6 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <Puzzle size={18} className="text-forest-300" />
+      {activeModules.length > 0 ? (
+        <div className="mt-6 rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm font-medium text-white">
-                {activeModules.length} модул{activeModules.length === 1 ? 'ь' : activeModules.length < 5 ? 'я' : 'ей'} подключено
+              <p className="text-sm font-semibold text-stone-900">
+                Подключено {activeModules.length} модулей
               </p>
-              <p className="text-xs text-forest-300">
-                База 4 990 ₽ + {formatPrice(totalMonthly)}/мес за модули
+              <p className="mt-1 text-sm text-stone-500">
+                База 4 990 ₽ + {formatPrice(totalMonthly)}/мес за активные модули
               </p>
             </div>
+            <p className="text-2xl font-semibold tracking-tight text-stone-900">
+              {formatPrice(4990 + totalMonthly)}
+              <span className="ml-1 text-sm font-medium text-stone-400">/мес</span>
+            </p>
           </div>
-          <p className="font-sans text-2xl font-medium text-white">
-            {formatPrice(4990 + totalMonthly)}<span className="text-forest-300 text-base font-sans font-normal">/мес</span>
-          </p>
-        </motion.div>
-      )}
+        </div>
+      ) : null}
 
-      {/* Category filter */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-        {categories.map((cat) => (
+      <div className="mt-6 flex flex-wrap gap-2">
+        {categories.map((category) => (
           <button
-            key={cat}
-            onClick={() => setFilter(cat)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
-              filter === cat
-                ? 'bg-stone-900 border-stone-900 text-white'
-                : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+            key={category}
+            onClick={() => setFilter(category)}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              filter === category
+                ? 'border-forest-700 bg-forest-700 text-white'
+                : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-900'
             }`}
           >
-            {cat === 'all' ? 'Все' : CATEGORY_LABELS[cat] ?? cat}
+            {category === 'all' ? 'Все' : CATEGORY_LABELS[category] ?? category}
           </button>
         ))}
       </div>
 
-      {/* Module grid */}
-      <motion.div
-        variants={stagger.container}
-        initial="hidden"
-        animate="show"
-        className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
-        {filtered.map((module) => {
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {filteredModules.map((module, index) => {
           const Icon = ICON_MAP[module.icon] ?? Puzzle
           const active = isActive(module.id)
 
           return (
-            <motion.div
-              key={module.id}
-              variants={stagger.item}
-              className={`bg-white rounded-2xl border shadow-card transition-all duration-200 overflow-hidden group ${
-                active ? 'border-forest-200 shadow-card-hover' : 'border-stone-100 hover:shadow-card-hover'
-              }`}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                    active ? 'bg-forest-100' : 'bg-stone-100'
-                  }`}>
-                    <Icon size={20} className={active ? 'text-forest-700' : 'text-stone-500'} />
+            <motion.div key={module.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: index * 0.03 }}>
+              <Card padding="md">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-forest-700">
+                    <Icon size={18} />
                   </div>
                   <div className="flex items-center gap-2">
-                    {module.isPopular && <Badge variant="forest" size="sm">Популярный</Badge>}
-                    {active && (
-                      <div className="flex items-center gap-1">
-                        <CheckCircle2 size={14} className="text-forest-600" />
-                        <span className="text-xs text-forest-700 font-medium">Активен</span>
-                      </div>
-                    )}
+                    {module.isPopular ? <Badge variant="outline">Популярный</Badge> : null}
+                    {active ? <Badge variant="forest">Активен</Badge> : null}
                   </div>
                 </div>
 
-                <h3 className="font-sans text-lg font-medium text-stone-900 mb-1.5">
-                  {module.name}
-                </h3>
-                <p className="text-xs text-stone-400 leading-relaxed mb-4">
-                  {module.shortDescription}
-                </p>
+                <h3 className="mt-5 text-lg font-semibold text-stone-900">{module.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-stone-500">{module.shortDescription}</p>
 
-                {/* Price */}
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="font-sans text-2xl font-medium text-stone-900">
-                    {module.price === 0 ? '0 ₽' : `${module.price.toLocaleString('ru-RU')} ₽`}
+                <div className="mt-5 flex items-baseline gap-2">
+                  <span className="text-2xl font-semibold tracking-tight text-stone-900">
+                    {module.price === 0 ? '0 ₽' : formatPrice(module.price)}
                   </span>
-                  <span className="text-xs text-stone-400">
-                    {module.priceType === 'monthly' && '/мес'}
-                    {module.priceType === 'one-time' && ' разово'}
-                    {module.priceType === 'usage' && ''}
+                  <span className="text-sm text-stone-400">
+                    {module.priceType === 'monthly' ? '/мес' : module.priceType === 'one-time' ? 'разово' : module.usageNote ?? ''}
                   </span>
-                  {module.usageNote && (
-                    <span className="text-xs text-stone-400">{module.usageNote}</span>
-                  )}
                 </div>
 
-                {/* Features preview */}
-                <ul className="space-y-1.5 mb-5">
-                  {module.features.slice(0, 3).map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-xs text-stone-500">
-                      <div className="w-1 h-1 bg-stone-300 rounded-full shrink-0" />
-                      {f}
+                <ul className="mt-5 space-y-2 text-sm text-stone-500">
+                  {module.features.slice(0, 3).map((feature) => (
+                    <li key={feature} className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-stone-300" />
+                      <span>{feature}</span>
                     </li>
                   ))}
-                  {module.features.length > 3 && (
-                    <li className="text-xs text-stone-400 pl-3">
-                      +{module.features.length - 3} ещё...
-                    </li>
-                  )}
                 </ul>
-              </div>
 
-              <div className="px-6 pb-6 flex gap-2">
-                <Button
-                  variant={active ? 'danger' : 'primary'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => toggle(module)}
-                >
-                  {active ? 'Отключить' : 'Подключить'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => navigate(`/admin/modules/${module.id}`)}
-                >
-                  <ArrowRight size={14} />
-                </Button>
-              </div>
+                <div className="mt-6 flex gap-2 border-t border-stone-100 pt-4">
+                  <Button variant={active ? 'danger' : 'primary'} size="sm" className="flex-1" onClick={() => toggle(module)}>
+                    {active ? 'Отключить' : 'Подключить'}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => navigate(`/admin/modules/${module.id}`)}>
+                    Подробнее
+                  </Button>
+                </div>
+              </Card>
             </motion.div>
           )
         })}
-      </motion.div>
+      </div>
     </div>
   )
 }

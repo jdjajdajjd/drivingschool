@@ -231,7 +231,7 @@ export function InstructorPage() {
         </motion.section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Section title="Ближайшие занятия" items={grouped.upcoming} emptyLabel="Нет ближайших занятий." />
+          <Section title="Ближайшие занятия" items={grouped.upcoming} emptyLabel="На ближайшие дни занятий нет" />
           <Section title="Прошедшие занятия" items={grouped.past} emptyLabel="Нет прошедших занятий." />
           <Section title="Отменённые" items={grouped.cancelled} emptyLabel="Нет отменённых записей." />
         </div>

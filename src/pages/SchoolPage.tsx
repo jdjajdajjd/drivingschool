@@ -143,7 +143,7 @@ function SummaryPanel({
   return (
     <div className="overflow-hidden rounded-[28px] border border-stone-200/80 bg-white/90 shadow-card backdrop-blur">
       <div className="border-b border-stone-100 px-5 py-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-400">Ваш booking flow</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-400">Детали записи</p>
         <p className="mt-2 text-lg font-semibold text-stone-900">Проверьте детали записи</p>
       </div>
       <div className="space-y-4 px-5 py-5">
@@ -360,7 +360,7 @@ export function SchoolPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(22,59,41,0.08),_transparent_28%),linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]">
+    <div className="min-h-screen bg-[#f7f8fa]">
       <header className="sticky top-0 z-30 border-b border-white/70 bg-stone-50/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
@@ -387,10 +387,10 @@ export function SchoolPage() {
           className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
         >
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-[32px] border border-stone-200/70 bg-white/90 shadow-card">
+            <div className="overflow-hidden rounded-[32px] border border-stone-200 bg-white shadow-card">
               <div className="border-b border-stone-100 px-6 py-6">
                 <Badge variant="forest" size="md">
-                  Онлайн запись
+                  Онлайн-запись
                 </Badge>
                 <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-stone-900 md:text-[2.6rem]">
                   Запишитесь на занятие без звонков и лишних шагов
@@ -662,6 +662,7 @@ export function SchoolPage() {
                         label="Телефон"
                         placeholder="+7 (999) 123-45-67"
                         value={form.phone}
+                        helperText="Нормализуем номер к формату 7XXXXXXXXXX"
                         onChange={(event) => {
                           setForm((current) => ({ ...current, phone: event.target.value }))
                           if (errors.phone) {
@@ -673,7 +674,7 @@ export function SchoolPage() {
                     </div>
 
                     <div className="rounded-[28px] border border-stone-200 bg-stone-50 px-5 py-5">
-                      <p className="text-sm font-semibold text-stone-900">Проверка перед подтверждением</p>
+                      <p className="text-sm font-semibold text-stone-900">Перед записью мы проверим</p>
                       <ul className="mt-3 space-y-2 text-sm text-stone-500">
                         <li>Имя не может быть пустым.</li>
                         <li>Телефон должен быть валиден для российского формата.</li>
@@ -712,7 +713,7 @@ export function SchoolPage() {
                     <div>
                       <p className="text-sm font-semibold text-stone-900">6. Подтверждение</p>
                       <p className="text-sm text-stone-500">
-                        После сохранения вы попадёте на страницу записи и сможете скачать `.ics`.
+                        После сохранения вы попадёте на страницу подтверждения и сможете скачать `.ics`.
                       </p>
                     </div>
 
@@ -743,7 +744,7 @@ export function SchoolPage() {
                       disabled={isSubmitting}
                       onClick={() => void handleSubmit()}
                     >
-                      {isSubmitting ? 'Сохраняем запись...' : 'Подтвердить запись'}
+                      {isSubmitting ? 'Сохраняем запись...' : 'Записаться'}
                       {!isSubmitting ? <Check size={16} /> : null}
                     </Button>
                   </div>

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ExternalLink, Star, Users } from 'lucide-react'
-import { db } from '../../services/storage'
-import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
 import { Avatar } from '../../components/ui/Avatar'
+import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { PageHeader } from '../../components/ui/PageHeader'
 import { pluralize } from '../../lib/utils'
-import type { Instructor, Branch, Booking } from '../../types'
+import { db } from '../../services/storage'
+import type { Booking, Branch, Instructor } from '../../types'
 
 export function AdminInstructors() {
   const navigate = useNavigate()
@@ -17,98 +19,88 @@ export function AdminInstructors() {
 
   useEffect(() => {
     const school = db.schools.bySlug('virazh')
-    if (!school) return
+    if (!school) {
+      return
+    }
+
     setInstructors(db.instructors.bySchool(school.id))
 
-    const bMap = new Map<string, Branch>()
-    db.branches.bySchool(school.id).forEach((b) => bMap.set(b.id, b))
-    setBranches(bMap)
+    const branchMap = new Map<string, Branch>()
+    db.branches.bySchool(school.id).forEach((branch) => branchMap.set(branch.id, branch))
+    setBranches(branchMap)
 
     const bookings: Booking[] = db.bookings.bySchool(school.id)
     const counts = new Map<string, number>()
-    bookings.forEach((b) => counts.set(b.instructorId, (counts.get(b.instructorId) ?? 0) + 1))
+    bookings.forEach((booking) => counts.set(booking.instructorId, (counts.get(booking.instructorId) ?? 0) + 1))
     setBookingCounts(counts)
   }, [])
 
   return (
-    <div className="p-8 max-w-7xl">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="flex items-start justify-between mb-8"
-      >
-        <div>
-          <p className="text-xs text-stone-400 uppercase tracking-wide font-medium mb-1">
-            Управление
-          </p>
-          <h1 className="font-sans text-3xl font-medium text-stone-900">Инструкторы</h1>
-        </div>
-        <Button>
-          <Users size={16} />
-          Добавить
-        </Button>
-      </motion.div>
+    <div className="max-w-7xl p-6 md:p-8">
+      <PageHeader
+        eyebrow="Admin"
+        title="Инструкторы"
+        description="Состав команды, машины, филиалы и быстрые ссылки на личные страницы."
+        actions={
+          <Button>
+            <Users size={16} />
+            Добавить
+          </Button>
+        }
+      />
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {instructors.map((instructor, idx) => {
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {instructors.map((instructor, index) => {
           const branch = branches.get(instructor.branchId)
-          const count = bookingCounts.get(instructor.id) ?? 0
+          const bookingCount = bookingCounts.get(instructor.id) ?? 0
+          const transmission = instructor.transmission === 'manual' ? 'Механика' : instructor.transmission === 'auto' ? 'Автомат' : 'Не указана'
+
           return (
-            <motion.div
-              key={instructor.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: idx * 0.05 }}
-              className="bg-white rounded-2xl border border-stone-100 shadow-card p-6 hover:shadow-card-hover transition-shadow duration-200"
-            >
-              <div className="flex items-start gap-4 mb-4">
-                <Avatar
-                  initials={instructor.avatarInitials}
-                  color={instructor.avatarColor}
-                  size="lg"
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-sans text-base font-medium text-stone-900 leading-tight">
-                    {instructor.name}
-                  </h3>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star size={11} className="text-amber-400 fill-amber-400" />
-                    <span className="text-xs text-stone-500">
-                      {pluralize(instructor.experience, 'год', 'года', 'лет')} опыта
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {instructor.categories.map((cat) => (
-                      <Badge key={cat} variant="outline" size="sm">
-                        кат. {cat}
+            <motion.div key={instructor.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: index * 0.04 }}>
+              <Card padding="md">
+                <div className="flex items-start gap-4">
+                  <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="lg" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold text-stone-900">{instructor.name}</h3>
+                      <Badge variant={instructor.isActive ? 'success' : 'default'}>
+                        {instructor.isActive ? 'Активен' : 'Неактивен'}
                       </Badge>
-                    ))}
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 text-sm text-stone-500">
+                      <Star size={12} className="fill-amber-400 text-amber-400" />
+                      {pluralize(instructor.experience, 'год', 'года', 'лет')} опыта
+                    </div>
                   </div>
                 </div>
-                <Badge variant={instructor.isActive ? 'success' : 'default'} size="sm">
-                  {instructor.isActive ? 'Активен' : 'Неактивен'}
-                </Badge>
-              </div>
 
-              <p className="text-xs text-stone-400 leading-relaxed mb-4 line-clamp-2">{instructor.bio}</p>
-
-              <div className="flex items-center justify-between pt-4 border-t border-stone-100">
-                <div>
-                  {branch && (
-                    <p className="text-xs text-stone-500">{branch.name}</p>
-                  )}
-                  <p className="text-xs text-stone-400">{count} записей</p>
+                <div className="mt-5 grid gap-3 text-sm text-stone-500">
+                  <p>Машина: <span className="font-medium text-stone-800">{instructor.car ?? 'Не указана'}</span></p>
+                  <p>Коробка: <span className="font-medium text-stone-800">{transmission}</span></p>
+                  <p>Филиал: <span className="font-medium text-stone-800">{branch?.name ?? 'Не найден'}</span></p>
+                  <p>Записей: <span className="font-medium text-stone-800">{bookingCount}</span></p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(`/instructor/${instructor.token}`)}
-                >
-                  <ExternalLink size={14} />
-                  Расписание
-                </Button>
-              </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {instructor.categories.map((category) => (
+                    <Badge key={category} variant="outline">
+                      кат. {category}
+                    </Badge>
+                  ))}
+                </div>
+
+                <p className="mt-5 text-sm leading-relaxed text-stone-500">{instructor.bio}</p>
+
+                <div className="mt-6 flex gap-2 border-t border-stone-100 pt-4">
+                  <Button variant="secondary" size="sm" className="flex-1">
+                    Редактировать
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate(`/instructor/${instructor.token}`)}>
+                    <ExternalLink size={14} />
+                    Ссылка
+                  </Button>
+                </div>
+              </Card>
             </motion.div>
           )
         })}

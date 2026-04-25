@@ -11,36 +11,39 @@ export function PublicNav({ transparent = false }: PublicNavProps) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-colors duration-300 ${
-        transparent ? 'bg-transparent' : 'bg-white/90 backdrop-blur-md border-b border-stone-100'
+      className={`fixed inset-x-0 top-0 z-40 transition-colors ${
+        transparent ? 'bg-transparent' : 'border-b border-stone-200 bg-white/88 backdrop-blur-xl'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-forest-800 rounded-lg flex items-center justify-center">
-            <Car size={15} className="text-white" />
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-forest-700 shadow-soft">
+            <Car size={16} className="text-white" />
           </div>
-          <span className="font-sans text-lg font-medium text-stone-900">DriveDesk</span>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-stone-900">DriveDesk</p>
+            <p className="text-[11px] text-stone-400">SaaS для автошкол</p>
+          </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm text-stone-600 hover:text-stone-900 transition-colors">
-            Возможности
+        <nav className="hidden items-center gap-7 md:flex">
+          <a href="#problems" className="text-sm text-stone-500 transition hover:text-stone-900">
+            Проблемы
           </a>
-          <a href="#modules" className="text-sm text-stone-600 hover:text-stone-900 transition-colors">
-            Модули
+          <a href="#solution" className="text-sm text-stone-500 transition hover:text-stone-900">
+            Решение
           </a>
-          <a href="#pricing" className="text-sm text-stone-600 hover:text-stone-900 transition-colors">
-            Цены
+          <a href="#pricing" className="text-sm text-stone-500 transition hover:text-stone-900">
+            Цена
           </a>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')}>
-            Войти
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/school/virazh')}>
+            Демо записи
           </Button>
           <Button size="sm" onClick={() => navigate('/admin')}>
-            Попробовать бесплатно
+            Админка
           </Button>
         </div>
       </div>

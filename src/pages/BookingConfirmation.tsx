@@ -192,8 +192,8 @@ export function BookingConfirmation() {
           <p className="mt-2 text-sm leading-relaxed text-stone-500">
             Ссылка может быть устаревшей или запись уже недоступна в локальном хранилище.
           </p>
-          <Button className="mt-6 w-full" onClick={() => navigate('/')}>
-            На главную
+          <Button className="mt-6 w-full" onClick={() => navigate('/school/virazh')}>
+            К странице автошколы
           </Button>
         </div>
       </div>
@@ -289,7 +289,9 @@ export function BookingConfirmation() {
                 <div className="rounded-[28px] border border-stone-100 bg-stone-50 px-5 py-5">
                   <p className="text-sm font-semibold text-stone-900">Что можно сделать дальше</p>
                   <p className="mt-2 text-sm leading-relaxed text-stone-500">
-                    Сохраните событие в календарь через `.ics`, а если планы изменились, отмените запись прямо с этой страницы.
+                    {booking.status === 'cancelled'
+                      ? 'Запись отменена. Слот снова доступен для записи.'
+                      : 'Сохраните событие в календарь через `.ics`, а если планы изменились, отмените запись прямо с этой страницы.'}
                   </p>
                 </div>
               </div>

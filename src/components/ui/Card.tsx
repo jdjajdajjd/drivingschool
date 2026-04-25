@@ -17,8 +17,8 @@ export function Card({
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl border border-stone-100 shadow-card',
-        hover && 'transition-shadow duration-200 hover:shadow-card-hover cursor-pointer',
+        'rounded-3xl border border-stone-200 bg-white shadow-soft',
+        hover && 'cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-card-hover',
         {
           none: '',
           sm: 'p-4',

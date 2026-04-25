@@ -3,17 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
   * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  html {
+    @apply bg-[#f7f8fa];
+  }
+
   body {
-    @apply bg-stone-50 text-stone-900 font-sans;
+    @apply bg-[#f7f8fa] text-stone-900 font-sans;
   }
 
   h1, h2, h3, h4 {
     @apply font-sans;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    @apply font-sans;
+  }
+
+  ::selection {
+    @apply bg-forest-100 text-stone-900;
   }
 
   ::-webkit-scrollbar {

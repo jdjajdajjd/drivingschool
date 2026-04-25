@@ -1,49 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import {
-  CalendarDays,
-  TrendingUp,
-  Users,
-  Clock,
-  ArrowRight,
-  Puzzle,
-} from 'lucide-react'
-import { db } from '../../services/storage'
-import { getModuleById } from '../../services/modules'
-import { Button } from '../../components/ui/Button'
-import { StatusBadge, Badge } from '../../components/ui/Badge'
+import { ArrowRight, CalendarDays, Clock3, Puzzle, TrendingUp, Users } from 'lucide-react'
 import { Avatar } from '../../components/ui/Avatar'
+import { Badge, StatusBadge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { Section } from '../../components/ui/Section'
+import { StatCard } from '../../components/ui/StatCard'
+import { getModuleById } from '../../services/modules'
+import { db } from '../../services/storage'
+import type { Booking, Branch, Instructor } from '../../types'
 import { formatDate } from '../../utils/date'
-import type { Booking, Instructor, Branch } from '../../types'
-
-interface StatCardProps {
-  label: string
-  value: string | number
-  sub?: string
-  icon: React.ElementType
-  delay?: number
-}
-
-function StatCard({ label, value, sub, icon: Icon, delay = 0 }: StatCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="bg-white rounded-2xl border border-stone-100 shadow-card p-6"
-    >
-      <div className="flex items-start justify-between mb-4">
-        <p className="text-sm text-stone-500 font-medium">{label}</p>
-        <div className="w-9 h-9 bg-forest-50 rounded-xl flex items-center justify-center">
-          <Icon size={16} className="text-forest-700" />
-        </div>
-      </div>
-      <p className="text-4xl font-semibold text-stone-900 tabular-nums">{value}</p>
-      {sub && <p className="text-xs text-stone-400 mt-1">{sub}</p>}
-    </motion.div>
-  )
-}
 
 export function AdminDashboard() {
   const navigate = useNavigate()
@@ -54,110 +22,91 @@ export function AdminDashboard() {
 
   useEffect(() => {
     const school = db.schools.bySlug('virazh')
-    if (!school) return
-    const bs = db.bookings.bySchool(school.id)
-    setBookings(bs)
+    if (!school) {
+      return
+    }
+
+    setBookings(db.bookings.bySchool(school.id))
     setInstructors(db.instructors.bySchool(school.id))
     setBranches(db.branches.bySchool(school.id))
-    setActiveModules(db.subModules.bySchool(school.id).map((sm) => sm.moduleId))
+    setActiveModules(db.subModules.bySchool(school.id).map((subscription) => subscription.moduleId))
   }, [])
 
   const now = new Date()
-  const thisMonthBookings = bookings.filter((b) => {
-    const d = new Date(b.createdAt)
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  const thisMonthBookings = bookings.filter((booking) => {
+    const createdAt = new Date(booking.createdAt)
+    return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
   })
-  const confirmedBookings = bookings.filter((b) => b.status === 'active')
+  const activeBookings = bookings.filter((booking) => booking.status === 'active')
   const allSlots = db.slots.all()
-  const bookedSlots = allSlots.filter((s) => s.status === 'booked')
-  const utilization =
-    allSlots.length > 0 ? Math.round((bookedSlots.length / allSlots.length) * 100) : 0
-
+  const bookedSlots = allSlots.filter((slot) => slot.status === 'booked')
+  const utilization = allSlots.length > 0 ? Math.round((bookedSlots.length / allSlots.length) * 100) : 0
   const recentBookings = [...bookings]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .slice(0, 8)
 
   return (
-    <div className="p-8 max-w-7xl">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8"
-      >
-        <p className="text-xs text-stone-400 uppercase tracking-wide font-medium mb-1">
-          Автошкола «Вираж»
-        </p>
-        <h1 className="font-sans text-3xl font-medium text-stone-900">Обзор</h1>
+    <div className="max-w-7xl p-6 md:p-8">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        <PageHeader
+          eyebrow="Автошкола «Вираж»"
+          title="Обзор"
+          description="Ключевые показатели, последние записи и активные модули без визуального шума."
+        />
       </motion.div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Записей в этом месяце"
           value={thisMonthBookings.length}
-          sub={`из ${bookings.length} всего`}
-          icon={CalendarDays}
-          delay={0}
+          meta={`из ${bookings.length} всего`}
+          icon={<CalendarDays size={18} />}
         />
         <StatCard
-          label="Подтверждено"
-          value={confirmedBookings.length}
-          sub="активных записей"
-          icon={TrendingUp}
-          delay={0.05}
+          label="Активные записи"
+          value={activeBookings.length}
+          meta="Требуют внимания"
+          icon={<TrendingUp size={18} />}
         />
         <StatCard
           label="Заполненность"
           value={`${utilization}%`}
-          sub={`${bookedSlots.length} из ${allSlots.length} слотов`}
-          icon={Clock}
-          delay={0.1}
+          meta={`${bookedSlots.length} из ${allSlots.length} слотов`}
+          icon={<Clock3 size={18} />}
         />
         <StatCard
-          label="Инструкторов"
-          value={instructors.filter((i) => i.isActive).length}
-          sub={`${branches.length} филиала`}
-          icon={Users}
-          delay={0.15}
+          label="Инструкторы"
+          value={instructors.filter((instructor) => instructor.isActive).length}
+          meta={`${branches.length} филиала`}
+          icon={<Users size={18} />}
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent bookings */}
-        <div className="lg:col-span-2">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-white rounded-2xl border border-stone-100 shadow-card overflow-hidden"
-          >
-            <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
-              <h2 className="font-sans text-lg font-medium text-stone-900">Последние записи</h2>
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }} className="lg:col-span-2">
+          <Section
+            title="Последние записи"
+            description="Последние действия учеников и изменения статусов."
+            actions={
               <Button variant="ghost" size="sm" onClick={() => navigate('/admin/bookings')}>
                 Все записи
                 <ArrowRight size={14} />
               </Button>
-            </div>
-            <div className="divide-y divide-stone-50">
+            }
+          >
+            <div className="divide-y divide-stone-100">
               {recentBookings.map((booking) => {
                 const instructor = db.instructors.byId(booking.instructorId)
                 const slot = db.slots.byId(booking.slotId)
                 return (
-                  <div key={booking.id} className="px-6 py-4 flex items-center gap-4 hover:bg-stone-50 transition-colors">
-                    {instructor && (
-                      <Avatar
-                        initials={instructor.avatarInitials}
-                        color={instructor.avatarColor}
-                        size="sm"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-900 truncate">{booking.studentName}</p>
-                      <p className="text-xs text-stone-400">
-                        {instructor?.name.split(' ')[0]} ·{' '}
-                        {slot ? `${formatDate(slot.date)}, ${slot.time}` : '—'}
+                  <div key={booking.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                    {instructor ? (
+                      <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-stone-900">{booking.studentName}</p>
+                      <p className="text-sm text-stone-500">
+                        {instructor?.name.split(' ')[0] ?? 'Инструктор'} · {slot ? `${formatDate(slot.date)}, ${slot.time}` : 'Без слота'}
                       </p>
                     </div>
                     <StatusBadge status={booking.status} />
@@ -165,75 +114,71 @@ export function AdminDashboard() {
                 )
               })}
             </div>
-          </motion.div>
-        </div>
+          </Section>
+        </motion.div>
 
-        {/* Right panel */}
-        <div className="space-y-4">
-          {/* Instructors */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
-            className="bg-white rounded-2xl border border-stone-100 shadow-card overflow-hidden"
-          >
-            <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
-              <h2 className="font-sans text-lg font-medium text-stone-900">Инструкторы</h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin/instructors')}>
-                <ArrowRight size={14} />
-              </Button>
-            </div>
-            <div className="p-4 space-y-2">
-              {instructors.map((instructor) => {
-                const count = bookings.filter((b) => b.instructorId === instructor.id).length
-                return (
-                  <div key={instructor.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-stone-50 transition-colors">
-                    <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-stone-900 truncate">
-                        {instructor.name.split(' ').slice(0, 2).join(' ')}
-                      </p>
+        <div className="space-y-6">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
+            <Section
+              title="Инструкторы"
+              actions={
+                <Button variant="ghost" size="sm" onClick={() => navigate('/admin/instructors')}>
+                  <ArrowRight size={14} />
+                </Button>
+              }
+            >
+              <div className="space-y-3">
+                {instructors.map((instructor) => {
+                  const count = bookings.filter((booking) => booking.instructorId === instructor.id).length
+                  return (
+                    <div key={instructor.id} className="flex items-center gap-3">
+                      <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-stone-900">
+                          {instructor.name.split(' ').slice(0, 2).join(' ')}
+                        </p>
+                      </div>
+                      <span className="text-xs text-stone-400">{count} зап.</span>
                     </div>
-                    <span className="text-xs text-stone-400">{count} зап.</span>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            </Section>
           </motion.div>
 
-          {/* Active modules */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="bg-white rounded-2xl border border-stone-100 shadow-card overflow-hidden"
-          >
-            <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
-              <h2 className="font-sans text-lg font-medium text-stone-900">Модули</h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin/modules')}>
-                <Puzzle size={14} />
-                <ArrowRight size={14} />
-              </Button>
-            </div>
-            <div className="p-4 space-y-2">
-              {activeModules.map((mid) => {
-                const m = getModuleById(mid)
-                if (!m) return null
-                return (
-                  <div key={mid} className="flex items-center gap-2 px-2 py-1.5">
-                    <div className="w-1.5 h-1.5 bg-forest-500 rounded-full" />
-                    <span className="text-xs text-stone-700">{m.name}</span>
-                    <Badge variant="forest" size="sm" className="ml-auto">Активен</Badge>
-                  </div>
-                )
-              })}
-              <button
-                onClick={() => navigate('/admin/modules')}
-                className="w-full text-center text-xs text-forest-700 font-medium py-2 hover:underline"
-              >
-                Подключить ещё
-              </button>
-            </div>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }}>
+            <Section
+              title="Модули"
+              actions={
+                <Button variant="ghost" size="sm" onClick={() => navigate('/admin/modules')}>
+                  <Puzzle size={14} />
+                  <ArrowRight size={14} />
+                </Button>
+              }
+            >
+              <div className="space-y-2">
+                {activeModules.map((moduleId) => {
+                  const module = getModuleById(moduleId)
+                  if (!module) {
+                    return null
+                  }
+
+                  return (
+                    <div key={moduleId} className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-forest-500" />
+                      <span className="text-sm text-stone-700">{module.name}</span>
+                      <Badge variant="forest" size="sm" className="ml-auto">
+                        Активен
+                      </Badge>
+                    </div>
+                  )
+                })}
+
+                {activeModules.length === 0 ? (
+                  <p className="text-sm text-stone-500">Пока нет подключённых модулей.</p>
+                ) : null}
+              </div>
+            </Section>
           </motion.div>
         </div>
       </div>

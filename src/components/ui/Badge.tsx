@@ -1,5 +1,5 @@
-import { cn } from '../../lib/utils'
 import type { ReactNode } from 'react'
+import { cn } from '../../lib/utils'
 
 interface BadgeProps {
   variant?: 'default' | 'success' | 'warning' | 'error' | 'forest' | 'outline'
@@ -17,17 +17,17 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center font-sans font-medium rounded-full',
+        'inline-flex items-center rounded-full font-sans font-medium',
         {
           default: 'bg-stone-100 text-stone-700',
           success: 'bg-emerald-50 text-emerald-700',
           warning: 'bg-amber-50 text-amber-700',
           error: 'bg-red-50 text-red-700',
-          forest: 'bg-forest-100 text-forest-800',
-          outline: 'border border-stone-200 text-stone-600 bg-white',
+          forest: 'bg-forest-50 text-forest-700',
+          outline: 'border border-stone-200 bg-white text-stone-600',
         }[variant],
         {
-          sm: 'px-2 py-0.5 text-xs',
+          sm: 'px-2.5 py-1 text-[11px]',
           md: 'px-3 py-1 text-sm',
         }[size],
         className,
@@ -43,10 +43,12 @@ export function StatusBadge({ status }: { status: string }) {
     active: { label: 'Активна', variant: 'success' },
     cancelled: { label: 'Отменена', variant: 'error' },
     completed: { label: 'Проведена', variant: 'default' },
-    // legacy — kept for any stale data in storage
+    available: { label: 'Свободно', variant: 'forest' },
+    booked: { label: 'Занято', variant: 'warning' },
     pending: { label: 'Активна', variant: 'warning' },
     confirmed: { label: 'Активна', variant: 'success' },
   }
+
   const entry = map[status] ?? { label: status, variant: 'default' as const }
   return <Badge variant={entry.variant}>{entry.label}</Badge>
 }
