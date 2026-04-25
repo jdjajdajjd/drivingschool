@@ -8,7 +8,7 @@ import { Input, Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-import { hexToRgba } from '../../lib/utils'
+import { formatDuration, hexToRgba } from '../../lib/utils'
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
 import { performDemoReset, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { db } from '../../services/storage'
@@ -26,6 +26,9 @@ export function AdminSettings() {
     logoUrl: '',
     bookingLimitEnabled: true,
     maxActiveBookingsPerStudent: 2,
+    branchSelectionMode: 'student_choice' as 'student_choice' | 'fixed_first',
+    maxSlotsPerBooking: 1,
+    defaultLessonDuration: 90,
   })
 
   useEffect(() => {
@@ -41,6 +44,9 @@ export function AdminSettings() {
       logoUrl: school.logoUrl ?? '',
       bookingLimitEnabled: school.bookingLimitEnabled ?? true,
       maxActiveBookingsPerStudent: school.maxActiveBookingsPerStudent ?? 2,
+      branchSelectionMode: school.branchSelectionMode ?? 'student_choice',
+      maxSlotsPerBooking: school.maxSlotsPerBooking ?? 1,
+      defaultLessonDuration: school.defaultLessonDuration ?? 90,
     })
   }, [school])
 
@@ -76,6 +82,16 @@ export function AdminSettings() {
       return
     }
 
+    if (form.maxSlotsPerBooking < 1 || form.maxSlotsPerBooking > 6) {
+      showToast('Лимит занятий за одну запись должен быть от 1 до 6.', 'error')
+      return
+    }
+
+    if (form.defaultLessonDuration < 30 || form.defaultLessonDuration > 240) {
+      showToast('Длительность занятия должна быть от 30 минут до 4 часов.', 'error')
+      return
+    }
+
     const result = updateSchool(school.id, {
       name: form.name,
       slug: form.slug,
@@ -84,6 +100,9 @@ export function AdminSettings() {
       logoUrl: form.logoUrl,
       bookingLimitEnabled: form.bookingLimitEnabled,
       maxActiveBookingsPerStudent: form.maxActiveBookingsPerStudent,
+      branchSelectionMode: form.branchSelectionMode,
+      maxSlotsPerBooking: form.maxSlotsPerBooking,
+      defaultLessonDuration: form.defaultLessonDuration,
     })
 
     if (!result.ok) {
@@ -203,6 +222,60 @@ export function AdminSettings() {
                 setForm((current) => ({
                   ...current,
                   maxActiveBookingsPerStudent: Number(event.target.value || 1),
+                }))
+              }
+            />
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+            <div>
+              <p className="text-sm font-medium text-stone-700">Выбор филиала учеником</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {[
+                  { value: 'student_choice' as const, title: 'Ученик выбирает филиал', text: 'Подходит, если школа работает в разных районах.' },
+                  { value: 'fixed_first' as const, title: 'Прикрепить к одному филиалу', text: 'Публичная запись сразу покажет инструкторов первого филиала.' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setForm((current) => ({ ...current, branchSelectionMode: option.value }))}
+                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                      form.branchSelectionMode === option.value
+                        ? 'border-forest-600 bg-forest-50 text-stone-900'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold">{option.title}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-stone-500">{option.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Input
+              label="Занятий за одну запись"
+              helperText="Например: 2 — можно выбрать два слота в один или разные дни"
+              type="number"
+              min={1}
+              max={6}
+              value={String(form.maxSlotsPerBooking)}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  maxSlotsPerBooking: Number(event.target.value || 1),
+                }))
+              }
+            />
+            <Input
+              label="Длительность занятия"
+              helperText={formatDuration(form.defaultLessonDuration)}
+              type="number"
+              min={30}
+              max={240}
+              step={15}
+              value={String(form.defaultLessonDuration)}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  defaultLessonDuration: Number(event.target.value || 90),
                 }))
               }
             />

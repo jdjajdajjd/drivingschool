@@ -11,6 +11,9 @@ export interface School {
   primaryColor?: string
   bookingLimitEnabled?: boolean
   maxActiveBookingsPerStudent?: number
+  branchSelectionMode?: 'student_choice' | 'fixed_first'
+  maxSlotsPerBooking?: number
+  defaultLessonDuration?: number
   isActive?: boolean
 }
 

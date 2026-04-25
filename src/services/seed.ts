@@ -17,6 +17,9 @@ const SCHOOL: School = {
   primaryColor: '#4455C4',
   bookingLimitEnabled: true,
   maxActiveBookingsPerStudent: 2,
+  branchSelectionMode: 'student_choice',
+  maxSlotsPerBooking: 2,
+  defaultLessonDuration: 90,
   isActive: true,
 }
 
@@ -159,7 +162,7 @@ function generateSlots(): Slot[] {
           branchId: instructor.branchId,
           date,
           time,
-          duration: 90,
+          duration: SCHOOL.defaultLessonDuration ?? 90,
           status: 'available',
           createdAt: new Date().toISOString(),
         })

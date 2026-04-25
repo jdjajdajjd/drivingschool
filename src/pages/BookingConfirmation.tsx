@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   Clock3,
-  Download,
   MapPin,
   Phone,
   UserRound,
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { useToast } from '../components/ui/Toast'
-import { formatPhone } from '../lib/utils'
+import { formatDuration, formatPhone } from '../lib/utils'
 import { generateIcs } from '../services/bookingService'
 import { db } from '../services/storage'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
@@ -119,33 +119,34 @@ export function BookingConfirmation() {
   const isCancelled = booking.status === 'cancelled'
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#f6f7fb]">
       <main className="mx-auto flex min-h-screen max-w-xl flex-col px-4 py-6">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex min-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white"
+          className="flex min-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card"
         >
-          <div className="px-6 pb-6 pt-8 text-center">
-            <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${isCancelled ? 'bg-red-50' : 'bg-forest-50'}`}>
-              {isCancelled ? (
-                <XCircle size={30} className="text-red-500" />
-              ) : (
-                <CheckCircle2 size={30} className="text-forest-700" />
-              )}
+          <div className="bg-gradient-to-br from-forest-700 via-blue-600 to-indigo-700 px-6 pb-7 pt-8 text-center text-white">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/16 ring-1 ring-white/20">
+              {isCancelled ? <XCircle size={30} className="text-red-100" /> : <CheckCircle2 size={30} />}
             </div>
-            <p className="mt-5 text-base font-medium text-stone-500">{school?.name ?? 'Автошкола'}</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">
+            <p className="mt-5 text-base font-medium text-white/75">{school?.name ?? 'Автошкола'}</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
               {isCancelled ? 'Запись отменена' : 'Вы записаны'}
             </h1>
+            {!isCancelled ? (
+              <p className="mx-auto mt-2 max-w-sm text-base leading-relaxed text-white/78">
+                Мы сохранили ваши данные в профиле. Следующая запись будет быстрее.
+              </p>
+            ) : null}
           </div>
 
-          <div className="mx-6 overflow-hidden rounded-2xl border border-stone-200">
+          <div className="mx-6 mt-6 overflow-hidden rounded-2xl border border-stone-200">
             {slot ? (
               <>
                 <DetailRow label="Дата занятия" value={formatDateFull(slot.date)} icon={CalendarDays} />
-                <DetailRow label="Время" value={slot.time} subtitle={`${slot.duration} минут`} icon={Clock3} />
+                <DetailRow label="Время" value={slot.time} subtitle={formatDuration(slot.duration)} icon={Clock3} />
               </>
             ) : null}
             {instructor ? (
@@ -165,7 +166,7 @@ export function BookingConfirmation() {
                 className="w-full min-h-14 text-lg"
                 onClick={handleDownloadIcs}
               >
-                <Download size={20} />
+                <CalendarPlus size={20} />
                 Добавить в календарь
               </Button>
             ) : null}
@@ -174,7 +175,7 @@ export function BookingConfirmation() {
               className="w-full min-h-14 text-lg"
               onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}
             >
-              Записаться ещё на занятие
+              В профиль ученика
             </Button>
           </div>
         </motion.section>

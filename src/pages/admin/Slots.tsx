@@ -11,6 +11,7 @@ import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
+import { formatDuration } from '../../lib/utils'
 import { createBulkSlots, createSlot, deleteSlot, getSlotsBySchool, updateSlotStatus } from '../../services/slotService'
 import { db } from '../../services/storage'
 
@@ -39,12 +40,14 @@ export function AdminSlots() {
   const branches = school ? db.branches.bySchool(school.id) : []
   const instructors = school ? db.instructors.bySchool(school.id) : []
 
+  const defaultDuration = String(school?.defaultLessonDuration ?? 90)
+
   const [singleForm, setSingleForm] = useState({
     branchId: branches[0]?.id ?? '',
     instructorId: instructors[0]?.id ?? '',
     date: '',
     startTime: '10:00',
-    duration: '90',
+    duration: defaultDuration,
   })
 
   const [bulkForm, setBulkForm] = useState({
@@ -55,7 +58,7 @@ export function AdminSlots() {
     weekdays: [1, 2, 3, 4, 5],
     windowStart: '09:00',
     windowEnd: '18:00',
-    duration: '90',
+    duration: defaultDuration,
     breakMinutes: '15',
   })
 
@@ -231,7 +234,7 @@ export function AdminSlots() {
               </FormField>
               <Input label="Дата" type="date" value={singleForm.date} onChange={(event) => setSingleForm((current) => ({ ...current, date: event.target.value }))} />
               <Input label="Время начала" type="time" value={singleForm.startTime} onChange={(event) => setSingleForm((current) => ({ ...current, startTime: event.target.value }))} />
-              <Input label="Длительность, мин" type="number" helperText="Проверяем дубликаты по instructor + startsAt" value={singleForm.duration} onChange={(event) => setSingleForm((current) => ({ ...current, duration: event.target.value }))} />
+              <Input label="Длительность занятия" type="number" step={15} helperText={formatDuration(Number(singleForm.duration || defaultDuration))} value={singleForm.duration} onChange={(event) => setSingleForm((current) => ({ ...current, duration: event.target.value }))} />
               <div className="md:col-span-2 xl:col-span-5">
                 <Button onClick={handleCreateSingle}>
                   <CalendarPlus2 size={16} />
@@ -274,7 +277,7 @@ export function AdminSlots() {
                 <Input label="Дата до" type="date" value={bulkForm.dateTo} onChange={(event) => setBulkForm((current) => ({ ...current, dateTo: event.target.value }))} />
                 <Input label="Окно с" type="time" value={bulkForm.windowStart} onChange={(event) => setBulkForm((current) => ({ ...current, windowStart: event.target.value }))} />
                 <Input label="Окно до" type="time" value={bulkForm.windowEnd} onChange={(event) => setBulkForm((current) => ({ ...current, windowEnd: event.target.value }))} />
-                <Input label="Длительность, мин" type="number" value={bulkForm.duration} onChange={(event) => setBulkForm((current) => ({ ...current, duration: event.target.value }))} />
+                <Input label="Длительность занятия" type="number" step={15} helperText={formatDuration(Number(bulkForm.duration || defaultDuration))} value={bulkForm.duration} onChange={(event) => setBulkForm((current) => ({ ...current, duration: event.target.value }))} />
                 <Input label="Перерыв, мин" type="number" helperText="Дубликаты будут пропущены автоматически" value={bulkForm.breakMinutes} onChange={(event) => setBulkForm((current) => ({ ...current, breakMinutes: event.target.value }))} />
               </div>
 

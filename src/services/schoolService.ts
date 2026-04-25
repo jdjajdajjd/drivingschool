@@ -37,6 +37,9 @@ export interface SchoolInput {
   logoUrl?: string
   bookingLimitEnabled?: boolean
   maxActiveBookingsPerStudent?: number
+  branchSelectionMode?: School['branchSelectionMode']
+  maxSlotsPerBooking?: number
+  defaultLessonDuration?: number
   isActive?: boolean
 }
 
@@ -73,6 +76,9 @@ export function createSchool(input: SchoolInput): { ok: boolean; school?: School
     logoUrl: input.logoUrl?.trim() || undefined,
     bookingLimitEnabled: input.bookingLimitEnabled ?? true,
     maxActiveBookingsPerStudent: input.maxActiveBookingsPerStudent ?? 2,
+    branchSelectionMode: input.branchSelectionMode ?? 'student_choice',
+    maxSlotsPerBooking: input.maxSlotsPerBooking ?? 1,
+    defaultLessonDuration: input.defaultLessonDuration ?? 90,
     isActive: input.isActive ?? true,
   }
 
@@ -112,6 +118,16 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
     return { ok: false, error: 'Лимит записей должен быть от 1 до 10.' }
   }
 
+  const maxSlotsPerBooking = patch.maxSlotsPerBooking ?? school.maxSlotsPerBooking ?? 1
+  if (maxSlotsPerBooking < 1 || maxSlotsPerBooking > 6) {
+    return { ok: false, error: 'Лимит занятий за одну запись должен быть от 1 до 6.' }
+  }
+
+  const defaultLessonDuration = patch.defaultLessonDuration ?? school.defaultLessonDuration ?? 90
+  if (defaultLessonDuration < 30 || defaultLessonDuration > 240) {
+    return { ok: false, error: 'Длительность занятия должна быть от 30 минут до 4 часов.' }
+  }
+
   const updated: School = {
     ...school,
     ...patch,
@@ -125,6 +141,9 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
     logoUrl: patch.logoUrl !== undefined ? patch.logoUrl.trim() || undefined : school.logoUrl,
     bookingLimitEnabled: patch.bookingLimitEnabled ?? school.bookingLimitEnabled,
     maxActiveBookingsPerStudent: maxActive,
+    branchSelectionMode: patch.branchSelectionMode ?? school.branchSelectionMode ?? 'student_choice',
+    maxSlotsPerBooking,
+    defaultLessonDuration,
     isActive: patch.isActive ?? school.isActive,
   }
 

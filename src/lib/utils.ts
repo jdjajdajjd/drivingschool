@@ -34,6 +34,23 @@ export function pluralize(n: number, one: string, few: string, many: string): st
   return `${n} ${many}`
 }
 
+export function formatDuration(minutes: number): string {
+  const safeMinutes = Math.max(0, Math.round(minutes))
+  const hours = Math.floor(safeMinutes / 60)
+  const mins = safeMinutes % 60
+  const parts: string[] = []
+
+  if (hours > 0) {
+    parts.push(pluralize(hours, 'час', 'часа', 'часов'))
+  }
+
+  if (mins > 0 || parts.length === 0) {
+    parts.push(pluralize(mins, 'минута', 'минуты', 'минут'))
+  }
+
+  return parts.join(' ')
+}
+
 export function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace('#', '')
   if (normalized.length !== 6) {
