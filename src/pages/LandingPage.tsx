@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Link2,
   PhoneCall,
+  Puzzle,
   Users,
 } from 'lucide-react'
 import { PublicNav } from '../components/layout/PublicNav'
@@ -18,19 +19,51 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 
 const painPoints = [
-  'Звонки и переписки вместо нормальной записи',
-  'Листы, MAX и заметки в телефоне',
-  'Путаница по филиалам и инструкторам',
-  'Двойные записи и ручные переносы',
+  'Звонки по записи и постоянные переписки вместо нормального расписания.',
+  'Бумажные листы, Excel, MAX и заметки в телефоне у администратора.',
+  'Путаница по филиалам, инструкторам и свободным окнам.',
+  'Двойные записи, ручные переносы и потерянные контакты учеников.',
 ]
 
 const solution = [
-  { icon: CalendarDays, title: 'Страница записи', text: 'Ученик сам выбирает филиал, инструктора, дату и свободный слот.' },
-  { icon: Clock3, title: 'Календарь слотов', text: 'Администратор видит доступность и быстро управляет расписанием.' },
-  { icon: LayoutDashboard, title: 'Админка', text: 'Все записи, статусы и действия находятся в одной спокойной панели.' },
-  { icon: Link2, title: 'Ссылка инструктора', text: 'У каждого инструктора есть личная страница с ближайшими занятиями.' },
-  { icon: Users, title: 'История ученика', text: 'Повторные записи не теряются, телефон нормализуется и связывает данные.' },
-  { icon: BarChart3, title: 'Базовая статистика', text: 'Ключевые показатели видны без лишнего визуального шума.' },
+  {
+    icon: CalendarDays,
+    title: 'Публичная страница записи',
+    text: 'Ученик сам выбирает филиал, инструктора, дату и свободное время без звонка администратору.',
+  },
+  {
+    icon: LayoutDashboard,
+    title: 'Админская панель',
+    text: 'Все записи, переносы, отмены и статусы находятся в одной понятной рабочей панели.',
+  },
+  {
+    icon: Link2,
+    title: 'Личная ссылка инструктора',
+    text: 'У каждого инструктора есть своя страница с ближайшими занятиями и контактами учеников.',
+  },
+  {
+    icon: Users,
+    title: 'История ученика',
+    text: 'Телефон связывает повторные записи, поэтому администратор видит историю ученика целиком.',
+  },
+  {
+    icon: BarChart3,
+    title: 'Базовая статистика',
+    text: 'Панель показывает ближайшие занятия, загрузку и простые операционные сигналы по школе.',
+  },
+  {
+    icon: Puzzle,
+    title: 'Модули по необходимости',
+    text: 'База стоит 4 990 ₽ в месяц, а дополнительные функции подключаются только при необходимости.',
+  },
+]
+
+const demoLinks = [
+  { label: 'Страница записи ученика', path: '/school/virazh' },
+  { label: 'Админка автошколы', path: '/admin' },
+  { label: 'Записи', path: '/admin/bookings' },
+  { label: 'Модули', path: '/admin/modules' },
+  { label: 'Суперадминка', path: '/superadmin' },
 ]
 
 function DemoPreview() {
@@ -42,9 +75,9 @@ function DemoPreview() {
       <div className="grid gap-4 p-5">
         <div className="grid gap-3 md:grid-cols-3">
           {[
-            { label: 'Записи сегодня', value: '14' },
-            { label: 'Свободные слоты', value: '23' },
-            { label: 'Инструкторы в работе', value: '5' },
+            { label: 'Записей сегодня', value: '14' },
+            { label: 'Свободных слотов', value: '23' },
+            { label: 'Инструкторов в работе', value: '5' },
           ].map((item) => (
             <div key={item.label} className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
               <p className="text-xs text-stone-500">{item.label}</p>
@@ -89,14 +122,17 @@ export function LandingPage() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_480px]">
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
               <Badge variant="outline" size="md">
-                MVP SaaS для автошкол
+                Спокойный SaaS для автошкол
               </Badge>
               <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-stone-900 md:text-[3.5rem] md:leading-[1.04]">
                 Онлайн-запись на вождение для автошкол
               </h1>
               <p className="mt-4 max-w-2xl text-lg leading-relaxed text-stone-500">
-                Ученики сами выбирают свободные слоты, администратор видит все записи в панели,
-                а инструктор открывает свою ссылку и сразу понимает расписание.
+                Ученики сами выбирают свободные слоты, администратор видит все записи в панели, инструкторы
+                получают личное расписание по ссылке.
+              </p>
+              <p className="mt-4 text-sm font-medium text-stone-600">
+                Без установки приложений. Работает по обычной ссылке в браузере.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -111,9 +147,9 @@ export function LandingPage() {
 
               <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-stone-500">
                 {[
-                  'Без backend на старте',
-                  'Рабочий booking flow',
-                  'Подходит для демо директору',
+                  'Ученик записывается сам без звонка администратору',
+                  'Админ видит все записи и действия по ним',
+                  'Модули подключаются отдельно, без перегруза в базе',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-forest-700" />
@@ -139,7 +175,8 @@ export function LandingPage() {
                     4 990 ₽/мес + подключаемые модули
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
-                    База уже покрывает запись, слоты, админку, страницы инструкторов и базовую статистику.
+                    В базу уже входят публичная запись, управление филиалами и инструкторами, слоты, записи,
+                    история ученика, личная ссылка инструктора и базовая статистика.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -159,7 +196,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-6xl">
             <div className="max-w-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Боль</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Что ломает управление автошколой</h2>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Что чаще всего мешает работе автошколы</h2>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               {painPoints.map((item) => (
@@ -180,7 +217,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-6xl">
             <div className="max-w-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Решение</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Спокойный рабочий контур вместо хаоса</h2>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Понятный рабочий контур вместо звонков и таблиц</h2>
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -198,25 +235,55 @@ export function LandingPage() {
         </section>
 
         <section className="px-6 py-16">
+          <div className="mx-auto max-w-6xl">
+            <Card padding="lg" className="bg-white">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Посмотреть демо</p>
+                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Показать директору можно уже сейчас</h2>
+                  <p className="mt-3 text-base leading-relaxed text-stone-500">
+                    Начните с публичной записи, затем покажите админку, модули и суперадминский обзор. Все
+                    ключевые сценарии уже собраны в одном демо-проекте.
+                  </p>
+                </div>
+
+                <div className="grid w-full gap-3 lg:max-w-xl">
+                  {demoLinks.map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-left transition hover:border-stone-300 hover:bg-white"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-stone-900">{item.label}</p>
+                        <p className="mt-1 text-xs text-stone-500">{item.path}</p>
+                      </div>
+                      <ArrowRight size={16} className="text-stone-400" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        <section className="px-6 pb-20">
           <div className="mx-auto max-w-4xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl">
-              Показать директору можно уже сейчас
+              Сервис объясняется за 30 секунд
             </h2>
             <p className="mt-3 text-base leading-relaxed text-stone-500">
-              Откройте публичную запись, админку и страницу инструктора на одном демо-проекте.
+              Ученик записывается сам, администратор держит расписание под контролем, инструктор открывает свою
+              ссылку, а модули подключаются только тогда, когда они действительно нужны.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button size="lg" onClick={() => navigate('/school/virazh')}>
                 <PhoneCall size={16} />
-                Демо записи
+                Открыть демо записи
               </Button>
-              <Button size="lg" variant="secondary" onClick={() => navigate('/admin')}>
-                <LayoutDashboard size={16} />
-                Админка
-              </Button>
-              <Button size="lg" variant="ghost" onClick={() => navigate('/instructor/tok-petrov-2024')}>
-                <Users size={16} />
-                Экран инструктора
+              <Button size="lg" variant="secondary" onClick={() => navigate('/admin/modules')}>
+                <Clock3 size={16} />
+                Посмотреть модули
               </Button>
             </div>
           </div>

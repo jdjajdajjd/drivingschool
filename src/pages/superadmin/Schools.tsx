@@ -62,7 +62,7 @@ export function SuperAdminSchools() {
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate('/admin')}>
                         <ExternalLink size={14} />
-                        Админка
+                        Демо-админка
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate(`/superadmin/schools/${item.school.id}`)}>
                         <Settings2 size={14} />

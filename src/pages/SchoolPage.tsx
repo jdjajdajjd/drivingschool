@@ -17,6 +17,7 @@ import {
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { useToast } from '../components/ui/Toast'
 import { formatPhone, generateId, hexToRgba, pluralize } from '../lib/utils'
@@ -166,6 +167,7 @@ export function SchoolPage() {
   const sessionId = useRef(generateId('session'))
 
   const [school, setSchool] = useState<School | null>(null)
+  const [schoolMissing, setSchoolMissing] = useState(false)
   const [branches, setBranches] = useState<Branch[]>([])
   const [instructors, setInstructors] = useState<Instructor[]>([])
   const [step, setStep] = useState<BookingStep>(1)
@@ -204,10 +206,11 @@ export function SchoolPage() {
 
     const currentSchool = db.schools.bySlug(slug)
     if (!currentSchool) {
-      navigate('/')
+      setSchoolMissing(true)
       return
     }
 
+    setSchoolMissing(false)
     setSchool(currentSchool)
     setBranches(db.branches.bySchool(currentSchool.id).filter((branch) => branch.isActive))
     setInstructors(db.instructors.bySchool(currentSchool.id))
@@ -315,7 +318,7 @@ export function SchoolPage() {
 
   async function handleSubmit(): Promise<void> {
     if (!school || !selectedBranch || !selectedInstructor || !selectedDate || !selectedSlot) {
-      showToast('Заполните booking flow целиком.', 'error')
+      showToast('Сначала выберите филиал, инструктора, дату и слот.', 'error')
       return
     }
 
@@ -353,6 +356,27 @@ export function SchoolPage() {
     releaseSessionLocks(sessionId.current)
     showToast('Запись сохранена.', 'success')
     navigate(`/booking/${result.booking.id}`)
+  }
+
+  if (schoolMissing) {
+    return (
+      <div className="min-h-screen bg-[#f7f8fa] px-6 py-16">
+        <div className="mx-auto max-w-3xl">
+          <EmptyState
+            title="Автошкола не найдена"
+            description="Проверьте ссылку или откройте демо-страницу записи заново."
+            action={
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button onClick={() => navigate('/')}>На главную</Button>
+                <Button variant="secondary" onClick={() => navigate('/school/virazh')}>
+                  Открыть демо записи
+                </Button>
+              </div>
+            }
+          />
+        </div>
+      </div>
+    )
   }
 
   if (!school) {
@@ -402,7 +426,12 @@ export function SchoolPage() {
                 <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-stone-900 md:text-[2.6rem]">
                   Запишитесь на занятие без звонков и лишних шагов
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-500">{school.description}</p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-500">
+                  {school.description || 'Выберите филиал, инструктора и свободное время для занятия.'}
+                </p>
+                <p className="mt-2 text-sm font-medium text-stone-600">
+                  Выберите филиал, инструктора и свободное время для занятия.
+                </p>
               </div>
 
               <div className="grid gap-3 border-b border-stone-100 px-6 py-5 md:grid-cols-3">
@@ -437,6 +466,12 @@ export function SchoolPage() {
                     </div>
 
                     <div className="grid gap-3">
+                      {branches.length === 0 ? (
+                        <EmptyState
+                          title="Нет доступных филиалов"
+                          description="Сейчас на публичной странице нет активных филиалов. Попробуйте позже или свяжитесь с автошколой."
+                        />
+                      ) : null}
                       {branches.map((branch) => {
                         const branchInstructorCount = instructors.filter(
                           (instructor) => instructor.branchId === branch.id && instructor.isActive,
@@ -491,6 +526,14 @@ export function SchoolPage() {
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-2">
+                      {branchInstructors.length === 0 ? (
+                        <div className="md:col-span-2">
+                          <EmptyState
+                            title="В этом филиале пока нет доступных инструкторов"
+                            description="Выберите другой филиал или попробуйте зайти позже."
+                          />
+                        </div>
+                      ) : null}
                       {branchInstructors.map((instructor) => (
                         <button
                           key={instructor.id}
@@ -704,6 +747,9 @@ export function SchoolPage() {
                       Перейти к подтверждению
                       <ArrowRight size={16} />
                     </Button>
+                    {!form.name.trim() || !form.phone.trim() ? (
+                      <p className="text-sm text-stone-500">Кнопка станет активной, когда вы заполните имя и телефон.</p>
+                    ) : null}
                   </div>
                 ) : null}
 

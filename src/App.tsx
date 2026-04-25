@@ -21,6 +21,7 @@ import { SuperAdminSchools } from './pages/superadmin/Schools'
 import { SuperAdminSchoolNew } from './pages/superadmin/SchoolNew'
 import { SuperAdminSchoolDetail } from './pages/superadmin/SchoolDetail'
 import { SuperAdminLayout } from './components/layout/SuperAdminLayout'
+import { NotFoundPage } from './pages/NotFoundPage'
 
 function App() {
   useEffect(() => {
@@ -52,6 +53,7 @@ function App() {
           <Route path="schools/new" element={<SuperAdminSchoolNew />} />
           <Route path="schools/:schoolId" element={<SuperAdminSchoolDetail />} />
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   )

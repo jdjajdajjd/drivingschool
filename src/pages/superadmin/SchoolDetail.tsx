@@ -43,10 +43,10 @@ export function SuperAdminSchoolDetail() {
 
   return (
     <div className="max-w-7xl p-6 md:p-8">
-      <PageHeader
-        eyebrow="Superadmin"
-        title={overview.school.name}
-        description={`/${overview.school.slug} · ${overview.school.description || 'Описание пока не заполнено.'}`}
+        <PageHeader
+          eyebrow="Superadmin"
+          title={overview.school.name}
+          description={`/${overview.school.slug} · ${overview.school.description || 'Описание пока не заполнено.'}`}
         actions={
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" onClick={() => window.open(`/school/${overview.school.slug}`, '_blank')}>
@@ -85,7 +85,7 @@ export function SuperAdminSchoolDetail() {
               <p className="mt-1 text-sm font-semibold text-stone-900">{overview.freeSlots7Days}</p>
             </div>
             <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Warnings</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Предупреждения</p>
               <p className="mt-1 text-sm font-semibold text-stone-900">{overview.integrityWarnings}</p>
             </div>
           </div>

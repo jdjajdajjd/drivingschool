@@ -216,7 +216,7 @@ export function BookingConfirmation() {
               Назад
             </button>
             <div className="text-right">
-              <p className="text-sm font-semibold text-stone-900">{school?.name ?? 'DriveDesk'}</p>
+              <p className="text-sm font-semibold text-stone-900">{school?.name ?? 'Автошкола'}</p>
               <p className="text-xs text-stone-500">Подтверждение записи</p>
             </div>
           </div>
@@ -247,7 +247,13 @@ export function BookingConfirmation() {
               <div className="mt-4 flex justify-center">
                 <StatusBadge status={booking.status} />
               </div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-stone-900">Ваша запись сохранена</h1>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
+                {booking.status === 'cancelled'
+                  ? 'Запись отменена'
+                  : booking.status === 'completed'
+                    ? 'Занятие отмечено проведённым'
+                    : 'Вы записаны'}
+              </h1>
               <p className="mt-2 text-sm text-stone-500">ID записи: {booking.id}</p>
             </div>
 

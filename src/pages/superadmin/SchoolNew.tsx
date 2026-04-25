@@ -47,7 +47,7 @@ export function SuperAdminSchoolNew() {
       <PageHeader
         eyebrow="Superadmin"
         title="Создать автошколу"
-        description="Создаём новую школу без backend. Пока это localStorage-режим с безопасным минимальным набором данных."
+        description="Создайте новую автошколу для демо, расчёта стоимости и проверки продуктового сценария."
       />
 
       <div className="mt-8">

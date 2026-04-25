@@ -117,7 +117,7 @@ export function AdminSettings() {
       <PageHeader
         eyebrow={school.name}
         title="Настройки"
-        description="Основные данные школы, публичная страница, лимиты записи и demo/localStorage режим."
+        description="Основные данные школы, публичная страница, лимиты записи и демо-режим хранения данных в браузере."
         actions={
           <Button onClick={handleSave}>
             <Settings2 size={16} />
@@ -230,7 +230,7 @@ export function AdminSettings() {
           </div>
         </Section>
 
-        <Section title="Демо-режим" description="Сейчас приложение работает в demo/localStorage режиме. Данные хранятся в браузере.">
+        <Section title="Демо-режим" description="Сейчас приложение работает в демо-режиме. Данные хранятся прямо в браузере.">
           <div className="rounded-3xl border border-amber-100 bg-amber-50 px-5 py-5 text-sm text-amber-900">
             Изменения сохраняются только локально в браузере. Сброс демо-данных очистит текущие данные проекта и заново создаст seed.
           </div>

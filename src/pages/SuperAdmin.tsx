@@ -56,7 +56,7 @@ export function SuperAdminOverview() {
       <PageHeader
         eyebrow="DriveDesk"
         title="Superadmin"
-        description="Обзор по всем автошколам, их стоимости, загрузке и предупреждениям в demo/localStorage режиме."
+        description="Обзор по всем автошколам, их стоимости, загрузке и важным сигналам в демо-режиме."
         actions={
           <Button
             variant="secondary"
@@ -66,7 +66,7 @@ export function SuperAdminOverview() {
             }}
           >
             <RefreshCw size={15} />
-            Сбросить demo data
+            Сбросить демо-данные
           </Button>
         }
       />
@@ -75,16 +75,16 @@ export function SuperAdminOverview() {
         <StatCard label="Всего автошкол" value={schools.length} icon={<Building2 size={18} />} />
         <StatCard label="Активных автошкол" value={activeSchools.length} icon={<Building2 size={18} />} />
         <StatCard label="Записей сегодня" value={todayBookingsTotal} icon={<CalendarDays size={18} />} />
-        <StatCard label="MRR demo estimate" value={formatPrice(mrr)} icon={<BarChart3 size={18} />} />
+        <StatCard label="Оценка MRR в демо" value={formatPrice(mrr)} icon={<BarChart3 size={18} />} />
         <StatCard label="Подключённых модулей" value={enabledModulesTotal} icon={<Puzzle size={18} />} />
         <StatCard label="Школ без свободных слотов на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle size={18} />} />
         <StatCard label="Школ с предупреждениями" value={schoolsWithWarnings} icon={<AlertTriangle size={18} />} />
       </div>
 
       <div className="mt-8">
-        <Section title="Сигналы по школам" description="Куда смотреть в первую очередь, если demo-данные выглядят проблемно.">
+        <Section title="Сигналы по школам" description="Куда смотреть в первую очередь, если демо-данные выглядят проблемно.">
           {metrics.length === 0 ? (
-            <EmptyState title="Автошкол пока нет" description="Создайте первую автошколу в superadmin-панели." />
+            <EmptyState title="Автошкол пока нет" description="Создайте первую автошколу в панели владельца сервиса." />
           ) : (
             <div className="space-y-3">
               {metrics.map((item) => (
@@ -98,7 +98,7 @@ export function SuperAdminOverview() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {item.noSlots ? <span className="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700">Нет слотов на 7 дней</span> : null}
-                      {item.warnings.length > 0 ? <span className="rounded-full bg-red-50 px-3 py-1 text-xs text-red-700">Есть warnings: {item.warnings.length}</span> : null}
+                      {item.warnings.length > 0 ? <span className="rounded-full bg-red-50 px-3 py-1 text-xs text-red-700">Есть предупреждения: {item.warnings.length}</span> : null}
                       {!item.noSlots && item.warnings.length === 0 ? <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">Стабильно</span> : null}
                     </div>
                   </div>
