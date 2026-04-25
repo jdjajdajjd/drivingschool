@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, CalendarDays, Car, Check, Clock3, MapPin, Phone, UserRound, Users } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowLeft, ArrowRight, CalendarDays, Car, Check, Clock3, MapPin, Phone, UserRound } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
-import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
@@ -24,13 +23,13 @@ import { formatDate, formatDateFull, formatDayOfWeek, getNext7Days } from '../ut
 
 type BookingStep = 1 | 2 | 3 | 4 | 5 | 6
 
-const STEP_LABELS: Record<BookingStep, string> = {
-  1: 'Филиал',
-  2: 'Инструктор',
-  3: 'Дата',
-  4: 'Слот',
-  5: 'Данные',
-  6: 'Подтверждение',
+const STEP_TITLES: Record<BookingStep, string> = {
+  1: 'Выберите филиал',
+  2: 'Выберите инструктора',
+  3: 'Выберите дату',
+  4: 'Выберите время',
+  5: 'Ваши данные',
+  6: 'Проверьте запись',
 }
 
 interface FormState {
@@ -38,98 +37,42 @@ interface FormState {
   phone: string
 }
 
-function InfoCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-}: {
-  title: string
-  value: string
-  subtitle?: string
-  icon: typeof MapPin
-}) {
-  return (
-    <div className="rounded-2xl border border-stone-100 bg-white p-4">
-      <div className="mb-3 text-stone-400">
-        <Icon size={16} className="text-forest-700" />
-      </div>
-      <p className="text-sm font-medium text-stone-500">{title}</p>
-      <p className="mt-1 text-sm font-semibold text-stone-900">{value}</p>
-      {subtitle ? <p className="mt-1 text-sm leading-relaxed text-stone-500">{subtitle}</p> : null}
-    </div>
-  )
+const fadeSlide = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.22 },
 }
 
-function StepHeader({ currentStep }: { currentStep: BookingStep }) {
-  const progress = Math.max(20, Math.round((currentStep / 5) * 100))
+function StepProgress({ step, total = 5 }: { step: BookingStep; total?: number }) {
+  const current = Math.min(step as number, total)
+  const pct = Math.round((current / total) * 100)
 
   return (
-    <div className="border-b border-stone-100 px-6 py-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-stone-500">Шаг {Math.min(currentStep, 5)} из 5</p>
-          <p className="mt-1 text-base font-semibold text-stone-900">{STEP_LABELS[currentStep]}</p>
-        </div>
-        {currentStep > 1 ? <div className="text-sm text-stone-500">{currentStep - 1} шага позади</div> : null}
+    <div className="px-6 pt-6 pb-2">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-stone-400">Шаг {current} из {total}</span>
+        <span className="text-sm font-medium text-stone-400">{pct}%</span>
       </div>
-      <div className="mt-4 h-1.5 rounded-full bg-stone-100">
-        <div className="h-full rounded-full bg-forest-700 transition-all" style={{ width: `${progress}%` }} />
+      <div className="h-1.5 rounded-full bg-stone-100">
+        <div
+          className="h-full rounded-full bg-forest-700 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   )
 }
 
-function SummaryPanel({
-  branch,
-  instructor,
-  date,
-  slot,
-  form,
-}: {
-  branch: Branch | null
-  instructor: Instructor | null
-  date: string | null
-  slot: Slot | null
-  form: FormState
-}) {
-  const rows = [
-    branch ? { label: 'Филиал', value: branch.name, muted: branch.address } : null,
-    instructor
-      ? {
-          label: 'Инструктор',
-          value: instructor.name,
-          muted: instructor.car
-            ? `${instructor.car}${instructor.transmission ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}`
-            : undefined,
-        }
-      : null,
-    date ? { label: 'Дата', value: formatDateFull(date), muted: formatDayOfWeek(date) } : null,
-    slot ? { label: 'Время', value: slot.time, muted: `${slot.duration} минут` } : null,
-    form.name ? { label: 'Ученик', value: form.name, muted: form.phone ? formatPhone(normalizePhone(form.phone)) : undefined } : null,
-  ].filter(Boolean) as Array<{ label: string; value: string; muted?: string }>
-
-  if (rows.length === 0) {
-    return null
-  }
-
+function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-      <div className="border-b border-stone-100 px-4 py-4">
-        <p className="text-sm font-semibold text-stone-900">Вы выбрали</p>
-      </div>
-      <div className="space-y-3 px-4 py-4">
-        {rows.map((row) => (
-          <div key={row.label} className="flex items-start justify-between gap-4 border-b border-stone-100 pb-3 last:border-b-0 last:pb-0">
-            <p className="text-sm font-medium text-stone-500">{row.label}</p>
-            <div className="text-right">
-              <p className="text-sm font-semibold text-stone-900">{row.value}</p>
-              {row.muted ? <p className="mt-1 text-sm text-stone-500">{row.muted}</p> : null}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <button
+      onClick={onClick}
+      className="mb-6 inline-flex items-center gap-2 text-base text-stone-500 hover:text-stone-900 transition-colors"
+    >
+      <ArrowLeft size={18} />
+      {label}
+    </button>
   )
 }
 
@@ -157,9 +100,7 @@ export function SchoolPage() {
   const branchInstructors = useMemo(
     () =>
       selectedBranch
-        ? instructors.filter(
-            (instructor) => instructor.branchId === selectedBranch.id && instructor.isActive,
-          )
+        ? instructors.filter((i) => i.branchId === selectedBranch.id && i.isActive)
         : [],
     [instructors, selectedBranch],
   )
@@ -173,97 +114,65 @@ export function SchoolPage() {
   )
 
   useEffect(() => {
-    if (!slug) {
-      return
-    }
-
+    if (!slug) return
     const currentSchool = db.schools.bySlug(slug)
     if (!currentSchool) {
       setSchoolMissing(true)
       return
     }
-
     setSchoolMissing(false)
     setSchool(currentSchool)
-    setBranches(db.branches.bySchool(currentSchool.id).filter((branch) => branch.isActive))
+    setBranches(db.branches.bySchool(currentSchool.id).filter((b) => b.isActive))
     setInstructors(db.instructors.bySchool(currentSchool.id))
   }, [navigate, slug])
 
   useEffect(() => {
-    if (!selectedSlot) {
-      return
-    }
-
+    if (!selectedSlot) return
     const refreshLock = () => {
       const result = acquireSlotLock(selectedSlot.id, sessionId.current)
       if (!result.ok) {
         setSelectedSlot(null)
-        if (step >= 4) {
-          setStep(4)
-        }
+        if (step >= 4) setStep(4)
         showToast(result.error ?? 'Слот больше недоступен.', 'error')
       } else {
         const freshSlot = db.slots.byId(selectedSlot.id)
-        if (freshSlot) {
-          setSelectedSlot(freshSlot)
-        }
+        if (freshSlot) setSelectedSlot(freshSlot)
       }
     }
-
     refreshLock()
-    const intervalId = window.setInterval(refreshLock, 30_000)
-
-    return () => window.clearInterval(intervalId)
+    const id = window.setInterval(refreshLock, 30_000)
+    return () => window.clearInterval(id)
   }, [selectedSlot, showToast, step])
 
   useEffect(() => {
-    return () => {
-      releaseSessionLocks(sessionId.current)
-    }
+    return () => { releaseSessionLocks(sessionId.current) }
   }, [])
 
-  function resetAfterBranch(): void {
-    if (selectedSlot) {
-      releaseSlotLock(selectedSlot.id, sessionId.current)
-    }
-
+  function resetAfterBranch() {
+    if (selectedSlot) releaseSlotLock(selectedSlot.id, sessionId.current)
     setSelectedInstructor(null)
     setSelectedDate(null)
     setSelectedSlot(null)
     setErrors({})
   }
 
-  function resetAfterInstructor(): void {
-    if (selectedSlot) {
-      releaseSlotLock(selectedSlot.id, sessionId.current)
-    }
-
+  function resetAfterInstructor() {
+    if (selectedSlot) releaseSlotLock(selectedSlot.id, sessionId.current)
     setSelectedDate(null)
     setSelectedSlot(null)
     setErrors({})
   }
 
-  function resetAfterDate(): void {
-    if (selectedSlot) {
-      releaseSlotLock(selectedSlot.id, sessionId.current)
-    }
-
+  function resetAfterDate() {
+    if (selectedSlot) releaseSlotLock(selectedSlot.id, sessionId.current)
     setSelectedSlot(null)
   }
 
   function validateForm(): boolean {
     const nextErrors: Partial<FormState> = {}
-
-    if (!form.name.trim()) {
-      nextErrors.name = 'Введите имя ученика'
-    }
-
-    if (!form.phone.trim()) {
-      nextErrors.phone = 'Введите телефон'
-    } else if (!isValidRussianPhone(form.phone)) {
-      nextErrors.phone = 'Введите номер в формате +7 или 8'
-    }
-
+    if (!form.name.trim()) nextErrors.name = 'Введите имя'
+    if (!form.phone.trim()) nextErrors.phone = 'Введите телефон'
+    else if (!isValidRussianPhone(form.phone)) nextErrors.phone = 'Формат: +7 или 8...'
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
@@ -273,17 +182,12 @@ export function SchoolPage() {
       setStep(5)
       return
     }
-
-    if (selectedSlot) {
-      releaseSlotLock(selectedSlot.id, sessionId.current)
-    }
-
+    if (selectedSlot) releaseSlotLock(selectedSlot.id, sessionId.current)
     const result = acquireSlotLock(slot.id, sessionId.current)
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось заблокировать слот.', 'error')
       return
     }
-
     const freshSlot = db.slots.byId(slot.id)
     setSelectedSlot(freshSlot ?? slot)
     setStep(5)
@@ -291,17 +195,14 @@ export function SchoolPage() {
 
   async function handleSubmit(): Promise<void> {
     if (!school || !selectedBranch || !selectedInstructor || !selectedDate || !selectedSlot) {
-      showToast('Сначала выберите филиал, инструктора, дату и слот.', 'error')
+      showToast('Сначала выберите все данные.', 'error')
       return
     }
-
     if (!validateForm()) {
       showToast('Проверьте имя и телефон.', 'error')
       return
     }
-
     setIsSubmitting(true)
-
     const result = createBooking({
       schoolId: school.id,
       branchId: selectedBranch.id,
@@ -311,9 +212,7 @@ export function SchoolPage() {
       studentPhone: form.phone,
       sessionId: sessionId.current,
     })
-
     setIsSubmitting(false)
-
     if (!result.ok || !result.booking) {
       showToast(result.error ?? 'Не удалось создать запись.', 'error')
       if (selectedInstructor && selectedDate) {
@@ -325,7 +224,6 @@ export function SchoolPage() {
       }
       return
     }
-
     releaseSessionLocks(sessionId.current)
     showToast('Запись сохранена.', 'success')
     navigate(`/booking/${result.booking.id}`)
@@ -333,16 +231,18 @@ export function SchoolPage() {
 
   if (schoolMissing) {
     return (
-      <div className="min-h-screen bg-[#f7f8fa] px-6 py-16">
-        <div className="mx-auto max-w-3xl">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center space-y-4">
           <EmptyState
             title="Автошкола не найдена"
-            description="Проверьте ссылку или откройте демо-страницу записи заново."
+            description="Проверьте ссылку или откройте демо-страницу."
             action={
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button onClick={() => navigate('/')}>На главную</Button>
-                <Button variant="secondary" onClick={() => navigate('/school/virazh')}>
+              <div className="flex flex-col gap-3 mt-2">
+                <Button size="lg" className="w-full" onClick={() => navigate('/school/virazh')}>
                   Открыть демо записи
+                </Button>
+                <Button size="lg" variant="secondary" className="w-full" onClick={() => navigate('/')}>
+                  На главную
                 </Button>
               </div>
             }
@@ -352,336 +252,333 @@ export function SchoolPage() {
     )
   }
 
-  if (!school) {
-    return null
-  }
+  if (!school) return null
 
   const brandColor = school.primaryColor ?? '#1f5b43'
   const brandSoft = hexToRgba(brandColor, 0.08)
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa]">
-      <header className="sticky top-0 z-30 border-b border-white/70 bg-stone-50/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-4">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl shadow-soft" style={{ backgroundColor: brandColor }}>
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-soft overflow-hidden shrink-0"
+              style={{ backgroundColor: brandColor }}
+            >
               {school.logoUrl ? (
                 <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
               ) : (
-                <Car size={18} className="text-white" />
+                <Car size={20} className="text-white" />
               )}
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-stone-900">{school.name}</p>
-              <p className="text-xs text-stone-400">Онлайн-запись на вождение</p>
+              <p className="text-base font-semibold text-stone-900 leading-tight">{school.name}</p>
+              <p className="text-sm text-stone-400">Запись на занятие</p>
             </div>
           </button>
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold text-stone-900">{school.name}</p>
-            <p className="text-xs text-stone-500">{formatPhone(school.phone)}</p>
-          </div>
+          {school.phone ? (
+            <a
+              href={`tel:${school.phone}`}
+              className="flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+            >
+              <Phone size={15} className="text-stone-400" />
+              {formatPhone(school.phone)}
+            </a>
+          ) : null}
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <motion.section
-          initial={{ opacity: 0, y: 18 }}
+      <main className="mx-auto max-w-xl px-4 py-8 pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+          transition={{ duration: 0.35 }}
         >
-          <div className="space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-              <div className="border-b border-stone-100 px-6 py-6">
-                <Badge variant="outline" size="md" className="border-transparent" style={{ backgroundColor: brandSoft, color: brandColor }}>
-                  Онлайн-запись
-                </Badge>
-                <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-stone-900 md:text-[2.6rem]">
-                  Запишитесь на занятие без звонков и лишних шагов
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-500">
-                  {school.description || 'Выберите филиал, инструктора и свободное время для занятия.'}
-                </p>
-                <p className="mt-2 text-sm font-medium text-stone-600">
-                  Выберите филиал, инструктора и свободное время для занятия.
-                </p>
-              </div>
+          {/* Step card */}
+          <div className="rounded-3xl border border-stone-200 bg-white overflow-hidden">
+            <StepProgress step={step} />
 
-              <StepHeader currentStep={step} />
-
-              <div className="px-6 pb-6">
+            <div className="px-6 pb-8 pt-4">
+              <AnimatePresence mode="wait">
+                {/* ── Step 1: Филиал ── */}
                 {step === 1 ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-stone-900">1. Выберите филиал</p>
-                        <p className="text-sm text-stone-500">От него зависит список инструкторов и адрес занятия.</p>
-                      </div>
-                    </div>
+                  <motion.div key="step1" {...fadeSlide}>
+                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
+                      {STEP_TITLES[1]}
+                    </h1>
+                    <p className="text-base text-stone-500 mb-6">
+                      От филиала зависит список инструкторов и адрес занятия.
+                    </p>
 
-                    <div className="grid gap-3">
-                      {branches.length === 0 ? (
-                        <EmptyState
-                          title="Нет доступных филиалов"
-                          description="Сейчас на публичной странице нет активных филиалов. Попробуйте позже или свяжитесь с автошколой."
-                        />
-                      ) : null}
-                      {branches.map((branch) => {
-                        const branchInstructorCount = instructors.filter(
-                          (instructor) => instructor.branchId === branch.id && instructor.isActive,
-                        ).length
-
-                        return (
-                          <button
-                            key={branch.id}
-                            onClick={() => {
-                              setSelectedBranch(branch)
-                              resetAfterBranch()
-                              setStep(2)
-                            }}
-                            className="rounded-2xl border border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-300 hover:bg-forest-50/50"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-base font-semibold text-stone-900">{branch.name}</p>
-                                <p className="mt-2 flex items-center gap-2 text-sm text-stone-500">
-                                  <MapPin size={14} className="text-stone-400" />
-                                  {branch.address}
-                                </p>
-                                <p className="mt-2 flex items-center gap-2 text-sm text-stone-500">
-                                  <Phone size={14} className="text-stone-400" />
+                    {branches.length === 0 ? (
+                      <EmptyState
+                        title="Нет доступных филиалов"
+                        description="Попробуйте позже или позвоните в автошколу."
+                      />
+                    ) : (
+                      <div className="space-y-3">
+                        {branches.map((branch) => {
+                          const cnt = instructors.filter(
+                            (i) => i.branchId === branch.id && i.isActive,
+                          ).length
+                          return (
+                            <button
+                              key={branch.id}
+                              onClick={() => {
+                                setSelectedBranch(branch)
+                                resetAfterBranch()
+                                setStep(2)
+                              }}
+                              className="w-full rounded-2xl border-2 border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]"
+                            >
+                              <p className="text-lg font-semibold text-stone-900 leading-snug">
+                                {branch.name}
+                              </p>
+                              <p className="mt-2 flex items-center gap-2 text-base text-stone-500">
+                                <MapPin size={16} className="shrink-0 text-stone-400" />
+                                {branch.address}
+                              </p>
+                              {branch.phone ? (
+                                <p className="mt-1 flex items-center gap-2 text-base text-stone-500">
+                                  <Phone size={16} className="shrink-0 text-stone-400" />
                                   {formatPhone(branch.phone)}
                                 </p>
-                              </div>
-                              <Badge variant="outline">
-                                {pluralize(branchInstructorCount, 'инструктор', 'инструктора', 'инструкторов')}
-                              </Badge>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
+                              ) : null}
+                              {cnt > 0 ? (
+                                <p className="mt-3 text-sm text-stone-400">
+                                  {pluralize(cnt, 'инструктор', 'инструктора', 'инструкторов')} доступно
+                                </p>
+                              ) : null}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
                 ) : null}
 
+                {/* ── Step 2: Инструктор ── */}
                 {step === 2 ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
-                    >
-                      <ArrowLeft size={15} />
-                      Назад к филиалам
-                    </button>
+                  <motion.div key="step2" {...fadeSlide}>
+                    <BackButton onClick={() => setStep(1)} label="Назад к филиалам" />
+                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
+                      {STEP_TITLES[2]}
+                    </h1>
+                    <p className="text-base text-stone-500 mb-6">
+                      Показываем инструкторов выбранного филиала.
+                    </p>
 
-                    <div>
-                      <p className="text-sm font-semibold text-stone-900">2. Выберите инструктора</p>
-                      <p className="text-sm text-stone-500">Показываем только активных инструкторов выбранного филиала.</p>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {branchInstructors.length === 0 ? (
-                        <div className="md:col-span-2">
-                          <EmptyState
-                            title="В этом филиале пока нет доступных инструкторов"
-                            description="Выберите другой филиал или попробуйте зайти позже."
-                          />
-                        </div>
-                      ) : null}
-                      {branchInstructors.map((instructor) => (
-                        <button
-                          key={instructor.id}
-                          onClick={() => {
-                            setSelectedInstructor(instructor)
-                            resetAfterInstructor()
-                            setStep(3)
-                          }}
-                          className="rounded-2xl border border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-300 hover:bg-forest-50/50"
-                        >
-                          <div className="flex items-start gap-4">
-                            <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="lg" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-base font-semibold text-stone-900">{instructor.name}</p>
-                              <p className="mt-1 text-sm text-stone-500">{instructor.bio}</p>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {instructor.categories.map((category) => (
-                                  <Badge key={category} variant="outline">
-                                    кат. {category}
-                                  </Badge>
-                                ))}
+                    {branchInstructors.length === 0 ? (
+                      <EmptyState
+                        title="Нет доступных инструкторов"
+                        description="Выберите другой филиал или попробуйте позже."
+                      />
+                    ) : (
+                      <div className="space-y-3">
+                        {branchInstructors.map((instructor) => (
+                          <button
+                            key={instructor.id}
+                            onClick={() => {
+                              setSelectedInstructor(instructor)
+                              resetAfterInstructor()
+                              setStep(3)
+                            }}
+                            className="w-full rounded-2xl border-2 border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-4">
+                              <Avatar
+                                initials={instructor.avatarInitials}
+                                color={instructor.avatarColor}
+                                size="lg"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-lg font-semibold text-stone-900 leading-snug">
+                                  {instructor.name}
+                                </p>
+                                {instructor.bio ? (
+                                  <p className="mt-1 text-base text-stone-500 line-clamp-2">
+                                    {instructor.bio}
+                                  </p>
+                                ) : null}
                                 {instructor.car ? (
-                                  <Badge variant="forest">
+                                  <p className="mt-1 text-sm text-stone-400">
                                     {instructor.car}
                                     {instructor.transmission
                                       ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}`
                                       : ''}
-                                  </Badge>
+                                  </p>
                                 ) : null}
                               </div>
+                              <ArrowRight size={20} className="text-stone-300 shrink-0" />
                             </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
                 ) : null}
 
+                {/* ── Step 3: Дата ── */}
                 {step === 3 ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setStep(2)}
-                      className="inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
-                    >
-                      <ArrowLeft size={15} />
-                      Назад к инструкторам
-                    </button>
+                  <motion.div key="step3" {...fadeSlide}>
+                    <BackButton onClick={() => setStep(2)} label="Назад к инструкторам" />
+                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
+                      {STEP_TITLES[3]}
+                    </h1>
+                    <p className="text-base text-stone-500 mb-6">
+                      Ближайшие 7 дней. Выберите удобный день.
+                    </p>
 
-                    <div>
-                      <p className="text-sm font-semibold text-stone-900">3. Выберите дату</p>
-                      <p className="text-sm text-stone-500">Показываем ближайшие 7 дней и доступные слоты по каждому дню.</p>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="space-y-2">
                       {dateOptions.map((date) => {
                         const count = selectedInstructor
                           ? getAvailableSlots(selectedInstructor.id, date, sessionId.current).length
                           : 0
+                        const available = count > 0
 
                         return (
                           <button
                             key={date}
-                            disabled={count === 0}
+                            disabled={!available}
                             onClick={() => {
                               setSelectedDate(date)
                               resetAfterDate()
                               setStep(4)
                             }}
-                            className={`rounded-2xl border px-5 py-5 text-left transition ${
-                              count === 0
-                                ? 'cursor-not-allowed border-stone-100 bg-stone-50 text-stone-300'
-                                : 'border-stone-200 bg-white hover:border-forest-300 hover:bg-forest-50/50'
+                            className={`w-full rounded-2xl border-2 px-5 py-4 text-left transition ${
+                              available
+                                ? 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]'
+                                : 'border-stone-100 bg-stone-50 cursor-not-allowed'
                             }`}
                           >
-                            <div className="flex items-center justify-between">
-                              <CalendarDays size={18} className={count === 0 ? 'text-stone-300' : 'text-forest-700'} />
-                              <Badge variant={count === 0 ? 'default' : 'forest'}>{count} слотов</Badge>
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p
+                                  className={`text-lg font-semibold capitalize ${
+                                    available ? 'text-stone-900' : 'text-stone-300'
+                                  }`}
+                                >
+                                  {formatDayOfWeek(date)}, {formatDate(date)}
+                                </p>
+                              </div>
+                              <span
+                                className={`shrink-0 text-sm font-medium ${
+                                  available ? 'text-forest-700' : 'text-stone-300'
+                                }`}
+                              >
+                                {available
+                                  ? pluralize(count, 'слот', 'слота', 'слотов')
+                                  : 'Нет мест'}
+                              </span>
                             </div>
-                            <p className="mt-6 text-base font-semibold text-stone-900">{formatDate(date)}</p>
-                            <p className="mt-1 text-sm capitalize text-stone-500">{formatDayOfWeek(date)}</p>
                           </button>
                         )
                       })}
                     </div>
-                  </div>
+                  </motion.div>
                 ) : null}
 
+                {/* ── Step 4: Время ── */}
                 {step === 4 ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setStep(3)}
-                      className="inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
-                    >
-                      <ArrowLeft size={15} />
-                      Назад к датам
-                    </button>
-
-                    <div>
-                      <p className="text-sm font-semibold text-stone-900">4. Выберите слот</p>
-                      <p className="text-sm text-stone-500">Выберите удобное время из доступных вариантов.</p>
-                    </div>
-
+                  <motion.div key="step4" {...fadeSlide}>
+                    <BackButton onClick={() => setStep(3)} label="Назад к датам" />
+                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
+                      {STEP_TITLES[4]}
+                    </h1>
                     {selectedDate ? (
-                      <div className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4">
-                        <p className="text-sm font-semibold text-stone-900">{formatDateFull(selectedDate)}</p>
-                        <p className="mt-1 text-sm capitalize text-stone-500">{formatDayOfWeek(selectedDate)}</p>
-                      </div>
+                      <p className="text-base text-stone-500 mb-6 capitalize">
+                        {formatDayOfWeek(selectedDate)}, {formatDateFull(selectedDate)}
+                      </p>
                     ) : null}
 
                     {availableSlots.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-6 py-12 text-center">
-                        <Clock3 size={24} className="mx-auto text-stone-300" />
-                        <p className="mt-4 text-sm font-semibold text-stone-900">На эту дату нет свободных слотов</p>
-                        <p className="mt-2 text-sm text-stone-500">Выберите другой день или другого инструктора.</p>
+                      <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 py-12 text-center">
+                        <Clock3 size={28} className="mx-auto text-stone-300 mb-3" />
+                        <p className="text-base font-semibold text-stone-700">Нет свободных мест</p>
+                        <p className="mt-1 text-sm text-stone-500">Выберите другой день.</p>
+                        <button
+                          onClick={() => setStep(3)}
+                          className="mt-4 text-sm font-medium text-forest-700 hover:underline"
+                        >
+                          ← Вернуться к выбору даты
+                        </button>
                       </div>
                     ) : (
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        {availableSlots.map((slot) => (
-                          <button
-                            key={slot.id}
-                            onClick={() => void handleSlotSelect(slot)}
-                            className={`rounded-[24px] border px-4 py-4 text-left transition ${
-                              selectedSlot?.id === slot.id
-                                ? 'border-forest-800 bg-forest-800 text-white'
-                                : 'border-stone-200 bg-white hover:border-forest-300 hover:bg-forest-50/50'
-                            }`}
-                          >
-                            <p className="text-lg font-semibold">{slot.time}</p>
-                            <p
-                              className={`mt-1 text-xs ${
-                                selectedSlot?.id === slot.id ? 'text-white/70' : 'text-stone-500'
+                      <div className="grid grid-cols-3 gap-3">
+                        {availableSlots.map((slot) => {
+                          const active = selectedSlot?.id === slot.id
+                          return (
+                            <button
+                              key={slot.id}
+                              onClick={() => void handleSlotSelect(slot)}
+                              className={`rounded-2xl border-2 px-3 py-4 text-center transition active:scale-[0.97] ${
+                                active
+                                  ? 'border-forest-700 bg-forest-700 text-white'
+                                  : 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40'
                               }`}
                             >
-                              {slot.duration} минут
-                            </p>
-                          </button>
-                        ))}
+                              <p className={`text-xl font-bold ${active ? 'text-white' : 'text-stone-900'}`}>
+                                {slot.time}
+                              </p>
+                              <p className={`mt-1 text-xs ${active ? 'text-white/70' : 'text-stone-400'}`}>
+                                {slot.duration} мин
+                              </p>
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ) : null}
 
+                {/* ── Step 5: Данные ── */}
                 {step === 5 ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setStep(4)}
-                      className="inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
-                    >
-                      <ArrowLeft size={15} />
-                      Назад к слотам
-                    </button>
+                  <motion.div key="step5" {...fadeSlide}>
+                    <BackButton onClick={() => setStep(4)} label="Назад к выбору времени" />
+                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
+                      {STEP_TITLES[5]}
+                    </h1>
+                    <p className="text-base text-stone-500 mb-8">
+                      Оставьте контакт — автошкола свяжется при необходимости.
+                    </p>
 
-                    <div>
-                      <p className="text-sm font-semibold text-stone-900">5. Данные ученика</p>
-                      <p className="text-sm text-stone-500">Оставьте имя и телефон, чтобы автошкола могла связаться с вами.</p>
-                    </div>
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-base font-medium text-stone-700 mb-2">
+                          Как вас зовут?
+                        </label>
+                        <Input
+                          placeholder="Анна Иванова"
+                          value={form.name}
+                          onChange={(e) => {
+                            setForm((c) => ({ ...c, name: e.target.value }))
+                            if (errors.name) setErrors((c) => ({ ...c, name: undefined }))
+                          }}
+                          error={errors.name}
+                        />
+                      </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Input
-                        label="Имя ученика"
-                        placeholder="Анна Иванова"
-                        value={form.name}
-                        onChange={(event) => {
-                          setForm((current) => ({ ...current, name: event.target.value }))
-                          if (errors.name) {
-                            setErrors((current) => ({ ...current, name: undefined }))
-                          }
-                        }}
-                        error={errors.name}
-                      />
-                      <Input
-                        label="Телефон"
-                        placeholder="+7 (999) 123-45-67"
-                        value={form.phone}
-                        helperText="Оставьте телефон для связи по записи."
-                        onChange={(event) => {
-                          setForm((current) => ({ ...current, phone: event.target.value }))
-                          if (errors.phone) {
-                            setErrors((current) => ({ ...current, phone: undefined }))
-                          }
-                        }}
-                        error={errors.phone}
-                      />
-                    </div>
-
-                    <div className="rounded-2xl bg-stone-50 px-5 py-5">
-                      <p className="text-sm leading-relaxed text-stone-600">
-                        После записи вы получите страницу подтверждения с датой, временем и кнопкой добавления в календарь.
-                      </p>
+                      <div>
+                        <label className="block text-base font-medium text-stone-700 mb-2">
+                          Ваш номер для связи?
+                        </label>
+                        <Input
+                          placeholder="+7 (999) 123-45-67"
+                          value={form.phone}
+                          onChange={(e) => {
+                            setForm((c) => ({ ...c, phone: e.target.value }))
+                            if (errors.phone) setErrors((c) => ({ ...c, phone: undefined }))
+                          }}
+                          error={errors.phone}
+                        />
+                      </div>
                     </div>
 
                     <Button
                       size="lg"
-                      className="w-full"
+                      className="w-full mt-8"
                       disabled={!form.name.trim() || !form.phone.trim()}
                       onClick={() => {
                         if (!validateForm()) {
@@ -691,49 +588,81 @@ export function SchoolPage() {
                         setStep(6)
                       }}
                     >
-                      Перейти к подтверждению
-                      <ArrowRight size={16} />
+                      Далее
+                      <ArrowRight size={18} />
                     </Button>
-                    {!form.name.trim() || !form.phone.trim() ? (
-                      <p className="text-sm text-stone-500">Кнопка станет активной, когда вы заполните имя и телефон.</p>
-                    ) : null}
-                  </div>
+                  </motion.div>
                 ) : null}
 
+                {/* ── Step 6: Подтверждение ── */}
                 {step === 6 ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setStep(5)}
-                      className="inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
-                    >
-                      <ArrowLeft size={15} />
-                      Назад к данным
-                    </button>
+                  <motion.div key="step6" {...fadeSlide}>
+                    <BackButton onClick={() => setStep(5)} label="Назад к данным" />
+                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
+                      {STEP_TITLES[6]}
+                    </h1>
+                    <p className="text-base text-stone-500 mb-6">
+                      Всё верно? Нажмите «Записаться».
+                    </p>
 
-                    <div>
-                      <p className="text-sm font-semibold text-stone-900">6. Подтверждение</p>
-                      <p className="text-sm text-stone-500">Проверьте детали и подтвердите запись.</p>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {selectedBranch ? (
-                        <InfoCard title="Филиал" value={selectedBranch.name} subtitle={selectedBranch.address} icon={MapPin} />
-                      ) : null}
-                      {selectedInstructor ? (
-                        <InfoCard
-                          title="Инструктор"
-                          value={selectedInstructor.name}
-                          subtitle={selectedInstructor.car ?? 'Автомобиль уточняется'}
-                          icon={Users}
-                        />
-                      ) : null}
-                      {selectedDate ? (
-                        <InfoCard title="Дата" value={formatDateFull(selectedDate)} subtitle={formatDayOfWeek(selectedDate)} icon={CalendarDays} />
-                      ) : null}
-                      {selectedSlot ? (
-                        <InfoCard title="Слот" value={selectedSlot.time} subtitle={`${selectedSlot.duration} минут`} icon={Clock3} />
-                      ) : null}
-                      <InfoCard title="Ученик" value={form.name.trim()} subtitle={formatPhone(normalizePhone(form.phone))} icon={UserRound} />
+                    <div className="rounded-2xl border border-stone-200 overflow-hidden mb-6">
+                      {[
+                        selectedBranch
+                          ? { icon: MapPin, label: 'Филиал', value: selectedBranch.name, sub: selectedBranch.address }
+                          : null,
+                        selectedInstructor
+                          ? { icon: UserRound, label: 'Инструктор', value: selectedInstructor.name, sub: selectedInstructor.car ?? undefined }
+                          : null,
+                        selectedDate
+                          ? {
+                              icon: CalendarDays,
+                              label: 'Дата',
+                              value: (() => {
+                                const day = formatDayOfWeek(selectedDate)
+                                return `${day.charAt(0).toUpperCase()}${day.slice(1)}, ${formatDateFull(selectedDate)}`
+                              })(),
+                              sub: undefined,
+                            }
+                          : null,
+                        selectedSlot
+                          ? { icon: Clock3, label: 'Время', value: selectedSlot.time, sub: `${selectedSlot.duration} минут` }
+                          : null,
+                        form.name
+                          ? {
+                              icon: UserRound,
+                              label: 'Ученик',
+                              value: form.name.trim(),
+                              sub: form.phone ? formatPhone(normalizePhone(form.phone)) : undefined,
+                            }
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .map((row, idx, arr) => {
+                          if (!row) return null
+                          const Icon = row.icon
+                          return (
+                            <div
+                              key={row.label}
+                              className={`flex items-start gap-4 px-5 py-4 ${idx < arr.length - 1 ? 'border-b border-stone-100' : ''}`}
+                            >
+                              <div
+                                className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                                style={{ backgroundColor: brandSoft }}
+                              >
+                                <Icon size={16} style={{ color: brandColor }} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-stone-400">{row.label}</p>
+                                <p className="mt-0.5 text-base font-semibold text-stone-900">
+                                  {row.value}
+                                </p>
+                                {row.sub ? (
+                                  <p className="mt-0.5 text-sm text-stone-500">{row.sub}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          )
+                        })}
                     </div>
 
                     <Button
@@ -743,27 +672,15 @@ export function SchoolPage() {
                       style={!isSubmitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined}
                       onClick={() => void handleSubmit()}
                     >
-                      {isSubmitting ? 'Сохраняем запись...' : 'Записаться'}
-                      {!isSubmitting ? <Check size={16} /> : null}
+                      {isSubmitting ? 'Сохраняем...' : 'Записаться'}
+                      {!isSubmitting ? <Check size={18} /> : null}
                     </Button>
-                  </div>
+                  </motion.div>
                 ) : null}
-              </div>
+              </AnimatePresence>
             </div>
           </div>
-
-          {step >= 2 ? (
-            <div className={`space-y-4 ${step < 6 ? 'hidden lg:block lg:sticky lg:top-24 lg:self-start' : ''}`}>
-              <SummaryPanel
-                branch={selectedBranch}
-                instructor={selectedInstructor}
-                date={selectedDate}
-                slot={selectedSlot}
-                form={form}
-              />
-            </div>
-          ) : null}
-        </motion.section>
+        </motion.div>
       </main>
     </div>
   )

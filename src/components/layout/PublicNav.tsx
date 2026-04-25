@@ -12,40 +12,24 @@ export function PublicNav({ transparent = false }: PublicNavProps) {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-40 transition-colors ${
-        transparent ? 'bg-transparent' : 'border-b border-stone-200 bg-white/88 backdrop-blur-xl'
+        transparent ? 'bg-transparent' : 'border-b border-stone-200 bg-white/95 backdrop-blur-xl'
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-forest-700 shadow-soft">
-            <Car size={16} className="text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-700 shadow-soft">
+            <Car size={18} className="text-white" />
           </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-stone-900">DriveDesk</p>
-            <p className="text-[11px] text-stone-400">SaaS для автошкол</p>
-          </div>
+          <span className="text-base font-semibold text-stone-900">DriveDesk</span>
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex">
-          <a href="#problems" className="text-sm text-stone-500 transition hover:text-stone-900">
-            Проблемы
-          </a>
-          <a href="#solution" className="text-sm text-stone-500 transition hover:text-stone-900">
-            Решение
-          </a>
-          <a href="#pricing" className="text-sm text-stone-500 transition hover:text-stone-900">
-            Цена
-          </a>
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/school/virazh')}>
-            Демо записи
-          </Button>
-          <Button size="sm" onClick={() => navigate('/admin')}>
-            Админка
-          </Button>
-        </div>
+        <Button
+          size="md"
+          onClick={() => navigate('/school/virazh')}
+          className="px-6 py-2.5 text-base font-semibold"
+        >
+          Записаться
+        </Button>
       </div>
     </header>
   )
