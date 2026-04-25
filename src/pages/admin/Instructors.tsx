@@ -149,7 +149,7 @@ export function AdminInstructors() {
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
-                <div key={instructor.id} className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft">
+                <div key={instructor.id} className="rounded-2xl border border-stone-200 bg-white p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -164,28 +164,28 @@ export function AdminInstructors() {
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Филиал</p>
+                      <p className="text-xs font-medium text-stone-500">Филиал</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Телефон</p>
+                      <p className="text-xs font-medium text-stone-500">Телефон</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Машина</p>
+                      <p className="text-xs font-medium text-stone-500">Машина</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">
                         {instructor.car ?? 'Не указана'}
                         {instructor.transmission ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Будущие занятия / свободные слоты</p>
+                      <p className="text-xs font-medium text-stone-500">Будущие занятия / свободные слоты</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{futureLessons} / {freeSlots7d}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Личная ссылка</p>
+                  <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-4">
+                    <p className="text-xs font-medium text-stone-500">Личная ссылка</p>
                     <p className="mt-2 break-all text-sm font-medium text-stone-700">
                       {window.location.origin}/instructor/{instructor.token}
                     </p>

@@ -1,19 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import {
-  ArrowLeft,
-  ArrowRight,
-  CalendarDays,
-  Car,
-  Check,
-  Clock3,
-  MapPin,
-  Phone,
-  ShieldCheck,
-  UserRound,
-  Users,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarDays, Car, Check, Clock3, MapPin, Phone, UserRound, Users } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -62,62 +50,43 @@ function InfoCard({
   icon: typeof MapPin
 }) {
   return (
-    <div className="rounded-2xl border border-stone-100 bg-white/90 p-4 shadow-card">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-50">
+    <div className="rounded-2xl border border-stone-100 bg-white p-4">
+      <div className="mb-3 text-stone-400">
         <Icon size={16} className="text-forest-700" />
       </div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">{title}</p>
+      <p className="text-sm font-medium text-stone-500">{title}</p>
       <p className="mt-1 text-sm font-semibold text-stone-900">{value}</p>
-      {subtitle ? <p className="mt-1 text-xs leading-relaxed text-stone-500">{subtitle}</p> : null}
+      {subtitle ? <p className="mt-1 text-sm leading-relaxed text-stone-500">{subtitle}</p> : null}
     </div>
   )
 }
 
-function StepPill({
-  step,
-  currentStep,
-}: {
-  step: BookingStep
-  currentStep: BookingStep
-}) {
-  const done = step < currentStep
-  const active = step === currentStep
+function StepHeader({ currentStep }: { currentStep: BookingStep }) {
+  const progress = Math.max(20, Math.round((currentStep / 5) * 100))
 
   return (
-    <div
-      className={`flex min-w-[112px] items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-all ${
-        active
-          ? 'border-forest-800 bg-forest-800 text-white'
-          : done
-            ? 'border-forest-200 bg-forest-50 text-forest-800'
-            : 'border-stone-200 bg-white text-stone-400'
-      }`}
-    >
-      <span
-        className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${
-          active
-            ? 'bg-white/15 text-white'
-            : done
-              ? 'bg-forest-100 text-forest-800'
-              : 'bg-stone-100 text-stone-500'
-        }`}
-      >
-        {done ? <Check size={12} /> : step}
-      </span>
-      <span>{STEP_LABELS[step]}</span>
+    <div className="border-b border-stone-100 px-6 py-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-stone-500">Шаг {Math.min(currentStep, 5)} из 5</p>
+          <p className="mt-1 text-base font-semibold text-stone-900">{STEP_LABELS[currentStep]}</p>
+        </div>
+        {currentStep > 1 ? <div className="text-sm text-stone-500">{currentStep - 1} шага позади</div> : null}
+      </div>
+      <div className="mt-4 h-1.5 rounded-full bg-stone-100">
+        <div className="h-full rounded-full bg-forest-700 transition-all" style={{ width: `${progress}%` }} />
+      </div>
     </div>
   )
 }
 
 function SummaryPanel({
-  school,
   branch,
   instructor,
   date,
   slot,
   form,
 }: {
-  school: School
   branch: Branch | null
   instructor: Instructor | null
   date: string | null
@@ -125,7 +94,6 @@ function SummaryPanel({
   form: FormState
 }) {
   const rows = [
-    { label: 'Школа', value: school.name, muted: school.phone },
     branch ? { label: 'Филиал', value: branch.name, muted: branch.address } : null,
     instructor
       ? {
@@ -141,18 +109,23 @@ function SummaryPanel({
     form.name ? { label: 'Ученик', value: form.name, muted: form.phone ? formatPhone(normalizePhone(form.phone)) : undefined } : null,
   ].filter(Boolean) as Array<{ label: string; value: string; muted?: string }>
 
+  if (rows.length === 0) {
+    return null
+  }
+
   return (
-    <div className="overflow-hidden rounded-[28px] border border-stone-200/80 bg-white/90 shadow-card backdrop-blur">
-      <div className="border-b border-stone-100 px-5 py-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-400">Детали записи</p>
-        <p className="mt-2 text-lg font-semibold text-stone-900">Проверьте детали записи</p>
+    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+      <div className="border-b border-stone-100 px-4 py-4">
+        <p className="text-sm font-semibold text-stone-900">Вы выбрали</p>
       </div>
-      <div className="space-y-4 px-5 py-5">
+      <div className="space-y-3 px-4 py-4">
         {rows.map((row) => (
-          <div key={row.label} className="rounded-2xl bg-stone-50 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">{row.label}</p>
-            <p className="mt-1 text-sm font-semibold text-stone-900">{row.value}</p>
-            {row.muted ? <p className="mt-1 text-xs text-stone-500">{row.muted}</p> : null}
+          <div key={row.label} className="flex items-start justify-between gap-4 border-b border-stone-100 pb-3 last:border-b-0 last:pb-0">
+            <p className="text-sm font-medium text-stone-500">{row.label}</p>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-stone-900">{row.value}</p>
+              {row.muted ? <p className="mt-1 text-sm text-stone-500">{row.muted}</p> : null}
+            </div>
           </div>
         ))}
       </div>
@@ -418,7 +391,7 @@ export function SchoolPage() {
           className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
         >
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-[32px] border border-stone-200 bg-white shadow-card">
+            <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
               <div className="border-b border-stone-100 px-6 py-6">
                 <Badge variant="outline" size="md" className="border-transparent" style={{ backgroundColor: brandSoft, color: brandColor }}>
                   Онлайн-запись
@@ -434,26 +407,7 @@ export function SchoolPage() {
                 </p>
               </div>
 
-              <div className="grid gap-3 border-b border-stone-100 px-6 py-5 md:grid-cols-3">
-                <InfoCard title="Школа" value={school.name} subtitle={school.address} icon={MapPin} />
-                <InfoCard title="Контакт" value={formatPhone(school.phone)} subtitle={school.email} icon={Phone} />
-                <InfoCard
-                  title="Лимит"
-                  value={
-                    school.bookingLimitEnabled && school.maxActiveBookingsPerStudent
-                      ? pluralize(school.maxActiveBookingsPerStudent, 'активная запись', 'активные записи', 'активных записей')
-                      : 'Без ограничений'
-                  }
-                  subtitle="Проверяется при подтверждении"
-                  icon={ShieldCheck}
-                />
-              </div>
-
-              <div className="flex gap-2 overflow-x-auto px-6 py-5">
-                {([1, 2, 3, 4, 5, 6] as BookingStep[]).map((item) => (
-                  <StepPill key={item} step={item} currentStep={step} />
-                ))}
-              </div>
+              <StepHeader currentStep={step} />
 
               <div className="px-6 pb-6">
                 {step === 1 ? (
@@ -485,7 +439,7 @@ export function SchoolPage() {
                               resetAfterBranch()
                               setStep(2)
                             }}
-                            className="rounded-[28px] border border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-300 hover:bg-forest-50/50"
+                            className="rounded-2xl border border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-300 hover:bg-forest-50/50"
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div>
@@ -542,7 +496,7 @@ export function SchoolPage() {
                             resetAfterInstructor()
                             setStep(3)
                           }}
-                          className="rounded-[28px] border border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-300 hover:bg-forest-50/50"
+                          className="rounded-2xl border border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-300 hover:bg-forest-50/50"
                         >
                           <div className="flex items-start gap-4">
                             <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="lg" />
@@ -602,7 +556,7 @@ export function SchoolPage() {
                               resetAfterDate()
                               setStep(4)
                             }}
-                            className={`rounded-[28px] border px-5 py-5 text-left transition ${
+                            className={`rounded-2xl border px-5 py-5 text-left transition ${
                               count === 0
                                 ? 'cursor-not-allowed border-stone-100 bg-stone-50 text-stone-300'
                                 : 'border-stone-200 bg-white hover:border-forest-300 hover:bg-forest-50/50'
@@ -633,20 +587,18 @@ export function SchoolPage() {
 
                     <div>
                       <p className="text-sm font-semibold text-stone-900">4. Выберите слот</p>
-                      <p className="text-sm text-stone-500">
-                        Слот блокируется сразу после выбора, чтобы его не заняли параллельно.
-                      </p>
+                      <p className="text-sm text-stone-500">Выберите удобное время из доступных вариантов.</p>
                     </div>
 
                     {selectedDate ? (
-                      <div className="rounded-[28px] border border-stone-200 bg-stone-50 px-5 py-4">
+                      <div className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4">
                         <p className="text-sm font-semibold text-stone-900">{formatDateFull(selectedDate)}</p>
                         <p className="mt-1 text-sm capitalize text-stone-500">{formatDayOfWeek(selectedDate)}</p>
                       </div>
                     ) : null}
 
                     {availableSlots.length === 0 ? (
-                      <div className="rounded-[28px] border border-dashed border-stone-200 bg-stone-50 px-6 py-12 text-center">
+                      <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-6 py-12 text-center">
                         <Clock3 size={24} className="mx-auto text-stone-300" />
                         <p className="mt-4 text-sm font-semibold text-stone-900">На эту дату нет свободных слотов</p>
                         <p className="mt-2 text-sm text-stone-500">Выберите другой день или другого инструктора.</p>
@@ -690,9 +642,7 @@ export function SchoolPage() {
 
                     <div>
                       <p className="text-sm font-semibold text-stone-900">5. Данные ученика</p>
-                      <p className="text-sm text-stone-500">
-                        Имя и телефон обязательны. Телефон нормализуется в формат `7xxxxxxxxxx`.
-                      </p>
+                      <p className="text-sm text-stone-500">Оставьте имя и телефон, чтобы автошкола могла связаться с вами.</p>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
@@ -712,7 +662,7 @@ export function SchoolPage() {
                         label="Телефон"
                         placeholder="+7 (999) 123-45-67"
                         value={form.phone}
-                        helperText="Нормализуем номер к формату 7XXXXXXXXXX"
+                        helperText="Оставьте телефон для связи по записи."
                         onChange={(event) => {
                           setForm((current) => ({ ...current, phone: event.target.value }))
                           if (errors.phone) {
@@ -723,13 +673,10 @@ export function SchoolPage() {
                       />
                     </div>
 
-                    <div className="rounded-[28px] border border-stone-200 bg-stone-50 px-5 py-5">
-                      <p className="text-sm font-semibold text-stone-900">Перед записью мы проверим</p>
-                      <ul className="mt-3 space-y-2 text-sm text-stone-500">
-                        <li>Имя не может быть пустым.</li>
-                        <li>Телефон должен быть валиден для российского формата.</li>
-                        <li>Слот ещё раз проверяется на занятость при создании записи.</li>
-                      </ul>
+                    <div className="rounded-2xl bg-stone-50 px-5 py-5">
+                      <p className="text-sm leading-relaxed text-stone-600">
+                        После записи вы получите страницу подтверждения с датой, временем и кнопкой добавления в календарь.
+                      </p>
                     </div>
 
                     <Button
@@ -765,9 +712,7 @@ export function SchoolPage() {
 
                     <div>
                       <p className="text-sm font-semibold text-stone-900">6. Подтверждение</p>
-                      <p className="text-sm text-stone-500">
-                        После сохранения вы попадёте на страницу подтверждения и сможете скачать `.ics`.
-                      </p>
+                      <p className="text-sm text-stone-500">Проверьте детали и подтвердите запись.</p>
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-2">
@@ -807,16 +752,17 @@ export function SchoolPage() {
             </div>
           </div>
 
-          <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <SummaryPanel
-              school={school}
-              branch={selectedBranch}
-              instructor={selectedInstructor}
-              date={selectedDate}
-              slot={selectedSlot}
-              form={form}
-            />
-          </div>
+          {step >= 2 ? (
+            <div className={`space-y-4 ${step < 6 ? 'hidden lg:block lg:sticky lg:top-24 lg:self-start' : ''}`}>
+              <SummaryPanel
+                branch={selectedBranch}
+                instructor={selectedInstructor}
+                date={selectedDate}
+                slot={selectedSlot}
+                form={form}
+              />
+            </div>
+          ) : null}
         </motion.section>
       </main>
     </div>

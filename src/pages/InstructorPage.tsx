@@ -3,10 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
-  CalendarDays,
-  Car,
-  MapPin,
-  Phone,
   XCircle,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
@@ -42,10 +38,10 @@ function Section({
   emptyLabel: string
 }) {
   return (
-    <div className="overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-card">
+    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
       <div className="border-b border-stone-100 px-5 py-4">
         <p className="text-sm font-semibold text-stone-900">{title}</p>
-        <p className="mt-1 text-xs text-stone-400">{items.length} записей</p>
+        <p className="mt-1 text-sm text-stone-500">{items.length} записей</p>
       </div>
 
       {items.length === 0 ? (
@@ -141,7 +137,7 @@ export function InstructorPage() {
   if (!instructor) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-50 px-6">
-        <div className="max-w-md rounded-[32px] border border-stone-200 bg-white px-6 py-8 text-center shadow-card">
+        <div className="max-w-md rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50">
             <XCircle size={26} className="text-red-500" />
           </div>
@@ -174,7 +170,7 @@ export function InstructorPage() {
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <div className="rounded-[32px] border border-stone-200 bg-white p-6 shadow-card">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
                 <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="xl" />
@@ -195,35 +191,23 @@ export function InstructorPage() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 lg:w-[320px]">
-                <div className="rounded-[24px] border border-stone-100 bg-stone-50 px-4 py-4">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-soft">
-                    <Phone size={16} className="text-forest-700" />
-                  </div>
+                <div className="rounded-2xl bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{formatPhone(instructor.phone)}</p>
-                  <p className="mt-1 text-xs text-stone-500">Контактный номер</p>
+                  <p className="mt-1 text-sm text-stone-500">Контактный номер</p>
                 </div>
-                <div className="rounded-[24px] border border-stone-100 bg-stone-50 px-4 py-4">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-soft">
-                    <MapPin size={16} className="text-forest-700" />
-                  </div>
+                <div className="rounded-2xl bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{branch?.name ?? 'Филиал не найден'}</p>
-                  <p className="mt-1 text-xs text-stone-500">{branch?.address ?? 'Адрес не указан'}</p>
+                  <p className="mt-1 text-sm text-stone-500">{branch?.address ?? 'Адрес не указан'}</p>
                 </div>
-                <div className="rounded-[24px] border border-stone-100 bg-stone-50 px-4 py-4">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-soft">
-                    <Car size={16} className="text-forest-700" />
-                  </div>
+                <div className="rounded-2xl bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{instructor.car ?? 'Автомобиль не указан'}</p>
-                  <p className="mt-1 text-xs text-stone-500">
+                  <p className="mt-1 text-sm text-stone-500">
                     {instructor.transmission === 'manual' ? 'Механика' : instructor.transmission === 'auto' ? 'Автомат' : 'Тип КПП не указан'}
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-stone-100 bg-stone-50 px-4 py-4">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-soft">
-                    <CalendarDays size={16} className="text-forest-700" />
-                  </div>
+                <div className="rounded-2xl bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{pluralize(grouped.upcoming.length, 'ближайшее занятие', 'ближайших занятия', 'ближайших занятий')}</p>
-                  <p className="mt-1 text-xs text-stone-500">Активные будущие записи</p>
+                  <p className="mt-1 text-sm text-stone-500">Активные будущие записи</p>
                 </div>
               </div>
             </div>

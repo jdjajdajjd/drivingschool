@@ -51,7 +51,7 @@ function ConfirmCancelModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
         transition={{ duration: 0.22 }}
-        className="w-full max-w-md rounded-[28px] border border-stone-200 bg-white p-6 shadow-modal"
+        className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-modal"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start gap-4">
@@ -91,11 +91,11 @@ function DetailTile({
   icon: typeof CalendarDays
 }) {
   return (
-    <div className="rounded-[24px] border border-stone-100 bg-stone-50 px-4 py-4">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-soft">
+    <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+      <div className="mb-3 text-stone-400">
         <Icon size={16} className="text-forest-700" />
       </div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">{label}</p>
+      <p className="text-sm font-medium text-stone-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-stone-900">{value}</p>
       {subtitle ? <p className="mt-1 text-xs text-stone-500">{subtitle}</p> : null}
     </div>
@@ -184,7 +184,7 @@ export function BookingConfirmation() {
   if (!bundle) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-50 px-6">
-        <div className="max-w-sm rounded-[32px] border border-stone-200 bg-white px-6 py-8 text-center shadow-card">
+        <div className="max-w-sm rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-stone-100">
             <XCircle size={26} className="text-stone-400" />
           </div>
@@ -227,7 +227,7 @@ export function BookingConfirmation() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="rounded-[32px] border border-stone-200/80 bg-white/90 shadow-card"
+            className="rounded-2xl border border-stone-200 bg-white"
           >
             <div className="border-b border-stone-100 px-6 py-7 text-center">
               <div
@@ -292,7 +292,7 @@ export function BookingConfirmation() {
                   />
                 </div>
 
-                <div className="rounded-[28px] border border-stone-100 bg-stone-50 px-5 py-5">
+                <div className="rounded-2xl bg-stone-50 px-5 py-5">
                   <p className="text-sm font-semibold text-stone-900">Что можно сделать дальше</p>
                   <p className="mt-2 text-sm leading-relaxed text-stone-500">
                     {booking.status === 'cancelled'
@@ -303,8 +303,8 @@ export function BookingConfirmation() {
               </div>
 
               <div className="space-y-3">
-                <div className="rounded-[28px] border border-stone-100 bg-stone-50 px-5 py-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">Авто</p>
+                <div className="rounded-2xl bg-stone-50 px-5 py-5">
+                  <p className="text-sm font-medium text-stone-500">Автомобиль</p>
                   <p className="mt-2 text-sm font-semibold text-stone-900">{instructor?.car ?? 'Не указано'}</p>
                   <p className="mt-1 text-sm text-stone-500">{transmissionLabel}</p>
                 </div>

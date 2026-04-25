@@ -122,7 +122,7 @@ export function AdminBranches() {
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {rows.map(({ branch, instructorCount, futureBookings, freeSlots7d }) => (
-                <div key={branch.id} className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft">
+                <div key={branch.id} className="rounded-2xl border border-stone-200 bg-white p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-stone-500">
@@ -142,15 +142,15 @@ export function AdminBranches() {
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Инструкторы</p>
+                      <p className="text-xs font-medium text-stone-500">Инструкторы</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{instructorCount}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Будущие записи</p>
+                      <p className="text-xs font-medium text-stone-500">Будущие записи</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{futureBookings}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Свободные слоты 7 дней</p>
+                      <p className="text-xs font-medium text-stone-500">Свободные слоты на 7 дней</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{freeSlots7d}</p>
                     </div>
                   </div>

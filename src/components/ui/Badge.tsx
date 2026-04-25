@@ -20,17 +20,17 @@ export function Badge({
     <span
       style={style}
       className={cn(
-        'inline-flex items-center rounded-full font-sans font-medium',
+        'inline-flex items-center rounded-full font-sans font-medium whitespace-nowrap',
         {
           default: 'bg-stone-100 text-stone-700',
-          success: 'bg-emerald-50 text-emerald-700',
-          warning: 'bg-amber-50 text-amber-700',
-          error: 'bg-red-50 text-red-700',
-          forest: 'bg-forest-50 text-forest-700',
+          success: 'bg-emerald-50/70 text-emerald-700',
+          warning: 'bg-amber-50/70 text-amber-700',
+          error: 'bg-red-50/70 text-red-700',
+          forest: 'bg-forest-50/70 text-forest-700',
           outline: 'border border-stone-200 bg-white text-stone-600',
         }[variant],
         {
-          sm: 'px-2.5 py-1 text-[11px]',
+          sm: 'px-2.5 py-1 text-xs',
           md: 'px-3 py-1 text-sm',
         }[size],
         className,

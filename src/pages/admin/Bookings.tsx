@@ -256,10 +256,10 @@ export function AdminBookings() {
             <EmptyState title="Записей не найдено" description="Измените фильтры или создайте новую запись на публичной странице." />
           ) : (
             <>
-              <div className="hidden overflow-hidden rounded-3xl border border-stone-200 xl:block">
+              <div className="hidden overflow-hidden rounded-2xl border border-stone-200 xl:block">
                 <table className="min-w-full divide-y divide-stone-200">
                   <thead className="bg-stone-50">
-                    <tr className="text-left text-xs uppercase tracking-[0.14em] text-stone-500">
+                    <tr className="text-left text-xs font-medium text-stone-500">
                       <th className="px-4 py-3">Дата</th>
                       <th className="px-4 py-3">Ученик</th>
                       <th className="px-4 py-3">Филиал</th>
@@ -348,7 +348,7 @@ export function AdminBookings() {
 
               <div className="grid gap-4 xl:hidden">
                 {filteredBookings.map((entry) => (
-                  <div key={entry.booking.id} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+                  <div key={entry.booking.id} className="rounded-2xl border border-stone-200 bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-base font-semibold text-stone-900">{entry.booking.studentName}</p>
@@ -358,21 +358,21 @@ export function AdminBookings() {
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Занятие</p>
+                        <p className="text-xs font-medium text-stone-500">Занятие</p>
                         <p className="mt-1 text-sm font-medium text-stone-900">
                           {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Инструктор</p>
+                        <p className="text-xs font-medium text-stone-500">Инструктор</p>
                         <p className="mt-1 text-sm font-medium text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Филиал</p>
+                        <p className="text-xs font-medium text-stone-500">Филиал</p>
                         <p className="mt-1 text-sm font-medium text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Создана</p>
+                        <p className="text-xs font-medium text-stone-500">Создана</p>
                         <p className="mt-1 text-sm font-medium text-stone-900">
                           {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
                         </p>

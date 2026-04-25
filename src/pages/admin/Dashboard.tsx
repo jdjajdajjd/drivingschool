@@ -1,6 +1,6 @@
 import { addDays, format, isAfter, isSameDay, subDays } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { AlertTriangle, CalendarDays, Clock3, RefreshCw, Users } from 'lucide-react'
+import { CalendarDays, Clock3, RefreshCw, Users } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
@@ -137,13 +137,11 @@ export function AdminDashboard() {
         }
       />
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Записей сегодня" value={data.bookingsToday.length} icon={<CalendarDays size={18} />} />
         <StatCard label="Записей завтра" value={data.bookingsTomorrow.length} icon={<CalendarDays size={18} />} />
-        <StatCard label="Активных записей" value={data.activeBookings.length} icon={<Users size={18} />} />
         <StatCard label="Свободных слотов на 7 дней" value={data.freeSlots7d.length} icon={<Clock3 size={18} />} />
         <StatCard label="Активных инструкторов" value={data.activeInstructors.length} icon={<Users size={18} />} />
-        <StatCard label="Отмен за 7 дней" value={data.recentCancellations.length} icon={<AlertTriangle size={18} />} />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
@@ -164,7 +162,7 @@ export function AdminDashboard() {
                 <Link
                   key={entry.booking.id}
                   to={`/booking/${entry.booking.id}`}
-                  className="flex flex-col gap-3 rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4 transition hover:border-stone-200 hover:bg-white md:flex-row md:items-center"
+                  className="flex flex-col gap-3 rounded-2xl border border-stone-200 px-4 py-4 transition hover:border-stone-300 md:flex-row md:items-center"
                 >
                   <div className="min-w-[140px]">
                     <p className="text-sm font-semibold text-stone-900">
@@ -190,17 +188,17 @@ export function AdminDashboard() {
         <div className="space-y-6">
           <Section title="Сегодня" description="Короткая сводка по текущему дню.">
             <div className="grid gap-3">
-              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+              <div className="rounded-2xl bg-stone-50 px-4 py-4">
                 <p className="text-sm text-stone-500">Занятия сегодня</p>
                 <p className="mt-2 text-2xl font-semibold text-stone-900">{data.bookingsToday.length}</p>
               </div>
-              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+              <div className="rounded-2xl bg-stone-50 px-4 py-4">
                 <p className="text-sm text-stone-500">Отмены сегодня</p>
                 <p className="mt-2 text-2xl font-semibold text-stone-900">
                   {data.bookingsToday.filter((booking) => booking.status === 'cancelled').length}
                 </p>
               </div>
-              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+              <div className="rounded-2xl bg-stone-50 px-4 py-4">
                 <p className="text-sm text-stone-500">Свободные слоты сегодня</p>
                 <p className="mt-2 text-2xl font-semibold text-stone-900">
                   {db.slots.bySchool(school.id).filter((slot) => slot.status === 'available' && slot.date === format(new Date(), 'yyyy-MM-dd')).length}
@@ -209,17 +207,11 @@ export function AdminDashboard() {
             </div>
           </Section>
 
-          <Section title="Проблемы и диагностика" description="Только простые операционные сигналы, без сложной аналитики.">
-            {data.issues.length === 0 ? (
-              <EmptyState
-                icon={<AlertTriangle size={20} />}
-                title="Критичных сигналов нет"
-                description={`Данные выглядят аккуратно: ${data.slotCount} слотов и активная запись работы школы.`}
-              />
-            ) : (
+          {data.issues.length > 0 ? (
+            <Section title="Нужно проверить" description="Только реальные сигналы, которые требуют внимания.">
               <div className="space-y-3">
                 {data.issues.map((issue) => (
-                  <div key={issue.id} className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
+                  <div key={issue.id} className="rounded-2xl bg-stone-50 px-4 py-4">
                     <div className="flex items-start gap-3">
                       <Badge variant={issue.level === 'error' ? 'error' : 'warning'}>
                         {issue.level === 'error' ? 'Ошибка' : 'Внимание'}
@@ -229,8 +221,8 @@ export function AdminDashboard() {
                   </div>
                 ))}
               </div>
-            )}
-          </Section>
+            </Section>
+          ) : null}
         </div>
       </div>
     </div>

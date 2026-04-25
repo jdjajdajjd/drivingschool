@@ -51,7 +51,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       >
         <div className="flex items-center justify-between border-b border-stone-100 px-5 py-5">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-700 shadow-soft">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-700">
               <Car size={18} className="text-white" />
             </div>
             <div className="text-left">
@@ -68,9 +68,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         </div>
 
         <div className="border-b border-stone-100 px-5 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">Школа</p>
-          <p className="mt-2 text-sm font-semibold text-stone-900">Автошкола «Вираж»</p>
-          <p className="mt-1 text-xs text-stone-500">Демо-аккаунт · virazh</p>
+          <p className="text-sm font-medium text-stone-500">Автошкола</p>
+          <p className="mt-1 text-sm font-semibold text-stone-900">Вираж</p>
+          <p className="mt-1 text-sm text-stone-500">Демо-школа · virazh</p>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -82,7 +82,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-forest-50 text-forest-700'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
@@ -105,7 +105,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               navigate('/school/virazh')
               onClose()
             }}
-            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
           >
             <ExternalLink size={15} className="text-stone-400" />
             Страница записи
@@ -115,7 +115,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               navigate('/superadmin')
               onClose()
             }}
-            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
           >
             <Puzzle size={15} className="text-stone-400" />
             Суперадмин

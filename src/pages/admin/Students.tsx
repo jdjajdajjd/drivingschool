@@ -102,7 +102,7 @@ export function AdminStudents() {
                 <Link
                   key={student.id}
                   to={`/admin/students/${student.id}`}
-                  className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft transition hover:border-stone-300 hover:shadow-card"
+                  className="rounded-2xl border border-stone-200 bg-white p-5 transition hover:border-stone-300"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
@@ -119,21 +119,21 @@ export function AdminStudents() {
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Всего записей</p>
+                      <p className="text-xs font-medium text-stone-500">Всего записей</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{stats.totalBookings}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Будущих активных</p>
+                      <p className="text-xs font-medium text-stone-500">Будущих активных</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">{stats.activeFutureBookings}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Последняя запись</p>
+                      <p className="text-xs font-medium text-stone-500">Последняя запись</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">
                         {stats.lastBooking ? new Date(stats.lastBooking.createdAt).toLocaleDateString('ru-RU') : 'Нет'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Ближайшая запись</p>
+                      <p className="text-xs font-medium text-stone-500">Ближайшая запись</p>
                       <p className="mt-1 text-sm font-semibold text-stone-900">
                         {stats.nextBooking ? stats.nextBooking.id : 'Нет'}
                       </p>

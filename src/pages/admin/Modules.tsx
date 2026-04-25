@@ -6,17 +6,16 @@ import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
-import { StatCard } from '../../components/ui/StatCard'
 import { useToast } from '../../components/ui/Toast'
 import { formatPrice } from '../../lib/utils'
 import {
   BASE_FEATURES,
   MODULE_CATEGORY_LABELS,
+  disableModule,
+  enableModule,
   getBillingSummary,
   getEnabledModules,
   getModulesCatalog,
-  enableModule,
-  disableModule,
   isModuleEnabled,
 } from '../../services/modules'
 import { db } from '../../services/storage'
@@ -40,7 +39,7 @@ const FILTERS: Array<'all' | ModuleCategory> = ['all', 'notifications', 'sales',
 
 function getPriceLabel(module: Module): string {
   if (module.priceType === 'usage') {
-    return module.usageNote ?? 'По факту использования'
+    return module.usageNote ?? 'Оплачивается по факту использования'
   }
   if (module.priceType === 'one_time') {
     return `${formatPrice(module.oneTimePrice ?? 0)} разово`
@@ -53,6 +52,7 @@ export function AdminModules() {
   const { showToast } = useToast()
   const school = db.schools.bySlug('virazh')
   const [filter, setFilter] = useState<'all' | ModuleCategory>('all')
+  const [showBaseFeatures, setShowBaseFeatures] = useState(false)
   const [, forceUpdate] = useState(0)
 
   const catalog = getModulesCatalog()
@@ -94,35 +94,82 @@ export function AdminModules() {
       <PageHeader
         eyebrow={school.name}
         title="Модули"
-        description="Каталог полезных расширений для школы. База всегда остаётся честной и понятной: 4 990 ₽/мес + подключаемые модули."
+        description="База остаётся простой: 4 990 ₽ в месяц. Дополнительные возможности подключаются отдельно, только когда они действительно нужны."
       />
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <StatCard label="База" value={`${billing.baseMonthlyPrice.toLocaleString('ru-RU')} ₽`} meta="/мес" />
-        <StatCard label="Подключённые модули" value={`${billing.modulesMonthlyTotal.toLocaleString('ru-RU')} ₽`} meta="/мес" />
-        <StatCard label="Разовые услуги" value={`${billing.oneTimeTotal.toLocaleString('ru-RU')} ₽`} meta="разово" />
-        <StatCard label="Подключено модулей" value={billing.enabledModulesCount} meta="всего" />
-        <StatCard label="Итого в месяц" value={`${billing.totalMonthlyPrice.toLocaleString('ru-RU')} ₽`} meta="/мес" />
-      </div>
-
       <div className="mt-8 space-y-6">
-        <Section title="Что входит в базу" description="История ученика и базовая операционная работа уже входят в стоимость 4 990 ₽/мес.">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {BASE_FEATURES.map((feature) => (
-              <div key={feature} className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-                {feature}
-              </div>
-            ))}
+        <Section title="Стоимость" description="Короткая сводка по текущей конфигурации школы.">
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
+            <div className="rounded-2xl bg-stone-50 px-4 py-4">
+              <p className="text-sm font-medium text-stone-600">База</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{formatPrice(billing.baseMonthlyPrice)}</p>
+            </div>
+            <div className="rounded-2xl bg-stone-50 px-4 py-4">
+              <p className="text-sm font-medium text-stone-600">Модули</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{formatPrice(billing.modulesMonthlyTotal)}</p>
+              {billing.oneTimeTotal > 0 ? <p className="mt-1 text-sm text-stone-500">Разово: {formatPrice(billing.oneTimeTotal)}</p> : null}
+            </div>
+            <div className="rounded-2xl border border-stone-200 bg-white px-4 py-4">
+              <p className="text-sm font-medium text-stone-600">Итого</p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">
+                {formatPrice(billing.totalMonthlyPrice)}
+                <span className="ml-1 text-base font-medium text-stone-500">/мес</span>
+              </p>
+              <p className="mt-1 text-sm text-stone-500">Подключено модулей: {billing.enabledModulesCount}</p>
+            </div>
           </div>
         </Section>
 
-        <Section title="Каталог модулей" description="Подключайте только то, что реально усиливает продукт для школы.">
+        {enabled.length > 0 ? (
+          <Section title="Подключено сейчас" description="Текущие расширения этой школы.">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {enabled.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-stone-900">{item.module.name}</p>
+                      <p className="mt-1 text-sm text-stone-600">{getPriceLabel(item.module)}</p>
+                    </div>
+                    <Badge variant="success">Подключено</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        ) : null}
+
+        <Section
+          title="Что входит в базу"
+          description="История ученика, записи, слоты и базовая админка уже входят в 4 990 ₽."
+          actions={
+            <Button variant="ghost" size="sm" onClick={() => setShowBaseFeatures((current) => !current)}>
+              {showBaseFeatures ? 'Скрыть список' : 'Показать список'}
+            </Button>
+          }
+        >
+          {showBaseFeatures ? (
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {BASE_FEATURES.map((feature) => (
+                <div key={feature} className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-700">
+                  {feature}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-stone-600">
+              Базовый пакет уже закрывает публичную запись, список записей, работу с учениками, инструкторами,
+              филиалами, слотами и личной ссылкой инструктора.
+            </p>
+          )}
+        </Section>
+
+        <Section title="Каталог модулей" description="Подключайте только то, что усиливает продукт для конкретной школы.">
           <div className="mb-5 flex flex-wrap gap-2">
             {FILTERS.map((item) => (
               <button
                 key={item}
                 onClick={() => setFilter(item)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                   filter === item
                     ? 'border-forest-700 bg-forest-700 text-white'
                     : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900'
@@ -134,7 +181,7 @@ export function AdminModules() {
           </div>
 
           {filteredModules.length === 0 ? (
-            <EmptyState title="По этому фильтру модулей пока нет" description="Попробуйте выбрать другую категорию." />
+            <EmptyState title="По этому фильтру модулей нет" description="Попробуйте выбрать другую категорию." />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredModules.map((module) => {
@@ -142,42 +189,32 @@ export function AdminModules() {
                 const enabledState = isModuleEnabled(school.id, module.id)
 
                 return (
-                  <div key={module.id} className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-forest-700">
-                        <Icon size={18} />
+                  <div key={module.id} className="rounded-2xl border border-stone-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="text-stone-400">
+                          <Icon size={18} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-stone-500">{MODULE_CATEGORY_LABELS[module.category]}</p>
+                          <h3 className="mt-1 text-base font-semibold text-stone-900">{module.name}</h3>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {module.isRecommended ? <Badge variant="outline">Рекомендуем</Badge> : null}
-                        <Badge variant={enabledState ? 'success' : 'default'}>
-                          {enabledState ? 'Подключено' : 'Не подключено'}
-                        </Badge>
-                      </div>
+                      <Badge variant={enabledState ? 'success' : 'default'}>
+                        {enabledState ? 'Подключено' : 'Не подключено'}
+                      </Badge>
                     </div>
 
-                    <p className="mt-4 text-xs uppercase tracking-[0.16em] text-stone-400">
-                      {MODULE_CATEGORY_LABELS[module.category]}
-                    </p>
-                    <h3 className="mt-2 text-lg font-semibold text-stone-900">{module.name}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-500">{module.description}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-stone-600">{module.description}</p>
 
-                    <div className="mt-5">
-                      <p className="text-2xl font-semibold tracking-tight text-stone-900">{getPriceLabel(module)}</p>
+                    <div className="mt-4">
+                      <p className="text-xl font-semibold tracking-tight text-stone-900">{getPriceLabel(module)}</p>
                       {module.priceType === 'usage' && module.usageNote ? (
-                        <p className="mt-1 text-xs text-stone-500">{module.usageNote}</p>
+                        <p className="mt-1 text-sm text-stone-500">{module.usageNote}</p>
                       ) : null}
                     </div>
 
-                    <ul className="mt-5 space-y-2 text-sm text-stone-500">
-                      {module.features.slice(0, 3).map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
-                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-stone-300" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="mt-6 flex gap-2 border-t border-stone-100 pt-4">
+                    <div className="mt-5 flex gap-2 border-t border-stone-100 pt-4">
                       <Button
                         variant={enabledState ? 'secondary' : 'primary'}
                         size="sm"
@@ -186,7 +223,7 @@ export function AdminModules() {
                       >
                         {enabledState ? 'Отключить' : 'Подключить'}
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => navigate(`/admin/modules/${module.id}`)}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/modules/${module.id}`)}>
                         Подробнее
                       </Button>
                     </div>
@@ -196,22 +233,6 @@ export function AdminModules() {
             </div>
           )}
         </Section>
-
-        {enabled.length > 0 ? (
-          <Section title="Подключено сейчас" description="Текущий набор модулей этой школы.">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {enabled.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-stone-900">{item.module.name}</p>
-                  <p className="mt-1 text-sm text-stone-500">{getPriceLabel(item.module)}</p>
-                  <p className="mt-2 text-xs text-stone-400">
-                    Подключено: {new Date(item.enabledAt).toLocaleDateString('ru-RU')}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Section>
-        ) : null}
       </div>
     </div>
   )

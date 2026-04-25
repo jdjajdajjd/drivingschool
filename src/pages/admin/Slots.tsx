@@ -315,8 +315,8 @@ export function AdminSlots() {
                 </div>
               </FormField>
 
-              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4 text-sm text-stone-600">
-                Preview логики: создаём серию слотов в выбранном окне, пропускаем дубликаты и всё, что попадает в прошлое.
+              <div className="rounded-2xl bg-stone-50 px-4 py-4 text-sm text-stone-600">
+                Создадим серию слотов в выбранном окне, а дубликаты и время в прошлом пропустим автоматически.
               </div>
 
               <Button onClick={handleCreateBulk}>
@@ -388,33 +388,33 @@ export function AdminSlots() {
                 {filteredSlots.map((entry) => {
                   const slotInPast = isBefore(new Date(`${entry.slot.date}T${entry.slot.time}:00`), new Date())
                   return (
-                    <div key={entry.slot.id} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+                    <div key={entry.slot.id} className="rounded-2xl border border-stone-200 bg-white p-4">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                           <div>
-                            <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Дата</p>
+                            <p className="text-xs font-medium text-stone-500">Дата</p>
                             <p className="mt-1 text-sm font-semibold text-stone-900">{entry.slot.date}</p>
                             <p className="text-sm text-stone-500">
                               {entry.slot.time} → {new Date(`2000-01-01T${entry.slot.time}:00`).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Филиал</p>
+                            <p className="text-xs font-medium text-stone-500">Филиал</p>
                             <p className="mt-1 text-sm font-semibold text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Инструктор</p>
+                            <p className="text-xs font-medium text-stone-500">Инструктор</p>
                             <p className="mt-1 text-sm font-semibold text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
                             <p className="text-sm text-stone-500">{entry.instructor?.car ?? 'Без машины'}</p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Статус</p>
+                            <p className="text-xs font-medium text-stone-500">Статус</p>
                             <div className="mt-1">
                               <StatusBadge status={entry.slot.status} kind="slot" />
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Связь с записью</p>
+                            <p className="text-xs font-medium text-stone-500">Связь с записью</p>
                             <p className="mt-1 text-sm font-semibold text-stone-900">
                               {entry.student?.name ?? 'Нет активной связи'}
                             </p>
