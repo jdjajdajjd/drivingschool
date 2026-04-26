@@ -27,6 +27,17 @@ interface BookingBundle {
   school: School | null
 }
 
+function hasSavedStudentProfile(schoolId: string, phone: string): boolean {
+  try {
+    const raw = localStorage.getItem(`dd:student_profile:${schoolId}`)
+    if (!raw) return false
+    const profile = JSON.parse(raw) as { phone?: string; createdByConsent?: boolean }
+    return Boolean(profile.createdByConsent && profile.phone === phone)
+  } catch {
+    return false
+  }
+}
+
 function loadBookingBundle(bookingId: string): BookingBundle | null {
   const booking = db.bookings.byId(bookingId)
   if (!booking) return null
@@ -117,6 +128,7 @@ export function BookingConfirmation() {
 
   const { booking, branch, instructor, school, slot } = bundle
   const isCancelled = booking.status === 'cancelled'
+  const hasProfile = hasSavedStudentProfile(booking.schoolId, booking.studentPhone)
 
   return (
     <div className="min-h-screen bg-[#f6f7fb]">
@@ -137,7 +149,9 @@ export function BookingConfirmation() {
             </h1>
             {!isCancelled ? (
               <p className="mx-auto mt-2 max-w-sm text-base leading-relaxed text-white/78">
-                Мы сохранили ваши данные в профиле. Следующая запись будет быстрее.
+                {hasProfile
+                  ? 'Профиль создан. Следующая запись будет быстрее.'
+                  : 'Данные записи сохранены. Если нужно, автошкола свяжется с вами по телефону.'}
               </p>
             ) : null}
           </div>
@@ -175,7 +189,7 @@ export function BookingConfirmation() {
               className="w-full min-h-14 text-lg"
               onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}
             >
-              В профиль ученика
+              {hasProfile ? 'В профиль ученика' : 'К записи на занятие'}
             </Button>
           </div>
         </motion.section>

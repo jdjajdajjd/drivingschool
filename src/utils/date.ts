@@ -30,6 +30,12 @@ export function getNext7Days(fromDate = new Date()): string[] {
   )
 }
 
+export function getNext14Days(fromDate = new Date()): string[] {
+  return Array.from({ length: 14 }, (_, i) =>
+    format(addDays(fromDate, i + 1), 'yyyy-MM-dd'),
+  )
+}
+
 export function getWeekDays(date: Date): Date[] {
   const start = startOfWeek(date, { locale: ru })
   const end = endOfWeek(date, { locale: ru })

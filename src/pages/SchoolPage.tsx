@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
   ArrowRight,
-  BookOpen,
   CalendarDays,
   Car,
   Check,
@@ -12,7 +11,6 @@ import {
   Clock3,
   MapPin,
   Phone,
-  ShieldCheck,
   UserRound,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
@@ -32,9 +30,9 @@ import {
 } from '../services/bookingService'
 import { db } from '../services/storage'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
-import { formatDate, formatDateFull, formatDayOfWeek, getNext7Days } from '../utils/date'
+import { formatDate, formatDateFull, formatDayOfWeek, getNext14Days, getNext7Days } from '../utils/date'
 
-type BookingStep = 1 | 2 | 3 | 4 | 5 | 6
+type BookingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 const STEP_TITLES: Record<BookingStep, string> = {
   1: 'Выберите филиал',
@@ -43,6 +41,7 @@ const STEP_TITLES: Record<BookingStep, string> = {
   4: 'Выберите время',
   5: 'Ваши данные',
   6: 'Проверьте запись',
+  7: 'Создать профиль?',
 }
 
 interface FormState {
@@ -54,6 +53,7 @@ interface StudentProfile {
   name: string
   phone: string
   updatedAt: string
+  createdByConsent: boolean
 }
 
 interface StudentLesson {
@@ -82,7 +82,7 @@ function getStudentProfile(schoolId: string): StudentProfile | null {
     const raw = localStorage.getItem(getProfileKey(schoolId))
     if (!raw) return null
     const profile = JSON.parse(raw) as StudentProfile
-    return profile.name && profile.phone ? profile : null
+    return profile.name && profile.phone && profile.createdByConsent ? profile : null
   } catch {
     return null
   }
@@ -93,6 +93,7 @@ function saveStudentProfile(schoolId: string, form: FormState): StudentProfile {
     name: form.name.trim(),
     phone: normalizePhone(form.phone),
     updatedAt: new Date().toISOString(),
+    createdByConsent: true,
   }
   localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
   return profile
@@ -130,88 +131,59 @@ function StepProgress({ step, total = 6 }: { step: BookingStep; total?: number }
 function StudentProfileCard({
   brandColor,
   brandSoft,
-  completedLessons,
   nextLesson,
   profile,
 }: {
   brandColor: string
   brandSoft: string
-  completedLessons: number
   nextLesson: StudentLesson | null
-  profile: StudentProfile | null
+  profile: StudentProfile
 }) {
-  const progress = profile ? Math.min(100, Math.max(18, 24 + completedLessons * 11)) : 0
-
   return (
     <section className="mb-5 overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card">
       <div
         className="px-5 py-5 text-white"
         style={{
-          background:
-            `linear-gradient(135deg, ${brandColor} 0%, #2563eb 58%, #7c3aed 100%)`,
+          background: 'linear-gradient(135deg, ' + brandColor + ' 0%, #2563eb 62%, #4f46e5 100%)',
         }}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-white/75">Профиль ученика</p>
-            <h2 className="mt-1 text-2xl font-semibold leading-tight">
-              {profile ? profile.name : 'Запишем вас один раз'}
-            </h2>
+            <h2 className="mt-1 text-2xl font-semibold leading-tight">{profile.name}</h2>
             <p className="mt-2 max-w-[18rem] text-sm leading-relaxed text-white/78">
-              {profile
-                ? 'Данные сохранены. Следующая запись будет быстрее.'
-                : 'После первой записи имя и телефон будут подставляться автоматически.'}
+              Здесь только ваши записи и данные, которые уже известны автошколе.
             </p>
           </div>
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/16 text-lg font-semibold ring-1 ring-white/20">
-            {profile ? initialsFromName(profile.name) : <CircleUserRound size={25} />}
+            {initialsFromName(profile.name)}
           </div>
         </div>
       </div>
 
       <div className="grid gap-3 px-5 py-4">
-        {profile ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-stone-50 px-4 py-4">
-              <p className="text-sm font-medium text-stone-500">Телефон</p>
-              <p className="mt-1 text-base font-semibold text-stone-900">{formatPhone(profile.phone)}</p>
-            </div>
-            <div className="rounded-2xl px-4 py-4" style={{ backgroundColor: brandSoft }}>
-              <p className="text-sm font-medium text-stone-500">Прогресс</p>
-              <p className="mt-1 text-base font-semibold text-stone-900">{progress}% навыков</p>
-            </div>
-          </div>
-        ) : null}
+        <div className="rounded-2xl bg-stone-50 px-4 py-4">
+          <p className="text-sm font-medium text-stone-500">Телефон</p>
+          <p className="mt-1 text-base font-semibold text-stone-900">{formatPhone(profile.phone)}</p>
+        </div>
 
-        <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+        <div className="rounded-2xl border border-stone-100 px-4 py-4" style={{ backgroundColor: nextLesson ? brandSoft : undefined }}>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-stone-500">
-                {nextLesson ? 'Ближайшее занятие' : 'Что будет в профиле'}
-              </p>
+              <p className="text-sm font-medium text-stone-500">Ближайшее занятие</p>
               <p className="mt-1 text-base font-semibold text-stone-900">
-                {nextLesson
-                  ? `${formatDate(nextLesson.slot.date)}, ${nextLesson.slot.time}`
-                  : 'Записи, прогресс и данные ученика'}
+                {nextLesson ? formatDate(nextLesson.slot.date) + ', ' + nextLesson.slot.time : 'Пока нет активных записей'}
               </p>
               <p className="mt-1 truncate text-sm text-stone-500">
                 {nextLesson
-                  ? `${nextLesson.instructor?.name ?? 'Инструктор'} · ${nextLesson.branch?.name ?? 'Филиал'}`
-                  : 'Так ученику не нужно каждый раз начинать с нуля.'}
+                  ? (nextLesson.instructor?.name ?? 'Инструктор') + ' · ' + (nextLesson.branch?.name ?? 'Филиал')
+                  : 'Когда вы запишетесь, занятие появится здесь.'}
               </p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white">
-              {nextLesson ? <CalendarDays size={20} style={{ color: brandColor }} /> : <BookOpen size={20} style={{ color: brandColor }} />}
+              <CalendarDays size={20} style={{ color: brandColor }} />
             </div>
           </div>
-          {profile ? (
-            <div className="mt-4 h-2 rounded-full bg-white">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${progress}%`, backgroundColor: brandColor }}
-              />
-            </div>
-          ) : null}
         </div>
       </div>
     </section>
@@ -221,26 +193,16 @@ function StudentProfileCard({
 function StudentDashboard({
   availableSlotsCount,
   brandColor,
-  branchCount,
-  completedLessons,
-  instructorCount,
   nextLesson,
+  onOpenSchedule,
   onStartBooking,
-  profile,
 }: {
   availableSlotsCount: number
   brandColor: string
-  branchCount: number
-  completedLessons: number
-  instructorCount: number
   nextLesson: StudentLesson | null
+  onOpenSchedule: () => void
   onStartBooking: () => void
-  profile: StudentProfile | null
 }) {
-  const skillsDone = profile ? Math.min(15, Math.max(3, 5 + completedLessons)) : 0
-  const drivingHoursLeft = profile ? Math.max(8, 32 - completedLessons * 2) : 32
-  const theoryProgress = profile ? Math.min(100, 18 + completedLessons * 9) : 0
-
   return (
     <section className="space-y-4">
       <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
@@ -251,7 +213,7 @@ function StudentDashboard({
               Записаться на занятие
             </h2>
             <p className="mt-2 text-base leading-relaxed text-stone-500">
-              Выберите филиал, инструктора, дату и время. Это займёт пару минут.
+              Выберите удобный день и время. Имя и телефон уже подставятся из профиля.
             </p>
           </div>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-forest-50">
@@ -268,71 +230,125 @@ function StudentDashboard({
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
-          <p className="text-sm font-medium text-stone-500">Остаток часов</p>
-          <p className="mt-2 text-3xl font-semibold text-stone-900">{drivingHoursLeft}</p>
-          <p className="mt-1 text-sm text-stone-500">учебных часов</p>
-        </div>
-        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
-          <p className="text-sm font-medium text-stone-500">Инструкторы</p>
-          <p className="mt-2 text-3xl font-semibold text-stone-900">{instructorCount}</p>
-          <p className="mt-1 text-sm text-stone-500">доступно сейчас</p>
-        </div>
-      </div>
-
-      <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-stone-500">Прогресс навыков</p>
-            <p className="mt-1 text-xl font-semibold text-stone-900">
-              {skillsDone} из 15 навыков освоено
-            </p>
-          </div>
-          <span className="text-xl font-semibold text-stone-900">{Math.round((skillsDone / 15) * 100)}%</span>
-        </div>
-        <div className="mt-4 h-2.5 rounded-full bg-stone-100">
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${Math.round((skillsDone / 15) * 100)}%`, backgroundColor: brandColor }}
-          />
-        </div>
-      </div>
-
       <div className="grid gap-3">
         {[
           {
             icon: Clock3,
             title: nextLesson ? 'Моя ближайшая запись' : 'Мои записи',
             text: nextLesson
-              ? `${formatDate(nextLesson.slot.date)} в ${nextLesson.slot.time}`
+              ? formatDate(nextLesson.slot.date) + ' в ' + nextLesson.slot.time
               : 'После записи здесь появится ближайшее занятие.',
-          },
-          {
-            icon: BookOpen,
-            title: 'Теория и материалы',
-            text: profile ? `Прогресс теории ${theoryProgress}%` : 'ПДД, материалы автошколы и подготовка к экзамену.',
           },
           {
             icon: MapPin,
             title: 'Расписание автошколы',
-            text: `${availableSlotsCount} свободных слотов, ${branchCount} филиала`,
+            text: availableSlotsCount > 0
+              ? pluralize(availableSlotsCount, 'свободное место', 'свободных места', 'свободных мест') + ' в ближайшие дни.'
+              : 'Свободных мест пока нет.',
+            onClick: onOpenSchedule,
           },
         ].map((item) => {
           const Icon = item.icon
           return (
-            <div key={item.title} className="flex items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+            <button
+              key={item.title}
+              onClick={item.onClick}
+              className="flex w-full items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 text-left shadow-soft transition hover:border-stone-300 active:scale-[0.99]"
+            >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-stone-50">
                 <Icon size={21} style={{ color: brandColor }} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-base font-semibold text-stone-900">{item.title}</p>
                 <p className="mt-1 text-sm leading-snug text-stone-500">{item.text}</p>
               </div>
-            </div>
+              {item.onClick ? <ArrowRight size={18} className="shrink-0 text-stone-300" /> : null}
+            </button>
           )
         })}
       </div>
+    </section>
+  )
+}
+
+function ScheduleOverview({
+  brandColor,
+  onBack,
+  school,
+}: {
+  brandColor: string
+  onBack: () => void
+  school: School
+}) {
+  const days = useMemo(() => getNext14Days(), [])
+  const slotsByDate = useMemo(
+    () =>
+      days.map((date) => ({
+        date,
+        slots: db.slots
+          .bySchool(school.id)
+          .filter((slot) => slot.date === date)
+          .sort((left, right) => left.time.localeCompare(right.time)),
+      })),
+    [days, school.id],
+  )
+
+  return (
+    <section className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+      <BackButton onClick={onBack} label="Назад в профиль" />
+      <h1 className="text-2xl font-semibold text-stone-900">Расписание автошколы</h1>
+      <p className="mt-2 text-base leading-relaxed text-stone-500">
+        Ближайшие две недели. Зеленым отмечены свободные занятия, серым - уже занятые.
+      </p>
+
+      <div className="mt-6 space-y-4">
+        {slotsByDate.map((group) => (
+          <div key={group.date} className="rounded-2xl border border-stone-200 p-4">
+            <div>
+              <p className="text-base font-semibold capitalize text-stone-900">
+                {formatDayOfWeek(group.date)}, {formatDateFull(group.date)}
+              </p>
+              <p className="mt-1 text-sm text-stone-500">
+                {group.slots.length > 0
+                  ? pluralize(group.slots.length, 'слот', 'слота', 'слотов')
+                  : 'Нет занятий'}
+              </p>
+            </div>
+
+            {group.slots.length > 0 ? (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {group.slots.map((slot) => {
+                  const available = slot.status === 'available'
+                  return (
+                    <div
+                      key={slot.id}
+                      className={
+                        'rounded-xl border px-3 py-3 ' +
+                        (available ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50')
+                      }
+                    >
+                      <p className="text-base font-semibold text-stone-900">{slot.time}</p>
+                      <p className={'mt-1 text-sm ' + (available ? 'text-emerald-700' : 'text-stone-500')}>
+                        {available ? 'Свободно' : 'Занято'}
+                      </p>
+                      <p className="mt-1 text-xs text-stone-400">{formatDuration(slot.duration)}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      <Button
+        size="lg"
+        className="mt-6 w-full min-h-14 text-lg"
+        style={{ backgroundColor: brandColor, borderColor: brandColor }}
+        onClick={onBack}
+      >
+        Понятно
+      </Button>
     </section>
   )
 }
@@ -369,6 +385,8 @@ export function SchoolPage() {
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [isBookingStarted, setIsBookingStarted] = useState(false)
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<FormState>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -451,6 +469,22 @@ export function SchoolPage() {
     if (profile) {
       setForm({ name: profile.name, phone: profile.phone })
       setIsEditingProfile(false)
+      setIsBookingStarted(false)
+    } else {
+      setForm({ name: '', phone: '' })
+      setIsEditingProfile(false)
+      setIsBookingStarted(true)
+      if (currentSchool.branchSelectionMode === 'fixed_first') {
+        const firstBranch = db.branches.bySchool(currentSchool.id).filter((b) => b.isActive)[0]
+        if (firstBranch) {
+          setSelectedBranch(firstBranch)
+          setStep(2)
+        } else {
+          setStep(1)
+        }
+      } else {
+        setStep(1)
+      }
     }
   }, [navigate, slug])
 
@@ -612,18 +646,28 @@ export function SchoolPage() {
 
     releaseSessionLocks(sessionId.current)
     setSelectedSlots([])
-    setStudentProfile(saveStudentProfile(school.id, form))
     setIsEditingProfile(false)
-    showToast(
-      createdBookings.length > 1
-        ? `${pluralize(createdBookings.length, 'запись сохранена', 'записи сохранены', 'записей сохранено')}.`
-        : 'Запись сохранена.',
-      'success',
-    )
-    navigate(`/booking/${createdBookings[0].id}`)
+    setIsSubmitting(false)
+    isFinalizingRef.current = false
+
+    if (studentProfile) {
+      showToast(
+        createdBookings.length > 1
+          ? `${pluralize(createdBookings.length, 'запись сохранена', 'записи сохранены', 'записей сохранено')}.`
+          : 'Запись сохранена.',
+        'success',
+      )
+      navigate(`/booking/${createdBookings[0].id}`)
+      return
+    }
+
+    setCreatedBookingId(createdBookings[0].id)
+    setStep(7)
   }
 
   function startBookingFlow(): void {
+    setCreatedBookingId(null)
+    setIsScheduleOpen(false)
     if (school?.branchSelectionMode === 'fixed_first' && branches[0]) {
       setSelectedBranch(branches[0])
       setStep(2)
@@ -631,6 +675,28 @@ export function SchoolPage() {
       setStep(1)
     }
     setIsBookingStarted(true)
+  }
+
+  function returnFromBooking(): void {
+    if (studentProfile) {
+      setIsBookingStarted(false)
+      return
+    }
+    navigate('/')
+  }
+
+  function continueToConfirmation(): void {
+    if (!createdBookingId) return
+    navigate(`/booking/${createdBookingId}`)
+  }
+
+  function createProfileAndContinue(): void {
+    if (!school || !createdBookingId) return
+    const profile = saveStudentProfile(school.id, form)
+    setStudentProfile(profile)
+    setForm({ name: profile.name, phone: profile.phone })
+    showToast('Профиль создан. Следующая запись будет быстрее.', 'success')
+    navigate(`/booking/${createdBookingId}`)
   }
 
   if (schoolMissing) {
@@ -679,7 +745,9 @@ export function SchoolPage() {
             </div>
             <div className="text-left">
               <p className="text-base font-semibold text-stone-900 leading-tight">{school.name}</p>
-              <p className="text-sm text-stone-400">{isBookingStarted ? 'Запись на занятие' : 'Профиль ученика'}</p>
+              <p className="text-sm text-stone-400">
+                {isBookingStarted ? 'Запись на занятие' : isScheduleOpen ? 'Расписание автошколы' : 'Профиль ученика'}
+              </p>
             </div>
           </button>
           {school.phone ? (
@@ -700,37 +768,41 @@ export function SchoolPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          <StudentProfileCard
-            brandColor={brandColor}
-            brandSoft={brandSoft}
-            completedLessons={studentStats.completedLessons}
-            nextLesson={studentStats.nextLesson}
-            profile={studentProfile}
-          />
+          {studentProfile && !isBookingStarted && !isScheduleOpen ? (
+            <StudentProfileCard
+              brandColor={brandColor}
+              brandSoft={brandSoft}
+              nextLesson={studentStats.nextLesson}
+              profile={studentProfile}
+            />
+          ) : null}
 
-          {!isBookingStarted ? (
+          {studentProfile && isScheduleOpen ? (
+            <ScheduleOverview
+              brandColor={brandColor}
+              onBack={() => setIsScheduleOpen(false)}
+              school={school}
+            />
+          ) : !isBookingStarted && studentProfile ? (
             <StudentDashboard
               availableSlotsCount={schoolSummary.availableSlotsCount}
               brandColor={brandColor}
-              branchCount={branches.length}
-              completedLessons={studentStats.completedLessons}
-              instructorCount={schoolSummary.instructorCount}
               nextLesson={studentStats.nextLesson}
-              profile={studentProfile}
+              onOpenSchedule={() => setIsScheduleOpen(true)}
               onStartBooking={startBookingFlow}
             />
           ) : (
           <>
           {/* Step card */}
           <div className="min-h-[calc(100vh-7rem)] overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card sm:min-h-0">
-            <StepProgress step={step} />
+            <StepProgress step={step} total={7} />
 
             <div className="px-6 pb-8 pt-4">
               <AnimatePresence mode="wait">
                 {/* ── Step 1: Филиал ── */}
                 {step === 1 ? (
                   <motion.div key="step1" {...fadeSlide}>
-                    <BackButton onClick={() => setIsBookingStarted(false)} label="Назад в профиль" />
+                    <BackButton onClick={returnFromBooking} label={studentProfile ? 'Назад в профиль' : 'На главную'} />
                     <h1 className="text-2xl font-semibold text-stone-900 mb-1">
                       {STEP_TITLES[1]}
                     </h1>
@@ -790,12 +862,12 @@ export function SchoolPage() {
                     <BackButton
                       onClick={() => {
                         if (school.branchSelectionMode === 'fixed_first') {
-                          setIsBookingStarted(false)
+                          returnFromBooking()
                         } else {
                           setStep(1)
                         }
                       }}
-                      label={school.branchSelectionMode === 'fixed_first' ? 'Назад в профиль' : 'Назад к филиалам'}
+                      label={school.branchSelectionMode === 'fixed_first' ? (studentProfile ? 'Назад в профиль' : 'На главную') : 'Назад к филиалам'}
                     />
                     <h1 className="text-2xl font-semibold text-stone-900 mb-1">
                       {STEP_TITLES[2]}
@@ -1075,9 +1147,9 @@ export function SchoolPage() {
 
                         <div className="rounded-2xl bg-stone-50 px-4 py-4">
                           <div className="flex gap-3">
-                            <ShieldCheck size={20} className="mt-0.5 shrink-0 text-forest-700" />
+                            <CircleUserRound size={20} className="mt-0.5 shrink-0 text-forest-700" />
                             <p className="text-sm leading-relaxed text-stone-500">
-                              Сохраним данные только в этом браузере, чтобы следующая запись заняла меньше времени.
+                              Эти данные нужны для записи. После сохранения спросим отдельно, создавать ли профиль.
                             </p>
                           </div>
                         </div>
@@ -1193,6 +1265,46 @@ export function SchoolPage() {
                       {isSubmitting ? 'Сохраняем...' : 'Записаться'}
                       {!isSubmitting ? <Check size={18} /> : null}
                     </Button>
+                  </motion.div>
+                ) : null}
+
+                {step === 7 ? (
+                  <motion.div key="step7" {...fadeSlide}>
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-forest-50">
+                      <CircleUserRound size={30} className="text-forest-700" />
+                    </div>
+                    <h1 className="mt-6 text-center text-2xl font-semibold text-stone-900">
+                      Создать профиль ученика?
+                    </h1>
+                    <p className="mx-auto mt-3 max-w-sm text-center text-base leading-relaxed text-stone-500">
+                      Мы можем сохранить имя и телефон в этом браузере. Тогда при следующем входе вы сразу увидите
+                      личный кабинет и сможете записаться быстрее.
+                    </p>
+
+                    <div className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4">
+                      <p className="text-sm font-medium text-stone-500">Данные профиля</p>
+                      <p className="mt-2 text-lg font-semibold text-stone-900">{form.name.trim()}</p>
+                      <p className="mt-1 text-base text-stone-500">{formatPhone(normalizePhone(form.phone))}</p>
+                    </div>
+
+                    <div className="mt-8 space-y-3">
+                      <Button
+                        size="lg"
+                        className="w-full min-h-14 text-lg"
+                        style={{ backgroundColor: brandColor, borderColor: brandColor }}
+                        onClick={createProfileAndContinue}
+                      >
+                        Создать профиль
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="secondary"
+                        className="w-full min-h-14 text-lg"
+                        onClick={continueToConfirmation}
+                      >
+                        Продолжить без профиля
+                      </Button>
+                    </div>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
