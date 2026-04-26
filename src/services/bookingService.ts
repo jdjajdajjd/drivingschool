@@ -3,6 +3,12 @@ import { ru } from 'date-fns/locale'
 import { generateId } from '../lib/utils'
 import type { Booking, ResolvedBooking, School, Slot, Student } from '../types'
 import { db } from './storage'
+import {
+  cancelSupabaseBooking,
+  completeSupabaseBooking,
+  persistSupabaseMutation,
+  rescheduleSupabaseBooking,
+} from './supabaseAdminService'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
 
@@ -308,6 +314,7 @@ export function cancelBooking(bookingId: string): BookingMutationResult {
   const slot = db.slots.byId(booking.slotId)
   if (!slot) {
     db.bookings.upsert(nextBooking)
+    persistSupabaseMutation(cancelSupabaseBooking(bookingId))
     return { ok: true, booking: nextBooking }
   }
 
@@ -317,7 +324,9 @@ export function cancelBooking(bookingId: string): BookingMutationResult {
     bookingId: undefined,
   }
 
-  return saveBookingAndSlot(nextBooking, nextSlot)
+  const result = saveBookingAndSlot(nextBooking, nextSlot)
+  persistSupabaseMutation(cancelSupabaseBooking(bookingId))
+  return result
 }
 
 export function completeBooking(bookingId: string): BookingMutationResult {
@@ -337,6 +346,7 @@ export function completeBooking(bookingId: string): BookingMutationResult {
   }
 
   db.bookings.upsert(nextBooking)
+  persistSupabaseMutation(completeSupabaseBooking(bookingId))
   return { ok: true, booking: nextBooking }
 }
 
@@ -401,6 +411,8 @@ export function rescheduleBooking(params: RescheduleBookingParams): BookingMutat
     status: 'booked',
     bookingId: booking.id,
   })
+
+  persistSupabaseMutation(rescheduleSupabaseBooking(params.bookingId, params.newSlotId))
 
   return {
     ok: true,

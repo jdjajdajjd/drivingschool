@@ -139,6 +139,7 @@ export const db = {
       readAll<Booking>(K.BOOKINGS).filter((booking) => booking.instructorId === instructorId),
     byId: (id: string) => readAll<Booking>(K.BOOKINGS).find((booking) => booking.id === id) ?? null,
     upsert: (booking: Booking) => upsert(K.BOOKINGS, booking),
+    remove: (id: string) => removeById(K.BOOKINGS, id),
   },
 
   students: {
@@ -151,6 +152,7 @@ export const db = {
         (student) => student.schoolId === schoolId && student.normalizedPhone === normalizedPhone,
       ) ?? null,
     upsert: (student: Student) => upsert(K.STUDENTS, student),
+    remove: (id: string) => removeById(K.STUDENTS, id),
   },
 
   schoolModules: {

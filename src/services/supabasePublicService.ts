@@ -14,6 +14,8 @@ export interface PublicSchoolBundle {
   branches: Branch[]
   instructors: Instructor[]
   slots: Slot[]
+  students: Student[]
+  bookings: Booking[]
 }
 
 export interface SupabaseBookingResult {
@@ -136,21 +138,27 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
 
   const school = mapSchool(schoolRow)
 
-  const [branchesResult, instructorsResult, slotsResult] = await Promise.all([
+  const [branchesResult, instructorsResult, slotsResult, studentsResult, bookingsResult] = await Promise.all([
     supabase.from('branches').select('*').eq('school_id', school.id).eq('is_active', true).order('name'),
     supabase.from('instructors').select('*').eq('school_id', school.id).eq('is_active', true).order('name'),
     supabase.from('slots').select('*').eq('school_id', school.id).order('date').order('time'),
+    supabase.from('students').select('*').eq('school_id', school.id).order('created_at', { ascending: false }),
+    supabase.from('bookings').select('*').eq('school_id', school.id).order('created_at', { ascending: false }),
   ])
 
   if (branchesResult.error) throw branchesResult.error
   if (instructorsResult.error) throw instructorsResult.error
   if (slotsResult.error) throw slotsResult.error
+  if (studentsResult.error) throw studentsResult.error
+  if (bookingsResult.error) throw bookingsResult.error
 
   return {
     school,
     branches: branchesResult.data.map(mapBranch),
     instructors: instructorsResult.data.map(mapInstructor),
     slots: slotsResult.data.map(mapSlot),
+    students: studentsResult.data.map(mapStudent),
+    bookings: bookingsResult.data.map(mapBooking),
   }
 }
 

@@ -209,6 +209,34 @@ export interface Database {
           slot_id: string
         }>
       }
+      public_cancel_booking: {
+        Args: {
+          p_booking_id: string
+        }
+        Returns: Array<{
+          booking_id: string
+          slot_id: string
+        }>
+      }
+      public_complete_booking: {
+        Args: {
+          p_booking_id: string
+        }
+        Returns: Array<{
+          booking_id: string
+        }>
+      }
+      public_reschedule_booking: {
+        Args: {
+          p_booking_id: string
+          p_new_slot_id: string
+        }
+        Returns: Array<{
+          booking_id: string
+          previous_slot_id: string
+          new_slot_id: string
+        }>
+      }
     }
     Views: Record<string, never>
     Enums: Record<string, never>

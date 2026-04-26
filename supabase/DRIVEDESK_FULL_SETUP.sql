@@ -14,6 +14,9 @@ drop table if exists public.branches cascade;
 drop table if exists public.schools cascade;
 
 drop function if exists public.public_create_booking(text, text, text, text[]);
+drop function if exists public.public_cancel_booking(text);
+drop function if exists public.public_complete_booking(text);
+drop function if exists public.public_reschedule_booking(text, text);
 
 create table public.schools (
   id text primary key,
@@ -357,6 +360,160 @@ begin
 end;
 $$;
 
+create or replace function public.public_cancel_booking(p_booking_id text)
+returns table (
+  booking_id text,
+  slot_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_booking public.bookings%rowtype;
+begin
+  select *
+    into v_booking
+    from public.bookings
+    where id = p_booking_id
+    for update;
+
+  if not found then
+    raise exception 'Booking not found.';
+  end if;
+
+  if v_booking.status <> 'active' then
+    raise exception 'Only active bookings can be cancelled.';
+  end if;
+
+  update public.bookings
+    set status = 'cancelled',
+        updated_at = now()
+    where id = p_booking_id;
+
+  update public.slots
+    set status = 'available',
+        booking_id = null,
+        updated_at = now()
+    where id = v_booking.slot_id;
+
+  booking_id := p_booking_id;
+  slot_id := v_booking.slot_id;
+  return next;
+end;
+$$;
+
+create or replace function public.public_complete_booking(p_booking_id text)
+returns table (
+  booking_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_booking public.bookings%rowtype;
+begin
+  select *
+    into v_booking
+    from public.bookings
+    where id = p_booking_id
+    for update;
+
+  if not found then
+    raise exception 'Booking not found.';
+  end if;
+
+  if v_booking.status <> 'active' then
+    raise exception 'Only active bookings can be completed.';
+  end if;
+
+  update public.bookings
+    set status = 'completed',
+        updated_at = now()
+    where id = p_booking_id;
+
+  booking_id := p_booking_id;
+  return next;
+end;
+$$;
+
+create or replace function public.public_reschedule_booking(
+  p_booking_id text,
+  p_new_slot_id text
+)
+returns table (
+  booking_id text,
+  previous_slot_id text,
+  new_slot_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_booking public.bookings%rowtype;
+  v_next_slot public.slots%rowtype;
+begin
+  select *
+    into v_booking
+    from public.bookings
+    where id = p_booking_id
+    for update;
+
+  if not found then
+    raise exception 'Booking not found.';
+  end if;
+
+  if v_booking.status <> 'active' then
+    raise exception 'Only active bookings can be rescheduled.';
+  end if;
+
+  select *
+    into v_next_slot
+    from public.slots
+    where id = p_new_slot_id
+    for update;
+
+  if not found then
+    raise exception 'New slot not found.';
+  end if;
+
+  if v_next_slot.status <> 'available' then
+    raise exception 'New slot is already booked.';
+  end if;
+
+  if v_next_slot.date < current_date then
+    raise exception 'New slot is in the past.';
+  end if;
+
+  update public.slots
+    set status = 'available',
+        booking_id = null,
+        updated_at = now()
+    where id = v_booking.slot_id;
+
+  update public.bookings
+    set slot_id = v_next_slot.id,
+        branch_id = v_next_slot.branch_id,
+        instructor_id = v_next_slot.instructor_id,
+        rescheduled_at = now(),
+        updated_at = now()
+    where id = p_booking_id;
+
+  update public.slots
+    set status = 'booked',
+        booking_id = p_booking_id,
+        updated_at = now()
+    where id = v_next_slot.id;
+
+  booking_id := p_booking_id;
+  previous_slot_id := v_booking.slot_id;
+  new_slot_id := v_next_slot.id;
+  return next;
+end;
+$$;
+
 alter table public.schools enable row level security;
 alter table public.branches enable row level security;
 alter table public.instructors enable row level security;
@@ -393,3 +550,6 @@ grant select on public.instructors to anon, authenticated;
 grant select on public.slots to anon, authenticated;
 grant select on public.bookings to anon, authenticated;
 grant execute on function public.public_create_booking(text, text, text, text[]) to anon, authenticated;
+grant execute on function public.public_cancel_booking(text) to anon, authenticated;
+grant execute on function public.public_complete_booking(text) to anon, authenticated;
+grant execute on function public.public_reschedule_booking(text, text) to anon, authenticated;

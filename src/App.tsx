@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { seedIfNeeded } from './services/seed'
+import { syncSupabaseSchoolToLocalDb } from './services/supabaseSync'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { LandingPage } from './pages/LandingPage'
 import { SchoolPage } from './pages/SchoolPage'
@@ -24,9 +25,18 @@ import { SuperAdminLayout } from './components/layout/SuperAdminLayout'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 function App() {
+  const [isReady, setIsReady] = useState(false)
+
   useEffect(() => {
     seedIfNeeded()
+    void syncSupabaseSchoolToLocalDb('virazh')
+      .catch(() => undefined)
+      .finally(() => setIsReady(true))
   }, [])
+
+  if (!isReady) {
+    return <div className="min-h-screen bg-stone-50" />
+  }
 
   return (
     <BrowserRouter>
