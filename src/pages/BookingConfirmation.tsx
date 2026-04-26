@@ -14,8 +14,9 @@ import {
 import { Button } from '../components/ui/Button'
 import { useToast } from '../components/ui/Toast'
 import { formatDuration, formatPhone } from '../lib/utils'
-import { generateIcs } from '../services/bookingService'
+import { generateIcs, getSlotDateTime } from '../services/bookingService'
 import { db } from '../services/storage'
+import { getBookingByIdFromSupabase } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatDateFull } from '../utils/date'
 
@@ -76,6 +77,48 @@ function DetailRow({
   )
 }
 
+function escapeIcsValue(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;')
+}
+
+function formatUtcDate(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+}
+
+function generateIcsFromBundle(bundle: BookingBundle): string | null {
+  if (!bundle.slot || !bundle.instructor || !bundle.branch || !bundle.school) return null
+
+  const start = getSlotDateTime(bundle.slot)
+  const end = new Date(start.getTime() + bundle.slot.duration * 60_000)
+  const description = [
+    `Автошкола: ${bundle.school.name}`,
+    `Инструктор: ${bundle.instructor.name}`,
+    `Ученик: ${bundle.booking.studentName}`,
+    bundle.instructor.car ? `Автомобиль: ${bundle.instructor.car}` : '',
+  ].filter(Boolean).join('\n')
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//DriveDesk//Booking Flow//RU',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${bundle.booking.id}@drivedesk`,
+    `DTSTAMP:${formatUtcDate(new Date())}`,
+    `DTSTART:${formatUtcDate(start)}`,
+    `DTEND:${formatUtcDate(end)}`,
+    `SUMMARY:${escapeIcsValue(`Занятие: ${bundle.instructor.name}`)}`,
+    `LOCATION:${escapeIcsValue(bundle.branch.address)}`,
+    `DESCRIPTION:${escapeIcsValue(description)}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+}
+
 export function BookingConfirmation() {
   const { bookingId } = useParams<{ bookingId: string }>()
   const navigate = useNavigate()
@@ -83,13 +126,35 @@ export function BookingConfirmation() {
   const [bundle, setBundle] = useState<BookingBundle | null>(null)
 
   useEffect(() => {
-    if (bookingId) setBundle(loadBookingBundle(bookingId))
+    if (!bookingId) return
+
+    const localBundle = loadBookingBundle(bookingId)
+    if (localBundle) {
+      setBundle(localBundle)
+      return
+    }
+
+    void getBookingByIdFromSupabase(bookingId)
+      .then((resolved) => {
+        if (!resolved) {
+          setBundle(null)
+          return
+        }
+        setBundle({
+          booking: resolved.booking,
+          slot: resolved.slot,
+          instructor: resolved.instructor,
+          branch: resolved.branch,
+          school: resolved.school,
+        })
+      })
+      .catch(() => setBundle(null))
   }, [bookingId])
 
   function handleDownloadIcs(): void {
     if (!bundle) return
 
-    const content = generateIcs(bundle.booking.id)
+    const content = generateIcs(bundle.booking.id) ?? generateIcsFromBundle(bundle)
     if (!content) {
       showToast('Не удалось подготовить файл календаря.', 'error')
       return

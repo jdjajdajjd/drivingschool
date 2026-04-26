@@ -291,9 +291,9 @@ begin
     raise exception 'Автошкола не найдена.';
   end if;
 
-  select count(distinct slot_id)
+  select count(distinct selected_slot_id)
     into v_slot_count
-    from unnest(p_slot_ids) as slot_id;
+    from unnest(p_slot_ids) as selected_slot_id;
 
   if v_slot_count = 0 then
     raise exception 'Выберите время занятия.';
@@ -304,7 +304,7 @@ begin
   end if;
 
   insert into public.students (id, school_id, name, phone, normalized_phone)
-  values ('stu-' || encode(gen_random_bytes(8), 'hex'), p_school_id, trim(p_student_name), v_normalized_phone, v_normalized_phone)
+  values ('stu-' || replace(gen_random_uuid()::text, '-', ''), p_school_id, trim(p_student_name), v_normalized_phone, v_normalized_phone)
   on conflict (school_id, normalized_phone)
   do update set
     name = excluded.name,
@@ -312,7 +312,7 @@ begin
     updated_at = now()
   returning id into v_student_id;
 
-  v_group_id := 'booking-group-' || encode(gen_random_bytes(8), 'hex');
+  v_group_id := 'booking-group-' || replace(gen_random_uuid()::text, '-', '');
 
   insert into public.booking_groups (id, school_id, student_id)
   values (v_group_id, p_school_id, v_student_id);
@@ -329,7 +329,7 @@ begin
       raise exception 'Один из выбранных слотов уже занят.';
     end if;
 
-    v_booking_id := 'booking-' || encode(gen_random_bytes(8), 'hex');
+    v_booking_id := 'booking-' || replace(gen_random_uuid()::text, '-', '');
 
     insert into public.bookings (
       id, booking_group_id, school_id, slot_id, instructor_id, branch_id,

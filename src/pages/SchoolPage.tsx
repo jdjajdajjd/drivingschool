@@ -21,7 +21,6 @@ import { useToast } from '../components/ui/Toast'
 import { formatDuration, formatPhone, generateId, hexToRgba, pluralize } from '../lib/utils'
 import {
   acquireSlotLock,
-  createBooking,
   getAvailableSlots,
   isValidRussianPhone,
   normalizePhone,
@@ -29,6 +28,7 @@ import {
   releaseSlotLock,
 } from '../services/bookingService'
 import { db } from '../services/storage'
+import { createSupabaseBooking, getPublicSchoolBundle } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatDate, formatDateFull, formatDayOfWeek, getNext14Days, getNext7Days } from '../utils/date'
 
@@ -455,37 +455,70 @@ export function SchoolPage() {
 
   useEffect(() => {
     if (!slug) return
-    const currentSchool = db.schools.bySlug(slug)
-    if (!currentSchool) {
-      setSchoolMissing(true)
-      return
-    }
-    setSchoolMissing(false)
-    setSchool(currentSchool)
-    setBranches(db.branches.bySchool(currentSchool.id).filter((b) => b.isActive))
-    setInstructors(db.instructors.bySchool(currentSchool.id))
-    const profile = getStudentProfile(currentSchool.id)
-    setStudentProfile(profile)
-    if (profile) {
-      setForm({ name: profile.name, phone: profile.phone })
-      setIsEditingProfile(false)
-      setIsBookingStarted(false)
-    } else {
-      setForm({ name: '', phone: '' })
-      setIsEditingProfile(false)
-      setIsBookingStarted(true)
-      if (currentSchool.branchSelectionMode === 'fixed_first') {
-        const firstBranch = db.branches.bySchool(currentSchool.id).filter((b) => b.isActive)[0]
-        if (firstBranch) {
-          setSelectedBranch(firstBranch)
-          setStep(2)
+
+    const applySchool = (currentSchool: School, nextBranches: Branch[], nextInstructors: Instructor[]) => {
+      setSchoolMissing(false)
+      setSchool(currentSchool)
+      setBranches(nextBranches.filter((b) => b.isActive))
+      setInstructors(nextInstructors)
+      const profile = getStudentProfile(currentSchool.id)
+      setStudentProfile(profile)
+      if (profile) {
+        setForm({ name: profile.name, phone: profile.phone })
+        setIsEditingProfile(false)
+        setIsBookingStarted(false)
+      } else {
+        setForm({ name: '', phone: '' })
+        setIsEditingProfile(false)
+        setIsBookingStarted(true)
+        if (currentSchool.branchSelectionMode === 'fixed_first') {
+          const firstBranch = nextBranches.filter((b) => b.isActive)[0]
+          if (firstBranch) {
+            setSelectedBranch(firstBranch)
+            setStep(2)
+          } else {
+            setStep(1)
+          }
         } else {
           setStep(1)
         }
-      } else {
-        setStep(1)
       }
     }
+
+    void getPublicSchoolBundle(slug)
+      .then((bundle) => {
+        if (!bundle) {
+          const fallbackSchool = db.schools.bySlug(slug)
+          if (!fallbackSchool) {
+            setSchoolMissing(true)
+            return
+          }
+          applySchool(
+            fallbackSchool,
+            db.branches.bySchool(fallbackSchool.id).filter((b) => b.isActive),
+            db.instructors.bySchool(fallbackSchool.id),
+          )
+          return
+        }
+
+        db.schools.upsert(bundle.school)
+        bundle.branches.forEach((branch) => db.branches.upsert(branch))
+        bundle.instructors.forEach((instructor) => db.instructors.upsert(instructor))
+        bundle.slots.forEach((slot) => db.slots.upsert(slot))
+        applySchool(bundle.school, bundle.branches, bundle.instructors)
+      })
+      .catch(() => {
+        const fallbackSchool = db.schools.bySlug(slug)
+        if (!fallbackSchool) {
+          setSchoolMissing(true)
+          return
+        }
+        applySchool(
+          fallbackSchool,
+          db.branches.bySchool(fallbackSchool.id).filter((b) => b.isActive),
+          db.instructors.bySchool(fallbackSchool.id),
+        )
+      })
   }, [navigate, slug])
 
   useEffect(() => {
@@ -618,30 +651,21 @@ export function SchoolPage() {
     isFinalizingRef.current = true
     setIsSubmitting(true)
 
-    const createdBookings = []
-    for (const slot of selectedSlots) {
-      const result = createBooking({
+    let createdBookingIds: string[] = []
+    try {
+      const result = await createSupabaseBooking({
         schoolId: school.id,
-        branchId: slot.branchId,
-        instructorId: slot.instructorId,
-        slotId: slot.id,
         studentName: form.name,
         studentPhone: form.phone,
-        sessionId: sessionId.current,
+        slotIds: selectedSlots.map((slot) => slot.id),
       })
-
-      if (!result.ok || !result.booking) {
-        isFinalizingRef.current = false
-        setIsSubmitting(false)
-        showToast(result.error ?? 'Не удалось создать запись.', 'error')
-        const freshSlot = db.slots.byId(slot.id)
-        if (!freshSlot || freshSlot.status === 'booked') {
-          setSelectedSlots((current) => current.filter((selected) => selected.id !== slot.id))
-          setStep(4)
-        }
-        return
-      }
-      createdBookings.push(result.booking)
+      createdBookingIds = result.bookingIds
+    } catch (error) {
+      isFinalizingRef.current = false
+      setIsSubmitting(false)
+      showToast(error instanceof Error ? error.message : 'Не удалось создать запись.', 'error')
+      setStep(4)
+      return
     }
 
     releaseSessionLocks(sessionId.current)
@@ -652,16 +676,16 @@ export function SchoolPage() {
 
     if (studentProfile) {
       showToast(
-        createdBookings.length > 1
-          ? `${pluralize(createdBookings.length, 'запись сохранена', 'записи сохранены', 'записей сохранено')}.`
+        createdBookingIds.length > 1
+          ? `${pluralize(createdBookingIds.length, 'запись сохранена', 'записи сохранены', 'записей сохранено')}.`
           : 'Запись сохранена.',
         'success',
       )
-      navigate(`/booking/${createdBookings[0].id}`)
+      navigate(`/booking/${createdBookingIds[0]}`)
       return
     }
 
-    setCreatedBookingId(createdBookings[0].id)
+    setCreatedBookingId(createdBookingIds[0])
     setStep(7)
   }
 
