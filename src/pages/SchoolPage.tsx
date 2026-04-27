@@ -31,6 +31,7 @@ import {
   releaseSlotLock,
 } from '../services/bookingService'
 import { DRIVING_CATEGORIES } from '../services/drivingCategories'
+import { getInstructorPhoto } from '../services/instructorPhotos'
 import { db } from '../services/storage'
 import {
   createSupabaseBooking,
@@ -1054,7 +1055,13 @@ export function SchoolPage() {
                       {visibleInstructors.length === 0 ? <EmptyState title="Инструкторов нет" description="Выберите другой филиал или категорию." /> : visibleInstructors.map((instructor) => (
                         <button key={instructor.id} onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }} className="w-full rounded-2xl border border-stone-200 bg-white p-4 text-left hover:border-blue-300">
                           <div className="flex items-center gap-4">
-                            <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="lg" />
+                            <Avatar
+                              initials={instructor.avatarInitials}
+                              color={instructor.avatarColor}
+                              src={getInstructorPhoto(instructor)}
+                              alt={instructor.name}
+                              size="lg"
+                            />
                             <div className="min-w-0">
                               <p className="text-lg font-semibold text-stone-950">{instructor.name}</p>
                               <p className="mt-1 text-base text-stone-600">{instructor.car ?? 'Автомобиль уточняется'}</p>

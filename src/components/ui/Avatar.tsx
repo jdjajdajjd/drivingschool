@@ -3,15 +3,17 @@ import { cn } from '../../lib/utils'
 interface AvatarProps {
   initials: string
   color?: string
+  src?: string
+  alt?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }
 
-export function Avatar({ initials, color = '#2A6E4C', size = 'md', className }: AvatarProps) {
+export function Avatar({ initials, color = '#2A6E4C', src, alt = initials, size = 'md', className }: AvatarProps) {
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-sans font-medium text-white shrink-0',
+        'rounded-full flex items-center justify-center font-sans font-medium text-white shrink-0 overflow-hidden',
         {
           sm: 'w-8 h-8 text-xs',
           md: 'w-10 h-10 text-sm',
@@ -22,7 +24,7 @@ export function Avatar({ initials, color = '#2A6E4C', size = 'md', className }: 
       )}
       style={{ backgroundColor: color }}
     >
-      {initials}
+      {src ? <img src={src} alt={alt} className="h-full w-full object-cover" /> : initials}
     </div>
   )
 }

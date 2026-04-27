@@ -9,6 +9,7 @@ import { Avatar } from '../components/ui/Avatar'
 import { Badge, StatusBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { formatPhone, pluralize } from '../lib/utils'
+import { getInstructorPhoto } from '../services/instructorPhotos'
 import { db } from '../services/storage'
 import type { Booking, Branch, Instructor, Slot } from '../types'
 import { formatDateFull } from '../utils/date'
@@ -173,7 +174,14 @@ export function InstructorPage() {
           <div className="rounded-2xl border border-stone-200 bg-white p-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
-                <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="xl" />
+                <Avatar
+                  initials={instructor.avatarInitials}
+                  color={instructor.avatarColor}
+                  src={getInstructorPhoto(instructor)}
+                  alt={instructor.name}
+                  size="xl"
+                  className="rounded-2xl"
+                />
                 <div>
                   <p className="text-3xl font-semibold tracking-tight text-stone-900">{instructor.name}</p>
                   <div className="mt-3 flex flex-wrap gap-2">

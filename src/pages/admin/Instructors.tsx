@@ -1,5 +1,6 @@
 import { ExternalLink, Link2, Plus, Power } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -12,6 +13,7 @@ import { useToast } from '../../components/ui/Toast'
 import { formatPhone } from '../../lib/utils'
 import { getUpcomingBookings, validateRussianPhone } from '../../services/bookingService'
 import { createInstructor, getInstructorsBySchool, toggleInstructorActive, updateInstructor } from '../../services/instructorService'
+import { getInstructorPhoto } from '../../services/instructorPhotos'
 import { db } from '../../services/storage'
 import { getAvailableSlots } from '../../services/slotService'
 import type { Instructor, Transmission } from '../../types'
@@ -150,8 +152,16 @@ export function AdminInstructors() {
             <div className="grid gap-4 lg:grid-cols-2">
               {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
                 <div key={instructor.id} className="rounded-2xl border border-stone-200 bg-white p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                  <div className="flex items-start gap-4">
+                    <Avatar
+                      initials={instructor.avatarInitials}
+                      color={instructor.avatarColor}
+                      src={getInstructorPhoto(instructor)}
+                      alt={instructor.name}
+                      size="xl"
+                      className="rounded-2xl"
+                    />
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-lg font-semibold text-stone-900">{instructor.name}</p>
                         <Badge variant={instructor.isActive ? 'success' : 'default'}>
