@@ -30,8 +30,8 @@ export function Button({
         }[variant],
         {
           sm: 'h-9 px-3.5 text-sm rounded-lg',
-          md: 'h-10 px-4 text-sm',
-          lg: 'h-11 px-5 text-[15px]',
+          md: 'h-9.5 px-4 text-sm',
+          lg: 'h-10 px-4.5 text-sm',
         }[size],
         className,
       )}

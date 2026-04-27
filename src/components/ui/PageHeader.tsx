@@ -9,17 +9,17 @@ interface PageHeaderProps {
 
 export function PageHeader({ eyebrow, title, description, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div className="max-w-2xl">
         {eyebrow ? (
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900 md:text-[2rem]">
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-stone-900 md:text-[1.8rem]">
           {title}
         </h1>
-        {description ? <p className="mt-2 text-sm leading-relaxed text-stone-500">{description}</p> : null}
+        {description ? <p className="mt-1.5 text-sm leading-relaxed text-stone-500">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
     </div>

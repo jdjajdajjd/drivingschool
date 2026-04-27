@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -135,7 +135,7 @@ function slotDateTime(slot: Slot): Date {
 }
 
 function selectClassName(): string {
-  return 'h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-base text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100'
+  return 'h-9 w-full rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100'
 }
 
 function getVisibleDrivingCategories(school: School, instructors: Instructor[]) {
@@ -146,12 +146,12 @@ function getVisibleDrivingCategories(school: School, instructors: Instructor[]) 
 
 function StepHeader({ current, total }: { current: number; total: number }) {
   return (
-    <div className="border-b border-stone-100 px-5 py-4">
-      <div className="flex items-center justify-between text-sm font-medium text-stone-500">
+    <div className="border-b border-stone-100 px-5 py-3">
+      <div className="flex items-center justify-between text-xs font-medium text-stone-400">
         <span>Шаг {current} из {total}</span>
         <span>{Math.round((current / total) * 100)}%</span>
       </div>
-      <div className="mt-3 h-1.5 rounded-full bg-stone-100">
+      <div className="mt-2 h-1 rounded-full bg-stone-100">
         <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${(current / total) * 100}%` }} />
       </div>
     </div>
@@ -160,8 +160,8 @@ function StepHeader({ current, total }: { current: number; total: number }) {
 
 function BackButton({ onClick, label = 'Назад' }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="mb-5 inline-flex min-h-10 items-center gap-2 text-base font-medium text-stone-500 hover:text-stone-900">
-      <ArrowLeft size={18} />
+    <button onClick={onClick} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 hover:text-stone-700 transition-colors">
+      <ArrowLeft size={14} />
       {label}
     </button>
   )
@@ -181,14 +181,13 @@ function VirazhLogo({ color }: { color: string }) {
 
 function LessonCard({ lesson }: { lesson: ResolvedLesson }) {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-semibold text-stone-900">{formatDate(lesson.slot.date)}, {lesson.slot.time}</p>
-          <p className="mt-1 text-base text-stone-600">{lesson.instructor?.name ?? 'Инструктор'}</p>
-          <p className="mt-1 text-sm text-stone-500">{lesson.branch?.name ?? 'Филиал'} · {formatDuration(lesson.slot.duration)}</p>
+    <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-stone-900">{formatDate(lesson.slot.date)}, {lesson.slot.time}</p>
+          <p className="mt-0.5 text-xs text-stone-500 truncate">{lesson.instructor?.name ?? 'Инструктор'} · {lesson.branch?.name ?? 'Филиал'} · {formatDuration(lesson.slot.duration)}</p>
         </div>
-        <CalendarDays size={22} className="shrink-0 text-blue-600" />
+        <CalendarDays size={15} className="shrink-0 text-blue-500" />
       </div>
     </div>
   )
@@ -228,61 +227,58 @@ function SchoolHome({
 
   return (
     <section className="space-y-5">
-      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
-        <p className="text-base font-medium text-stone-500">Автошкола</p>
-        <h1 className="mt-2 text-3xl font-semibold leading-tight text-stone-950">{school.name}</h1>
-        <p className="mt-3 text-lg leading-relaxed text-stone-600">{school.description}</p>
-        <div className="mt-5 grid gap-3">
-          <Button size="lg" className="min-h-14 text-lg" onClick={onStartBooking}>
+      <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-card">
+        <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">Автошкола</p>
+        <h1 className="mt-1 text-xl font-bold leading-tight text-stone-950">{school.name}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-stone-500">{school.description}</p>
+        <div className="mt-4 grid gap-2">
+          <Button size="lg" onClick={onStartBooking} className="w-full">
             Записаться
-            <ArrowRight size={20} />
+            <ArrowRight size={16} />
           </Button>
-          <div className="grid grid-cols-2 gap-3">
-            <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onLogin}>
-              <LogIn size={18} />
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={onLogin}>
+              <LogIn size={15} />
               Войти
             </Button>
-            <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onOpenSchedule}>
-              <CalendarDays size={18} />
+            <Button variant="secondary" onClick={onOpenSchedule}>
+              <CalendarDays size={15} />
               Расписание
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-stone-200 bg-white p-4">
-          <p className="text-2xl font-semibold text-stone-900">{branches.length}</p>
-          <p className="mt-1 text-sm text-stone-500">филиала</p>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-center">
+          <p className="text-lg font-bold tabular-nums text-stone-900">{branches.length}</p>
+          <p className="text-[11px] text-stone-400">филиала</p>
         </div>
-        <div className="rounded-2xl border border-stone-200 bg-white p-4">
-          <p className="text-2xl font-semibold text-stone-900">{instructors.length}</p>
-          <p className="mt-1 text-sm text-stone-500">инструкторов</p>
+        <div className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-center">
+          <p className="text-lg font-bold tabular-nums text-stone-900">{instructors.length}</p>
+          <p className="text-[11px] text-stone-400">инструкторов</p>
         </div>
-        <div className="rounded-2xl border border-stone-200 bg-white p-4">
-          <p className="text-2xl font-semibold text-stone-900">{futureSlots.length}</p>
-          <p className="mt-1 text-sm text-stone-500">свободных мест</p>
+        <div className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-center">
+          <p className="text-lg font-bold tabular-nums text-stone-900">{futureSlots.length}</p>
+          <p className="text-[11px] text-stone-400">свободных мест</p>
         </div>
       </div>
 
       {visibleCategories.length > 0 ? (
-        <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-stone-900">Категории прав</h2>
-              <p className="mt-1 text-base text-stone-500">Выберите категорию, если уже знаете цель обучения.</p>
-            </div>
-            <ShieldCheck size={23} style={{ color: brandColor }} />
+            <h2 className="text-sm font-bold text-stone-800">Категории прав</h2>
+            <ShieldCheck size={16} style={{ color: brandColor }} />
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {visibleCategories.map((category) => (
               <button
                 key={category.code}
                 onClick={() => onSelectCategory(category.code)}
-                className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
+                className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-left transition hover:border-blue-200 hover:bg-blue-50"
               >
-                <p className="text-lg font-semibold text-stone-900">{category.code}</p>
-                <p className="mt-1 line-clamp-2 text-sm leading-snug text-stone-500">{category.title}</p>
+                <p className="text-sm font-bold text-stone-900">{category.code}</p>
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-stone-400">{category.title}</p>
               </button>
             ))}
           </div>
@@ -290,37 +286,32 @@ function SchoolHome({
       ) : null}
 
       {instructorCards.length > 0 ? (
-        <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+        <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-stone-900">Инструкторы</h2>
-              <p className="mt-1 text-base text-stone-500">Живые люди, учебные машины и ближайшее свободное время.</p>
-            </div>
-            <Button variant="secondary" size="sm" onClick={onStartBooking}>
-              Записаться
-            </Button>
+            <h2 className="text-sm font-bold text-stone-800">Инструкторы</h2>
+            <Button variant="secondary" size="sm" onClick={onStartBooking}>Записаться</Button>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
             {instructorCards.map(({ branch, instructor, nextSlot }) => (
               <button
                 key={instructor.id}
                 type="button"
                 onClick={() => onSelectCategory(instructor.categories?.[0] ?? '')}
-                className="flex w-full items-center gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
+                className="flex w-full items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50"
               >
                 <Avatar
                   initials={instructor.avatarInitials}
                   color={instructor.avatarColor}
                   src={getInstructorPhoto(instructor)}
                   alt={instructor.name}
-                  size="lg"
+                  size="md"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-semibold text-stone-950">{instructor.name}</p>
-                  <p className="mt-1 truncate text-sm text-stone-600">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
-                  <p className="mt-1 truncate text-sm text-stone-500">{branch?.name ?? 'Филиал уточняется'} · {(instructor.categories ?? []).join(', ')}</p>
-                  <p className="mt-2 text-sm font-medium text-blue-700">
-                    {nextSlot ? `${formatDate(nextSlot.date)}, ${nextSlot.time}` : 'Свободное время уточняется'}
+                  <p className="truncate text-sm font-semibold text-stone-900">{instructor.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-stone-500">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
+                  <p className="mt-0.5 truncate text-xs text-stone-400">{branch?.name ?? 'Филиал уточняется'} · {(instructor.categories ?? []).join(', ')}</p>
+                  <p className="mt-1 text-xs font-semibold text-blue-600">
+                    {nextSlot ? `${formatDate(nextSlot.date)}, ${nextSlot.time}` : 'Время уточняется'}
                   </p>
                 </div>
               </button>
@@ -329,14 +320,14 @@ function SchoolHome({
         </div>
       ) : null}
 
-      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
-        <h2 className="text-xl font-semibold text-stone-900">Филиалы</h2>
-        <div className="mt-4 space-y-3">
+      <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
+        <h2 className="text-sm font-bold text-stone-800">Филиалы</h2>
+        <div className="mt-3 space-y-2">
           {branches.map((branch) => (
-            <div key={branch.id} className="rounded-2xl bg-stone-50 p-4">
-              <p className="text-base font-semibold text-stone-900">{branch.name}</p>
-              <p className="mt-1 text-base text-stone-600">{branch.address}</p>
-              {branch.phone ? <p className="mt-1 text-sm text-stone-500">{formatPhone(branch.phone)}</p> : null}
+            <div key={branch.id} className="rounded-xl bg-stone-50 px-4 py-3">
+              <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
+              <p className="mt-0.5 text-xs text-stone-500">{branch.address}</p>
+              {branch.phone ? <p className="mt-0.5 text-xs text-stone-400">{formatPhone(branch.phone)}</p> : null}
             </div>
           ))}
         </div>
@@ -369,61 +360,63 @@ function StudentDashboard({
   const nextLesson = futureLessons[0] ?? null
 
   return (
-    <section className="space-y-5">
-      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
-        <div className="flex items-start gap-4">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl text-2xl font-semibold text-white" style={{ backgroundColor: brandColor }}>
+    <section className="space-y-4">
+      <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold text-white" style={{ backgroundColor: brandColor }}>
             {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" /> : initialsFromName(profile.name)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-base text-stone-500">Кабинет ученика</p>
-            <h1 className="mt-1 truncate text-2xl font-semibold text-stone-950">{profile.name}</h1>
-            <p className="mt-1 text-base text-stone-600">{branch?.address ?? 'Филиал уточнит администратор'}</p>
+            <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wide">Кабинет ученика</p>
+            <h1 className="truncate text-base font-bold text-stone-950">{profile.name}</h1>
+            <p className="text-xs text-stone-400">{branch?.address ?? 'Филиал уточнит администратор'}</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={onOpenSettings} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-600">
-              <Settings size={19} />
+          <div className="flex gap-1.5">
+            <button onClick={onOpenSettings} className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:border-stone-300 hover:text-stone-900">
+              <Settings size={14} />
             </button>
-            <button onClick={onLogout} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-600">
-              <LogOut size={19} />
+            <button onClick={onLogout} className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:border-stone-300 hover:text-stone-900">
+              <LogOut size={14} />
             </button>
           </div>
         </div>
 
         {!isComplete ? (
-          <button onClick={onOpenSettings} className="mt-5 w-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-left">
-            <p className="text-base font-semibold text-amber-950">Профиль заполнен не до конца</p>
-            <p className="mt-1 text-base text-amber-800">Добавьте e-mail и пароль, чтобы входить с другого устройства.</p>
+          <button onClick={onOpenSettings} className="mt-3 w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-left transition hover:border-rose-300">
+            <p className="text-xs font-semibold text-rose-900">Профиль не заполнен до конца</p>
+            <p className="mt-0.5 text-xs text-rose-700">Добавьте e-mail и пароль для входа с другого устройства.</p>
           </button>
         ) : null}
 
-        <div className="mt-5 rounded-2xl bg-stone-50 p-4">
-          <p className="text-base font-medium text-stone-500">Ближайшее занятие</p>
+        <div className="mt-3 rounded-xl bg-stone-50 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Ближайшее занятие</p>
           {nextLesson ? (
             <>
-              <p className="mt-1 text-xl font-semibold text-stone-950">{formatDate(nextLesson.slot.date)}, {nextLesson.slot.time}</p>
-              <p className="mt-1 text-base text-stone-600">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
+              <p className="mt-1 text-sm font-bold text-stone-950">{formatDate(nextLesson.slot.date)}, {nextLesson.slot.time}</p>
+              <p className="mt-0.5 text-xs text-stone-500">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
             </>
           ) : (
-            <p className="mt-1 text-lg font-semibold text-stone-900">Активных записей пока нет</p>
+            <p className="mt-1 text-sm text-stone-500">Активных записей пока нет</p>
           )}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button size="lg" className="w-full" onClick={onStartBooking}>
+              Записаться
+              <ArrowRight size={14} />
+            </Button>
+            <Button variant="secondary" className="w-full" onClick={onOpenSchedule}>
+              <CalendarDays size={14} />
+              Расписание
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-3">
-        <Button size="lg" className="min-h-14 text-lg" onClick={onStartBooking}>
-          Записаться еще
-          <ArrowRight size={20} />
-        </Button>
-        <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onOpenSchedule}>
-          <CalendarDays size={18} />
-          Открыть расписание
-        </Button>
-      </div>
-
-      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
-        <h2 className="text-xl font-semibold text-stone-900">Мои записи</h2>
-        <div className="mt-4 space-y-3">
+      <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-stone-800">Мои записи</h2>
+          {futureLessons.length > 0 ? <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500">{futureLessons.length}</span> : null}
+        </div>
+        <div className="mt-2.5 space-y-2">
           {futureLessons.length === 0 ? (
             <EmptyState title="Записей пока нет" description="Когда вы запишетесь на занятие, оно появится здесь." />
           ) : (
@@ -465,46 +458,46 @@ function ScheduleOverview({ brandColor, onBack, onSelectSlot, school }: {
   const freeCount = visibleSlots.reduce((sum, group) => sum + group.slots.filter((slot) => slot.status === 'available').length, 0)
 
   return (
-    <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
       <BackButton onClick={onBack} />
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-950">Расписание автошколы</h1>
-          <p className="mt-2 text-base leading-relaxed text-stone-600">Ближайшие две недели. Нажмите на свободное время, чтобы записаться.</p>
+          <h1 className="text-base font-bold text-stone-950">Расписание</h1>
+          <p className="text-xs text-stone-400">Ближайшие 14 дней. Нажмите на слот, чтобы записаться.</p>
         </div>
-        <div className="rounded-2xl bg-blue-50 px-4 py-3 text-center">
-          <p className="text-2xl font-semibold text-blue-700">{freeCount}</p>
-          <p className="text-xs font-semibold text-blue-700/70">свободно</p>
+        <div className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-center">
+          <p className="text-base font-bold tabular-nums text-blue-700">{freeCount}</p>
+          <p className="text-[10px] font-semibold text-blue-600/70">свободно</p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
           <option value="">Все филиалы</option>
           {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
         </select>
         <select value={category} onChange={(event) => setCategory(event.target.value)} className={selectClassName()}>
           <option value="">Все категории</option>
-          {categoryOptions.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.title}</option>)}
+          {categoryOptions.map((item) => <option key={item.code} value={item.code}>{item.code} — {item.title}</option>)}
         </select>
-        <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 text-base text-stone-700">
+        <label className="flex h-9 items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-3 text-sm text-stone-600 cursor-pointer">
           <input type="checkbox" checked={onlyAvailable} onChange={(event) => setOnlyAvailable(event.target.checked)} />
           Только свободные
         </label>
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-3 space-y-2.5">
         {visibleSlots.map((group) => (
-          <div key={group.date} className="rounded-3xl border border-stone-100 bg-stone-50/70 p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
-              {group.slots.length > 3 ? <p className="shrink-0 text-xs font-medium text-stone-400">листайте время</p> : null}
+          <div key={group.date} className="rounded-xl border border-stone-100 bg-stone-50/70 p-2.5">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+              {group.slots.length > 3 ? <p className="shrink-0 text-[10px] text-stone-400">листайте →</p> : null}
             </div>
             {group.slots.length === 0 ? (
-              <div className="rounded-2xl bg-white px-4 py-4 text-base text-stone-500">Нет подходящих мест.</div>
+              <div className="rounded-lg bg-white px-3 py-2 text-xs text-stone-400">Нет подходящих мест.</div>
             ) : (
-              <div className="-mx-1 overflow-x-auto px-1 pb-1">
-                <div className="flex min-w-max gap-3">
+              <div className="-mx-0.5 overflow-x-auto px-0.5 pb-0.5">
+                <div className="flex min-w-max gap-2">
                   {group.slots.map((slot) => {
                     const instructor = db.instructors.byId(slot.instructorId)
                     const disabled = slot.status !== 'available'
@@ -513,11 +506,11 @@ function ScheduleOverview({ brandColor, onBack, onSelectSlot, school }: {
                         key={slot.id}
                         disabled={disabled}
                         onClick={() => onSelectSlot(slot)}
-                        className="min-h-[116px] w-[168px] shrink-0 rounded-2xl border border-stone-200 bg-white p-4 text-left transition hover:border-blue-300 disabled:bg-stone-100 disabled:text-stone-400 sm:w-[190px]"
+                        className="min-h-[68px] w-[108px] shrink-0 rounded-lg border border-stone-200 bg-white px-3 py-2 text-left transition hover:border-blue-300 disabled:bg-stone-100 disabled:text-stone-400"
                       >
-                        <p className="text-2xl font-semibold text-stone-950">{slot.time}</p>
-                        <p className="mt-2 truncate text-sm text-stone-500">{instructor?.name ?? 'Инструктор'}</p>
-                        <p className="mt-2 text-xs font-semibold" style={{ color: disabled ? undefined : brandColor }}>
+                        <p className="text-base font-bold text-stone-950">{slot.time}</p>
+                        <p className="mt-1 truncate text-[10px] text-stone-400">{instructor?.name ?? 'Инструктор'}</p>
+                        <p className="mt-0.5 text-[10px] font-semibold" style={{ color: disabled ? undefined : brandColor }}>
                           {disabled ? 'занято' : formatDuration(slot.duration)}
                         </p>
                       </button>
@@ -542,14 +535,14 @@ function LoginPanel({ errors, login, onBack, onChange, onLogin, submitting }: {
   submitting: boolean
 }) {
   return (
-    <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
       <BackButton onClick={onBack} />
-      <h1 className="text-2xl font-semibold text-stone-950">Вход ученика</h1>
-      <p className="mt-2 text-base text-stone-600">Введите телефон и пароль, который указывали при создании кабинета.</p>
-      <div className="mt-6 space-y-4">
+      <h1 className="text-base font-bold text-stone-950">Вход в кабинет</h1>
+      <p className="mt-1 text-xs text-stone-400">Телефон и пароль, которые указывали при создании кабинета.</p>
+      <div className="mt-4 space-y-3">
         <Input label="Телефон" value={login.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => onChange({ phone: event.target.value })} />
         <Input label="Пароль" type="password" value={login.password} error={errors.password} placeholder="Ваш пароль" onChange={(event) => onChange({ password: event.target.value })} />
-        <Button size="lg" className="min-h-14 w-full text-lg" disabled={submitting} onClick={onLogin}>
+        <Button size="lg" className="w-full" disabled={submitting} onClick={onLogin}>
           {submitting ? 'Проверяем...' : 'Войти'}
         </Button>
       </div>
@@ -570,33 +563,33 @@ function ProfileSettings({ branch, branchRequestNote, form, onBack, onBranchRequ
   profile: StudentProfile
 }) {
   return (
-    <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
       <BackButton onClick={onBack} label="В кабинет" />
-      <h1 className="text-2xl font-semibold text-stone-950">Настройки профиля</h1>
-      <p className="mt-2 text-base text-stone-600">Контакты и пароль хранятся здесь. ФИО меняйте через администратора, если в документах ошибка.</p>
-      <div className="mt-6 rounded-2xl bg-stone-50 p-4">
-        <p className="text-base font-semibold text-stone-900">{profile.name}</p>
-        <p className="mt-1 text-base text-stone-600">{branch?.address ?? 'Филиал не закреплен'}</p>
+      <h1 className="text-base font-bold text-stone-950">Настройки профиля</h1>
+      <p className="mt-1 text-xs text-stone-400">ФИО меняйте через администратора, если ошибка в документах.</p>
+      <div className="mt-3 rounded-xl bg-stone-50 px-4 py-3">
+        <p className="text-sm font-semibold text-stone-900">{profile.name}</p>
+        <p className="text-xs text-stone-400">{branch?.address ?? 'Филиал не закреплен'}</p>
       </div>
-      <div className="mt-6 space-y-4">
+      <div className="mt-3 space-y-3">
         <Input label="Телефон" value={form.phone} onChange={(event) => onChange({ phone: event.target.value })} />
         <Input label="E-mail" type="email" value={form.email} onChange={(event) => onChange({ email: event.target.value })} />
         <Input label="Новый пароль" type="password" helperText="Оставьте пустым, если не хотите менять." value={form.password} onChange={(event) => onChange({ password: event.target.value })} />
         <Input label="Аватарка" placeholder="Ссылка на фото, можно оставить пустой" value={form.avatarUrl} onChange={(event) => onChange({ avatarUrl: event.target.value })} />
         <Textarea
           label="Запрос на смену филиала"
-          rows={3}
+          rows={2}
           placeholder="Например: хочу заниматься ближе к дому, филиал на Ленина."
           value={branchRequestNote}
           onChange={(event) => onBranchRequestNoteChange(event.target.value)}
         />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button size="lg" className="min-h-12 text-base" onClick={onSave}>Сохранить</Button>
-          <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onCopy}>
-            <Copy size={18} />
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button size="lg" onClick={onSave}>Сохранить</Button>
+          <Button variant="secondary" onClick={onCopy}>
+            <Copy size={14} />
             Скопировать доступ
           </Button>
-          <Button size="lg" variant="secondary" className="min-h-12 text-base sm:col-span-2" onClick={onRequestBranchChange}>
+          <Button variant="secondary" className="sm:col-span-2" onClick={onRequestBranchChange}>
             Запросить смену филиала
           </Button>
         </div>
@@ -982,26 +975,26 @@ export function SchoolPage() {
   if (!school) return <div className="min-h-screen bg-stone-50" />
 
   return (
-    <div className="min-h-screen bg-[#f7f6f2]">
+    <div className="min-h-screen bg-[#f6f4ef]">
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-[1120px] items-center justify-between px-4 py-3">
           <button onClick={() => setView(profile ? 'dashboard' : 'home')} className="flex min-w-0 items-center gap-3 text-left">
             {school.logoUrl ? (
-              <div className="h-11 w-11 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <div className="h-10 w-10 overflow-hidden rounded-xl border border-stone-200 bg-white">
                 <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
               </div>
             ) : (
               <VirazhLogo color={brandColor} />
             )}
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-stone-950">{school.name}</p>
-              <p className="text-sm text-stone-500">
+              <p className="truncate text-[15px] font-semibold text-stone-950">{school.name}</p>
+              <p className="text-xs text-stone-500">
                 {view === 'dashboard' ? 'Кабинет ученика' : view === 'booking' ? 'Запись на занятие' : view === 'schedule' ? 'Расписание' : 'Страница автошколы'}
               </p>
             </div>
           </button>
           {school.phone ? (
-            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 sm:flex">
+            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 sm:flex">
               <Phone size={16} />
               {formatPhone(school.phone)}
             </a>
@@ -1009,7 +1002,7 @@ export function SchoolPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-6 pb-24">
+      <main className="mx-auto max-w-[1120px] px-4 py-4 pb-20">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
           {view === 'login' ? (
             <LoginPanel
@@ -1071,35 +1064,35 @@ export function SchoolPage() {
               profile={profile}
             />
           ) : view === 'booking' ? (
-            <section className="overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-card">
+            <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card">
               <StepHeader current={Math.min(currentStep, totalSteps)} total={totalSteps} />
-              <div className="p-5">
+              <div className="px-5 py-4">
                 {step === 'category' ? (
                   <>
-                    <BackButton onClick={backFromBooking} label={profile ? 'В кабинет' : 'На страницу школы'} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Какая категория нужна?</h1>
-                    <p className="mt-2 text-base text-stone-600">Если не уверены, можно пропустить и выбрать инструктора.</p>
-                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <BackButton onClick={backFromBooking} label={profile ? 'В кабинет' : 'На главную'} />
+                    <h1 className="text-base font-bold text-stone-950">Какая категория нужна?</h1>
+                    <p className="mt-1 text-xs text-stone-400">Если не уверены — пропустите, выберете с инструктором.</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {bookingCategoryOptions.map((category) => (
-                        <button key={category.code} onClick={() => { setSelectedCategory(category.code); setStep('branch') }} className="rounded-2xl border border-stone-200 bg-stone-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50">
-                          <p className="text-xl font-semibold text-stone-950">{category.code}</p>
-                          <p className="mt-1 line-clamp-2 text-sm text-stone-500">{category.title}</p>
+                        <button key={category.code} onClick={() => { setSelectedCategory(category.code); setStep('branch') }} className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-left hover:border-blue-300 hover:bg-blue-50 transition">
+                          <p className="text-sm font-bold text-stone-950">{category.code}</p>
+                          <p className="mt-0.5 line-clamp-2 text-[11px] text-stone-400">{category.title}</p>
                         </button>
                       ))}
                     </div>
-                    <Button size="lg" variant="secondary" className="mt-4 min-h-12 w-full text-base" onClick={() => setStep('branch')}>Пропустить</Button>
+                    <Button variant="secondary" className="mt-3 w-full" onClick={() => setStep('branch')}>Пропустить</Button>
                   </>
                 ) : null}
 
                 {step === 'branch' ? (
                   <>
                     <BackButton onClick={() => setStep('category')} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Выберите филиал</h1>
-                    <div className="mt-5 space-y-3">
+                    <h1 className="text-base font-bold text-stone-950">Выберите филиал</h1>
+                    <div className="mt-3 space-y-2">
                       {branches.map((branch) => (
-                        <button key={branch.id} onClick={() => { setSelectedBranch(branch); setSelectedInstructor(null); setStep('instructor') }} className="w-full rounded-2xl border border-stone-200 bg-white p-4 text-left hover:border-blue-300">
-                          <p className="text-lg font-semibold text-stone-950">{branch.name}</p>
-                          <p className="mt-1 text-base text-stone-600">{branch.address}</p>
+                        <button key={branch.id} onClick={() => { setSelectedBranch(branch); setSelectedInstructor(null); setStep('instructor') }} className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-blue-300 transition">
+                          <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
+                          <p className="mt-0.5 text-xs text-stone-400">{branch.address}</p>
                         </button>
                       ))}
                     </div>
@@ -1109,22 +1102,22 @@ export function SchoolPage() {
                 {step === 'instructor' ? (
                   <>
                     <BackButton onClick={() => setStep('branch')} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Выберите инструктора</h1>
-                    <div className="mt-5 space-y-3">
+                    <h1 className="text-base font-bold text-stone-950">Выберите инструктора</h1>
+                    <div className="mt-3 space-y-2">
                       {visibleInstructors.length === 0 ? <EmptyState title="Инструкторов нет" description="Выберите другой филиал или категорию." /> : visibleInstructors.map((instructor) => (
-                        <button key={instructor.id} onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }} className="w-full rounded-2xl border border-stone-200 bg-white p-4 text-left hover:border-blue-300">
-                          <div className="flex items-center gap-4">
+                        <button key={instructor.id} onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }} className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-blue-300 transition">
+                          <div className="flex items-center gap-3">
                             <Avatar
                               initials={instructor.avatarInitials}
                               color={instructor.avatarColor}
                               src={getInstructorPhoto(instructor)}
                               alt={instructor.name}
-                              size="lg"
+                              size="md"
                             />
                             <div className="min-w-0">
-                              <p className="text-lg font-semibold text-stone-950">{instructor.name}</p>
-                              <p className="mt-1 text-base text-stone-600">{instructor.car ?? 'Автомобиль уточняется'}</p>
-                              <p className="mt-1 text-sm text-stone-500">{(instructor.categories ?? []).join(', ')}</p>
+                              <p className="text-sm font-semibold text-stone-900">{instructor.name}</p>
+                              <p className="mt-0.5 text-xs text-stone-500">{instructor.car ?? 'Автомобиль уточняется'}</p>
+                              <p className="mt-0.5 text-xs text-stone-400">{(instructor.categories ?? []).join(', ')}</p>
                             </div>
                           </div>
                         </button>
@@ -1136,8 +1129,8 @@ export function SchoolPage() {
                 {step === 'date' ? (
                   <>
                     <BackButton onClick={() => setStep('instructor')} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Выберите день</h1>
-                    <div className="mt-5 space-y-3">
+                    <h1 className="text-base font-bold text-stone-950">Выберите день</h1>
+                    <div className="mt-3 space-y-2">
                       {dates.map((date) => {
                         const count = selectedInstructor ? getAvailableSlots(selectedInstructor.id, date, sessionId.current).length : 0
                         const active = selectedDates.includes(date)
@@ -1146,42 +1139,42 @@ export function SchoolPage() {
                             key={date}
                             disabled={count === 0}
                             onClick={() => setSelectedDates(active ? selectedDates.filter((item) => item !== date) : [...selectedDates, date])}
-                            className={`w-full rounded-2xl border p-4 text-left ${active ? 'border-blue-500 bg-blue-50' : 'border-stone-200 bg-white'} disabled:bg-stone-50 disabled:text-stone-400`}
+                            className={`w-full rounded-xl border px-4 py-3 text-left transition ${active ? 'border-blue-500 bg-blue-50' : 'border-stone-200 bg-white'} disabled:bg-stone-50 disabled:text-stone-400`}
                           >
-                            <p className="text-lg font-semibold capitalize">{formatDayOfWeek(date)}, {formatDate(date)}</p>
-                            <p className="mt-1 text-base text-stone-500">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
+                            <p className="text-sm font-semibold capitalize">{formatDayOfWeek(date)}, {formatDate(date)}</p>
+                            <p className="mt-0.5 text-xs text-stone-400">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
                           </button>
                         )
                       })}
                     </div>
-                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" disabled={selectedDates.length === 0} onClick={() => setStep('time')}>Выбрать время</Button>
+                    <Button size="lg" className="mt-4 w-full" disabled={selectedDates.length === 0} onClick={() => setStep('time')}>Выбрать время</Button>
                   </>
                 ) : null}
 
                 {step === 'time' ? (
                   <>
                     <BackButton onClick={() => setStep('date')} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Выберите время</h1>
-                    <p className="mt-2 text-base text-stone-600">Можно выбрать до {maxSlots} занятий.</p>
-                    <div className="mt-5 space-y-5">
+                    <h1 className="text-base font-bold text-stone-950">Выберите время</h1>
+                    <p className="mt-1 text-xs text-stone-400">Можно выбрать до {maxSlots} занятий.</p>
+                    <div className="mt-3 space-y-3">
                       {slotsByDate.map((group) => (
-                        <div key={group.date} className="rounded-3xl border border-stone-100 bg-stone-50/70 p-3">
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <p className="text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
-                            {group.slots.length > 3 ? <p className="shrink-0 text-xs font-medium text-stone-400">листайте время</p> : null}
+                        <div key={group.date} className="rounded-xl border border-stone-100 bg-stone-50/70 p-2.5">
+                          <div className="mb-2 flex items-center justify-between gap-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+                            {group.slots.length > 3 ? <p className="shrink-0 text-[10px] text-stone-400">листайте →</p> : null}
                           </div>
-                          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-                            <div className="flex min-w-max gap-3">
+                          <div className="-mx-0.5 overflow-x-auto px-0.5 pb-0.5">
+                            <div className="flex min-w-max gap-2">
                               {group.slots.map((slot) => {
                                 const active = selectedSlots.some((item) => item.id === slot.id)
                                 return (
                                   <button
                                     key={slot.id}
                                     onClick={() => selectSlot(slot)}
-                                    className={`min-h-[104px] w-[128px] shrink-0 rounded-2xl border p-4 text-center transition sm:w-[148px] ${active ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-200 bg-white hover:border-blue-300'}`}
+                                    className={`min-h-[76px] w-[96px] shrink-0 rounded-lg border px-3 py-2 text-center transition ${active ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-200 bg-white hover:border-blue-300'}`}
                                   >
-                                    <p className="text-2xl font-semibold">{slot.time}</p>
-                                    <p className="mt-2 text-xs">{formatDuration(slot.duration)}</p>
+                                    <p className="text-base font-bold">{slot.time}</p>
+                                    <p className="mt-1 text-[10px] opacity-80">{formatDuration(slot.duration)}</p>
                                   </button>
                                 )
                               })}
@@ -1190,71 +1183,71 @@ export function SchoolPage() {
                         </div>
                       ))}
                     </div>
-                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" disabled={selectedSlots.length === 0} onClick={() => setStep('details')}>Дальше</Button>
+                    <Button size="lg" className="mt-4 w-full" disabled={selectedSlots.length === 0} onClick={() => setStep('details')}>Дальше</Button>
                   </>
                 ) : null}
 
                 {step === 'details' ? (
                   <>
                     <BackButton onClick={() => setStep('time')} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Ваши данные</h1>
-                    <p className="mt-2 text-base text-stone-600">Для записи нужны только имя и телефон.</p>
-                    <div className="mt-5 space-y-4">
+                    <h1 className="text-base font-bold text-stone-950">Ваши данные</h1>
+                    <p className="mt-1 text-xs text-stone-400">Только имя и телефон — этого достаточно для записи.</p>
+                    <div className="mt-4 space-y-3">
                       <Input label="Имя" value={form.name} error={errors.name} placeholder="Анна Иванова" onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
                       <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
                     </div>
-                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" onClick={() => validateDetails() && setStep('review')}>Проверить запись</Button>
+                    <Button size="lg" className="mt-4 w-full" onClick={() => validateDetails() && setStep('review')}>Проверить запись</Button>
                   </>
                 ) : null}
 
                 {step === 'review' ? (
                   <>
                     <BackButton onClick={() => setStep('details')} />
-                    <h1 className="text-2xl font-semibold text-stone-950">Проверьте запись</h1>
-                    <div className="mt-5 space-y-3">
+                    <h1 className="text-base font-bold text-stone-950">Проверьте запись</h1>
+                    <div className="mt-3 space-y-2">
                       {selectedSlots.map((slot) => {
                         const branch = db.branches.byId(slot.branchId)
                         const instructor = db.instructors.byId(slot.instructorId)
                         return (
-                          <div key={slot.id} className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                            <p className="text-lg font-semibold text-stone-950">{formatDate(slot.date)}, {slot.time}</p>
-                            <p className="mt-1 text-base text-stone-600">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
+                          <div key={slot.id} className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
+                            <p className="text-sm font-semibold text-stone-950">{formatDate(slot.date)}, {slot.time}</p>
+                            <p className="mt-0.5 text-xs text-stone-500">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
                           </div>
                         )
                       })}
-                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                        <p className="text-base font-semibold text-stone-900">{form.name}</p>
-                        <p className="mt-1 text-base text-stone-600">{formatPhone(normalizePhone(form.phone))}</p>
+                      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
+                        <p className="text-sm font-semibold text-stone-900">{form.name}</p>
+                        <p className="text-xs text-stone-400">{formatPhone(normalizePhone(form.phone))}</p>
                       </div>
                     </div>
-                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" disabled={submitting} style={!submitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined} onClick={() => void submitBooking()}>
+                    <Button size="lg" className="mt-4 w-full" disabled={submitting} style={!submitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined} onClick={() => void submitBooking()}>
                       {submitting ? 'Сохраняем...' : 'Записаться'}
-                      {!submitting ? <Check size={18} /> : null}
+                      {!submitting ? <Check size={15} /> : null}
                     </Button>
                   </>
                 ) : null}
 
                 {step === 'profile' ? (
                   <>
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                      <CheckCircle2 size={32} />
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <CheckCircle2 size={24} />
                     </div>
-                    <h1 className="mt-5 text-center text-2xl font-semibold text-stone-950">Запись создана</h1>
-                    <p className="mx-auto mt-2 max-w-md text-center text-base leading-relaxed text-stone-600">Создайте кабинет ученика, чтобы видеть свои занятия и быстрее записываться снова.</p>
-                    <div className="mt-6 space-y-4">
+                    <h1 className="mt-4 text-center text-base font-bold text-stone-950">Запись создана!</h1>
+                    <p className="mx-auto mt-1 max-w-sm text-center text-xs leading-relaxed text-stone-400">Создайте кабинет, чтобы видеть занятия и записываться быстрее в следующий раз.</p>
+                    <div className="mt-4 space-y-3">
                       <Input label="ФИО" value={form.name} error={errors.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
                       <Input label="Телефон" value={form.phone} error={errors.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
                       <Input label="E-mail" type="email" value={form.email} error={errors.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
                       <Input label="Пароль" type="password" value={form.password} error={errors.password} helperText="Минимум 6 символов." onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
-                      <Input label="Аватарка" value={form.avatarUrl} placeholder="Ссылка на фото, можно пусто" onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))} />
+                      <Input label="Аватарка" value={form.avatarUrl} placeholder="Ссылка на фото (не обязательно)" onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))} />
                     </div>
-                    <div className="mt-6 grid gap-3">
-                      <Button size="lg" className="min-h-14 w-full text-lg" disabled={submitting} onClick={() => void createProfile()}>Создать кабинет</Button>
-                      <Button size="lg" variant="secondary" className="min-h-12 w-full text-base" onClick={() => void copyCredentials()}>
-                        <Copy size={18} />
+                    <div className="mt-4 grid gap-2">
+                      <Button size="lg" className="w-full" disabled={submitting} onClick={() => void createProfile()}>Создать кабинет</Button>
+                      <Button variant="secondary" className="w-full" onClick={() => void copyCredentials()}>
+                        <Copy size={14} />
                         Скопировать логин и пароль
                       </Button>
-                      <Button size="lg" variant="secondary" className="min-h-12 w-full text-base" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : setView('home')}>Готово</Button>
+                      <Button variant="secondary" className="w-full" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : setView('home')}>Готово</Button>
                     </div>
                   </>
                 ) : null}

@@ -19,8 +19,8 @@ export function Input({ label, error, helperText, className, id, ...props }: Inp
       <input
         id={inputId}
         className={cn(
-          'w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 placeholder:text-stone-400 transition-colors duration-150',
-          'h-11 focus:border-forest-300 focus:outline-none focus:ring-4 focus:ring-forest-100',
+          'w-full rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-900 placeholder:text-stone-400 transition-colors duration-150',
+          'h-10 focus:border-forest-300 focus:outline-none focus:ring-4 focus:ring-forest-100',
           error && 'border-red-300 focus:border-red-300 focus:ring-red-100',
           className,
         )}
@@ -50,7 +50,7 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
       <textarea
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-[15px] text-stone-900 placeholder:text-stone-400 transition-colors duration-150',
+          'w-full resize-none rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 transition-colors duration-150',
           'focus:border-forest-300 focus:outline-none focus:ring-4 focus:ring-forest-100',
           error && 'border-red-300 focus:border-red-300 focus:ring-red-100',
           className,
