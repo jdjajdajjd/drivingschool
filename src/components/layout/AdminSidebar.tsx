@@ -2,27 +2,25 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   CalendarDays,
   Car,
-  Clock3,
+  ClipboardList,
   ExternalLink,
   LayoutDashboard,
   MapPin,
-  Puzzle,
   Settings2,
   UserRound,
   Users,
   X,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
+import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 
 const NAV = [
-  { to: ADMIN_BASE_PATH, label: 'Обзор', icon: LayoutDashboard, end: true },
-  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: CalendarDays },
-  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Слоты', icon: Clock3 },
+  { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true },
+  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: ClipboardList },
+  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание', icon: CalendarDays },
   { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound },
   { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users },
   { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: MapPin },
-  { to: `${ADMIN_BASE_PATH}/modules`, label: 'Модули', icon: Puzzle },
   { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2 },
 ]
 
@@ -51,13 +49,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         )}
       >
         <div className="flex items-center justify-between border-b border-stone-100 px-5 py-5">
-          <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-700">
+          <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-700">
               <Car size={18} className="text-white" />
             </div>
             <div className="text-left">
               <p className="text-sm font-semibold text-stone-900">DriveDesk</p>
-              <p className="text-xs text-stone-400">Панель школы</p>
+              <p className="text-xs text-stone-400">Панель автошколы</p>
             </div>
           </button>
           <button
@@ -71,7 +69,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         <div className="border-b border-stone-100 px-5 py-4">
           <p className="text-sm font-medium text-stone-500">Автошкола</p>
           <p className="mt-1 text-sm font-semibold text-stone-900">Вираж</p>
-          <p className="mt-1 text-sm text-stone-500">Демо-школа · virazh</p>
+          <p className="mt-1 text-sm text-stone-500">Рабочая панель</p>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -83,16 +81,16 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors',
+                  'flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-base font-medium transition-colors',
                   isActive
-                    ? 'bg-forest-50 text-forest-700'
+                    ? 'bg-blue-50 text-blue-700'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? 'text-forest-700' : 'text-stone-400'} />
+                  <Icon size={18} className={isActive ? 'text-blue-700' : 'text-stone-400'} />
                   <span>{label}</span>
                 </>
               )}
@@ -106,20 +104,10 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               navigate('/school/virazh')
               onClose()
             }}
-            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            className="flex w-full min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-base text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
           >
-            <ExternalLink size={15} className="text-stone-400" />
-            Страница записи
-          </button>
-          <button
-            onClick={() => {
-              navigate(SUPERADMIN_BASE_PATH)
-              onClose()
-            }}
-            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
-          >
-            <Puzzle size={15} className="text-stone-400" />
-            Суперадмин
+            <ExternalLink size={17} className="text-stone-400" />
+            Страница школы
           </button>
           <button
             onClick={() => {
@@ -127,10 +115,10 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               navigate('/')
               onClose()
             }}
-            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-red-600 transition hover:bg-red-50"
+            className="flex w-full min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-base text-red-600 transition hover:bg-red-50"
           >
-            <X size={15} />
-            Выйти из админки
+            <X size={17} />
+            Выйти
           </button>
         </div>
       </aside>

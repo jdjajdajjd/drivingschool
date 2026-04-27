@@ -1,41 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
   Check,
-  CircleUserRound,
+  CheckCircle2,
   Copy,
-  Clock3,
-  AlertTriangle,
-  Bike,
-  Bus,
-  Car,
-  LockKeyhole,
+  LogIn,
   LogOut,
-  Mail,
-  MapPin,
   Phone,
   Settings,
-  Truck,
-  UserRound,
+  ShieldCheck,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
-import { Input } from '../components/ui/Input'
+import { Input, Textarea } from '../components/ui/Input'
+import { Modal } from '../components/ui/Modal'
 import { useToast } from '../components/ui/Toast'
-import { formatDuration, formatPhone, generateId, hexToRgba, pluralize } from '../lib/utils'
+import { formatDuration, formatPhone, generateId, pluralize } from '../lib/utils'
 import {
   acquireSlotLock,
   getAvailableSlots,
+  getOrCreateStudent,
   isValidRussianPhone,
   normalizePhone,
   releaseSessionLocks,
   releaseSlotLock,
 } from '../services/bookingService'
+import { DRIVING_CATEGORIES } from '../services/drivingCategories'
 import { db } from '../services/storage'
 import {
   createSupabaseBooking,
@@ -44,21 +39,11 @@ import {
   requestBranchChangeInSupabase,
   updateStudentProfileInSupabase,
 } from '../services/supabasePublicService'
-import { DRIVING_CATEGORIES, type DrivingCategoryInfo } from '../services/drivingCategories'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatDate, formatDateFull, formatDayOfWeek, getNext14Days, getNext7Days } from '../utils/date'
 
-type BookingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
-
-const STEP_TITLES: Record<BookingStep, string> = {
-  1: 'Выберите филиал',
-  2: 'Выберите инструктора',
-  3: 'Выберите дату',
-  4: 'Выберите время',
-  5: 'Ваши данные',
-  6: 'Проверьте запись',
-  7: 'Создать профиль?',
-}
+type BookingStep = 'category' | 'branch' | 'instructor' | 'date' | 'time' | 'details' | 'review' | 'profile'
+type SchoolView = 'home' | 'dashboard' | 'booking' | 'schedule' | 'settings' | 'login'
 
 interface FormState {
   name: string
@@ -85,38 +70,32 @@ interface StudentProfile {
   createdByConsent: boolean
 }
 
-interface StudentLesson {
+interface ResolvedLesson {
+  booking: Booking
+  slot: Slot
   branch: Branch | null
   instructor: Instructor | null
-  slot: Slot
 }
 
-interface ResolvedStudentLesson extends StudentLesson {
-  booking: Booking
-}
-
-const fadeSlide = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.22 },
-}
+const stepOrder: BookingStep[] = ['category', 'branch', 'instructor', 'date', 'time', 'details', 'review', 'profile']
+const emptyForm: FormState = { name: '', phone: '', email: '', password: '', avatarUrl: '' }
 
 function getProfileKey(schoolId: string): string {
   return `dd:student_profile:${schoolId}`
 }
 
-function getStudentProfile(schoolId: string): StudentProfile | null {
+function loadStudentProfile(schoolId: string): StudentProfile | null {
   try {
     const raw = localStorage.getItem(getProfileKey(schoolId))
     if (!raw) return null
     const profile = JSON.parse(raw) as StudentProfile
-    return profile.name && profile.phone && profile.createdByConsent ? {
+    if (!profile.createdByConsent || !profile.name || !profile.phone) return null
+    return {
       ...profile,
       email: profile.email ?? '',
       avatarUrl: profile.avatarUrl ?? '',
       passwordSet: Boolean(profile.passwordSet),
-    } : null
+    }
   } catch {
     return null
   }
@@ -142,7 +121,7 @@ function removeStudentProfile(schoolId: string): void {
 }
 
 function isProfileComplete(profile: StudentProfile | null): boolean {
-  return Boolean(profile?.name?.trim() && profile.phone && profile.email?.trim() && profile.passwordSet)
+  return Boolean(profile?.name.trim() && profile.phone && profile.email.trim() && profile.passwordSet)
 }
 
 function initialsFromName(name: string): string {
@@ -154,774 +133,27 @@ function slotDateTime(slot: Slot): Date {
   return new Date(`${slot.date}T${slot.time}:00`)
 }
 
-function StepProgress({ step, total = 6 }: { step: BookingStep; total?: number }) {
-  const current = Math.min(step as number, total)
-  const pct = Math.round((current / total) * 100)
+function selectClassName(): string {
+  return 'h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-base text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100'
+}
 
+function StepHeader({ current, total }: { current: number; total: number }) {
   return (
-    <div className="px-6 pt-6 pb-2">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-stone-400">Шаг {current} из {total}</span>
-        <span className="text-sm font-medium text-stone-400">{pct}%</span>
+    <div className="border-b border-stone-100 px-5 py-4">
+      <div className="flex items-center justify-between text-sm font-medium text-stone-500">
+        <span>Шаг {current} из {total}</span>
+        <span>{Math.round((current / total) * 100)}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-stone-100">
-        <div
-          className="h-full rounded-full bg-forest-700 transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="mt-3 h-1.5 rounded-full bg-stone-100">
+        <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${(current / total) * 100}%` }} />
       </div>
     </div>
   )
 }
 
-function StudentProfileCard({
-  brandColor,
-  branch,
-  futureLessons,
-  isComplete,
-  nextLesson,
-  onLogout,
-  onOpenSettings,
-  profile,
-}: {
-  brandColor: string
-  branch: Branch | null
-  futureLessons: ResolvedStudentLesson[]
-  isComplete: boolean
-  nextLesson: StudentLesson | null
-  onLogout: () => void
-  onOpenSettings: () => void
-  profile: StudentProfile
-}) {
-  const avatar = profile.avatarUrl.trim()
-
+function BackButton({ onClick, label = 'Назад' }: { onClick: () => void; label?: string }) {
   return (
-    <section className="mb-5 overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card">
-      <div className="relative overflow-hidden px-5 py-5 text-white" style={{ background: `linear-gradient(135deg, ${brandColor} 0%, #2563eb 58%, #111827 100%)` }}>
-        <div className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-white/10" />
-        <div className="pointer-events-none absolute -bottom-20 left-10 h-36 w-36 rounded-full bg-cyan-200/15" />
-
-        <div className="relative flex items-center gap-4">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] bg-white/16 text-2xl font-semibold ring-1 ring-white/25">
-            {avatar ? (
-              <img src={avatar} alt={profile.name} className="h-full w-full object-cover" />
-            ) : (
-              initialsFromName(profile.name)
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-white/72">Профиль ученика</p>
-            <h2 className="mt-1 truncate text-2xl font-semibold leading-tight">{profile.name}</h2>
-            <p className="mt-2 truncate text-sm text-white/78">
-              {branch?.address ?? 'Филиал уточнит администратор'}
-            </p>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <button
-              onClick={onOpenSettings}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/14 ring-1 ring-white/20 transition hover:bg-white/20"
-              aria-label="Настройки профиля"
-            >
-              <Settings size={20} />
-            </button>
-            <button
-              onClick={onLogout}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/14 ring-1 ring-white/20 transition hover:bg-white/20"
-              aria-label="Выйти из профиля"
-            >
-              <LogOut size={19} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-3 px-5 py-4">
-        {!isComplete ? (
-          <button
-            onClick={onOpenSettings}
-            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left text-red-900 transition hover:bg-red-100"
-          >
-            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-red-600" />
-            <span>
-              <span className="block text-sm font-semibold">Профиль заполнен не до конца</span>
-              <span className="mt-0.5 block text-sm text-red-700">Заполните e-mail и пароль, чтобы записываться без повторного ввода данных.</span>
-            </span>
-          </button>
-        ) : null}
-        <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-stone-500">Ближайшая запись</p>
-              <p className="mt-1 text-base font-semibold text-stone-900">
-                {nextLesson ? formatDate(nextLesson.slot.date) + ', ' + nextLesson.slot.time : 'Пока нет активных записей'}
-              </p>
-              <p className="mt-1 truncate text-sm text-stone-500">
-                {nextLesson
-                  ? (nextLesson.instructor?.name ?? 'Инструктор') + ' · ' + (nextLesson.branch?.name ?? 'Филиал')
-                  : 'Нажмите "Записаться на занятие", когда будете готовы.'}
-              </p>
-            </div>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white">
-              <CalendarDays size={20} style={{ color: brandColor }} />
-            </div>
-          </div>
-        </div>
-        {futureLessons.length > 1 ? (
-          <div className="rounded-2xl border border-stone-100 bg-white px-4 py-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-stone-900">Ближайшие занятия</p>
-                <p className="mt-0.5 text-sm text-stone-500">
-                  {pluralize(futureLessons.length, 'активная запись', 'активные записи', 'активных записей')}
-                </p>
-              </div>
-              <CalendarDays size={20} style={{ color: brandColor }} />
-            </div>
-            <div className="mt-3 space-y-2">
-              {futureLessons.slice(0, 4).map((lesson) => (
-                <div key={lesson.booking.id} className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-stone-900">
-                      {formatDate(lesson.slot.date)}, {lesson.slot.time}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-stone-500">
-                      {(lesson.instructor?.name ?? 'Инструктор') + ' · ' + (lesson.branch?.name ?? 'Филиал')}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-stone-500">
-                    {formatDuration(lesson.slot.duration)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  )
-}
-
-function StudentDashboard({
-  availableSlotsCount,
-  brandColor,
-  futureLessons,
-  nextLesson,
-  onOpenSchedule,
-  onStartBooking,
-}: {
-  availableSlotsCount: number
-  brandColor: string
-  futureLessons: ResolvedStudentLesson[]
-  nextLesson: StudentLesson | null
-  onOpenSchedule: () => void
-  onStartBooking: () => void
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-stone-500">Главное действие</p>
-            <h2 className="mt-1 text-2xl font-semibold leading-tight text-stone-900">
-              Записаться на занятие
-            </h2>
-            <p className="mt-2 text-base leading-relaxed text-stone-500">
-              Выберите удобный день и время. Имя и телефон уже подставятся из профиля.
-            </p>
-          </div>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-forest-50">
-            <CalendarDays size={22} style={{ color: brandColor }} />
-          </div>
-        </div>
-        <Button
-          size="lg"
-          className="mt-5 w-full min-h-14 text-lg"
-          onClick={onStartBooking}
-        >
-          Записаться на занятие
-          <ArrowRight size={20} />
-        </Button>
-      </div>
-
-      <div className="grid gap-3">
-        {futureLessons.length > 0 ? (
-          <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-base font-semibold text-stone-900">Мои ближайшие занятия</p>
-                <p className="mt-1 text-sm text-stone-500">
-                  Показываем только реальные активные записи.
-                </p>
-              </div>
-              <Clock3 size={21} style={{ color: brandColor }} />
-            </div>
-            <div className="mt-4 space-y-2">
-              {futureLessons.slice(0, 5).map((lesson) => (
-                <div key={lesson.booking.id} className="rounded-2xl bg-stone-50 px-4 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-stone-900">
-                      {formatDate(lesson.slot.date)} в {lesson.slot.time}
-                    </p>
-                    <p className="shrink-0 text-xs font-semibold text-stone-500">
-                      {formatDuration(lesson.slot.duration)}
-                    </p>
-                  </div>
-                  <p className="mt-1 truncate text-sm text-stone-500">
-                    {(lesson.instructor?.name ?? 'Инструктор') + ' · ' + (lesson.branch?.name ?? 'Филиал')}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        {[
-          {
-            icon: Clock3,
-            title: nextLesson ? 'Моя ближайшая запись' : 'Мои записи',
-            text: nextLesson
-              ? formatDate(nextLesson.slot.date) + ' в ' + nextLesson.slot.time
-              : 'После записи здесь появится ближайшее занятие.',
-          },
-          {
-            icon: MapPin,
-            title: 'Расписание автошколы',
-            text: availableSlotsCount > 0
-              ? pluralize(availableSlotsCount, 'свободное место', 'свободных места', 'свободных мест') + ' в ближайшие дни.'
-              : 'Свободных мест пока нет.',
-            onClick: onOpenSchedule,
-          },
-        ].map((item) => {
-          const Icon = item.icon
-          return (
-            <button
-              key={item.title}
-              onClick={item.onClick}
-              className="flex w-full items-center gap-4 rounded-3xl border border-stone-200 bg-white p-4 text-left shadow-soft transition hover:border-stone-300 active:scale-[0.99]"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-stone-50">
-                <Icon size={21} style={{ color: brandColor }} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-semibold text-stone-900">{item.title}</p>
-                <p className="mt-1 text-sm leading-snug text-stone-500">{item.text}</p>
-              </div>
-              {item.onClick ? <ArrowRight size={18} className="shrink-0 text-stone-300" /> : null}
-            </button>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-function ScheduleOverview({
-  brandColor,
-  onBack,
-  onSelectCategory,
-  onStartBooking,
-  school,
-}: {
-  brandColor: string
-  onBack: () => void
-  onSelectCategory?: (category: string) => void
-  onStartBooking: () => void
-  school: School
-}) {
-  const [branchId, setBranchId] = useState('')
-  const [category, setCategory] = useState('')
-  const [instructorId, setInstructorId] = useState('')
-  const [transmission, setTransmission] = useState('')
-  const [onlyAvailable, setOnlyAvailable] = useState(false)
-  const days = useMemo(() => getNext14Days(), [])
-  const branches = useMemo(() => db.branches.bySchool(school.id).filter((item) => item.isActive), [school.id])
-  const instructors = useMemo(() => db.instructors.bySchool(school.id).filter((item) => item.isActive), [school.id])
-  const categoryOptions = useMemo(
-    () =>
-      DRIVING_CATEGORIES.filter((item) =>
-        instructors.some((instructor) => instructor.categories?.includes(item.code)),
-      ),
-    [instructors],
-  )
-  const visibleInstructors = useMemo(
-    () =>
-      instructors
-        .filter((item) => (branchId ? item.branchId === branchId : true))
-        .filter((item) => (category ? item.categories?.includes(category) : true))
-        .filter((item) => (transmission ? item.transmission === transmission : true)),
-    [branchId, category, instructors, transmission],
-  )
-  const visibleInstructorIds = useMemo(
-    () => new Set(visibleInstructors.map((item) => item.id)),
-    [visibleInstructors],
-  )
-  const slotsByDate = useMemo(
-    () => {
-      const slots = db.slots
-        .bySchool(school.id)
-        .filter((slot) => days.includes(slot.date))
-        .filter((slot) => (branchId ? slot.branchId === branchId : true))
-        .filter((slot) => (instructorId ? slot.instructorId === instructorId : visibleInstructorIds.has(slot.instructorId)))
-        .filter((slot) => (onlyAvailable ? slot.status === 'available' : true))
-        .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
-
-      return days.map((date) => ({
-        date,
-        slots: slots.filter((slot) => slot.date === date),
-      }))
-    },
-    [branchId, days, instructorId, onlyAvailable, school.id, visibleInstructorIds],
-  )
-  const filteredSlotCount = slotsByDate.reduce((sum, group) => sum + group.slots.length, 0)
-  const freeSlotCount = slotsByDate.reduce(
-    (sum, group) => sum + group.slots.filter((slot) => slot.status === 'available').length,
-    0,
-  )
-
-  function resetFilters(): void {
-    setBranchId('')
-    setCategory('')
-    setInstructorId('')
-    setTransmission('')
-    setOnlyAvailable(false)
-  }
-
-  function selectClassName(): string {
-    return 'h-11 w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100'
-  }
-
-  return (
-    <section className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-      <BackButton onClick={onBack} label="Назад" />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Расписание автошколы</h1>
-          <p className="mt-2 text-base leading-relaxed text-stone-500">
-            Ближайшие две недели. Можно быстро отфильтровать по филиалу, категории, инструктору и коробке.
-          </p>
-        </div>
-        <div className="hidden rounded-2xl bg-blue-50 px-4 py-3 text-right sm:block">
-          <p className="text-2xl font-semibold text-blue-700">{freeSlotCount}</p>
-          <p className="text-xs font-medium text-blue-700/70">свободно</p>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 p-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-600">Филиал</label>
-            <select
-              className={selectClassName()}
-              value={branchId}
-              onChange={(event) => {
-                setBranchId(event.target.value)
-                setInstructorId('')
-              }}
-            >
-              <option value="">Все филиалы</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>{branch.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-600">Категория</label>
-            <select
-              className={selectClassName()}
-              value={category}
-              onChange={(event) => {
-                setCategory(event.target.value)
-                setInstructorId('')
-              }}
-            >
-              <option value="">Все категории</option>
-              {categoryOptions.map((item) => (
-                <option key={item.code} value={item.code}>{item.code} · {item.title}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-600">Инструктор</label>
-            <select
-              className={selectClassName()}
-              value={instructorId}
-              onChange={(event) => setInstructorId(event.target.value)}
-            >
-              <option value="">Все инструкторы</option>
-              {visibleInstructors.map((instructor) => (
-                <option key={instructor.id} value={instructor.id}>{instructor.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-600">Коробка</label>
-            <select
-              className={selectClassName()}
-              value={transmission}
-              onChange={(event) => {
-                setTransmission(event.target.value)
-                setInstructorId('')
-              }}
-            >
-              <option value="">Любая</option>
-              <option value="manual">Механика</option>
-              <option value="auto">Автомат</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-stone-700">
-            <input
-              type="checkbox"
-              checked={onlyAvailable}
-              onChange={(event) => setOnlyAvailable(event.target.checked)}
-              className="h-4 w-4 accent-blue-600"
-            />
-            Только свободные
-          </label>
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="rounded-2xl px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
-          >
-            Сбросить фильтры
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-6 space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-600">
-            Найдено: {pluralize(filteredSlotCount, 'слот', 'слота', 'слотов')}
-          </span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Свободно: {freeSlotCount}
-          </span>
-        </div>
-
-        {filteredSlotCount === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center">
-            <Clock3 size={28} className="mx-auto text-stone-300" />
-            <p className="mt-3 text-base font-semibold text-stone-800">По фильтрам ничего не найдено</p>
-            <p className="mt-1 text-sm text-stone-500">Сбросьте фильтры или выберите другой филиал.</p>
-            <button type="button" onClick={resetFilters} className="mt-4 text-sm font-semibold text-blue-700">
-              Сбросить фильтры
-            </button>
-          </div>
-        ) : null}
-
-        {slotsByDate.filter((group) => group.slots.length > 0).map((group) => (
-          <div key={group.date} className="rounded-2xl border border-stone-200 p-4">
-            <div>
-              <p className="text-base font-semibold capitalize text-stone-900">
-                {formatDayOfWeek(group.date)}, {formatDateFull(group.date)}
-              </p>
-              <p className="mt-1 text-sm text-stone-500">
-                {group.slots.length > 0
-                  ? pluralize(group.slots.length, 'слот', 'слота', 'слотов')
-                  : 'Нет занятий'}
-              </p>
-            </div>
-
-            {group.slots.length > 0 ? (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {group.slots.map((slot) => {
-                  const available = slot.status === 'available'
-                  const instructor = db.instructors.byId(slot.instructorId)
-                  const branch = db.branches.byId(slot.branchId)
-                  return (
-                    <div
-                      key={slot.id}
-                      className={
-                        'rounded-xl border px-3 py-3 ' +
-                        (available ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50')
-                      }
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-base font-semibold text-stone-900">{slot.time}</p>
-                        <span className={'rounded-full px-2 py-0.5 text-[11px] font-semibold ' + (available ? 'bg-white text-emerald-700' : 'bg-white text-stone-500')}>
-                          {available ? 'свободно' : 'занято'}
-                        </span>
-                      </div>
-                      <p className={'mt-1 text-sm ' + (available ? 'text-emerald-700' : 'text-stone-500')}>
-                        {instructor?.name ?? 'Инструктор'}
-                      </p>
-                      <p className="mt-1 text-xs text-stone-400">
-                        {branch?.name ?? 'Филиал'} · {formatDuration(slot.duration)}
-                      </p>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 space-y-3">
-        {freeSlotCount > 0 ? (
-          <Button
-            size="lg"
-            className="w-full min-h-14 text-lg"
-            style={{ backgroundColor: brandColor, borderColor: brandColor }}
-            onClick={() => {
-              if (category && onSelectCategory) {
-                onSelectCategory(category)
-                return
-              }
-              onStartBooking()
-            }}
-          >
-            Записаться на свободное время
-            <ArrowRight size={20} />
-          </Button>
-        ) : null}
-        <Button
-          size="lg"
-          variant="secondary"
-          className="w-full min-h-14 text-lg"
-          onClick={onBack}
-        >
-          Назад
-        </Button>
-      </div>
-    </section>
-  )
-}
-
-function ProfileSettingsPanel({
-  branch,
-  brandColor,
-  form,
-  onBack,
-  onChange,
-  onCopyCredentials,
-  onRequestBranchChange,
-  onSave,
-  profile,
-}: {
-  branch: Branch | null
-  brandColor: string
-  form: FormState
-  onBack: () => void
-  onChange: (patch: Partial<FormState>) => void
-  onCopyCredentials: () => void
-  onRequestBranchChange: () => void
-  onSave: () => void
-  profile: StudentProfile | null
-}) {
-  const complete = isProfileComplete(profile)
-
-  return (
-    <section className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-      <BackButton onClick={onBack} label="Назад в профиль" />
-      <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-          <Settings size={24} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Настройки профиля</h1>
-          <p className="mt-2 text-base leading-relaxed text-stone-500">
-            Заполните данные один раз. Потом запись будет быстрее, а профиль станет вашим личным кабинетом.
-          </p>
-        </div>
-      </div>
-
-      {!complete ? (
-        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
-          Перед записью заполните ФИО, телефон, e-mail и пароль. Так автошкола сможет найти ваш профиль, а вы сможете войти снова.
-        </div>
-      ) : null}
-
-      <div className="mt-6 space-y-4">
-        <Input
-          label="ФИО"
-          placeholder="Анна Иванова"
-          disabled={Boolean(profile)}
-          helperText={profile ? 'ФИО меняет администратор автошколы.' : undefined}
-          value={form.name}
-          onChange={(event) => onChange({ name: event.target.value })}
-        />
-        <Input
-          label="Телефон"
-          placeholder="+7 (999) 123-45-67"
-          value={form.phone}
-          onChange={(event) => onChange({ phone: event.target.value })}
-        />
-        <Input
-          label="E-mail"
-          type="email"
-          placeholder="name@example.ru"
-          value={form.email}
-          onChange={(event) => onChange({ email: event.target.value })}
-        />
-        <Input
-          label={profile?.passwordSet ? 'Новый пароль' : 'Пароль'}
-          type="password"
-          placeholder={profile?.passwordSet ? 'Оставьте пустым, если не меняете' : 'Минимум 6 символов'}
-          value={form.password}
-          onChange={(event) => onChange({ password: event.target.value })}
-        />
-        <Input
-          label="Аватарка"
-          placeholder="Ссылка на фото"
-          helperText="Пока используем ссылку на изображение. Загрузку файла подключим позже."
-          value={form.avatarUrl}
-          onChange={(event) => onChange({ avatarUrl: event.target.value })}
-        />
-
-        <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
-          <div className="flex items-start gap-3">
-            <MapPin size={20} className="mt-0.5 shrink-0 text-blue-700" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-stone-500">Филиал</p>
-              <p className="mt-1 text-base font-semibold text-stone-900">
-                {branch?.name ?? 'Филиал пока не закреплён'}
-              </p>
-              <p className="mt-1 text-sm text-stone-500">
-                {branch?.address ?? 'Если нужен другой филиал, отправьте запрос администратору.'}
-              </p>
-              <button
-                className="mt-3 text-sm font-semibold text-blue-700"
-                onClick={onRequestBranchChange}
-                type="button"
-              >
-                Запросить смену филиала
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 space-y-3">
-        <Button
-          size="lg"
-          className="w-full min-h-14 text-lg"
-          style={{ backgroundColor: brandColor, borderColor: brandColor }}
-          onClick={onSave}
-        >
-          Сохранить профиль
-          <Check size={18} />
-        </Button>
-        <Button
-          size="lg"
-          variant="secondary"
-          className="w-full min-h-14 text-lg"
-          onClick={onCopyCredentials}
-        >
-          <Copy size={18} />
-          Скопировать логин и пароль
-        </Button>
-      </div>
-    </section>
-  )
-}
-
-function StudentLoginPanel({
-  brandColor,
-  errors,
-  login,
-  onBack,
-  onChange,
-  onLogin,
-  isSubmitting,
-}: {
-  brandColor: string
-  errors: Partial<LoginState>
-  login: LoginState
-  onBack: () => void
-  onChange: (patch: Partial<LoginState>) => void
-  onLogin: () => void
-  isSubmitting: boolean
-}) {
-  return (
-    <section className="rounded-[1.65rem] border border-stone-200 bg-white p-6 shadow-card">
-      <BackButton onClick={onBack} label="Назад к записи" />
-      <div
-        className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-soft"
-        style={{ background: `linear-gradient(135deg, ${brandColor}, #2563eb)` }}
-      >
-        <LockKeyhole size={24} />
-      </div>
-      <h1 className="text-2xl font-semibold text-stone-900">Войти в профиль</h1>
-      <p className="mt-2 text-base leading-relaxed text-stone-500">
-        Если вы уже создавали профиль, введите телефон и пароль. Сайт откроет личный кабинет без повторного ввода данных.
-      </p>
-
-      <div className="mt-7 space-y-4">
-        <Input
-          label="Телефон"
-          placeholder="+7 (999) 123-45-67"
-          value={login.phone}
-          error={errors.phone}
-          onChange={(event) => onChange({ phone: event.target.value })}
-        />
-        <Input
-          label="Пароль"
-          type="password"
-          placeholder="Ваш пароль"
-          value={login.password}
-          error={errors.password}
-          onChange={(event) => onChange({ password: event.target.value })}
-        />
-      </div>
-
-      <Button
-        size="lg"
-        className="mt-7 w-full min-h-14 text-lg"
-        style={{ backgroundColor: brandColor, borderColor: brandColor }}
-        onClick={onLogin}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? 'Проверяем...' : 'Войти'}
-        <ArrowRight size={20} />
-      </Button>
-    </section>
-  )
-}
-
-function ProfileRequiredDialog({
-  onClose,
-  onOpenSettings,
-}: {
-  onClose: () => void
-  onOpenSettings: () => void
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 px-4 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 10 }}
-        transition={{ duration: 0.18 }}
-        className="w-full max-w-sm rounded-[1.5rem] border border-red-100 bg-white p-5 shadow-2xl"
-      >
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-          <AlertTriangle size={24} />
-        </div>
-        <h2 className="mt-4 text-2xl font-semibold text-stone-900">Заполните профиль</h2>
-        <p className="mt-2 text-base leading-relaxed text-stone-500">
-          Перед записью нужны e-mail и пароль. Так автошкола сможет связать запись с вашим профилем, а вы потом войдёте без повторного ввода данных.
-        </p>
-        <div className="mt-6 space-y-3">
-          <Button size="lg" className="w-full min-h-14 text-lg" onClick={onOpenSettings}>
-            Заполнить профиль
-            <ArrowRight size={20} />
-          </Button>
-          <Button size="lg" variant="secondary" className="w-full min-h-14 text-lg" onClick={onClose}>
-            Позже
-          </Button>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className="mb-6 inline-flex items-center gap-2 text-base text-stone-500 hover:text-stone-900 transition-colors"
-    >
+    <button onClick={onClick} className="mb-5 inline-flex min-h-10 items-center gap-2 text-base font-medium text-stone-500 hover:text-stone-900">
       <ArrowLeft size={18} />
       {label}
     </button>
@@ -930,31 +162,34 @@ function BackButton({ onClick, label }: { onClick: () => void; label: string }) 
 
 function VirazhLogo({ color }: { color: string }) {
   return (
-    <div
-      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/5"
-      style={{ background: `linear-gradient(145deg, ${color}, #1d4ed8)` }}
-    >
-      <div className="absolute inset-x-2 top-2 h-px bg-white/30" />
-      <div className="absolute inset-x-2 bottom-2 h-px bg-white/20" />
-      <div className="relative h-7 w-7">
-        <div className="absolute left-[3px] top-0 h-7 w-2 origin-top rounded-full bg-white shadow-sm [transform:skewX(-23deg)]" />
-        <div className="absolute right-[3px] top-0 h-7 w-2 origin-top rounded-full bg-white/95 shadow-sm [transform:skewX(23deg)]" />
-        <div className="absolute left-[11px] top-[8px] h-4 w-[3px] rounded-full bg-blue-600/80" />
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-stone-200">
+      <div className="relative h-6 w-6">
+        <div className="absolute left-0 top-0 h-6 w-2 rounded-full" style={{ backgroundColor: color }} />
+        <div className="absolute left-2 top-2 h-2 w-4 rounded-full bg-stone-900" />
+        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-stone-900 bg-white" />
       </div>
     </div>
   )
 }
 
-function categoryIcon(category: DrivingCategoryInfo) {
-  if (category.group === 'moto') return Bike
-  if (category.group === 'truck') return Truck
-  if (category.group === 'bus' || category.group === 'special') return Bus
-  return Car
+function LessonCard({ lesson }: { lesson: ResolvedLesson }) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-lg font-semibold text-stone-900">{formatDate(lesson.slot.date)}, {lesson.slot.time}</p>
+          <p className="mt-1 text-base text-stone-600">{lesson.instructor?.name ?? 'Инструктор'}</p>
+          <p className="mt-1 text-sm text-stone-500">{lesson.branch?.name ?? 'Филиал'} · {formatDuration(lesson.slot.duration)}</p>
+        </div>
+        <CalendarDays size={22} className="shrink-0 text-blue-600" />
+      </div>
+    </div>
+  )
 }
 
-function PublicSchoolHome({
-  brandColor,
+function SchoolHome({
   branches,
+  brandColor,
   instructors,
   onLogin,
   onOpenSchedule,
@@ -962,8 +197,8 @@ function PublicSchoolHome({
   onStartBooking,
   school,
 }: {
-  brandColor: string
   branches: Branch[]
+  brandColor: string
   instructors: Instructor[]
   onLogin: () => void
   onOpenSchedule: () => void
@@ -971,165 +206,342 @@ function PublicSchoolHome({
   onStartBooking: () => void
   school: School
 }) {
-  const supportedCategoryCodes = useMemo(
-    () => new Set(instructors.flatMap((instructor) => instructor.categories ?? [])),
-    [instructors],
-  )
-  const supportedCategories = DRIVING_CATEGORIES.filter((category) => supportedCategoryCodes.has(category.code))
-  const futureSlots = db.slots
-    .bySchool(school.id)
-    .filter((slot) => slot.status === 'available' && slotDateTime(slot) >= new Date())
+  const futureSlots = db.slots.bySchool(school.id)
+    .filter((slot) => slot.status === 'available' && slotDateTime(slot) > new Date())
     .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
-  const nextSlot = futureSlots[0] ?? null
-  const activeInstructors = instructors.filter((instructor) => instructor.isActive)
+  const supported = new Set(instructors.flatMap((item) => item.categories ?? []))
+  const visibleCategories = DRIVING_CATEGORIES.filter((category) => supported.has(category.code)).slice(0, 12)
 
   return (
-    <section className="space-y-4">
-      <div className="overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card">
-        <div className="relative px-5 pb-6 pt-6 text-white" style={{ background: `linear-gradient(135deg, ${brandColor} 0%, #2563eb 56%, #111827 100%)` }}>
-          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-white/10" />
-          <div className="relative flex items-start gap-4">
-            <VirazhLogo color={brandColor} />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/68">Страница автошколы</p>
-              <h1 className="mt-2 text-3xl font-semibold leading-tight">{school.name}</h1>
-              <p className="mt-3 text-base leading-relaxed text-white/78">{school.description}</p>
-            </div>
-          </div>
-          <div className="relative mt-6 grid gap-2 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white/12 px-4 py-3 ring-1 ring-white/16">
-              <p className="text-2xl font-semibold">{supportedCategories.length || 0}</p>
-              <p className="mt-1 text-sm text-white/72">категорий в школе</p>
-            </div>
-            <div className="rounded-2xl bg-white/12 px-4 py-3 ring-1 ring-white/16">
-              <p className="text-2xl font-semibold">{branches.length}</p>
-              <p className="mt-1 text-sm text-white/72">филиалов</p>
-            </div>
-            <div className="rounded-2xl bg-white/12 px-4 py-3 ring-1 ring-white/16">
-              <p className="text-2xl font-semibold">{futureSlots.length}</p>
-              <p className="mt-1 text-sm text-white/72">свободных мест</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 p-5">
-          <Button size="lg" className="min-h-14 w-full text-lg" style={{ backgroundColor: brandColor, borderColor: brandColor }} onClick={onStartBooking}>
-            Записаться на занятие
+    <section className="space-y-5">
+      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+        <p className="text-base font-medium text-stone-500">Автошкола</p>
+        <h1 className="mt-2 text-3xl font-semibold leading-tight text-stone-950">{school.name}</h1>
+        <p className="mt-3 text-lg leading-relaxed text-stone-600">{school.description}</p>
+        <div className="mt-5 grid gap-3">
+          <Button size="lg" className="min-h-14 text-lg" onClick={onStartBooking}>
+            Записаться
             <ArrowRight size={20} />
           </Button>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button size="lg" variant="secondary" className="min-h-13 w-full" onClick={onLogin}>
-              Войти в профиль
+          <div className="grid grid-cols-2 gap-3">
+            <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onLogin}>
+              <LogIn size={18} />
+              Войти
             </Button>
-            <Button size="lg" variant="secondary" className="min-h-13 w-full" onClick={onOpenSchedule}>
+            <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onOpenSchedule}>
+              <CalendarDays size={18} />
               Расписание
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-stone-900">Категории прав</h2>
-            <p className="mt-1 text-sm leading-relaxed text-stone-500">
-              Показываем все категории, но активными отмечены только те, где у школы есть инструкторы.
-            </p>
-          </div>
-          <Car size={22} style={{ color: brandColor }} />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4">
+          <p className="text-2xl font-semibold text-stone-900">{branches.length}</p>
+          <p className="mt-1 text-sm text-stone-500">филиала</p>
         </div>
-        <div className="mt-4 grid gap-2">
-          {DRIVING_CATEGORIES.map((category) => {
-            const Icon = categoryIcon(category)
-            const active = supportedCategoryCodes.has(category.code)
-            return (
+        <div className="rounded-2xl border border-stone-200 bg-white p-4">
+          <p className="text-2xl font-semibold text-stone-900">{instructors.length}</p>
+          <p className="mt-1 text-sm text-stone-500">инструкторов</p>
+        </div>
+        <div className="rounded-2xl border border-stone-200 bg-white p-4">
+          <p className="text-2xl font-semibold text-stone-900">{futureSlots.length}</p>
+          <p className="mt-1 text-sm text-stone-500">свободных мест</p>
+        </div>
+      </div>
+
+      {visibleCategories.length > 0 ? (
+        <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-stone-900">Категории прав</h2>
+              <p className="mt-1 text-base text-stone-500">Выберите категорию, если уже знаете цель обучения.</p>
+            </div>
+            <ShieldCheck size={23} style={{ color: brandColor }} />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {visibleCategories.map((category) => (
               <button
                 key={category.code}
-                type="button"
-                onClick={() => {
-                  if (active) onSelectCategory(category.code)
-                }}
-                className={'flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ' + (active ? 'border-blue-100 bg-blue-50/70 hover:border-blue-200 hover:bg-blue-50' : 'border-stone-100 bg-stone-50')}
+                onClick={() => onSelectCategory(category.code)}
+                className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
               >
-                <div className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' + (active ? 'bg-white text-blue-700' : 'bg-white text-stone-400')}>
-                  <Icon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-stone-900">{category.code} · {category.title}</p>
-                    <span className={'rounded-full px-2.5 py-1 text-xs font-semibold ' + (active ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-500')}>
-                      {active ? 'доступно' : 'не подключено'}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm leading-snug text-stone-500">
-                    {category.description}
-                    {active ? ' Нажмите, чтобы перейти к записи по этой категории.' : ''}
-                  </p>
-                </div>
+                <p className="text-lg font-semibold text-stone-900">{category.code}</p>
+                <p className="mt-1 line-clamp-2 text-sm leading-snug text-stone-500">{category.title}</p>
               </button>
-            )
-          })}
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+        <h2 className="text-xl font-semibold text-stone-900">Филиалы</h2>
+        <div className="mt-4 space-y-3">
+          {branches.map((branch) => (
+            <div key={branch.id} className="rounded-2xl bg-stone-50 p-4">
+              <p className="text-base font-semibold text-stone-900">{branch.name}</p>
+              <p className="mt-1 text-base text-stone-600">{branch.address}</p>
+              {branch.phone ? <p className="mt-1 text-sm text-stone-500">{formatPhone(branch.phone)}</p> : null}
+            </div>
+          ))}
         </div>
       </div>
+    </section>
+  )
+}
 
-      <div className="grid gap-4">
-        <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-          <h2 className="text-xl font-semibold text-stone-900">Ближайшее свободное время</h2>
-          {nextSlot ? (
-            <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-4">
-              <p className="text-lg font-semibold text-stone-900">{formatDateFull(nextSlot.date)} в {nextSlot.time}</p>
-              <p className="mt-1 text-sm text-stone-500">
-                {(db.instructors.byId(nextSlot.instructorId)?.name ?? 'Инструктор') + ' · ' + (db.branches.byId(nextSlot.branchId)?.name ?? 'Филиал')}
-              </p>
-              <Button className="mt-4 w-full" onClick={onStartBooking}>
-                Выбрать занятие
-              </Button>
-            </div>
+function StudentDashboard({
+  branch,
+  brandColor,
+  futureLessons,
+  isComplete,
+  onLogout,
+  onOpenSchedule,
+  onOpenSettings,
+  onStartBooking,
+  profile,
+}: {
+  branch: Branch | null
+  brandColor: string
+  futureLessons: ResolvedLesson[]
+  isComplete: boolean
+  onLogout: () => void
+  onOpenSchedule: () => void
+  onOpenSettings: () => void
+  onStartBooking: () => void
+  profile: StudentProfile
+}) {
+  const nextLesson = futureLessons[0] ?? null
+
+  return (
+    <section className="space-y-5">
+      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+        <div className="flex items-start gap-4">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl text-2xl font-semibold text-white" style={{ backgroundColor: brandColor }}>
+            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" /> : initialsFromName(profile.name)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-base text-stone-500">Кабинет ученика</p>
+            <h1 className="mt-1 truncate text-2xl font-semibold text-stone-950">{profile.name}</h1>
+            <p className="mt-1 text-base text-stone-600">{branch?.address ?? 'Филиал уточнит администратор'}</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onOpenSettings} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-600">
+              <Settings size={19} />
+            </button>
+            <button onClick={onLogout} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-600">
+              <LogOut size={19} />
+            </button>
+          </div>
+        </div>
+
+        {!isComplete ? (
+          <button onClick={onOpenSettings} className="mt-5 w-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-left">
+            <p className="text-base font-semibold text-amber-950">Профиль заполнен не до конца</p>
+            <p className="mt-1 text-base text-amber-800">Добавьте e-mail и пароль, чтобы входить с другого устройства.</p>
+          </button>
+        ) : null}
+
+        <div className="mt-5 rounded-2xl bg-stone-50 p-4">
+          <p className="text-base font-medium text-stone-500">Ближайшее занятие</p>
+          {nextLesson ? (
+            <>
+              <p className="mt-1 text-xl font-semibold text-stone-950">{formatDate(nextLesson.slot.date)}, {nextLesson.slot.time}</p>
+              <p className="mt-1 text-base text-stone-600">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
+            </>
           ) : (
-            <p className="mt-3 rounded-2xl bg-stone-50 px-4 py-4 text-sm text-stone-500">Свободных мест пока нет. Можно посмотреть расписание или связаться с автошколой.</p>
+            <p className="mt-1 text-lg font-semibold text-stone-900">Активных записей пока нет</p>
           )}
         </div>
+      </div>
 
-        <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-          <h2 className="text-xl font-semibold text-stone-900">Филиалы</h2>
-          <div className="mt-4 space-y-2">
-            {branches.map((branch) => (
-              <div key={branch.id} className="rounded-2xl bg-stone-50 px-4 py-3">
-                <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
-                <p className="mt-1 text-sm text-stone-500">{branch.address}</p>
-              </div>
-            ))}
-          </div>
+      <div className="grid gap-3">
+        <Button size="lg" className="min-h-14 text-lg" onClick={onStartBooking}>
+          Записаться еще
+          <ArrowRight size={20} />
+        </Button>
+        <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onOpenSchedule}>
+          <CalendarDays size={18} />
+          Открыть расписание
+        </Button>
+      </div>
+
+      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+        <h2 className="text-xl font-semibold text-stone-900">Мои записи</h2>
+        <div className="mt-4 space-y-3">
+          {futureLessons.length === 0 ? (
+            <EmptyState title="Записей пока нет" description="Когда вы запишетесь на занятие, оно появится здесь." />
+          ) : (
+            futureLessons.map((lesson) => <LessonCard key={lesson.booking.id} lesson={lesson} />)
+          )}
         </div>
+      </div>
+    </section>
+  )
+}
 
-        <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-          <h2 className="text-xl font-semibold text-stone-900">Инструкторы</h2>
-          <div className="mt-4 space-y-2">
-            {activeInstructors.slice(0, 4).map((instructor) => (
-              <div key={instructor.id} className="flex items-start gap-3 rounded-2xl bg-stone-50 px-4 py-3">
-                <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-stone-900">{instructor.name}</p>
-                  <p className="mt-1 text-sm text-stone-500">
-                    {(instructor.categories ?? []).join(', ') || 'Категория не указана'} · {instructor.car ?? 'Автомобиль уточняется'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+function ScheduleOverview({ brandColor, onBack, onSelectSlot, school }: {
+  brandColor: string
+  onBack: () => void
+  onSelectSlot: (slot: Slot) => void
+  school: School
+}) {
+  const [branchId, setBranchId] = useState('')
+  const [category, setCategory] = useState('')
+  const [onlyAvailable, setOnlyAvailable] = useState(true)
+  const days = useMemo(() => getNext14Days(), [])
+  const branches = db.branches.bySchool(school.id).filter((item) => item.isActive)
+  const instructors = db.instructors.bySchool(school.id).filter((item) => item.isActive)
+  const categoryOptions = DRIVING_CATEGORIES.filter((categoryItem) =>
+    instructors.some((instructor) => instructor.categories?.includes(categoryItem.code)),
+  )
+
+  const visibleSlots = days.map((date) => {
+    const slots = db.slots.bySchool(school.id)
+      .filter((slot) => slot.date === date)
+      .filter((slot) => branchId ? slot.branchId === branchId : true)
+      .filter((slot) => onlyAvailable ? slot.status === 'available' : true)
+      .filter((slot) => {
+        if (!category) return true
+        const instructor = db.instructors.byId(slot.instructorId)
+        return Boolean(instructor?.categories?.includes(category))
+      })
+      .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
+    return { date, slots }
+  })
+  const freeCount = visibleSlots.reduce((sum, group) => sum + group.slots.filter((slot) => slot.status === 'available').length, 0)
+
+  return (
+    <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+      <BackButton onClick={onBack} />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-950">Расписание автошколы</h1>
+          <p className="mt-2 text-base leading-relaxed text-stone-600">Ближайшие две недели. Нажмите на свободное время, чтобы записаться.</p>
+        </div>
+        <div className="rounded-2xl bg-blue-50 px-4 py-3 text-center">
+          <p className="text-2xl font-semibold text-blue-700">{freeCount}</p>
+          <p className="text-xs font-semibold text-blue-700/70">свободно</p>
         </div>
       </div>
 
-      <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-        <h2 className="text-xl font-semibold text-stone-900">Контакты</h2>
-        <div className="mt-4 grid gap-2">
-          <a className="rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900" href={`tel:${school.phone}`}>
-            {formatPhone(school.phone)}
-          </a>
-          <a className="rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900" href={`mailto:${school.email}`}>
-            {school.email}
-          </a>
-          <p className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-500">{school.address}</p>
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
+          <option value="">Все филиалы</option>
+          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+        </select>
+        <select value={category} onChange={(event) => setCategory(event.target.value)} className={selectClassName()}>
+          <option value="">Все категории</option>
+          {categoryOptions.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.title}</option>)}
+        </select>
+        <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 text-base text-stone-700">
+          <input type="checkbox" checked={onlyAvailable} onChange={(event) => setOnlyAvailable(event.target.checked)} />
+          Только свободные
+        </label>
+      </div>
+
+      <div className="mt-5 space-y-5">
+        {visibleSlots.map((group) => (
+          <div key={group.date}>
+            <p className="mb-2 text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+            {group.slots.length === 0 ? (
+              <div className="rounded-2xl bg-stone-50 px-4 py-4 text-base text-stone-500">Нет подходящих мест.</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {group.slots.map((slot) => {
+                  const instructor = db.instructors.byId(slot.instructorId)
+                  const disabled = slot.status !== 'available'
+                  return (
+                    <button
+                      key={slot.id}
+                      disabled={disabled}
+                      onClick={() => onSelectSlot(slot)}
+                      className="rounded-2xl border border-stone-200 bg-white p-4 text-left transition hover:border-blue-300 disabled:bg-stone-50 disabled:text-stone-400"
+                    >
+                      <p className="text-xl font-semibold text-stone-950">{slot.time}</p>
+                      <p className="mt-1 truncate text-sm text-stone-500">{instructor?.name ?? 'Инструктор'}</p>
+                      <p className="mt-1 text-xs font-semibold" style={{ color: disabled ? undefined : brandColor }}>
+                        {disabled ? 'занято' : formatDuration(slot.duration)}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function LoginPanel({ errors, login, onBack, onChange, onLogin, submitting }: {
+  errors: Partial<LoginState>
+  login: LoginState
+  onBack: () => void
+  onChange: (patch: Partial<LoginState>) => void
+  onLogin: () => void
+  submitting: boolean
+}) {
+  return (
+    <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+      <BackButton onClick={onBack} />
+      <h1 className="text-2xl font-semibold text-stone-950">Вход ученика</h1>
+      <p className="mt-2 text-base text-stone-600">Введите телефон и пароль, который указывали при создании кабинета.</p>
+      <div className="mt-6 space-y-4">
+        <Input label="Телефон" value={login.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => onChange({ phone: event.target.value })} />
+        <Input label="Пароль" type="password" value={login.password} error={errors.password} placeholder="Ваш пароль" onChange={(event) => onChange({ password: event.target.value })} />
+        <Button size="lg" className="min-h-14 w-full text-lg" disabled={submitting} onClick={onLogin}>
+          {submitting ? 'Проверяем...' : 'Войти'}
+        </Button>
+      </div>
+    </section>
+  )
+}
+
+function ProfileSettings({ branch, branchRequestNote, form, onBack, onBranchRequestNoteChange, onChange, onCopy, onRequestBranchChange, onSave, profile }: {
+  branch: Branch | null
+  branchRequestNote: string
+  form: FormState
+  onBack: () => void
+  onBranchRequestNoteChange: (value: string) => void
+  onChange: (patch: Partial<FormState>) => void
+  onCopy: () => void
+  onRequestBranchChange: () => void
+  onSave: () => void
+  profile: StudentProfile
+}) {
+  return (
+    <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-card">
+      <BackButton onClick={onBack} label="В кабинет" />
+      <h1 className="text-2xl font-semibold text-stone-950">Настройки профиля</h1>
+      <p className="mt-2 text-base text-stone-600">Контакты и пароль хранятся здесь. ФИО меняйте через администратора, если в документах ошибка.</p>
+      <div className="mt-6 rounded-2xl bg-stone-50 p-4">
+        <p className="text-base font-semibold text-stone-900">{profile.name}</p>
+        <p className="mt-1 text-base text-stone-600">{branch?.address ?? 'Филиал не закреплен'}</p>
+      </div>
+      <div className="mt-6 space-y-4">
+        <Input label="Телефон" value={form.phone} onChange={(event) => onChange({ phone: event.target.value })} />
+        <Input label="E-mail" type="email" value={form.email} onChange={(event) => onChange({ email: event.target.value })} />
+        <Input label="Новый пароль" type="password" helperText="Оставьте пустым, если не хотите менять." value={form.password} onChange={(event) => onChange({ password: event.target.value })} />
+        <Input label="Аватарка" placeholder="Ссылка на фото, можно оставить пустой" value={form.avatarUrl} onChange={(event) => onChange({ avatarUrl: event.target.value })} />
+        <Textarea
+          label="Запрос на смену филиала"
+          rows={3}
+          placeholder="Например: хочу заниматься ближе к дому, филиал на Ленина."
+          value={branchRequestNote}
+          onChange={(event) => onBranchRequestNoteChange(event.target.value)}
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button size="lg" className="min-h-12 text-base" onClick={onSave}>Сохранить</Button>
+          <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={onCopy}>
+            <Copy size={18} />
+            Скопировать доступ
+          </Button>
+          <Button size="lg" variant="secondary" className="min-h-12 text-base sm:col-span-2" onClick={onRequestBranchChange}>
+            Запросить смену филиала
+          </Button>
         </div>
       </div>
     </section>
@@ -1141,149 +553,58 @@ export function SchoolPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const sessionId = useRef(generateId('session'))
-  const isFinalizingRef = useRef(false)
-
+  const finalizing = useRef(false)
   const [school, setSchool] = useState<School | null>(null)
-  const [schoolMissing, setSchoolMissing] = useState(false)
+  const [missing, setMissing] = useState(false)
   const [branches, setBranches] = useState<Branch[]>([])
   const [instructors, setInstructors] = useState<Instructor[]>([])
-  const [step, setStep] = useState<BookingStep>(1)
+  const [view, setView] = useState<SchoolView>('home')
+  const [step, setStep] = useState<BookingStep>('category')
+  const [profile, setProfile] = useState<StudentProfile | null>(null)
+  const [form, setForm] = useState<FormState>(emptyForm)
+  const [login, setLogin] = useState<LoginState>({ phone: '', password: '' })
+  const [errors, setErrors] = useState<Partial<FormState>>({})
+  const [loginErrors, setLoginErrors] = useState<Partial<LoginState>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [profileRequiredOpen, setProfileRequiredOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null)
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([])
-  const [form, setForm] = useState<FormState>({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
-  const [loginForm, setLoginForm] = useState<LoginState>({ phone: '', password: '' })
-  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null)
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
-  const [isProfileRequiredOpen, setIsProfileRequiredOpen] = useState(false)
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
-  const [isBookingStarted, setIsBookingStarted] = useState(false)
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
-  const [preferredCategory, setPreferredCategory] = useState('')
-  const [errors, setErrors] = useState<Partial<FormState>>({})
-  const [loginErrors, setLoginErrors] = useState<Partial<LoginState>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const dateOptions = useMemo(() => getNext7Days(), [])
-
-  const branchInstructors = useMemo(
-    () =>
-      selectedBranch
-        ? instructors.filter((i) => i.branchId === selectedBranch.id && i.isActive)
-          .filter((i) => (preferredCategory ? i.categories?.includes(preferredCategory) : true))
-        : [],
-    [instructors, preferredCategory, selectedBranch],
-  )
-
-  const maxSlotsPerBooking = Math.max(1, school?.maxSlotsPerBooking ?? 1)
-  const canSelectMultipleSlots = maxSlotsPerBooking > 1
-  const canSelectMultipleDates = canSelectMultipleSlots
-
-  const availableSlotsByDate = useMemo(() => {
-    if (!selectedInstructor) return []
-    return selectedDates.map((date) => ({
-      date,
-      slots: getAvailableSlots(selectedInstructor.id, date, sessionId.current),
-    }))
-  }, [selectedDates, selectedInstructor])
-
-  const studentStats = useMemo(() => {
-    if (!school || !studentProfile) {
-      return { completedLessons: 0, futureLessons: [] as ResolvedStudentLesson[], nextLesson: null as StudentLesson | null }
-    }
-
-    const now = new Date()
-    const lessons = db.bookings
-      .bySchool(school.id)
-      .filter((booking) => booking.studentPhone === normalizePhone(studentProfile.phone))
-      .map((booking) => {
-        const slot = db.slots.byId(booking.slotId)
-        if (!slot) return null
-        return {
-          booking,
-          branch: db.branches.byId(booking.branchId),
-          instructor: db.instructors.byId(booking.instructorId),
-          slot,
-        }
-      })
-      .filter((entry): entry is ResolvedStudentLesson => Boolean(entry))
-
-    const completedLessons = lessons.filter((entry) => entry.booking.status === 'completed').length
-    const futureLessons = lessons
-      .filter((entry) => entry.booking.status === 'active' && slotDateTime(entry.slot) >= now)
-      .sort((left, right) => slotDateTime(left.slot).getTime() - slotDateTime(right.slot).getTime())
-    const nextLesson = futureLessons[0] ?? null
-
-    return { completedLessons, futureLessons, nextLesson }
-  }, [school, studentProfile])
-
-  const schoolSummary = useMemo(() => {
-    if (!school) {
-      return { availableSlotsCount: 0, instructorCount: 0 }
-    }
-
-    return {
-      availableSlotsCount: db.slots.bySchool(school.id).filter((slot) => slot.status === 'available').length,
-      instructorCount: db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length,
-    }
-  }, [school, branches, instructors])
-
-  const profileBranch = useMemo(() => {
-    if (!studentProfile) return null
-    if (studentProfile.assignedBranchId) {
-      return branches.find((branch) => branch.id === studentProfile.assignedBranchId) ?? null
-    }
-    return selectedBranch ?? branches[0] ?? null
-  }, [branches, selectedBranch, studentProfile])
+  const [branchRequestNote, setBranchRequestNote] = useState('')
 
   useEffect(() => {
     if (!slug) return
 
-    const applySchool = (currentSchool: School, nextBranches: Branch[], nextInstructors: Instructor[]) => {
-      setSchoolMissing(false)
-      setSchool(currentSchool)
-      setBranches(nextBranches.filter((b) => b.isActive))
-      setInstructors(nextInstructors)
-      const profile = getStudentProfile(currentSchool.id)
-      setStudentProfile(profile)
-      if (profile) {
-        setForm({ name: profile.name, phone: profile.phone, email: profile.email, password: '', avatarUrl: profile.avatarUrl })
-        setIsEditingProfile(false)
-        setIsBookingStarted(false)
-      } else {
-        setForm({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
-        setIsEditingProfile(false)
-        setIsBookingStarted(false)
-        if (currentSchool.branchSelectionMode === 'fixed_first') {
-          const firstBranch = nextBranches.filter((b) => b.isActive)[0]
-          if (firstBranch) {
-            setSelectedBranch(firstBranch)
-            setStep(2)
-          } else {
-            setStep(1)
-          }
-        } else {
-          setStep(1)
-        }
+    const applySchool = (nextSchool: School, nextBranches: Branch[], nextInstructors: Instructor[]) => {
+      setSchool(nextSchool)
+      setBranches(nextBranches.filter((branch) => branch.isActive))
+      setInstructors(nextInstructors.filter((instructor) => instructor.isActive))
+      const savedProfile = loadStudentProfile(nextSchool.id)
+      setProfile(savedProfile)
+      if (savedProfile) {
+        setForm({
+          name: savedProfile.name,
+          phone: savedProfile.phone,
+          email: savedProfile.email,
+          password: '',
+          avatarUrl: savedProfile.avatarUrl,
+        })
+        setView('dashboard')
       }
     }
 
     void getPublicSchoolBundle(slug)
       .then((bundle) => {
         if (!bundle) {
-          const fallbackSchool = db.schools.bySlug(slug)
-          if (!fallbackSchool) {
-            setSchoolMissing(true)
+          const fallback = db.schools.bySlug(slug)
+          if (!fallback) {
+            setMissing(true)
             return
           }
-          applySchool(
-            fallbackSchool,
-            db.branches.bySchool(fallbackSchool.id).filter((b) => b.isActive),
-            db.instructors.bySchool(fallbackSchool.id),
-          )
+          applySchool(fallback, db.branches.bySchool(fallback.id), db.instructors.bySchool(fallback.id))
           return
         }
 
@@ -1296,150 +617,134 @@ export function SchoolPage() {
         applySchool(bundle.school, bundle.branches, bundle.instructors)
       })
       .catch(() => {
-        const fallbackSchool = db.schools.bySlug(slug)
-        if (!fallbackSchool) {
-          setSchoolMissing(true)
+        const fallback = db.schools.bySlug(slug)
+        if (!fallback) {
+          setMissing(true)
           return
         }
-        applySchool(
-          fallbackSchool,
-          db.branches.bySchool(fallbackSchool.id).filter((b) => b.isActive),
-          db.instructors.bySchool(fallbackSchool.id),
-        )
+        applySchool(fallback, db.branches.bySchool(fallback.id), db.instructors.bySchool(fallback.id))
       })
-  }, [navigate, slug])
+  }, [slug])
 
   useEffect(() => {
-    if (selectedSlots.length === 0) return
-    if (isSubmitting) return
     const refreshLock = () => {
-      if (isFinalizingRef.current) return
-      for (const selectedSlot of selectedSlots) {
-        const result = acquireSlotLock(selectedSlot.id, sessionId.current)
-        if (!result.ok) {
-          setSelectedSlots((current) => current.filter((slot) => slot.id !== selectedSlot.id))
-          if (step >= 4) setStep(4)
-          showToast(result.error ?? 'Слот больше недоступен.', 'error')
-          return
-        }
-      }
+      selectedSlots.forEach((slot) => acquireSlotLock(slot.id, sessionId.current))
     }
     refreshLock()
     const id = window.setInterval(refreshLock, 30_000)
-    return () => window.clearInterval(id)
-  }, [isSubmitting, selectedSlots, showToast, step])
+    return () => {
+      window.clearInterval(id)
+      if (!finalizing.current) releaseSessionLocks(sessionId.current)
+    }
+  }, [selectedSlots])
 
-  useEffect(() => {
-    return () => { releaseSessionLocks(sessionId.current) }
-  }, [])
+  const brandColor = school?.primaryColor === '#1f5b43' ? '#3157C8' : (school?.primaryColor ?? '#3157C8')
+  const dates = useMemo(() => getNext7Days(), [])
+  const maxSlots = Math.max(1, school?.maxSlotsPerBooking ?? 1)
+  const currentStep = stepOrder.indexOf(step) + 1
+  const totalSteps = profile ? 7 : 8
 
-  function resetAfterBranch() {
-    selectedSlots.forEach((slot) => releaseSlotLock(slot.id, sessionId.current))
+  const profileBranch = useMemo(() => {
+    if (!profile) return null
+    if (profile.assignedBranchId) return db.branches.byId(profile.assignedBranchId)
+    return branches[0] ?? null
+  }, [branches, profile])
+
+  const futureLessons = useMemo<ResolvedLesson[]>(() => {
+    if (!school || !profile) return []
+    const phone = normalizePhone(profile.phone)
+    return db.bookings.bySchool(school.id)
+      .filter((booking) => booking.status === 'active' && booking.studentPhone === phone)
+      .map((booking) => {
+        const slot = db.slots.byId(booking.slotId)
+        if (!slot || slotDateTime(slot) <= new Date()) return null
+        return {
+          booking,
+          slot,
+          branch: db.branches.byId(booking.branchId),
+          instructor: db.instructors.byId(booking.instructorId),
+        }
+      })
+      .filter((item): item is ResolvedLesson => Boolean(item))
+      .sort((left, right) => slotDateTime(left.slot).getTime() - slotDateTime(right.slot).getTime())
+  }, [profile, school])
+
+  const visibleInstructors = useMemo(() => {
+    return instructors
+      .filter((instructor) => selectedBranch ? instructor.branchId === selectedBranch.id : true)
+      .filter((instructor) => selectedCategory ? instructor.categories?.includes(selectedCategory) : true)
+  }, [instructors, selectedBranch, selectedCategory])
+
+  const slotsByDate = useMemo(() => {
+    if (!selectedInstructor) return []
+    return selectedDates.map((date) => ({
+      date,
+      slots: getAvailableSlots(selectedInstructor.id, date, sessionId.current),
+    }))
+  }, [selectedDates, selectedInstructor])
+
+  function resetBooking(): void {
+    releaseSessionLocks(sessionId.current)
+    setStep('category')
+    setSelectedCategory('')
+    setSelectedBranch(null)
     setSelectedInstructor(null)
     setSelectedDates([])
     setSelectedSlots([])
     setErrors({})
+    setCreatedBookingId(null)
   }
 
-  function resetAfterInstructor() {
-    selectedSlots.forEach((slot) => releaseSlotLock(slot.id, sessionId.current))
-    setSelectedDates([])
-    setSelectedSlots([])
-    setErrors({})
-  }
-
-  function resetAfterDate() {
-    selectedSlots.forEach((slot) => releaseSlotLock(slot.id, sessionId.current))
-    setSelectedSlots([])
-  }
-
-  function chooseBranch(branch: Branch): void {
-    if (selectedBranch?.id !== branch.id) {
-      resetAfterBranch()
-      setSelectedBranch(branch)
-    }
-    setStep(2)
-  }
-
-  function chooseInstructor(instructor: Instructor): void {
-    if (selectedInstructor?.id !== instructor.id) {
-      resetAfterInstructor()
-      setSelectedInstructor(instructor)
-    }
-    setStep(3)
-  }
-
-  function chooseDate(date: string): void {
-    if (!canSelectMultipleDates) {
-      resetAfterDate()
-      setSelectedDates([date])
-      setStep(4)
+  function startBooking(category = ''): void {
+    if (profile && !isProfileComplete(profile)) {
+      setProfileRequiredOpen(true)
       return
     }
-
-    setSelectedDates((current) => {
-      if (current.includes(date)) {
-        const next = current.filter((item) => item !== date)
-        setSelectedSlots((slots) => slots.filter((slot) => slot.date !== date))
-        return next
-      }
-      if (current.length >= maxSlotsPerBooking) {
-        showToast(`Можно выбрать максимум ${pluralize(maxSlotsPerBooking, 'день', 'дня', 'дней')}.`, 'info')
-        return current
-      }
-      return [...current, date]
-    })
+    resetBooking()
+    setSelectedCategory(category)
+    setView('booking')
+    if (category) setStep('branch')
   }
 
-  function validateForm(): boolean {
-    const nextErrors: Partial<FormState> = {}
-    if (!form.name.trim()) nextErrors.name = 'Введите имя'
-    if (!form.phone.trim()) nextErrors.phone = 'Введите телефон'
-    else if (!isValidRussianPhone(form.phone)) nextErrors.phone = 'Формат: +7 или 8...'
-    setErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
+  function backFromBooking(): void {
+    resetBooking()
+    setView(profile ? 'dashboard' : 'home')
   }
 
-  async function handleSlotSelect(slot: Slot): Promise<void> {
-    if (selectedSlots.some((selected) => selected.id === slot.id)) {
+  function selectSlot(slot: Slot): void {
+    const active = selectedSlots.some((item) => item.id === slot.id)
+    if (active) {
       releaseSlotLock(slot.id, sessionId.current)
-      setSelectedSlots((current) => current.filter((selected) => selected.id !== slot.id))
+      setSelectedSlots((current) => current.filter((item) => item.id !== slot.id))
       return
     }
-
-    if (!canSelectMultipleSlots && selectedSlots.length > 0) {
-      selectedSlots.forEach((selected) => releaseSlotLock(selected.id, sessionId.current))
-      setSelectedSlots([])
-    }
-
-    if (selectedSlots.length >= maxSlotsPerBooking) {
-      showToast(`Можно выбрать максимум ${pluralize(maxSlotsPerBooking, 'занятие', 'занятия', 'занятий')}.`, 'info')
+    if (selectedSlots.length >= maxSlots) {
+      showToast(`Можно выбрать не больше ${maxSlots}.`, 'error')
       return
     }
-
     const result = acquireSlotLock(slot.id, sessionId.current)
     if (!result.ok) {
-      showToast(result.error ?? 'Не удалось заблокировать слот.', 'error')
+      showToast(result.error ?? 'Это время уже недоступно.', 'error')
       return
     }
-    const freshSlot = db.slots.byId(slot.id)
-    setSelectedSlots((current) => (canSelectMultipleSlots ? [...current, freshSlot ?? slot] : [freshSlot ?? slot]))
-    isFinalizingRef.current = false
+    const fresh = db.slots.byId(slot.id)
+    setSelectedSlots((current) => [...current, fresh ?? slot].sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime()))
   }
 
-  async function handleSubmit(): Promise<void> {
-    if (!school || !selectedBranch || !selectedInstructor || selectedDates.length === 0 || selectedSlots.length === 0) {
-      showToast('Сначала выберите все данные.', 'error')
-      return
-    }
-    if (!validateForm()) {
-      showToast('Проверьте имя и телефон.', 'error')
-      return
-    }
-    isFinalizingRef.current = true
-    setIsSubmitting(true)
+  function validateDetails(requireEmail = false): boolean {
+    const next: Partial<FormState> = {}
+    if (!form.name.trim()) next.name = 'Введите имя.'
+    if (!isValidRussianPhone(form.phone)) next.phone = 'Введите российский номер телефона.'
+    if (requireEmail && !form.email.trim()) next.email = 'Введите e-mail.'
+    if (requireEmail && form.password.trim().length < 6) next.password = 'Минимум 6 символов.'
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
 
-    let createdBookingIds: string[] = []
+  async function submitBooking(): Promise<void> {
+    if (!school || selectedSlots.length === 0 || !validateDetails()) return
+    finalizing.current = true
+    setSubmitting(true)
     try {
       const result = await createSupabaseBooking({
         schoolId: school.id,
@@ -1447,184 +752,51 @@ export function SchoolPage() {
         studentPhone: form.phone,
         slotIds: selectedSlots.map((slot) => slot.id),
       })
-      createdBookingIds = result.bookingIds
-    } catch (error) {
-      isFinalizingRef.current = false
-      setIsSubmitting(false)
-      showToast(error instanceof Error ? error.message : 'Не удалось создать запись.', 'error')
-      setStep(4)
-      return
-    }
-
-    releaseSessionLocks(sessionId.current)
-    setSelectedSlots([])
-    setIsEditingProfile(false)
-    setIsSubmitting(false)
-    isFinalizingRef.current = false
-
-    if (studentProfile) {
-      showToast(
-        createdBookingIds.length > 1
-          ? `${pluralize(createdBookingIds.length, 'запись сохранена', 'записи сохранены', 'записей сохранено')}.`
-          : 'Запись сохранена.',
-        'success',
-      )
-      navigate(`/booking/${createdBookingIds[0]}`)
-      return
-    }
-
-    setCreatedBookingId(createdBookingIds[0])
-    setStep(7)
-  }
-
-  function startBookingFlow(): void {
-    setPreferredCategory('')
-    if (studentProfile && !isProfileComplete(studentProfile)) {
-      setIsScheduleOpen(false)
-      setIsProfileRequiredOpen(true)
-      return
-    }
-    setCreatedBookingId(null)
-    setIsScheduleOpen(false)
-    setIsProfileSettingsOpen(false)
-    setIsLoginOpen(false)
-    if (school?.branchSelectionMode === 'fixed_first' && branches[0]) {
-      setSelectedBranch(branches[0])
-      setStep(2)
-    } else {
-      setStep(1)
-    }
-    setIsBookingStarted(true)
-  }
-
-  function startBookingForCategory(category: string): void {
-    setPreferredCategory(category)
-    if (studentProfile && !isProfileComplete(studentProfile)) {
-      setIsScheduleOpen(false)
-      setIsProfileRequiredOpen(true)
-      return
-    }
-    setCreatedBookingId(null)
-    setIsScheduleOpen(false)
-    setIsProfileSettingsOpen(false)
-    setIsLoginOpen(false)
-    if (school?.branchSelectionMode === 'fixed_first' && branches[0]) {
-      setSelectedBranch(branches[0])
-      setStep(2)
-    } else {
-      setStep(1)
-    }
-    setIsBookingStarted(true)
-  }
-
-  function returnFromBooking(): void {
-    if (studentProfile) {
-      setIsBookingStarted(false)
-      return
-    }
-    setIsBookingStarted(false)
-  }
-
-  function continueToConfirmation(): void {
-    if (!createdBookingId) return
-    navigate(`/booking/${createdBookingId}`)
-  }
-
-  function logoutStudent(): void {
-    if (!school) return
-    removeStudentProfile(school.id)
-    setStudentProfile(null)
-    setForm({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
-    setLoginForm({ phone: '', password: '' })
-    setIsProfileSettingsOpen(false)
-    setIsProfileRequiredOpen(false)
-    setIsScheduleOpen(false)
-    setIsLoginOpen(false)
-    setIsBookingStarted(true)
-    setStep(1)
-    showToast('Вы вышли из профиля.', 'success')
-  }
-
-  async function loginStudent(): Promise<void> {
-    if (!school) return
-
-    const nextErrors: Partial<LoginState> = {}
-    if (!normalizePhone(loginForm.phone)) nextErrors.phone = 'Введите телефон'
-    if (!loginForm.password.trim()) nextErrors.password = 'Введите пароль'
-    setLoginErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0) return
-
-    setIsSubmitting(true)
-    try {
-      const student = await loginStudentInSupabase({
-        schoolId: school.id,
-        phone: loginForm.phone,
-        password: loginForm.password,
+      const student = getOrCreateStudent(school.id, form.name, form.phone)
+      selectedSlots.forEach((slot, index) => {
+        const bookingId = result.bookingIds[index] ?? generateId('booking')
+        const booking: Booking = {
+          id: bookingId,
+          bookingGroupId: result.bookingGroupId || undefined,
+          schoolId: school.id,
+          slotId: slot.id,
+          branchId: slot.branchId,
+          instructorId: slot.instructorId,
+          studentId: student.id,
+          studentName: student.name,
+          studentPhone: student.normalizedPhone,
+          studentEmail: student.email,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        db.bookings.upsert(booking)
+        db.slots.upsert({ ...slot, status: 'booked', bookingId })
       })
-
-      if (!student) {
-        setLoginErrors({ password: 'Телефон или пароль не подошли' })
+      releaseSessionLocks(sessionId.current)
+      setCreatedBookingId(result.bookingIds[0] ?? null)
+      setSelectedSlots([])
+      setSubmitting(false)
+      finalizing.current = false
+      if (profile) {
+        navigate(`/booking/${result.bookingIds[0]}`)
         return
       }
-
-      const profile = saveStudentProfile(
-        school.id,
-        {
-          name: student.name,
-          phone: student.phone,
-          email: student.email,
-          password: '',
-          avatarUrl: student.avatarUrl,
-        },
-        {
-          passwordSet: true,
-          assignedBranchId: student.assignedBranchId || undefined,
-        },
-      )
-
-      setStudentProfile(profile)
-      setForm({ name: profile.name, phone: profile.phone, email: profile.email, password: '', avatarUrl: profile.avatarUrl })
-      setLoginForm({ phone: '', password: '' })
-      setIsLoginOpen(false)
-      setIsBookingStarted(false)
-      setIsScheduleOpen(false)
-      setIsProfileSettingsOpen(false)
-      setStep(1)
-      showToast('Профиль открыт.', 'success')
+      setStep('profile')
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось войти в профиль.', 'error')
-    } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
+      finalizing.current = false
+      showToast(error instanceof Error ? error.message : 'Не удалось создать запись.', 'error')
+      setStep('time')
     }
   }
 
-  function validateProfileSettings(requirePassword: boolean): boolean {
-    if (!form.name.trim()) {
-      showToast('Введите ФИО.', 'error')
-      return false
-    }
-    if (!isValidRussianPhone(form.phone)) {
-      showToast('Введите корректный телефон.', 'error')
-      return false
-    }
-    if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-      showToast('Введите e-mail.', 'error')
-      return false
-    }
-    if (requirePassword && form.password.trim().length < 6) {
-      showToast('Пароль должен быть минимум 6 символов.', 'error')
-      return false
-    }
-    return true
-  }
-
-  async function saveProfileSettings(options?: { continueToBooking?: boolean }): Promise<void> {
-    if (!school) return
-    const requirePassword = !studentProfile?.passwordSet || Boolean(options?.continueToBooking)
-    if (!validateProfileSettings(requirePassword)) return
-
+  async function createProfile(): Promise<void> {
+    if (!school || !validateDetails(true)) return
+    setSubmitting(true)
     try {
-      await updateStudentProfileInSupabase({
+      const saved = saveStudentProfile(school.id, form, { passwordSet: true })
+      const result = await updateStudentProfileInSupabase({
         schoolId: school.id,
         name: form.name,
         phone: form.phone,
@@ -1632,832 +804,419 @@ export function SchoolPage() {
         password: form.password,
         avatarUrl: form.avatarUrl,
       })
-      const profile = saveStudentProfile(school.id, form, {
-        passwordSet: true,
-        assignedBranchId: profileBranch?.id,
-      })
-      setStudentProfile(profile)
-      setForm({ name: profile.name, phone: profile.phone, email: profile.email, password: '', avatarUrl: profile.avatarUrl })
-      setIsProfileSettingsOpen(false)
-      showToast('Профиль сохранён.', 'success')
-      if (options?.continueToBooking && createdBookingId) {
-        navigate(`/booking/${createdBookingId}`)
+      const student = db.students.byNormalizedPhone(school.id, result.normalizedPhone)
+      if (student) {
+        db.students.upsert({
+          ...student,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          avatarUrl: form.avatarUrl.trim() || undefined,
+          hasPassword: true,
+        })
       }
+      setProfile(saved)
+      showToast('Кабинет ученика создан.', 'success')
+      if (createdBookingId) navigate(`/booking/${createdBookingId}`)
+      else setView('dashboard')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось сохранить профиль.', 'error')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function loginStudent(): Promise<void> {
+    if (!school) return
+    const next: Partial<LoginState> = {}
+    if (!isValidRussianPhone(login.phone)) next.phone = 'Введите телефон.'
+    if (!login.password.trim()) next.password = 'Введите пароль.'
+    setLoginErrors(next)
+    if (Object.keys(next).length > 0) return
+    setSubmitting(true)
+    try {
+      const student = await loginStudentInSupabase({ schoolId: school.id, phone: login.phone, password: login.password })
+      if (!student) {
+        showToast('Телефон или пароль не подошли.', 'error')
+        return
+      }
+      const saved = saveStudentProfile(school.id, {
+        name: student.name,
+        phone: student.phone,
+        email: student.email,
+        password: '',
+        avatarUrl: student.avatarUrl,
+      }, { assignedBranchId: student.assignedBranchId, passwordSet: true })
+      setProfile(saved)
+      setForm({ name: saved.name, phone: saved.phone, email: saved.email, password: '', avatarUrl: saved.avatarUrl })
+      setView('dashboard')
+      showToast('Вы вошли в кабинет.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось войти.', 'error')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function saveSettings(): Promise<void> {
+    if (!school || !profile) return
+    if (!validateDetails(false)) return
+    setSubmitting(true)
+    try {
+      const saved = saveStudentProfile(school.id, form, {
+        assignedBranchId: profile.assignedBranchId,
+        branchChangeRequestedAt: profile.branchChangeRequestedAt,
+        passwordSet: profile.passwordSet || Boolean(form.password.trim()),
+      })
+      if (form.email.trim() && form.password.trim()) {
+        await updateStudentProfileInSupabase({
+          schoolId: school.id,
+          name: saved.name,
+          phone: saved.phone,
+          email: saved.email,
+          password: form.password.trim(),
+          avatarUrl: saved.avatarUrl,
+        })
+      }
+      setProfile(saved)
+      showToast('Профиль сохранен.', 'success')
+      setView('dashboard')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось сохранить профиль.', 'error')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   async function copyCredentials(): Promise<void> {
-    const login = normalizePhone(form.phone || studentProfile?.phone || '')
+    const loginText = normalizePhone(form.phone || profile?.phone || '')
     const password = form.password.trim()
-    if (!login || !password) {
-      showToast('Введите телефон и пароль, чтобы скопировать доступ.', 'info')
+    if (!loginText || !password) {
+      showToast('Введите телефон и пароль перед копированием.', 'error')
       return
     }
-    await navigator.clipboard.writeText(`Логин: ${formatPhone(login)}\nПароль: ${password}`)
+    await navigator.clipboard.writeText(`Логин: ${loginText}\nПароль: ${password}`)
     showToast('Логин и пароль скопированы.', 'success')
   }
 
   async function requestBranchChange(): Promise<void> {
-    if (!school || !studentProfile) return
-    try {
-      await requestBranchChangeInSupabase({
-        schoolId: school.id,
-        phone: studentProfile.phone,
-        note: 'Ученик запросил смену филиала из профиля.',
-      })
-      const profile = saveStudentProfile(school.id, form, {
-        ...studentProfile,
-        branchChangeRequestedAt: new Date().toISOString(),
-      })
-      setStudentProfile(profile)
-      showToast('Запрос отправлен администратору.', 'success')
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось отправить запрос.', 'error')
-    }
+    if (!school || !profile) return
+    const note = branchRequestNote.trim() || 'Прошу связаться для смены филиала.'
+    await requestBranchChangeInSupabase({ schoolId: school.id, phone: profile.phone, note })
+    const saved = saveStudentProfile(school.id, form, {
+      ...profile,
+      branchChangeRequestedAt: new Date().toISOString(),
+    })
+    setProfile(saved)
+    setBranchRequestNote('')
+    showToast('Запрос отправлен администратору.', 'success')
   }
 
-  async function createProfileAndContinue(): Promise<void> {
-    if (!school || !createdBookingId) return
-    await saveProfileSettings({ continueToBooking: true })
-  }
-
-  if (schoolMissing) {
+  if (missing) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="max-w-sm w-full text-center space-y-4">
-          <EmptyState
-            title="Автошкола не найдена"
-            description="Проверьте ссылку или откройте демо-страницу."
-            action={
-              <div className="flex flex-col gap-3 mt-2">
-                <Button size="lg" className="w-full" onClick={() => navigate('/school/virazh')}>
-                  Открыть демо записи
-                </Button>
-                <Button size="lg" variant="secondary" className="w-full" onClick={() => navigate('/')}>
-                  На главную
-                </Button>
-              </div>
-            }
-          />
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
+        <EmptyState title="Автошкола не найдена" description="Проверьте ссылку или откройте страницу автошколы Вираж." action={<Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>} />
       </div>
     )
   }
 
-  if (!school) return null
-
-  const brandColor = school.primaryColor === '#1f5b43' ? '#4455C4' : (school.primaryColor ?? '#4455C4')
-  const brandSoft = hexToRgba(brandColor, 0.08)
+  if (!school) return <div className="min-h-screen bg-stone-50" />
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb]">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-4">
-          <button onClick={() => navigate('/')} className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#f7f6f2]">
+      <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+          <button onClick={() => setView(profile ? 'dashboard' : 'home')} className="flex min-w-0 items-center gap-3 text-left">
             {school.logoUrl ? (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-soft">
+              <div className="h-11 w-11 overflow-hidden rounded-2xl border border-stone-200 bg-white">
                 <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
               </div>
             ) : (
               <VirazhLogo color={brandColor} />
             )}
-            <div className="text-left">
-              <p className="text-base font-semibold text-stone-900 leading-tight">{school.name}</p>
-              <p className="text-sm text-stone-400">
-                {isBookingStarted
-                  ? 'Запись на занятие'
-                  : isScheduleOpen
-                    ? 'Расписание автошколы'
-                    : studentProfile
-                      ? 'Профиль ученика'
-                      : 'Страница автошколы'}
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-stone-950">{school.name}</p>
+              <p className="text-sm text-stone-500">
+                {view === 'dashboard' ? 'Кабинет ученика' : view === 'booking' ? 'Запись на занятие' : view === 'schedule' ? 'Расписание' : 'Страница автошколы'}
               </p>
             </div>
           </button>
           {school.phone ? (
-            <a
-              href={`tel:${school.phone}`}
-              className="flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-            >
-              <Phone size={15} className="text-stone-400" />
+            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 sm:flex">
+              <Phone size={16} />
               {formatPhone(school.phone)}
             </a>
           ) : null}
         </div>
       </header>
 
-      <main className="mx-auto max-w-xl px-4 py-6 pb-24 sm:py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          {!studentProfile && isLoginOpen ? (
-            <StudentLoginPanel
-              brandColor={brandColor}
+      <main className="mx-auto max-w-3xl px-4 py-6 pb-24">
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          {view === 'login' ? (
+            <LoginPanel
               errors={loginErrors}
-              isSubmitting={isSubmitting}
-              login={loginForm}
-              onBack={() => setIsLoginOpen(false)}
+              login={login}
+              onBack={() => setView('home')}
               onChange={(patch) => {
-                setLoginForm((current) => ({ ...current, ...patch }))
+                setLogin((current) => ({ ...current, ...patch }))
                 setLoginErrors({})
               }}
               onLogin={() => void loginStudent()}
+              submitting={submitting}
             />
-          ) : studentProfile && !isBookingStarted && !isScheduleOpen && !isProfileSettingsOpen ? (
-            <StudentProfileCard
-              brandColor={brandColor}
+          ) : view === 'settings' && profile ? (
+            <ProfileSettings
               branch={profileBranch}
-              futureLessons={studentStats.futureLessons}
-              isComplete={isProfileComplete(studentProfile)}
-              nextLesson={studentStats.nextLesson}
-              onLogout={logoutStudent}
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
-              profile={studentProfile}
-            />
-          ) : null}
-
-          {studentProfile && isProfileSettingsOpen ? (
-            <ProfileSettingsPanel
-              branch={profileBranch}
-              brandColor={brandColor}
+              branchRequestNote={branchRequestNote}
               form={form}
-              onBack={() => setIsProfileSettingsOpen(false)}
+              onBack={() => setView('dashboard')}
+              onBranchRequestNoteChange={setBranchRequestNote}
               onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
-              onCopyCredentials={() => void copyCredentials()}
+              onCopy={() => void copyCredentials()}
               onRequestBranchChange={() => void requestBranchChange()}
-              onSave={() => void saveProfileSettings()}
-              profile={studentProfile}
+              onSave={() => void saveSettings()}
+              profile={profile}
             />
-          ) : studentProfile && isScheduleOpen ? (
+          ) : view === 'schedule' ? (
             <ScheduleOverview
               brandColor={brandColor}
-              onBack={() => setIsScheduleOpen(false)}
-              onSelectCategory={startBookingForCategory}
-              onStartBooking={startBookingFlow}
-              school={school}
-            />
-          ) : !isBookingStarted && studentProfile ? (
-            <StudentDashboard
-              availableSlotsCount={schoolSummary.availableSlotsCount}
-              brandColor={brandColor}
-              futureLessons={studentStats.futureLessons}
-              nextLesson={studentStats.nextLesson}
-              onOpenSchedule={() => setIsScheduleOpen(true)}
-              onStartBooking={startBookingFlow}
-            />
-          ) : !studentProfile && isScheduleOpen ? (
-            <ScheduleOverview
-              brandColor={brandColor}
-              onBack={() => setIsScheduleOpen(false)}
-              onSelectCategory={startBookingForCategory}
-              onStartBooking={startBookingFlow}
-              school={school}
-            />
-          ) : !isBookingStarted && !studentProfile ? (
-            <PublicSchoolHome
-              brandColor={brandColor}
-              branches={branches}
-              instructors={instructors}
-              onLogin={() => {
-                setIsLoginOpen(true)
-                setLoginErrors({})
+              onBack={() => setView(profile ? 'dashboard' : 'home')}
+              onSelectSlot={(slot) => {
+                const instructor = db.instructors.byId(slot.instructorId)
+                const branch = db.branches.byId(slot.branchId)
+                setSelectedBranch(branch)
+                setSelectedInstructor(instructor)
+                setSelectedCategory(instructor?.categories?.[0] ?? '')
+                setSelectedDates([slot.date])
+                setSelectedSlots([slot])
+                setView('booking')
+                setStep('details')
               }}
-              onOpenSchedule={() => setIsScheduleOpen(true)}
-              onSelectCategory={startBookingForCategory}
-              onStartBooking={startBookingFlow}
               school={school}
             />
-          ) : !isLoginOpen ? (
-          <>
-          {/* Step card */}
-          <div className="min-h-[calc(100vh-7rem)] overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card sm:min-h-0">
-            <StepProgress step={step} total={7} />
-
-            <div className="px-6 pb-8 pt-4">
-              <AnimatePresence mode="wait">
-                {/* ── Step 1: Филиал ── */}
-                {step === 1 ? (
-                  <motion.div key="step1" {...fadeSlide}>
-                    <div className="mb-6 flex items-center justify-between gap-3">
-                      <button
-                        onClick={returnFromBooking}
-                        className="inline-flex items-center gap-2 text-base text-stone-500 transition-colors hover:text-stone-900"
-                      >
-                        <ArrowLeft size={18} />
-                        {studentProfile ? 'Назад в профиль' : 'На главную'}
-                      </button>
-                      {!studentProfile ? (
-                        <button
-                          onClick={() => {
-                            setIsLoginOpen(true)
-                            setLoginErrors({})
-                          }}
-                          className="inline-flex items-center gap-2 rounded-full border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                        >
-                          <LockKeyhole size={15} />
-                          Войти
+          ) : view === 'dashboard' && profile ? (
+            <StudentDashboard
+              branch={profileBranch}
+              brandColor={brandColor}
+              futureLessons={futureLessons}
+              isComplete={isProfileComplete(profile)}
+              onLogout={() => {
+                removeStudentProfile(school.id)
+                setProfile(null)
+                setForm(emptyForm)
+                setView('home')
+              }}
+              onOpenSchedule={() => setView('schedule')}
+              onOpenSettings={() => setView('settings')}
+              onStartBooking={() => startBooking()}
+              profile={profile}
+            />
+          ) : view === 'booking' ? (
+            <section className="overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-card">
+              <StepHeader current={Math.min(currentStep, totalSteps)} total={totalSteps} />
+              <div className="p-5">
+                {step === 'category' ? (
+                  <>
+                    <BackButton onClick={backFromBooking} label={profile ? 'В кабинет' : 'На страницу школы'} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Какая категория нужна?</h1>
+                    <p className="mt-2 text-base text-stone-600">Если не уверены, можно пропустить и выбрать инструктора.</p>
+                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {DRIVING_CATEGORIES.filter((category) => instructors.some((instructor) => instructor.categories?.includes(category.code))).map((category) => (
+                        <button key={category.code} onClick={() => { setSelectedCategory(category.code); setStep('branch') }} className="rounded-2xl border border-stone-200 bg-stone-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50">
+                          <p className="text-xl font-semibold text-stone-950">{category.code}</p>
+                          <p className="mt-1 line-clamp-2 text-sm text-stone-500">{category.title}</p>
                         </button>
-                      ) : null}
+                      ))}
                     </div>
-                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
-                      {STEP_TITLES[1]}
-                    </h1>
-                    <p className="text-base text-stone-500 mb-6">
-                      От филиала зависит список инструкторов и адрес занятия.
-                    </p>
-
-                    {branches.length === 0 ? (
-                      <EmptyState
-                        title="Нет доступных филиалов"
-                        description="Попробуйте позже или позвоните в автошколу."
-                      />
-                    ) : (
-                      <div className="space-y-3">
-                        {branches.map((branch) => {
-                          const cnt = instructors.filter(
-                            (i) => i.branchId === branch.id && i.isActive,
-                          ).length
-                          return (
-                            <button
-                              key={branch.id}
-                              onClick={() => chooseBranch(branch)}
-                              className="w-full rounded-2xl border-2 border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]"
-                            >
-                              <div className="flex items-start justify-between gap-4">
-                                <p className="text-lg font-semibold text-stone-900 leading-snug">
-                                  {branch.name}
-                                </p>
-                                <ArrowRight size={20} className="mt-1 shrink-0 text-stone-300" />
-                              </div>
-                              <p className="mt-2 flex items-center gap-2 text-base text-stone-500">
-                                <MapPin size={16} className="shrink-0 text-stone-400" />
-                                {branch.address}
-                              </p>
-                              {branch.phone ? (
-                                <p className="mt-1 flex items-center gap-2 text-base text-stone-500">
-                                  <Phone size={16} className="shrink-0 text-stone-400" />
-                                  {formatPhone(branch.phone)}
-                                </p>
-                              ) : null}
-                              {cnt > 0 ? (
-                                <p className="mt-3 text-sm text-stone-400">
-                                  {pluralize(cnt, 'инструктор', 'инструктора', 'инструкторов')} доступно
-                                </p>
-                              ) : null}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </motion.div>
+                    <Button size="lg" variant="secondary" className="mt-4 min-h-12 w-full text-base" onClick={() => setStep('branch')}>Пропустить</Button>
+                  </>
                 ) : null}
 
-                {/* ── Step 2: Инструктор ── */}
-                {step === 2 ? (
-                  <motion.div key="step2" {...fadeSlide}>
-                    <BackButton
-                      onClick={() => {
-                        if (school.branchSelectionMode === 'fixed_first') {
-                          returnFromBooking()
-                        } else {
-                          setStep(1)
-                        }
-                      }}
-                      label={school.branchSelectionMode === 'fixed_first' ? (studentProfile ? 'Назад в профиль' : 'На главную') : 'Назад к филиалам'}
-                    />
-                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
-                      {STEP_TITLES[2]}
-                    </h1>
-                    <p className="text-base text-stone-500 mb-6">
-                      {preferredCategory
-                        ? `Показываем инструкторов выбранного филиала по категории ${preferredCategory}.`
-                        : 'Показываем инструкторов выбранного филиала.'}
-                    </p>
-                    {preferredCategory ? (
-                      <button
-                        type="button"
-                        onClick={() => setPreferredCategory('')}
-                        className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-left text-sm font-semibold text-blue-700"
-                      >
-                        Категория {preferredCategory} выбрана. Нажмите, чтобы показать всех инструкторов.
-                      </button>
-                    ) : null}
+                {step === 'branch' ? (
+                  <>
+                    <BackButton onClick={() => setStep('category')} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Выберите филиал</h1>
+                    <div className="mt-5 space-y-3">
+                      {branches.map((branch) => (
+                        <button key={branch.id} onClick={() => { setSelectedBranch(branch); setSelectedInstructor(null); setStep('instructor') }} className="w-full rounded-2xl border border-stone-200 bg-white p-4 text-left hover:border-blue-300">
+                          <p className="text-lg font-semibold text-stone-950">{branch.name}</p>
+                          <p className="mt-1 text-base text-stone-600">{branch.address}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
 
-                    {branchInstructors.length === 0 ? (
-                      <EmptyState
-                        title="Нет доступных инструкторов"
-                        description={preferredCategory ? 'Для этой категории в филиале нет активных инструкторов.' : 'Выберите другой филиал или попробуйте позже.'}
-                      />
-                    ) : (
-                      <div className="space-y-3">
-                        {branchInstructors.map((instructor) => {
-                          return (
-                          <button
-                            key={instructor.id}
-                            onClick={() => chooseInstructor(instructor)}
-                            className="w-full rounded-2xl border-2 border-stone-200 bg-white px-5 py-5 text-left transition hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]"
-                          >
-                            <div className="flex items-center gap-4">
-                              <Avatar
-                                initials={instructor.avatarInitials}
-                                color={instructor.avatarColor}
-                                size="lg"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-lg font-semibold text-stone-900 leading-snug">
-                                  {instructor.name}
-                                </p>
-                                {instructor.bio ? (
-                                  <p className="mt-1 text-base text-stone-500 line-clamp-2">
-                                    {instructor.bio}
-                                  </p>
-                                ) : null}
-                                {instructor.car ? (
-                                  <p className="mt-1 text-sm text-stone-400">
-                                    {instructor.car}
-                                    {instructor.transmission
-                                      ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}`
-                                      : ''}
-                                  </p>
-                                ) : null}
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {(instructor.categories ?? []).map((code) => (
-                                    <span key={code} className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600">
-                                      {code}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                              <ArrowRight size={20} className="text-stone-300 shrink-0" />
+                {step === 'instructor' ? (
+                  <>
+                    <BackButton onClick={() => setStep('branch')} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Выберите инструктора</h1>
+                    <div className="mt-5 space-y-3">
+                      {visibleInstructors.length === 0 ? <EmptyState title="Инструкторов нет" description="Выберите другой филиал или категорию." /> : visibleInstructors.map((instructor) => (
+                        <button key={instructor.id} onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }} className="w-full rounded-2xl border border-stone-200 bg-white p-4 text-left hover:border-blue-300">
+                          <div className="flex items-center gap-4">
+                            <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="lg" />
+                            <div className="min-w-0">
+                              <p className="text-lg font-semibold text-stone-950">{instructor.name}</p>
+                              <p className="mt-1 text-base text-stone-600">{instructor.car ?? 'Автомобиль уточняется'}</p>
+                              <p className="mt-1 text-sm text-stone-500">{(instructor.categories ?? []).join(', ')}</p>
                             </div>
-                          </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </motion.div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 ) : null}
 
-                {/* ── Step 3: Дата ── */}
-                {step === 3 ? (
-                  <motion.div key="step3" {...fadeSlide}>
-                    <BackButton onClick={() => setStep(2)} label="Назад к инструкторам" />
-                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
-                      {STEP_TITLES[3]}
-                    </h1>
-                    <p className="text-base text-stone-500 mb-6">
-                      {canSelectMultipleDates
-                        ? `Можно выбрать до ${pluralize(maxSlotsPerBooking, 'дня', 'дней', 'дней')} для записи.`
-                        : 'Ближайшие 7 дней. Выберите удобный день.'}
-                    </p>
-
-                    <div className="space-y-2">
-                      {dateOptions.map((date) => {
-                        const count = selectedInstructor
-                          ? getAvailableSlots(selectedInstructor.id, date, sessionId.current).length
-                          : 0
-                        const available = count > 0
-                        const selected = selectedDates.includes(date)
-
+                {step === 'date' ? (
+                  <>
+                    <BackButton onClick={() => setStep('instructor')} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Выберите день</h1>
+                    <div className="mt-5 space-y-3">
+                      {dates.map((date) => {
+                        const count = selectedInstructor ? getAvailableSlots(selectedInstructor.id, date, sessionId.current).length : 0
+                        const active = selectedDates.includes(date)
                         return (
                           <button
                             key={date}
-                            disabled={!available}
-                            onClick={() => chooseDate(date)}
-                            className={`w-full rounded-2xl border-2 px-5 py-4 text-left transition ${
-                              selected
-                                ? 'border-forest-700 bg-forest-50 active:scale-[0.99]'
-                                : available
-                                  ? 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40 active:scale-[0.99]'
-                                : 'border-stone-100 bg-stone-50 cursor-not-allowed'
-                            }`}
+                            disabled={count === 0}
+                            onClick={() => setSelectedDates(active ? selectedDates.filter((item) => item !== date) : [...selectedDates, date])}
+                            className={`w-full rounded-2xl border p-4 text-left ${active ? 'border-blue-500 bg-blue-50' : 'border-stone-200 bg-white'} disabled:bg-stone-50 disabled:text-stone-400`}
                           >
-                            <div className="flex items-center justify-between gap-4">
-                              <div>
-                                <p
-                                  className={`text-lg font-semibold capitalize ${
-                                    available ? 'text-stone-900' : 'text-stone-300'
-                                  }`}
-                                >
-                                  {formatDayOfWeek(date)}, {formatDate(date)}
-                                </p>
-                              </div>
-                              <span
-                                className={`shrink-0 text-sm font-medium ${
-                                  available ? 'text-forest-700' : 'text-stone-300'
-                                }`}
-                              >
-                                {available
-                                  ? selected ? 'Выбрано' : pluralize(count, 'слот', 'слота', 'слотов')
-                                  : 'Нет мест'}
-                              </span>
-                            </div>
+                            <p className="text-lg font-semibold capitalize">{formatDayOfWeek(date)}, {formatDate(date)}</p>
+                            <p className="mt-1 text-base text-stone-500">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
                           </button>
                         )
                       })}
                     </div>
-
-                    <Button
-                      size="lg"
-                      className="mt-6 w-full min-h-14 text-lg"
-                      disabled={selectedDates.length === 0}
-                      onClick={() => setStep(4)}
-                    >
-                      {canSelectMultipleDates ? 'Выбрать время' : 'Далее'}
-                      <ArrowRight size={20} />
-                    </Button>
-                  </motion.div>
+                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" disabled={selectedDates.length === 0} onClick={() => setStep('time')}>Выбрать время</Button>
+                  </>
                 ) : null}
 
-                {/* ── Step 4: Время ── */}
-                {step === 4 ? (
-                  <motion.div key="step4" {...fadeSlide}>
-                    <BackButton onClick={() => setStep(3)} label="Назад к датам" />
-                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
-                      {STEP_TITLES[4]}
-                    </h1>
-                    {selectedDates.length > 0 ? (
-                      <p className="text-base text-stone-500 mb-6">
-                        {canSelectMultipleSlots
-                          ? `Выберите до ${pluralize(maxSlotsPerBooking, 'занятия', 'занятий', 'занятий')}. Можно в один день или в разные дни.`
-                          : `${formatDayOfWeek(selectedDates[0])}, ${formatDateFull(selectedDates[0])}`}
-                      </p>
-                    ) : null}
-
-                    {availableSlotsByDate.every((group) => group.slots.length === 0) ? (
-                      <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 py-12 text-center">
-                        <Clock3 size={28} className="mx-auto text-stone-300 mb-3" />
-                        <p className="text-base font-semibold text-stone-700">Нет свободных мест</p>
-                        <p className="mt-1 text-sm text-stone-500">Выберите другой день.</p>
-                        <button
-                          onClick={() => setStep(3)}
-                          className="mt-4 text-sm font-medium text-forest-700 hover:underline"
-                        >
-                          ← Вернуться к выбору даты
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        {availableSlotsByDate.map((group) => (
-                          group.slots.length > 0 ? (
-                            <div key={group.date}>
-                              <p className="mb-2 text-sm font-semibold text-stone-500 capitalize">
-                                {formatDayOfWeek(group.date)}, {formatDateFull(group.date)}
-                              </p>
-                              <div className="grid grid-cols-3 gap-3">
-                                {group.slots.map((slot) => {
-                                  const active = selectedSlots.some((selected) => selected.id === slot.id)
-                                  return (
-                                    <button
-                                      key={slot.id}
-                                      onClick={() => void handleSlotSelect(slot)}
-                                      className={`rounded-2xl border-2 px-3 py-4 text-center transition active:scale-[0.97] ${
-                                        active
-                                          ? 'border-forest-700 bg-forest-700 text-white'
-                                          : 'border-stone-200 bg-white hover:border-forest-400 hover:bg-forest-50/40'
-                                      }`}
-                                    >
-                                      <p className={`text-xl font-bold ${active ? 'text-white' : 'text-stone-900'}`}>
-                                        {slot.time}
-                                      </p>
-                                      <p className={`mt-1 text-xs ${active ? 'text-white/70' : 'text-stone-400'}`}>
-                                        {formatDuration(slot.duration)}
-                                      </p>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ) : null
-                        ))}
-                      </div>
-                    )}
-
-                    <Button
-                      size="lg"
-                      className="mt-6 w-full min-h-14 text-lg"
-                      disabled={selectedSlots.length === 0}
-                      onClick={() => setStep(5)}
-                    >
-                      {selectedSlots.length > 0
-                        ? `Далее: ${pluralize(selectedSlots.length, 'занятие', 'занятия', 'занятий')}`
-                        : 'Далее'}
-                      <ArrowRight size={20} />
-                    </Button>
-                  </motion.div>
-                ) : null}
-
-                {/* ── Step 5: Данные ── */}
-                {step === 5 ? (
-                  <motion.div key="step5" {...fadeSlide}>
-                    <BackButton onClick={() => setStep(4)} label="Назад к выбору времени" />
-                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
-                      {studentProfile && !isEditingProfile ? 'Профиль ученика' : STEP_TITLES[5]}
-                    </h1>
-                    <p className="text-base text-stone-500 mb-8">
-                      {studentProfile && !isEditingProfile
-                        ? 'Используем сохранённые данные. Их можно изменить в один клик.'
-                        : 'Оставьте контакт — автошкола свяжется при необходимости.'}
-                    </p>
-
-                    {studentProfile && !isEditingProfile ? (
-                      <div className="rounded-3xl border border-stone-200 bg-gradient-to-br from-white to-forest-50/70 p-5">
-                        <div className="flex items-start gap-4">
-                          <div
-                            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white"
-                            style={{ backgroundColor: brandColor }}
-                          >
-                            {initialsFromName(studentProfile.name)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-stone-500">Продолжить как</p>
-                            <p className="mt-1 text-xl font-semibold leading-tight text-stone-900">
-                              {studentProfile.name}
-                            </p>
-                            <p className="mt-1 text-base text-stone-500">
-                              {formatPhone(studentProfile.phone)}
-                            </p>
+                {step === 'time' ? (
+                  <>
+                    <BackButton onClick={() => setStep('date')} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Выберите время</h1>
+                    <p className="mt-2 text-base text-stone-600">Можно выбрать до {maxSlots} занятий.</p>
+                    <div className="mt-5 space-y-5">
+                      {slotsByDate.map((group) => (
+                        <div key={group.date}>
+                          <p className="mb-2 text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {group.slots.map((slot) => {
+                              const active = selectedSlots.some((item) => item.id === slot.id)
+                              return (
+                                <button key={slot.id} onClick={() => selectSlot(slot)} className={`rounded-2xl border p-4 text-center ${active ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-200 bg-white'}`}>
+                                  <p className="text-xl font-semibold">{slot.time}</p>
+                                  <p className="mt-1 text-xs">{formatDuration(slot.duration)}</p>
+                                </button>
+                              )
+                            })}
                           </div>
                         </div>
-                        <button
-                          className="mt-5 inline-flex items-center gap-2 text-base font-medium text-forest-700"
-                          onClick={() => setIsEditingProfile(true)}
-                        >
-                          Изменить данные
-                          <ArrowRight size={17} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-base font-medium text-stone-700 mb-2">
-                            Как вас зовут?
-                          </label>
-                          <Input
-                            placeholder="Анна Иванова"
-                            value={form.name}
-                            onChange={(e) => {
-                              setForm((c) => ({ ...c, name: e.target.value }))
-                              if (errors.name) setErrors((c) => ({ ...c, name: undefined }))
-                            }}
-                            error={errors.name}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-base font-medium text-stone-700 mb-2">
-                            Ваш номер для связи?
-                          </label>
-                          <Input
-                            placeholder="+7 (999) 123-45-67"
-                            value={form.phone}
-                            onChange={(e) => {
-                              setForm((c) => ({ ...c, phone: e.target.value }))
-                              if (errors.phone) setErrors((c) => ({ ...c, phone: undefined }))
-                            }}
-                            error={errors.phone}
-                          />
-                        </div>
-
-                        <div className="rounded-2xl bg-stone-50 px-4 py-4">
-                          <div className="flex gap-3">
-                            <CircleUserRound size={20} className="mt-0.5 shrink-0 text-forest-700" />
-                            <p className="text-sm leading-relaxed text-stone-500">
-                              Эти данные нужны для записи. После сохранения спросим отдельно, создавать ли профиль.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      size="lg"
-                      className="w-full mt-8 min-h-14 text-lg"
-                      disabled={!form.name.trim() || !form.phone.trim()}
-                      onClick={() => {
-                        if (!validateForm()) {
-                          showToast('Проверьте форму перед продолжением.', 'error')
-                          return
-                        }
-                        setStep(6)
-                      }}
-                    >
-                      Далее
-                      <ArrowRight size={18} />
-                    </Button>
-                  </motion.div>
-                ) : null}
-
-                {/* ── Step 6: Подтверждение ── */}
-                {step === 6 ? (
-                  <motion.div key="step6" {...fadeSlide}>
-                    <BackButton onClick={() => setStep(5)} label="Назад к данным" />
-                    <h1 className="text-2xl font-semibold text-stone-900 mb-1">
-                      {STEP_TITLES[6]}
-                    </h1>
-                    <p className="text-base text-stone-500 mb-6">
-                      Всё верно? Нажмите «Записаться».
-                    </p>
-
-                    <div className="rounded-2xl border border-stone-200 overflow-hidden mb-6">
-                      {[
-                        selectedBranch
-                          ? { icon: MapPin, label: 'Филиал', value: selectedBranch.name, sub: selectedBranch.address }
-                          : null,
-                        selectedInstructor
-                          ? { icon: UserRound, label: 'Инструктор', value: selectedInstructor.name, sub: selectedInstructor.car ?? undefined }
-                          : null,
-                        selectedDates.length > 0
-                          ? {
-                              icon: CalendarDays,
-                              label: selectedDates.length > 1 ? 'Даты' : 'Дата',
-                              value: (() => {
-                                if (selectedDates.length > 1) {
-                                  return selectedDates.map((date) => formatDate(date)).join(', ')
-                                }
-                                const day = formatDayOfWeek(selectedDates[0])
-                                return `${day.charAt(0).toUpperCase()}${day.slice(1)}, ${formatDateFull(selectedDates[0])}`
-                              })(),
-                              sub: undefined,
-                            }
-                          : null,
-                        selectedSlots.length > 0
-                          ? {
-                              icon: Clock3,
-                              label: selectedSlots.length > 1 ? 'Время' : 'Время',
-                              value: selectedSlots.map((slot) => `${formatDate(slot.date)} ${slot.time}`).join(', '),
-                              sub: selectedSlots.length > 1
-                                ? pluralize(selectedSlots.length, 'занятие', 'занятия', 'занятий')
-                                : formatDuration(selectedSlots[0].duration),
-                            }
-                          : null,
-                        form.name
-                          ? {
-                              icon: UserRound,
-                              label: 'Ученик',
-                              value: form.name.trim(),
-                              sub: form.phone ? formatPhone(normalizePhone(form.phone)) : undefined,
-                            }
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .map((row, idx, arr) => {
-                          if (!row) return null
-                          const Icon = row.icon
-                          return (
-                            <div
-                              key={row.label}
-                              className={`flex items-start gap-4 px-5 py-4 ${idx < arr.length - 1 ? 'border-b border-stone-100' : ''}`}
-                            >
-                              <div
-                                className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                                style={{ backgroundColor: brandSoft }}
-                              >
-                                <Icon size={16} style={{ color: brandColor }} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-stone-400">{row.label}</p>
-                                <p className="mt-0.5 text-base font-semibold text-stone-900">
-                                  {row.value}
-                                </p>
-                                {row.sub ? (
-                                  <p className="mt-0.5 text-sm text-stone-500">{row.sub}</p>
-                                ) : null}
-                              </div>
-                            </div>
-                          )
-                        })}
+                      ))}
                     </div>
-
-                    <Button
-                      size="lg"
-                      className="w-full min-h-14 text-lg"
-                      disabled={isSubmitting}
-                      style={!isSubmitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined}
-                      onClick={() => void handleSubmit()}
-                    >
-                      {isSubmitting ? 'Сохраняем...' : 'Записаться'}
-                      {!isSubmitting ? <Check size={18} /> : null}
-                    </Button>
-                  </motion.div>
+                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" disabled={selectedSlots.length === 0} onClick={() => setStep('details')}>Дальше</Button>
+                  </>
                 ) : null}
 
-                {step === 7 ? (
-                  <motion.div key="step7" {...fadeSlide}>
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-forest-50">
-                      <CircleUserRound size={30} className="text-forest-700" />
+                {step === 'details' ? (
+                  <>
+                    <BackButton onClick={() => setStep('time')} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Ваши данные</h1>
+                    <p className="mt-2 text-base text-stone-600">Для записи нужны только имя и телефон.</p>
+                    <div className="mt-5 space-y-4">
+                      <Input label="Имя" value={form.name} error={errors.name} placeholder="Анна Иванова" onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+                      <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
                     </div>
-                    <h1 className="mt-6 text-center text-2xl font-semibold text-stone-900">
-                      Создать профиль ученика?
-                    </h1>
-                    <p className="mx-auto mt-3 max-w-sm text-center text-base leading-relaxed text-stone-500">
-                      Мы можем сохранить имя и телефон в этом браузере. Тогда при следующем входе вы сразу увидите
-                      личный кабинет и сможете записаться быстрее.
-                    </p>
+                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" onClick={() => validateDetails() && setStep('review')}>Проверить запись</Button>
+                  </>
+                ) : null}
 
+                {step === 'review' ? (
+                  <>
+                    <BackButton onClick={() => setStep('details')} />
+                    <h1 className="text-2xl font-semibold text-stone-950">Проверьте запись</h1>
+                    <div className="mt-5 space-y-3">
+                      {selectedSlots.map((slot) => {
+                        const branch = db.branches.byId(slot.branchId)
+                        const instructor = db.instructors.byId(slot.instructorId)
+                        return (
+                          <div key={slot.id} className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                            <p className="text-lg font-semibold text-stone-950">{formatDate(slot.date)}, {slot.time}</p>
+                            <p className="mt-1 text-base text-stone-600">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
+                          </div>
+                        )
+                      })}
+                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                        <p className="text-base font-semibold text-stone-900">{form.name}</p>
+                        <p className="mt-1 text-base text-stone-600">{formatPhone(normalizePhone(form.phone))}</p>
+                      </div>
+                    </div>
+                    <Button size="lg" className="mt-5 min-h-14 w-full text-lg" disabled={submitting} style={!submitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined} onClick={() => void submitBooking()}>
+                      {submitting ? 'Сохраняем...' : 'Записаться'}
+                      {!submitting ? <Check size={18} /> : null}
+                    </Button>
+                  </>
+                ) : null}
+
+                {step === 'profile' ? (
+                  <>
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                      <CheckCircle2 size={32} />
+                    </div>
+                    <h1 className="mt-5 text-center text-2xl font-semibold text-stone-950">Запись создана</h1>
+                    <p className="mx-auto mt-2 max-w-md text-center text-base leading-relaxed text-stone-600">Создайте кабинет ученика, чтобы видеть свои занятия и быстрее записываться снова.</p>
                     <div className="mt-6 space-y-4">
-                      <Input
-                        label="ФИО"
-                        placeholder="Анна Иванова"
-                        value={form.name}
-                        onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))}
-                      />
-                      <Input
-                        label="Телефон"
-                        placeholder="+7 (999) 123-45-67"
-                        value={form.phone}
-                        onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))}
-                      />
-                      <Input
-                        label="E-mail"
-                        type="email"
-                        placeholder="name@example.ru"
-                        value={form.email}
-                        onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
-                      />
-                      <Input
-                        label="Пароль"
-                        type="password"
-                        placeholder="Минимум 6 символов"
-                        value={form.password}
-                        onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))}
-                      />
-                      <Input
-                        label="Аватарка"
-                        placeholder="Ссылка на фото, можно оставить пустой"
-                        value={form.avatarUrl}
-                        onChange={(e) => setForm((c) => ({ ...c, avatarUrl: e.target.value }))}
-                      />
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { icon: UserRound, text: 'ФИО' },
-                          { icon: Mail, text: 'E-mail' },
-                          { icon: LockKeyhole, text: 'Пароль' },
-                        ].map((item) => {
-                          const Icon = item.icon
-                          return (
-                            <div key={item.text} className="rounded-2xl bg-stone-50 px-3 py-3 text-center">
-                              <Icon size={18} className="mx-auto text-stone-400" />
-                              <p className="mt-1 text-xs font-medium text-stone-500">{item.text}</p>
-                            </div>
-                          )
-                        })}
-                      </div>
+                      <Input label="ФИО" value={form.name} error={errors.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+                      <Input label="Телефон" value={form.phone} error={errors.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
+                      <Input label="E-mail" type="email" value={form.email} error={errors.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
+                      <Input label="Пароль" type="password" value={form.password} error={errors.password} helperText="Минимум 6 символов." onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
+                      <Input label="Аватарка" value={form.avatarUrl} placeholder="Ссылка на фото, можно пусто" onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))} />
                     </div>
-
-                    <div className="mt-8 space-y-3">
-                      <Button
-                        size="lg"
-                        className="w-full min-h-14 text-lg"
-                        style={{ backgroundColor: brandColor, borderColor: brandColor }}
-                        onClick={() => void createProfileAndContinue()}
-                      >
-                        Создать профиль
-                      </Button>
-                      <Button
-                        size="lg"
-                        variant="secondary"
-                        className="w-full min-h-14 text-lg"
-                        onClick={() => void copyCredentials()}
-                      >
+                    <div className="mt-6 grid gap-3">
+                      <Button size="lg" className="min-h-14 w-full text-lg" disabled={submitting} onClick={() => void createProfile()}>Создать кабинет</Button>
+                      <Button size="lg" variant="secondary" className="min-h-12 w-full text-base" onClick={() => void copyCredentials()}>
                         <Copy size={18} />
                         Скопировать логин и пароль
                       </Button>
-                      <Button
-                        size="lg"
-                        variant="secondary"
-                        className="w-full min-h-14 text-lg"
-                        onClick={continueToConfirmation}
-                      >
-                        Продолжить без профиля
-                      </Button>
+                      <Button size="lg" variant="secondary" className="min-h-12 w-full text-base" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : setView('home')}>Готово</Button>
                     </div>
-                  </motion.div>
+                  </>
                 ) : null}
-              </AnimatePresence>
-            </div>
-          </div>
-          </>
-          ) : null}
+              </div>
+            </section>
+          ) : (
+            <SchoolHome
+              branches={branches}
+              brandColor={brandColor}
+              instructors={instructors}
+              onLogin={() => setView('login')}
+              onOpenSchedule={() => setView('schedule')}
+              onSelectCategory={(category) => startBooking(category)}
+              onStartBooking={() => startBooking()}
+              school={school}
+            />
+          )}
         </motion.div>
       </main>
 
-      <AnimatePresence>
-        {isProfileRequiredOpen ? (
-          <ProfileRequiredDialog
-            onClose={() => setIsProfileRequiredOpen(false)}
-            onOpenSettings={() => {
-              setIsProfileRequiredOpen(false)
-              setIsProfileSettingsOpen(true)
-            }}
-          />
-        ) : null}
-      </AnimatePresence>
+      <Modal open={profileRequiredOpen} onClose={() => setProfileRequiredOpen(false)} title="Заполните профиль">
+        <div className="space-y-4 px-6 py-5">
+          <p className="text-base leading-relaxed text-stone-600">Чтобы записываться из кабинета без повторного ввода данных, добавьте e-mail и пароль.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button size="lg" className="min-h-12 text-base" onClick={() => { setProfileRequiredOpen(false); setView('settings') }}>Заполнить профиль</Button>
+            <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={() => setProfileRequiredOpen(false)}>Позже</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <div className="fixed bottom-4 left-1/2 z-20 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-3xl border border-stone-200 bg-white/95 p-2 shadow-modal backdrop-blur sm:hidden">
+        <div className="grid grid-cols-3 gap-2">
+          <button onClick={() => setView(profile ? 'dashboard' : 'home')} className="rounded-2xl px-3 py-2 text-sm font-semibold text-stone-700">Главная</button>
+          <button onClick={() => setView('schedule')} className="rounded-2xl px-3 py-2 text-sm font-semibold text-stone-700">Расписание</button>
+          <button onClick={() => profile ? startBooking() : setView('login')} className="rounded-2xl px-3 py-2 text-sm font-semibold text-white" style={{ backgroundColor: brandColor }}>{profile ? 'Запись' : 'Войти'}</button>
+        </div>
+      </div>
     </div>
   )
 }

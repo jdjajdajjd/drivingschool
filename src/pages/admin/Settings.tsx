@@ -120,14 +120,14 @@ export function AdminSettings() {
   function handleReset(): void {
     performDemoReset()
     setResetOpen(false)
-    showToast('Демо-данные сброшены и заново созданы.', 'success')
+    showToast('Локальные данные обновлены.', 'success')
     window.location.href = `${ADMIN_BASE_PATH}/settings`
   }
 
   if (!school) {
     return (
       <div className="max-w-7xl p-6 md:p-8">
-        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+        <EmptyState title="Школа не найдена" description="Проверьте подключение данных школы." />
       </div>
     )
   }
@@ -137,7 +137,7 @@ export function AdminSettings() {
       <PageHeader
         eyebrow={school.name}
         title="Настройки"
-        description="Основные данные школы, публичная страница, лимиты записи и демо-режим хранения данных в браузере."
+        description="Основные данные школы, публичная страница и правила записи для учеников."
         actions={
           <Button onClick={handleSave}>
             <Settings2 size={16} />
@@ -304,14 +304,14 @@ export function AdminSettings() {
           </div>
         </Section>
 
-        <Section title="Демо-режим" description="Сейчас приложение работает в демо-режиме. Данные хранятся прямо в браузере.">
+        <Section title="Служебное обновление" description="Используйте только при настройке стенда или восстановлении тестового состояния.">
           <div className="rounded-3xl border border-amber-100 bg-amber-50 px-5 py-5 text-sm text-amber-900">
-            Изменения сохраняются только локально в браузере. Сброс демо-данных очистит текущие данные проекта и заново создаст seed.
+            Это действие очищает локальный рабочий снимок и заново загружает стартовые данные школы. Не используйте во время реальной работы с учениками.
           </div>
           <div className="mt-4">
             <Button variant="danger" onClick={() => setResetOpen(true)}>
               <RefreshCw size={15} />
-              Сбросить демо-данные
+              Обновить стартовые данные
             </Button>
           </div>
         </Section>
@@ -319,9 +319,9 @@ export function AdminSettings() {
 
       <ConfirmDialog
         open={resetOpen}
-        title="Сбросить демо-данные"
-        description="Все текущие localStorage-данные проекта будут очищены, после чего демо-данные создадутся заново."
-        confirmLabel="Сбросить данные"
+        title="Обновить стартовые данные"
+        description="Текущий локальный снимок будет очищен, после чего стартовые данные школы создадутся заново."
+        confirmLabel="Обновить данные"
         onClose={() => setResetOpen(false)}
         onConfirm={handleReset}
         danger
