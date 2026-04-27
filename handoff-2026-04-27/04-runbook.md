@@ -62,7 +62,7 @@ drivingschool
 https://drivingschool-6wy.pages.dev
 ```
 
-Лишний проект:
+Лишний проект уже удалён:
 
 ```text
 drivedesk
@@ -72,10 +72,8 @@ https://drivedesk.pages.dev
 Состояние:
 
 - `drivingschool` подключен к GitHub и сам деплоит `main`;
-- `drivedesk` больше не получает деплой из GitHub Actions;
+- `drivedesk` удалён и больше не получает деплой из GitHub Actions;
 - `.github/workflows/deploy.yml` теперь только запускает build.
-
-Если пользователь скажет удалить `drivedesk`, можно удалить Cloudflare Pages project `drivedesk`.
 
 ## Git
 

@@ -15,8 +15,8 @@
 - репозиторий: `jdjajdajjd/drivingschool`;
 - ветка: `main`;
 - база: Supabase;
-- Cloudflare Pages project, который надо оставить: `drivingschool`;
-- лишний Cloudflare Pages project, который пользователь хотел удалить: `drivedesk`;
+- Cloudflare Pages project, который остался: `drivingschool`;
+- лишний Cloudflare Pages project `drivedesk` уже удалён;
 - GitHub Actions больше не деплоит в `drivedesk`, он только проверяет сборку;
 - деплой в `drivingschool` идет через Git connection Cloudflare.
 

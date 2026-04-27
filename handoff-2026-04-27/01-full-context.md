@@ -52,13 +52,13 @@ https://drivingschool-6wy.pages.dev/admin
 https://drivingschool-6wy.pages.dev/admin/bookings
 ```
 
-Старый/лишний Cloudflare project:
+Старый/лишний Cloudflare project уже удалён:
 
 ```text
 https://drivedesk.pages.dev
 ```
 
-Его хотели удалить, чтобы не было путаницы. Удаление еще не сделано, потому что для удаления cloud project нужно отдельное явное подтверждение.
+Его удалили, чтобы не было путаницы с двумя продами.
 
 ## Что сделали по UI записи
 
@@ -201,7 +201,8 @@ Supabase уже подключен, но не все страницы полно
    - URL: `https://drivedesk.pages.dev`
    - без Git connection;
    - туда деплоил GitHub Actions workflow;
-   - из-за этого один пуш выглядел как два деплоя.
+   - из-за этого один пуш выглядел как два деплоя;
+   - проект уже удалён.
 
 Что уже сделали:
 
@@ -211,8 +212,7 @@ Supabase уже подключен, но не все страницы полно
 
 Что осталось:
 
-- удалить Cloudflare Pages project `drivedesk`, если пользователь подтвердит;
-- после удаления пользоваться только `drivingschool-6wy.pages.dev`;
+- пользоваться только `drivingschool-6wy.pages.dev`;
 - в будущем подключить красивый домен.
 
 ## Последние важные коммиты

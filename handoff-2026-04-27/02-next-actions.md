@@ -39,14 +39,12 @@ drivingschool
 https://drivingschool-6wy.pages.dev
 ```
 
-Удалить после подтверждения пользователя:
+Уже удалён:
 
 ```text
 drivedesk
 https://drivedesk.pages.dev
 ```
-
-Важно: удаление Cloudflare project - действие с потерей облачного проекта, поэтому без явного подтверждения не удалять.
 
 После удаления:
 
@@ -251,5 +249,5 @@ npm run build
 - Не записывать service role key в документацию.
 - Не вставлять реальные ключи в markdown.
 - SQL-изменения держать единым файлом.
-- Перед удалением Cloudflare project спросить явное подтверждение.
+- Cloudflare project `drivedesk` уже удалён, дальше пользоваться только `drivingschool`.
 - После каждого важного изменения проверять реальный prod URL.

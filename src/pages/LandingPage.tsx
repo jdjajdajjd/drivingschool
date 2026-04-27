@@ -1,158 +1,176 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, CalendarDays, LayoutDashboard, Link2, Puzzle } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarClock,
+  Car,
+  ClipboardList,
+  GraduationCap,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  UserCog,
+  UserRound,
+  UsersRound,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { PublicNav } from '../components/layout/PublicNav'
 import { Button } from '../components/ui/Button'
-import { Card } from '../components/ui/Card'
 
-const howItWorks = [
+const primaryEntrances = [
   {
-    title: 'Ученик записывается сам',
-    text: 'Выбирает филиал, инструктора, дату и свободное время по обычной ссылке в браузере.',
-    icon: CalendarDays,
+    title: 'Войти как ученик',
+    text: 'Страница ученика: профиль, ближайшая запись и запись на занятие.',
+    path: '/school/virazh',
+    icon: GraduationCap,
+    tone: 'bg-blue-600 text-white',
+    button: 'Открыть ученика',
   },
   {
-    title: 'Администратор держит всё под контролем',
-    text: 'Видит записи, переносы, отмены, учеников и свободные слоты в одной панели.',
-    icon: LayoutDashboard,
+    title: 'Войти как администратор',
+    text: 'Рабочая панель автошколы: записи, ученики, расписание и настройки.',
+    path: '/admin',
+    icon: UserCog,
+    tone: 'bg-stone-900 text-white',
+    button: 'Открыть админку',
   },
   {
-    title: 'Инструктор открывает личную ссылку',
-    text: 'Сразу видит ближайшие занятия, контакты ученика и статус записи.',
-    icon: Link2,
+    title: 'Войти как супер-админ',
+    text: 'Управление школами, модулями и общей витриной сервиса.',
+    path: '/superadmin',
+    icon: ShieldCheck,
+    tone: 'bg-indigo-600 text-white',
+    button: 'Открыть superadmin',
   },
 ]
 
-const demoLinks = [
-  { label: 'Страница записи ученика', path: '/school/virazh' },
-  { label: 'Админка автошколы', path: '/admin' },
-  { label: 'Записи', path: '/admin/bookings' },
-  { label: 'Модули', path: '/admin/modules' },
-  { label: 'Суперадминка', path: '/superadmin' },
+const quickLinks = [
+  { label: 'Записи автошколы', path: '/admin/bookings', icon: ClipboardList },
+  { label: 'Расписание и слоты', path: '/admin/slots', icon: CalendarClock },
+  { label: 'Ученики', path: '/admin/students', icon: UsersRound },
+  { label: 'Инструкторы', path: '/admin/instructors', icon: UserRound },
+  { label: 'Филиалы', path: '/admin/branches', icon: Car },
+  { label: 'Настройки школы', path: '/admin/settings', icon: Settings },
+  { label: 'Модули', path: '/admin/modules', icon: BookOpen },
+  { label: 'Кабинет инструктора', path: '/instructor/tok-petrov-2024', icon: LayoutDashboard },
 ]
 
 export function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa]">
-      <PublicNav />
-
-      <main>
-        <section className="px-6 pb-16 pt-28">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
-              className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]"
-            >
-              <div className="max-w-3xl">
-                <p className="text-sm font-medium text-stone-600">DriveDesk для автошкол</p>
-                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-900 md:text-[3.5rem] md:leading-[1.04]">
-                  Онлайн-запись на вождение для автошкол
-                </h1>
-                <p className="mt-5 max-w-2xl text-lg leading-relaxed text-stone-600">
-                  Ученики сами выбирают свободные слоты, администратор видит все записи в панели, инструкторы
-                  получают личное расписание по ссылке.
-                </p>
-                <p className="mt-4 text-sm font-medium text-stone-600">
-                  Без установки приложений. Работает по обычной ссылке в браузере.
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button size="lg" onClick={() => navigate('/school/virazh')}>
-                    Открыть демо записи
-                    <ArrowRight size={16} />
-                  </Button>
-                  <Button size="lg" variant="secondary" onClick={() => navigate('/admin')}>
-                    Открыть админку
-                  </Button>
-                </div>
-              </div>
-
-              <Card padding="lg">
-                <p className="text-sm font-medium text-stone-500">Цена</p>
-                <p className="mt-3 text-3xl font-semibold tracking-tight text-stone-900">
-                  4 990 ₽<span className="ml-1 text-base font-medium text-stone-500">/мес</span>
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600">+ подключаемые модули только при необходимости.</p>
-
-                <div className="mt-6 space-y-3 border-t border-stone-100 pt-5">
-                  <div className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-700">Онлайн-запись ученика</div>
-                  <div className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-700">Админка школы и список записей</div>
-                  <div className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-700">История ученика и ссылка инструктора</div>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
-        </section>
-
-        <section className="bg-white px-6 py-16">
-          <div className="mx-auto max-w-6xl">
-            <div className="max-w-2xl">
-              <p className="text-sm font-medium text-stone-500">Как это работает</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Понятный рабочий контур без звонков и таблиц</h2>
+    <div className="min-h-screen bg-[#f5f6f8] text-stone-900">
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:py-8">
+        <motion.header
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col gap-4 border-b border-stone-200 pb-5 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 shadow-soft">
+              <Car size={22} className="text-white" />
             </div>
-
-            <div className="mt-8 grid gap-4 lg:grid-cols-3">
-              {howItWorks.map(({ title, text, icon: Icon }) => (
-                <Card key={title} padding="md">
-                  <div className="text-stone-400">
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-stone-900">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-600">{text}</p>
-                </Card>
-              ))}
+            <div>
+              <p className="text-xl font-semibold leading-tight">DriveDesk</p>
+              <p className="text-sm text-stone-500">Панель демонстрации продукта</p>
             </div>
           </div>
-        </section>
 
-        <section id="pricing" className="px-6 py-16">
-          <div className="mx-auto max-w-6xl">
-            <Card padding="lg">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="max-w-2xl">
-                  <p className="text-sm font-medium text-stone-500">Модули</p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">База остаётся простой, расширения подключаются отдельно</h2>
-                  <p className="mt-3 text-sm leading-relaxed text-stone-600">
-                    Уведомления, брендирование, аналитика и дополнительные лимиты подключаются по мере роста школы,
-                    а не зашиваются в тарифную сетку.
+          <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800">
+            Прод: drivingschool-6wy.pages.dev
+          </div>
+        </motion.header>
+
+        <section className="grid flex-1 gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: 0.03 }}
+            className="space-y-5"
+          >
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                Быстрый вход в продукт
+              </h1>
+              <p className="mt-3 max-w-2xl text-base leading-relaxed text-stone-600">
+                Без лендинга и красивых обещаний. Здесь только рабочие экраны, которые можно
+                открыть на демонстрации автошколе.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              {primaryEntrances.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className="group flex min-h-[230px] flex-col rounded-[1.35rem] border border-stone-200 bg-white p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-card active:translate-y-0"
+                  >
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.tone}`}>
+                      <Icon size={22} />
+                    </div>
+                    <h2 className="mt-5 text-xl font-semibold leading-tight">{item.title}</h2>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-stone-500">{item.text}</p>
+                    <div className="mt-5 inline-flex items-center gap-2 text-base font-semibold text-blue-700">
+                      {item.button}
+                      <ArrowRight size={18} className="transition group-hover:translate-x-1" />
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="rounded-[1.35rem] border border-stone-200 bg-white p-5 shadow-soft">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">Что показать в первую очередь</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-stone-500">
+                    Оптимальный порядок демо: ученик записывается, запись появляется в админке,
+                    админ переносит или завершает занятие.
                   </p>
                 </div>
-                <Button variant="secondary" onClick={() => navigate('/admin/modules')}>
-                  <Puzzle size={16} />
-                  Открыть каталог модулей
+                <Button size="lg" onClick={() => navigate('/school/virazh')}>
+                  Начать с ученика
+                  <ArrowRight size={18} />
                 </Button>
               </div>
-            </Card>
-          </div>
-        </section>
-
-        <section className="px-6 pb-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="max-w-2xl">
-              <p className="text-sm font-medium text-stone-500">Демо</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Ключевые экраны в одном месте</h2>
             </div>
+          </motion.div>
 
-            <div className="mt-8 grid gap-3 lg:grid-cols-2">
-              {demoLinks.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left transition hover:border-stone-300"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-stone-900">{item.label}</p>
-                    <p className="mt-1 text-sm text-stone-500">{item.path}</p>
-                  </div>
-                  <ArrowRight size={16} className="text-stone-400" />
-                </button>
-              ))}
+          <motion.aside
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: 0.08 }}
+            className="rounded-[1.35rem] border border-stone-200 bg-white p-5 shadow-soft"
+          >
+            <h2 className="text-xl font-semibold">Быстрые разделы</h2>
+            <p className="mt-1 text-sm text-stone-500">
+              Прямые входы в основные экраны без поиска по меню.
+            </p>
+
+            <div className="mt-5 space-y-2">
+              {quickLinks.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-stone-100 bg-stone-50 px-4 py-3 text-left transition hover:border-stone-200 hover:bg-white"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700">
+                      <Icon size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-stone-900">{item.label}</p>
+                      <p className="truncate text-xs text-stone-500">{item.path}</p>
+                    </div>
+                    <ArrowRight size={16} className="shrink-0 text-stone-400" />
+                  </button>
+                )
+              })}
             </div>
-          </div>
+          </motion.aside>
         </section>
       </main>
     </div>
