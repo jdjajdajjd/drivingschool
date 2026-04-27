@@ -237,6 +237,55 @@ export interface Database {
           new_slot_id: string
         }>
       }
+      public_update_school_settings: {
+        Args: {
+          p_school_id: string
+          p_name: string
+          p_slug: string
+          p_description: string
+          p_primary_color: string
+          p_logo_url: string
+          p_booking_limit_enabled: boolean
+          p_max_active_bookings_per_student: number
+          p_branch_selection_mode: 'student_choice' | 'fixed_first'
+          p_max_slots_per_booking: number
+          p_default_lesson_duration: number
+        }
+        Returns: Array<{
+          school_id: string
+        }>
+      }
+      public_create_slot: {
+        Args: {
+          p_slot_id: string
+          p_school_id: string
+          p_branch_id: string
+          p_instructor_id: string
+          p_date: string
+          p_start_time: string
+          p_duration: number
+        }
+        Returns: Array<{
+          slot_id: string
+        }>
+      }
+      public_update_slot_status: {
+        Args: {
+          p_slot_id: string
+          p_status: 'available' | 'booked' | 'cancelled'
+        }
+        Returns: Array<{
+          slot_id: string
+        }>
+      }
+      public_delete_slot: {
+        Args: {
+          p_slot_id: string
+        }
+        Returns: Array<{
+          slot_id: string
+        }>
+      }
     }
     Views: Record<string, never>
     Enums: Record<string, never>

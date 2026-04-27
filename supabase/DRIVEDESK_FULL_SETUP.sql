@@ -17,6 +17,10 @@ drop function if exists public.public_create_booking(text, text, text, text[]);
 drop function if exists public.public_cancel_booking(text);
 drop function if exists public.public_complete_booking(text);
 drop function if exists public.public_reschedule_booking(text, text);
+drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer);
+drop function if exists public.public_create_slot(text, text, text, text, text, text, integer);
+drop function if exists public.public_update_slot_status(text, text);
+drop function if exists public.public_delete_slot(text);
 
 create table public.schools (
   id text primary key,
@@ -514,6 +518,213 @@ begin
 end;
 $$;
 
+create or replace function public.public_update_school_settings(
+  p_school_id text,
+  p_name text,
+  p_slug text,
+  p_description text,
+  p_primary_color text,
+  p_logo_url text,
+  p_booking_limit_enabled boolean,
+  p_max_active_bookings_per_student integer,
+  p_branch_selection_mode text,
+  p_max_slots_per_booking integer,
+  p_default_lesson_duration integer
+)
+returns table (
+  school_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_name is null or length(trim(p_name)) = 0 then
+    raise exception 'School name is required.';
+  end if;
+
+  if p_slug is null or p_slug !~ '^[a-z0-9-]+$' then
+    raise exception 'School slug is invalid.';
+  end if;
+
+  if p_primary_color is not null and p_primary_color <> '' and p_primary_color !~ '^#[0-9A-Fa-f]{6}$' then
+    raise exception 'Primary color is invalid.';
+  end if;
+
+  if p_max_active_bookings_per_student < 1 or p_max_active_bookings_per_student > 10 then
+    raise exception 'Active bookings limit is invalid.';
+  end if;
+
+  if p_branch_selection_mode not in ('student_choice', 'fixed_first') then
+    raise exception 'Branch selection mode is invalid.';
+  end if;
+
+  if p_max_slots_per_booking < 1 or p_max_slots_per_booking > 6 then
+    raise exception 'Max slots per booking is invalid.';
+  end if;
+
+  if p_default_lesson_duration < 30 or p_default_lesson_duration > 240 then
+    raise exception 'Lesson duration is invalid.';
+  end if;
+
+  update public.schools
+    set name = trim(p_name),
+        slug = trim(p_slug),
+        description = coalesce(p_description, ''),
+        primary_color = nullif(p_primary_color, ''),
+        logo_url = nullif(p_logo_url, ''),
+        booking_limit_enabled = coalesce(p_booking_limit_enabled, true),
+        max_active_bookings_per_student = p_max_active_bookings_per_student,
+        branch_selection_mode = p_branch_selection_mode,
+        max_slots_per_booking = p_max_slots_per_booking,
+        default_lesson_duration = p_default_lesson_duration,
+        updated_at = now()
+    where id = p_school_id;
+
+  if not found then
+    raise exception 'School not found.';
+  end if;
+
+  school_id := p_school_id;
+  return next;
+end;
+$$;
+
+create or replace function public.public_create_slot(
+  p_slot_id text,
+  p_school_id text,
+  p_branch_id text,
+  p_instructor_id text,
+  p_date text,
+  p_start_time text,
+  p_duration integer
+)
+returns table (
+  slot_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_slot_date date;
+  v_slot_time time;
+begin
+  v_slot_date := p_date::date;
+  v_slot_time := p_start_time::time;
+
+  if v_slot_date < current_date then
+    raise exception 'Slot date is in the past.';
+  end if;
+
+  if p_duration < 30 or p_duration > 240 then
+    raise exception 'Slot duration is invalid.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.instructors
+    where id = p_instructor_id
+      and school_id = p_school_id
+      and branch_id = p_branch_id
+      and is_active = true
+  ) then
+    raise exception 'Instructor is not available for this branch.';
+  end if;
+
+  insert into public.slots (
+    id, school_id, branch_id, instructor_id, date, time, duration, status
+  ) values (
+    p_slot_id, p_school_id, p_branch_id, p_instructor_id, v_slot_date, v_slot_time, p_duration, 'available'
+  );
+
+  slot_id := p_slot_id;
+  return next;
+exception
+  when unique_violation then
+    raise exception 'Slot already exists.';
+end;
+$$;
+
+create or replace function public.public_update_slot_status(
+  p_slot_id text,
+  p_status text
+)
+returns table (
+  slot_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_slot public.slots%rowtype;
+begin
+  if p_status not in ('available', 'booked', 'cancelled') then
+    raise exception 'Slot status is invalid.';
+  end if;
+
+  select *
+    into v_slot
+    from public.slots
+    where id = p_slot_id
+    for update;
+
+  if not found then
+    raise exception 'Slot not found.';
+  end if;
+
+  if p_status = 'available' and v_slot.booking_id is not null then
+    raise exception 'Booked slot cannot be manually released.';
+  end if;
+
+  if p_status = 'cancelled' and v_slot.booking_id is not null then
+    raise exception 'Booked slot cannot be cancelled without booking handling.';
+  end if;
+
+  update public.slots
+    set status = p_status,
+        booking_id = case when p_status = 'available' then null else booking_id end,
+        updated_at = now()
+    where id = p_slot_id;
+
+  slot_id := p_slot_id;
+  return next;
+end;
+$$;
+
+create or replace function public.public_delete_slot(p_slot_id text)
+returns table (
+  slot_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_slot public.slots%rowtype;
+begin
+  select *
+    into v_slot
+    from public.slots
+    where id = p_slot_id
+    for update;
+
+  if not found then
+    raise exception 'Slot not found.';
+  end if;
+
+  if v_slot.booking_id is not null or v_slot.status = 'booked' then
+    raise exception 'Booked slot cannot be deleted.';
+  end if;
+
+  delete from public.slots where id = p_slot_id;
+
+  slot_id := p_slot_id;
+  return next;
+end;
+$$;
+
 alter table public.schools enable row level security;
 alter table public.branches enable row level security;
 alter table public.instructors enable row level security;
@@ -553,3 +764,7 @@ grant execute on function public.public_create_booking(text, text, text, text[])
 grant execute on function public.public_cancel_booking(text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text) to anon, authenticated;
+grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer) to anon, authenticated;
+grant execute on function public.public_create_slot(text, text, text, text, text, text, integer) to anon, authenticated;
+grant execute on function public.public_update_slot_status(text, text) to anon, authenticated;
+grant execute on function public.public_delete_slot(text) to anon, authenticated;

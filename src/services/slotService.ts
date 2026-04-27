@@ -3,6 +3,12 @@ import { generateId } from '../lib/utils'
 import type { BulkSlotCreateResult, ResolvedSlot, Slot, SlotStatus } from '../types'
 import { db } from './storage'
 import { getBookingById, getSlotDateTime } from './bookingService'
+import {
+  createSupabaseSlot,
+  deleteSupabaseSlot,
+  persistSupabaseMutation,
+  updateSupabaseSlotStatus,
+} from './supabaseAdminService'
 
 export interface CreateSlotParams {
   schoolId: string
@@ -105,6 +111,17 @@ export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot
   }
 
   db.slots.upsert(slot)
+  persistSupabaseMutation(
+    createSupabaseSlot({
+      slotId: slot.id,
+      schoolId: slot.schoolId,
+      branchId: slot.branchId,
+      instructorId: slot.instructorId,
+      date: slot.date,
+      startTime: slot.time,
+      duration: slot.duration,
+    }),
+  )
   return { ok: true, slot }
 }
 
@@ -185,6 +202,17 @@ export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; r
       }
 
       db.slots.upsert(slot)
+      persistSupabaseMutation(
+        createSupabaseSlot({
+          slotId: slot.id,
+          schoolId: slot.schoolId,
+          branchId: slot.branchId,
+          instructorId: slot.instructorId,
+          date: slot.date,
+          startTime: slot.time,
+          duration: slot.duration,
+        }),
+      )
       created.push(slot)
     }
   }
@@ -225,6 +253,7 @@ export function updateSlotStatus(
     bookingId: status === 'available' ? undefined : slot.bookingId,
   }
   db.slots.upsert(nextSlot)
+  persistSupabaseMutation(updateSupabaseSlotStatus(slotId, status))
   return { ok: true, slot: nextSlot }
 }
 
@@ -239,5 +268,6 @@ export function deleteSlot(slotId: string): { ok: boolean; error?: string } {
   }
 
   db.slots.remove(slotId)
+  persistSupabaseMutation(deleteSupabaseSlot(slotId))
   return { ok: true }
 }

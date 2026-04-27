@@ -5,6 +5,7 @@ import { getBillingSummary } from './modules'
 import { resetDemoData } from './seed'
 import { db } from './storage'
 import { validateDataIntegrity } from './integrityService'
+import { persistSupabaseMutation, updateSupabaseSchoolSettings } from './supabaseAdminService'
 
 export function getSchools(): School[] {
   return [...db.schools.all()].sort((left, right) => left.name.localeCompare(right.name, 'ru'))
@@ -148,6 +149,20 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
   }
 
   db.schools.upsert(updated)
+  persistSupabaseMutation(
+    updateSupabaseSchoolSettings(schoolId, {
+      name: updated.name,
+      slug: updated.slug,
+      description: updated.description,
+      primaryColor: updated.primaryColor,
+      logoUrl: updated.logoUrl,
+      bookingLimitEnabled: updated.bookingLimitEnabled,
+      maxActiveBookingsPerStudent: updated.maxActiveBookingsPerStudent,
+      branchSelectionMode: updated.branchSelectionMode,
+      maxSlotsPerBooking: updated.maxSlotsPerBooking,
+      defaultLessonDuration: updated.defaultLessonDuration,
+    }),
+  )
   return { ok: true, school: updated }
 }
 
