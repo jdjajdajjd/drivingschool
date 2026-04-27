@@ -495,30 +495,35 @@ function ScheduleOverview({ brandColor, onBack, onSelectSlot, school }: {
 
       <div className="mt-5 space-y-5">
         {visibleSlots.map((group) => (
-          <div key={group.date}>
-            <p className="mb-2 text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+          <div key={group.date} className="rounded-3xl border border-stone-100 bg-stone-50/70 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+              {group.slots.length > 3 ? <p className="shrink-0 text-xs font-medium text-stone-400">листайте время</p> : null}
+            </div>
             {group.slots.length === 0 ? (
-              <div className="rounded-2xl bg-stone-50 px-4 py-4 text-base text-stone-500">Нет подходящих мест.</div>
+              <div className="rounded-2xl bg-white px-4 py-4 text-base text-stone-500">Нет подходящих мест.</div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {group.slots.map((slot) => {
-                  const instructor = db.instructors.byId(slot.instructorId)
-                  const disabled = slot.status !== 'available'
-                  return (
-                    <button
-                      key={slot.id}
-                      disabled={disabled}
-                      onClick={() => onSelectSlot(slot)}
-                      className="rounded-2xl border border-stone-200 bg-white p-4 text-left transition hover:border-blue-300 disabled:bg-stone-50 disabled:text-stone-400"
-                    >
-                      <p className="text-xl font-semibold text-stone-950">{slot.time}</p>
-                      <p className="mt-1 truncate text-sm text-stone-500">{instructor?.name ?? 'Инструктор'}</p>
-                      <p className="mt-1 text-xs font-semibold" style={{ color: disabled ? undefined : brandColor }}>
-                        {disabled ? 'занято' : formatDuration(slot.duration)}
-                      </p>
-                    </button>
-                  )
-                })}
+              <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                <div className="flex min-w-max gap-3">
+                  {group.slots.map((slot) => {
+                    const instructor = db.instructors.byId(slot.instructorId)
+                    const disabled = slot.status !== 'available'
+                    return (
+                      <button
+                        key={slot.id}
+                        disabled={disabled}
+                        onClick={() => onSelectSlot(slot)}
+                        className="min-h-[116px] w-[168px] shrink-0 rounded-2xl border border-stone-200 bg-white p-4 text-left transition hover:border-blue-300 disabled:bg-stone-100 disabled:text-stone-400 sm:w-[190px]"
+                      >
+                        <p className="text-2xl font-semibold text-stone-950">{slot.time}</p>
+                        <p className="mt-2 truncate text-sm text-stone-500">{instructor?.name ?? 'Инструктор'}</p>
+                        <p className="mt-2 text-xs font-semibold" style={{ color: disabled ? undefined : brandColor }}>
+                          {disabled ? 'занято' : formatDuration(slot.duration)}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -1160,18 +1165,27 @@ export function SchoolPage() {
                     <p className="mt-2 text-base text-stone-600">Можно выбрать до {maxSlots} занятий.</p>
                     <div className="mt-5 space-y-5">
                       {slotsByDate.map((group) => (
-                        <div key={group.date}>
-                          <p className="mb-2 text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
-                          <div className="grid grid-cols-3 gap-3">
-                            {group.slots.map((slot) => {
-                              const active = selectedSlots.some((item) => item.id === slot.id)
-                              return (
-                                <button key={slot.id} onClick={() => selectSlot(slot)} className={`rounded-2xl border p-4 text-center ${active ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-200 bg-white'}`}>
-                                  <p className="text-xl font-semibold">{slot.time}</p>
-                                  <p className="mt-1 text-xs">{formatDuration(slot.duration)}</p>
-                                </button>
-                              )
-                            })}
+                        <div key={group.date} className="rounded-3xl border border-stone-100 bg-stone-50/70 p-3">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <p className="text-base font-semibold capitalize text-stone-700">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+                            {group.slots.length > 3 ? <p className="shrink-0 text-xs font-medium text-stone-400">листайте время</p> : null}
+                          </div>
+                          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                            <div className="flex min-w-max gap-3">
+                              {group.slots.map((slot) => {
+                                const active = selectedSlots.some((item) => item.id === slot.id)
+                                return (
+                                  <button
+                                    key={slot.id}
+                                    onClick={() => selectSlot(slot)}
+                                    className={`min-h-[104px] w-[128px] shrink-0 rounded-2xl border p-4 text-center transition sm:w-[148px] ${active ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-200 bg-white hover:border-blue-300'}`}
+                                  >
+                                    <p className="text-2xl font-semibold">{slot.time}</p>
+                                    <p className="mt-2 text-xs">{formatDuration(slot.duration)}</p>
+                                  </button>
+                                )
+                              })}
+                            </div>
                           </div>
                         </div>
                       ))}
