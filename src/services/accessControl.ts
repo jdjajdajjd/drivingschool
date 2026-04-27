@@ -10,6 +10,11 @@ const ACCESS_KEYS: Record<AccessRole, string> = {
   superadmin: 'dd:access:superadmin',
 }
 
+const ACCESS_PASSWORD_KEYS: Record<AccessRole, string> = {
+  admin: 'dd:access_password:admin',
+  superadmin: 'dd:access_password:superadmin',
+}
+
 const ACCESS: Record<AccessRole, { login: string; password: string; redirect: string }> = {
   admin: {
     login: import.meta.env.VITE_ADMIN_LOGIN || 'virazh-admin',
@@ -28,13 +33,21 @@ export function getAccessConfig(role: AccessRole) {
 }
 
 export function isAccessGranted(role: AccessRole): boolean {
-  return localStorage.getItem(ACCESS_KEYS[role]) === 'granted'
+  return sessionStorage.getItem(ACCESS_KEYS[role]) === 'granted'
 }
 
-export function grantAccess(role: AccessRole): void {
-  localStorage.setItem(ACCESS_KEYS[role], 'granted')
+export function grantAccess(role: AccessRole, password: string): void {
+  sessionStorage.setItem(ACCESS_KEYS[role], 'granted')
+  sessionStorage.setItem(ACCESS_PASSWORD_KEYS[role], password)
+  localStorage.removeItem(ACCESS_KEYS[role])
 }
 
 export function clearAccess(role: AccessRole): void {
+  sessionStorage.removeItem(ACCESS_KEYS[role])
+  sessionStorage.removeItem(ACCESS_PASSWORD_KEYS[role])
   localStorage.removeItem(ACCESS_KEYS[role])
+}
+
+export function getAccessPassword(role: AccessRole): string {
+  return sessionStorage.getItem(ACCESS_PASSWORD_KEYS[role]) ?? ''
 }

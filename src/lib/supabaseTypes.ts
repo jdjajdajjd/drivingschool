@@ -216,6 +216,7 @@ export interface Database {
       public_cancel_booking: {
         Args: {
           p_booking_id: string
+          p_staff_password: string
         }
         Returns: Array<{
           booking_id: string
@@ -225,6 +226,7 @@ export interface Database {
       public_complete_booking: {
         Args: {
           p_booking_id: string
+          p_staff_password: string
         }
         Returns: Array<{
           booking_id: string
@@ -234,6 +236,7 @@ export interface Database {
         Args: {
           p_booking_id: string
           p_new_slot_id: string
+          p_staff_password: string
         }
         Returns: Array<{
           booking_id: string
@@ -254,6 +257,7 @@ export interface Database {
           p_branch_selection_mode: 'student_choice' | 'fixed_first'
           p_max_slots_per_booking: number
           p_default_lesson_duration: number
+          p_staff_password: string
         }
         Returns: Array<{
           school_id: string
@@ -268,6 +272,7 @@ export interface Database {
           p_date: string
           p_start_time: string
           p_duration: number
+          p_staff_password: string
         }
         Returns: Array<{
           slot_id: string
@@ -277,6 +282,7 @@ export interface Database {
         Args: {
           p_slot_id: string
           p_status: 'available' | 'booked' | 'cancelled'
+          p_staff_password: string
         }
         Returns: Array<{
           slot_id: string
@@ -285,9 +291,62 @@ export interface Database {
       public_delete_slot: {
         Args: {
           p_slot_id: string
+          p_staff_password: string
         }
         Returns: Array<{
           slot_id: string
+        }>
+      }
+      public_upsert_branch: {
+        Args: {
+          p_branch_id: string
+          p_school_id: string
+          p_name: string
+          p_address: string
+          p_phone: string
+          p_is_active: boolean
+          p_staff_password: string
+        }
+        Returns: Array<{
+          branch_id: string
+        }>
+      }
+      public_delete_branch: {
+        Args: {
+          p_branch_id: string
+          p_staff_password: string
+        }
+        Returns: Array<{
+          branch_id: string
+        }>
+      }
+      public_upsert_instructor: {
+        Args: {
+          p_instructor_id: string
+          p_school_id: string
+          p_branch_id: string
+          p_name: string
+          p_phone: string
+          p_email: string
+          p_token: string
+          p_bio: string
+          p_is_active: boolean
+          p_car: string
+          p_transmission: 'manual' | 'auto' | null
+          p_staff_password: string
+        }
+        Returns: Array<{
+          instructor_id: string
+        }>
+      }
+      public_update_instructor_active: {
+        Args: {
+          p_instructor_id: string
+          p_is_active: boolean
+          p_staff_password: string
+        }
+        Returns: Array<{
+          instructor_id: string
         }>
       }
       public_update_student_profile: {

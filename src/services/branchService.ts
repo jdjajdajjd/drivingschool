@@ -1,6 +1,7 @@
 import { generateId } from '../lib/utils'
 import type { Branch } from '../types'
 import { db } from './storage'
+import { deleteSupabaseBranch, persistSupabaseMutation, upsertSupabaseBranch } from './supabaseAdminService'
 
 export interface BranchInput {
   schoolId: string
@@ -30,6 +31,7 @@ export function createBranch(input: BranchInput): { ok: boolean; branch?: Branch
   }
 
   db.branches.upsert(branch)
+  persistSupabaseMutation(upsertSupabaseBranch(branch.id, input))
   return { ok: true, branch }
 }
 
@@ -53,6 +55,7 @@ export function updateBranch(branchId: string, input: Omit<BranchInput, 'schoolI
   }
 
   db.branches.upsert(nextBranch)
+  persistSupabaseMutation(upsertSupabaseBranch(nextBranch.id, { schoolId: nextBranch.schoolId, ...input }))
   return { ok: true, branch: nextBranch }
 }
 
@@ -75,5 +78,6 @@ export function deleteBranchSafe(branchId: string): { ok: boolean; error?: strin
   }
 
   db.branches.remove(branchId)
+  persistSupabaseMutation(deleteSupabaseBranch(branchId))
   return { ok: true }
 }

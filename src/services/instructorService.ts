@@ -2,6 +2,7 @@ import { generateId } from '../lib/utils'
 import type { Instructor, Transmission } from '../types'
 import { db } from './storage'
 import { normalizePhone, validateRussianPhone } from './bookingService'
+import { persistSupabaseMutation, updateSupabaseInstructorActive, upsertSupabaseInstructor } from './supabaseAdminService'
 
 export interface InstructorInput {
   schoolId: string
@@ -82,6 +83,7 @@ export function createInstructor(input: InstructorInput): { ok: boolean; instruc
   }
 
   db.instructors.upsert(instructor)
+  persistSupabaseMutation(upsertSupabaseInstructor(instructor.id, input, instructor.token))
   return { ok: true, instructor }
 }
 
@@ -119,6 +121,23 @@ export function updateInstructor(
   }
 
   db.instructors.upsert(nextInstructor)
+  persistSupabaseMutation(
+    upsertSupabaseInstructor(
+      nextInstructor.id,
+      {
+        schoolId: nextInstructor.schoolId,
+        branchId: input.branchId,
+        name: input.name,
+        phone: input.phone,
+        email: input.email,
+        bio: input.bio,
+        car: input.car,
+        transmission: input.transmission,
+        isActive: input.isActive,
+      },
+      nextInstructor.token,
+    ),
+  )
   return { ok: true, instructor: nextInstructor }
 }
 
@@ -137,5 +156,6 @@ export function toggleInstructorActive(
   }
 
   db.instructors.upsert(nextInstructor)
+  persistSupabaseMutation(updateSupabaseInstructorActive(instructorId, nextInstructor.isActive))
   return { ok: true, instructor: nextInstructor }
 }

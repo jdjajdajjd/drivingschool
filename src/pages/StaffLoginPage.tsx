@@ -39,7 +39,7 @@ export function StaffLoginPage({ role }: StaffLoginPageProps) {
       setError('Логин или пароль не подошли')
       return
     }
-    grantAccess(role)
+    grantAccess(role, password)
     navigate(config.redirect, { replace: true })
   }
 
