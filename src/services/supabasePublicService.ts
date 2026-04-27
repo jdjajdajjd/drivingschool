@@ -94,6 +94,7 @@ function mapSlot(row: SlotRow): Slot {
 function mapBooking(row: BookingRow): Booking {
   return {
     id: row.id,
+    bookingGroupId: row.booking_group_id ?? undefined,
     schoolId: row.school_id,
     slotId: row.slot_id,
     instructorId: row.instructor_id,
@@ -109,6 +110,15 @@ function mapBooking(row: BookingRow): Booking {
     notes: row.notes ?? undefined,
     comment: row.comment ?? undefined,
   }
+}
+
+export interface SupabaseBookingBundle {
+  booking: Booking
+  school: School | null
+  branch: Branch | null
+  instructor: Instructor | null
+  slot: Slot | null
+  student: Student | null
 }
 
 function mapStudent(row: StudentRow): Student {
@@ -191,14 +201,7 @@ export async function createSupabaseBooking(params: {
   }
 }
 
-export async function getBookingByIdFromSupabase(bookingId: string): Promise<{
-  booking: Booking
-  school: School | null
-  branch: Branch | null
-  instructor: Instructor | null
-  slot: Slot | null
-  student: Student | null
-} | null> {
+export async function getBookingByIdFromSupabase(bookingId: string): Promise<SupabaseBookingBundle | null> {
   const { data: bookingRow, error } = await supabase
     .from('bookings')
     .select('*')
@@ -226,6 +229,61 @@ export async function getBookingByIdFromSupabase(bookingId: string): Promise<{
     slot: slotResult.data ? mapSlot(slotResult.data) : null,
     student: studentResult.data ? mapStudent(studentResult.data) : null,
   }
+}
+
+export async function getBookingGroupFromSupabase(bookingId: string): Promise<SupabaseBookingBundle[]> {
+  const first = await getBookingByIdFromSupabase(bookingId)
+  if (!first) return []
+
+  const groupId = first.booking.bookingGroupId
+  if (!groupId) return [first]
+
+  const { data: bookingRows, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('booking_group_id', groupId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  if (!bookingRows || bookingRows.length <= 1) return [first]
+
+  const schoolId = first.booking.schoolId
+  const branchIds = [...new Set(bookingRows.map((row) => row.branch_id))]
+  const instructorIds = [...new Set(bookingRows.map((row) => row.instructor_id))]
+  const slotIds = [...new Set(bookingRows.map((row) => row.slot_id))]
+  const studentIds = [...new Set(bookingRows.map((row) => row.student_id))]
+
+  const [schoolResult, branchesResult, instructorsResult, slotsResult, studentsResult] = await Promise.all([
+    supabase.from('schools').select('*').eq('id', schoolId).single(),
+    supabase.from('branches').select('*').in('id', branchIds),
+    supabase.from('instructors').select('*').in('id', instructorIds),
+    supabase.from('slots').select('*').in('id', slotIds),
+    supabase.from('students').select('*').in('id', studentIds),
+  ])
+
+  const school = schoolResult.data ? mapSchool(schoolResult.data) : first.school
+  const branches = new Map((branchesResult.data ?? []).map((row) => [row.id, mapBranch(row)]))
+  const instructors = new Map((instructorsResult.data ?? []).map((row) => [row.id, mapInstructor(row)]))
+  const slots = new Map((slotsResult.data ?? []).map((row) => [row.id, mapSlot(row)]))
+  const students = new Map((studentsResult.data ?? []).map((row) => [row.id, mapStudent(row)]))
+
+  return bookingRows
+    .map((row) => {
+      const booking = mapBooking(row)
+      return {
+        booking,
+        school,
+        branch: branches.get(booking.branchId) ?? null,
+        instructor: instructors.get(booking.instructorId) ?? null,
+        slot: slots.get(booking.slotId) ?? null,
+        student: students.get(booking.studentId ?? '') ?? null,
+      }
+    })
+    .sort((left, right) => {
+      const leftTime = left.slot ? new Date(`${left.slot.date}T${left.slot.time}:00`).getTime() : 0
+      const rightTime = right.slot ? new Date(`${right.slot.date}T${right.slot.time}:00`).getTime() : 0
+      return leftTime - rightTime
+    })
 }
 
 export async function updateStudentProfileInSupabase(params: {

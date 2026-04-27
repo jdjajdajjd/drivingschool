@@ -65,6 +65,7 @@ export type BookingStatus = 'active' | 'cancelled' | 'completed'
 
 export interface Booking {
   id: string
+  bookingGroupId?: string
   schoolId: string
   slotId: string
   instructorId: string

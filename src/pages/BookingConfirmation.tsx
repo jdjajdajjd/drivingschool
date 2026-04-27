@@ -16,7 +16,7 @@ import { useToast } from '../components/ui/Toast'
 import { formatDuration, formatPhone } from '../lib/utils'
 import { generateIcs, getSlotDateTime } from '../services/bookingService'
 import { db } from '../services/storage'
-import { getBookingByIdFromSupabase } from '../services/supabasePublicService'
+import { getBookingGroupFromSupabase } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatDateFull } from '../utils/date'
 
@@ -50,6 +50,30 @@ function loadBookingBundle(bookingId: string): BookingBundle | null {
     branch: db.branches.byId(booking.branchId),
     school: db.schools.byId(booking.schoolId),
   }
+}
+
+function loadBookingGroup(bookingId: string): BookingBundle[] {
+  const first = loadBookingBundle(bookingId)
+  if (!first) return []
+
+  const groupId = first.booking.bookingGroupId
+  const bookings = groupId
+    ? db.bookings.bySchool(first.booking.schoolId).filter((booking) => booking.bookingGroupId === groupId)
+    : [first.booking]
+
+  return bookings
+    .map((booking) => ({
+      booking,
+      slot: db.slots.byId(booking.slotId),
+      instructor: db.instructors.byId(booking.instructorId),
+      branch: db.branches.byId(booking.branchId),
+      school: db.schools.byId(booking.schoolId),
+    }))
+    .sort((left, right) => {
+      const leftTime = left.slot ? getSlotDateTime(left.slot).getTime() : 0
+      const rightTime = right.slot ? getSlotDateTime(right.slot).getTime() : 0
+      return leftTime - rightTime
+    })
 }
 
 function DetailRow({
@@ -119,42 +143,79 @@ function generateIcsFromBundle(bundle: BookingBundle): string | null {
   ].join('\r\n')
 }
 
+function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
+  const events = bundles
+    .map((bundle) => {
+      if (!bundle.slot || !bundle.instructor || !bundle.branch || !bundle.school) return null
+
+      const start = getSlotDateTime(bundle.slot)
+      const end = new Date(start.getTime() + bundle.slot.duration * 60_000)
+      const description = [
+        `Автошкола: ${bundle.school.name}`,
+        `Инструктор: ${bundle.instructor.name}`,
+        `Ученик: ${bundle.booking.studentName}`,
+        bundle.instructor.car ? `Автомобиль: ${bundle.instructor.car}` : '',
+      ].filter(Boolean).join('\n')
+
+      return [
+        'BEGIN:VEVENT',
+        `UID:${bundle.booking.id}@drivedesk`,
+        `DTSTAMP:${formatUtcDate(new Date())}`,
+        `DTSTART:${formatUtcDate(start)}`,
+        `DTEND:${formatUtcDate(end)}`,
+        `SUMMARY:${escapeIcsValue(`Занятие: ${bundle.instructor.name}`)}`,
+        `LOCATION:${escapeIcsValue(bundle.branch.address)}`,
+        `DESCRIPTION:${escapeIcsValue(description)}`,
+        'END:VEVENT',
+      ].join('\r\n')
+    })
+    .filter(Boolean)
+
+  if (events.length === 0) return null
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//DriveDesk//Booking Flow//RU',
+    'CALSCALE:GREGORIAN',
+    ...events,
+    'END:VCALENDAR',
+  ].join('\r\n')
+}
+
 export function BookingConfirmation() {
   const { bookingId } = useParams<{ bookingId: string }>()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const [bundle, setBundle] = useState<BookingBundle | null>(null)
+  const [bundles, setBundles] = useState<BookingBundle[]>([])
 
   useEffect(() => {
     if (!bookingId) return
 
-    const localBundle = loadBookingBundle(bookingId)
-    if (localBundle) {
-      setBundle(localBundle)
+    const localGroup = loadBookingGroup(bookingId)
+    if (localGroup.length > 0) {
+      setBundles(localGroup)
       return
     }
 
-    void getBookingByIdFromSupabase(bookingId)
+    void getBookingGroupFromSupabase(bookingId)
       .then((resolved) => {
-        if (!resolved) {
-          setBundle(null)
+        if (resolved.length === 0) {
+          setBundles([])
           return
         }
-        setBundle({
-          booking: resolved.booking,
-          slot: resolved.slot,
-          instructor: resolved.instructor,
-          branch: resolved.branch,
-          school: resolved.school,
-        })
+        setBundles(resolved)
       })
-      .catch(() => setBundle(null))
+      .catch(() => setBundles([]))
   }, [bookingId])
 
   function handleDownloadIcs(): void {
-    if (!bundle) return
+    if (bundles.length === 0) return
 
-    const content = generateIcs(bundle.booking.id) ?? generateIcsFromBundle(bundle)
+    const first = bundles[0]
+    const content = bundles.length > 1
+      ? generateIcsFromBundles(bundles)
+      : generateIcs(first.booking.id) ?? generateIcsFromBundle(first)
     if (!content) {
       showToast('Не удалось подготовить файл календаря.', 'error')
       return
@@ -164,7 +225,7 @@ export function BookingConfirmation() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${bundle.booking.id}.ics`
+    link.download = bundles.length > 1 ? `${first.booking.bookingGroupId ?? first.booking.id}.ics` : `${first.booking.id}.ics`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -172,7 +233,7 @@ export function BookingConfirmation() {
     showToast('Файл календаря скачан.', 'success')
   }
 
-  if (!bundle) {
+  if (bundles.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
@@ -191,9 +252,12 @@ export function BookingConfirmation() {
     )
   }
 
-  const { booking, branch, instructor, school, slot } = bundle
-  const isCancelled = booking.status === 'cancelled'
+  const firstBundle = bundles[0]
+  const { booking, school } = firstBundle
+  const activeBundles = bundles.filter((item) => item.booking.status !== 'cancelled')
+  const isCancelled = activeBundles.length === 0
   const hasProfile = hasSavedStudentProfile(booking.schoolId, booking.studentPhone)
+  const lessonCount = bundles.length
 
   return (
     <div className="min-h-screen bg-[#f6f7fb]">
@@ -210,30 +274,43 @@ export function BookingConfirmation() {
             </div>
             <p className="mt-5 text-base font-medium text-white/75">{school?.name ?? 'Автошкола'}</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              {isCancelled ? 'Запись отменена' : 'Вы записаны'}
+              {isCancelled
+                ? lessonCount > 1 ? 'Записи отменены' : 'Запись отменена'
+                : lessonCount > 1 ? 'Вы записаны на занятия' : 'Вы записаны'}
             </h1>
             {!isCancelled ? (
               <p className="mx-auto mt-2 max-w-sm text-base leading-relaxed text-white/78">
                 {hasProfile
                   ? 'Профиль создан. Следующая запись будет быстрее.'
-                  : 'Данные записи сохранены. Если нужно, автошкола свяжется с вами по телефону.'}
+                  : lessonCount > 1
+                    ? `${lessonCount} занятия сохранены одной записью. Если нужно, автошкола свяжется с вами по телефону.`
+                    : 'Данные записи сохранены. Если нужно, автошкола свяжется с вами по телефону.'}
               </p>
             ) : null}
           </div>
 
           <div className="mx-6 mt-6 overflow-hidden rounded-2xl border border-stone-200">
-            {slot ? (
-              <>
-                <DetailRow label="Дата занятия" value={formatDateFull(slot.date)} icon={CalendarDays} />
-                <DetailRow label="Время" value={slot.time} subtitle={formatDuration(slot.duration)} icon={Clock3} />
-              </>
-            ) : null}
-            {instructor ? (
-              <DetailRow label="Инструктор" value={instructor.name} subtitle={instructor.car ?? undefined} icon={UserRound} />
-            ) : null}
-            {branch ? (
-              <DetailRow label="Филиал" value={branch.name} subtitle={branch.address} icon={MapPin} />
-            ) : null}
+            {bundles.map((item, index) => (
+              <div key={item.booking.id} className={index < bundles.length - 1 ? 'border-b border-stone-200' : ''}>
+                <div className="bg-stone-50 px-5 py-3">
+                  <p className="text-sm font-semibold text-stone-700">
+                    {lessonCount > 1 ? `Занятие ${index + 1}` : 'Занятие'}
+                  </p>
+                </div>
+                {item.slot ? (
+                  <>
+                    <DetailRow label="Дата занятия" value={formatDateFull(item.slot.date)} icon={CalendarDays} />
+                    <DetailRow label="Время" value={item.slot.time} subtitle={formatDuration(item.slot.duration)} icon={Clock3} />
+                  </>
+                ) : null}
+                {item.instructor ? (
+                  <DetailRow label="Инструктор" value={item.instructor.name} subtitle={item.instructor.car ?? undefined} icon={UserRound} />
+                ) : null}
+                {item.branch ? (
+                  <DetailRow label="Филиал" value={item.branch.name} subtitle={item.branch.address} icon={MapPin} />
+                ) : null}
+              </div>
+            ))}
             <DetailRow label="Ученик" value={booking.studentName} subtitle={formatPhone(booking.studentPhone)} icon={Phone} />
           </div>
 

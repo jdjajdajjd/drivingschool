@@ -172,6 +172,7 @@ function StepProgress({ step, total = 6 }: { step: BookingStep; total?: number }
 function StudentProfileCard({
   brandColor,
   branch,
+  futureLessons,
   isComplete,
   nextLesson,
   onLogout,
@@ -180,6 +181,7 @@ function StudentProfileCard({
 }: {
   brandColor: string
   branch: Branch | null
+  futureLessons: ResolvedStudentLesson[]
   isComplete: boolean
   nextLesson: StudentLesson | null
   onLogout: () => void
@@ -259,6 +261,36 @@ function StudentProfileCard({
             </div>
           </div>
         </div>
+        {futureLessons.length > 1 ? (
+          <div className="rounded-2xl border border-stone-100 bg-white px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-stone-900">Ближайшие занятия</p>
+                <p className="mt-0.5 text-sm text-stone-500">
+                  {pluralize(futureLessons.length, 'активная запись', 'активные записи', 'активных записей')}
+                </p>
+              </div>
+              <CalendarDays size={20} style={{ color: brandColor }} />
+            </div>
+            <div className="mt-3 space-y-2">
+              {futureLessons.slice(0, 4).map((lesson) => (
+                <div key={lesson.booking.id} className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-stone-900">
+                      {formatDate(lesson.slot.date)}, {lesson.slot.time}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-stone-500">
+                      {(lesson.instructor?.name ?? 'Инструктор') + ' · ' + (lesson.branch?.name ?? 'Филиал')}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-stone-500">
+                    {formatDuration(lesson.slot.duration)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   )
@@ -267,12 +299,14 @@ function StudentProfileCard({
 function StudentDashboard({
   availableSlotsCount,
   brandColor,
+  futureLessons,
   nextLesson,
   onOpenSchedule,
   onStartBooking,
 }: {
   availableSlotsCount: number
   brandColor: string
+  futureLessons: ResolvedStudentLesson[]
   nextLesson: StudentLesson | null
   onOpenSchedule: () => void
   onStartBooking: () => void
@@ -305,6 +339,36 @@ function StudentDashboard({
       </div>
 
       <div className="grid gap-3">
+        {futureLessons.length > 0 ? (
+          <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-base font-semibold text-stone-900">Мои ближайшие занятия</p>
+                <p className="mt-1 text-sm text-stone-500">
+                  Показываем только реальные активные записи.
+                </p>
+              </div>
+              <Clock3 size={21} style={{ color: brandColor }} />
+            </div>
+            <div className="mt-4 space-y-2">
+              {futureLessons.slice(0, 5).map((lesson) => (
+                <div key={lesson.booking.id} className="rounded-2xl bg-stone-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-stone-900">
+                      {formatDate(lesson.slot.date)} в {lesson.slot.time}
+                    </p>
+                    <p className="shrink-0 text-xs font-semibold text-stone-500">
+                      {formatDuration(lesson.slot.duration)}
+                    </p>
+                  </div>
+                  <p className="mt-1 truncate text-sm text-stone-500">
+                    {(lesson.instructor?.name ?? 'Инструктор') + ' · ' + (lesson.branch?.name ?? 'Филиал')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {[
           {
             icon: Clock3,
@@ -738,7 +802,7 @@ export function SchoolPage() {
 
   const studentStats = useMemo(() => {
     if (!school || !studentProfile) {
-      return { completedLessons: 0, nextLesson: null as StudentLesson | null }
+      return { completedLessons: 0, futureLessons: [] as ResolvedStudentLesson[], nextLesson: null as StudentLesson | null }
     }
 
     const now = new Date()
@@ -758,12 +822,12 @@ export function SchoolPage() {
       .filter((entry): entry is ResolvedStudentLesson => Boolean(entry))
 
     const completedLessons = lessons.filter((entry) => entry.booking.status === 'completed').length
-    const nextLesson =
-      lessons
-        .filter((entry) => entry.booking.status === 'active' && slotDateTime(entry.slot) >= now)
-        .sort((left, right) => slotDateTime(left.slot).getTime() - slotDateTime(right.slot).getTime())[0] ?? null
+    const futureLessons = lessons
+      .filter((entry) => entry.booking.status === 'active' && slotDateTime(entry.slot) >= now)
+      .sort((left, right) => slotDateTime(left.slot).getTime() - slotDateTime(right.slot).getTime())
+    const nextLesson = futureLessons[0] ?? null
 
-    return { completedLessons, nextLesson }
+    return { completedLessons, futureLessons, nextLesson }
   }, [school, studentProfile])
 
   const schoolSummary = useMemo(() => {
@@ -837,6 +901,8 @@ export function SchoolPage() {
         bundle.branches.forEach((branch) => db.branches.upsert(branch))
         bundle.instructors.forEach((instructor) => db.instructors.upsert(instructor))
         bundle.slots.forEach((slot) => db.slots.upsert(slot))
+        bundle.students.forEach((student) => db.students.upsert(student))
+        bundle.bookings.forEach((booking) => db.bookings.upsert(booking))
         applySchool(bundle.school, bundle.branches, bundle.instructors)
       })
       .catch(() => {
@@ -1289,6 +1355,7 @@ export function SchoolPage() {
             <StudentProfileCard
               brandColor={brandColor}
               branch={profileBranch}
+              futureLessons={studentStats.futureLessons}
               isComplete={isProfileComplete(studentProfile)}
               nextLesson={studentStats.nextLesson}
               onLogout={logoutStudent}
@@ -1319,6 +1386,7 @@ export function SchoolPage() {
             <StudentDashboard
               availableSlotsCount={schoolSummary.availableSlotsCount}
               brandColor={brandColor}
+              futureLessons={studentStats.futureLessons}
               nextLesson={studentStats.nextLesson}
               onOpenSchedule={() => setIsScheduleOpen(true)}
               onStartBooking={startBookingFlow}
