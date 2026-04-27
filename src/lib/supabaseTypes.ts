@@ -95,8 +95,12 @@ export interface Database {
           phone: string
           normalized_phone: string
           email: string
+          password_hash: string | null
+          avatar_url: string | null
           assigned_branch_id: string | null
           assigned_instructor_id: string | null
+          branch_change_requested_at: string | null
+          branch_change_note: string | null
           created_at: string
           updated_at: string
         }
@@ -284,6 +288,46 @@ export interface Database {
         }
         Returns: Array<{
           slot_id: string
+        }>
+      }
+      public_update_student_profile: {
+        Args: {
+          p_school_id: string
+          p_phone: string
+          p_name: string
+          p_email: string
+          p_password: string
+          p_avatar_url: string
+        }
+        Returns: Array<{
+          student_id: string
+          student_phone: string
+          profile_ready: boolean
+        }>
+      }
+      public_login_student: {
+        Args: {
+          p_school_id: string
+          p_phone: string
+          p_password: string
+        }
+        Returns: Array<{
+          student_id: string
+          name: string
+          phone: string
+          email: string
+          avatar_url: string | null
+          assigned_branch_id: string | null
+        }>
+      }
+      public_request_branch_change: {
+        Args: {
+          p_school_id: string
+          p_phone: string
+          p_note: string
+        }
+        Returns: Array<{
+          student_id: string
         }>
       }
     }

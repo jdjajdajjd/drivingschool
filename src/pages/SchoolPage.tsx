@@ -5,12 +5,15 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  Car,
   Check,
   CircleUserRound,
+  Copy,
   Clock3,
+  LockKeyhole,
+  Mail,
   MapPin,
   Phone,
+  Settings,
   UserRound,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
@@ -28,7 +31,13 @@ import {
   releaseSlotLock,
 } from '../services/bookingService'
 import { db } from '../services/storage'
-import { createSupabaseBooking, getPublicSchoolBundle } from '../services/supabasePublicService'
+import {
+  createSupabaseBooking,
+  getPublicSchoolBundle,
+  loginStudentInSupabase,
+  requestBranchChangeInSupabase,
+  updateStudentProfileInSupabase,
+} from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatDate, formatDateFull, formatDayOfWeek, getNext14Days, getNext7Days } from '../utils/date'
 
@@ -47,11 +56,24 @@ const STEP_TITLES: Record<BookingStep, string> = {
 interface FormState {
   name: string
   phone: string
+  email: string
+  password: string
+  avatarUrl: string
+}
+
+interface LoginState {
+  phone: string
+  password: string
 }
 
 interface StudentProfile {
   name: string
   phone: string
+  email: string
+  avatarUrl: string
+  passwordSet: boolean
+  assignedBranchId?: string
+  branchChangeRequestedAt?: string
   updatedAt: string
   createdByConsent: boolean
 }
@@ -82,21 +104,34 @@ function getStudentProfile(schoolId: string): StudentProfile | null {
     const raw = localStorage.getItem(getProfileKey(schoolId))
     if (!raw) return null
     const profile = JSON.parse(raw) as StudentProfile
-    return profile.name && profile.phone && profile.createdByConsent ? profile : null
+    return profile.name && profile.phone && profile.createdByConsent ? {
+      ...profile,
+      email: profile.email ?? '',
+      avatarUrl: profile.avatarUrl ?? '',
+      passwordSet: Boolean(profile.passwordSet),
+    } : null
   } catch {
     return null
   }
 }
 
-function saveStudentProfile(schoolId: string, form: FormState): StudentProfile {
+function saveStudentProfile(schoolId: string, form: FormState, extra?: Partial<StudentProfile>): StudentProfile {
   const profile: StudentProfile = {
     name: form.name.trim(),
     phone: normalizePhone(form.phone),
+    email: form.email.trim(),
+    avatarUrl: form.avatarUrl.trim(),
+    passwordSet: Boolean(form.password.trim() || extra?.passwordSet),
     updatedAt: new Date().toISOString(),
     createdByConsent: true,
+    ...extra,
   }
   localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
   return profile
+}
+
+function isProfileComplete(profile: StudentProfile | null): boolean {
+  return Boolean(profile?.name?.trim() && profile.phone && profile.email?.trim() && profile.passwordSet)
 }
 
 function initialsFromName(name: string): string {
@@ -130,54 +165,62 @@ function StepProgress({ step, total = 6 }: { step: BookingStep; total?: number }
 
 function StudentProfileCard({
   brandColor,
-  brandSoft,
+  branch,
   nextLesson,
+  onOpenSettings,
   profile,
 }: {
   brandColor: string
-  brandSoft: string
+  branch: Branch | null
   nextLesson: StudentLesson | null
+  onOpenSettings: () => void
   profile: StudentProfile
 }) {
+  const avatar = profile.avatarUrl.trim()
+
   return (
     <section className="mb-5 overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card">
-      <div
-        className="px-5 py-5 text-white"
-        style={{
-          background: 'linear-gradient(135deg, ' + brandColor + ' 0%, #2563eb 62%, #4f46e5 100%)',
-        }}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-white/75">Профиль ученика</p>
-            <h2 className="mt-1 text-2xl font-semibold leading-tight">{profile.name}</h2>
-            <p className="mt-2 max-w-[18rem] text-sm leading-relaxed text-white/78">
-              Здесь только ваши записи и данные, которые уже известны автошколе.
+      <div className="relative overflow-hidden px-5 py-5 text-white" style={{ background: `linear-gradient(135deg, ${brandColor} 0%, #2563eb 58%, #111827 100%)` }}>
+        <div className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute -bottom-20 left-10 h-36 w-36 rounded-full bg-cyan-200/15" />
+
+        <div className="relative flex items-center gap-4">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] bg-white/16 text-2xl font-semibold ring-1 ring-white/25">
+            {avatar ? (
+              <img src={avatar} alt={profile.name} className="h-full w-full object-cover" />
+            ) : (
+              initialsFromName(profile.name)
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white/72">Профиль ученика</p>
+            <h2 className="mt-1 truncate text-2xl font-semibold leading-tight">{profile.name}</h2>
+            <p className="mt-2 truncate text-sm text-white/78">
+              {branch?.address ?? 'Филиал уточнит администратор'}
             </p>
           </div>
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/16 text-lg font-semibold ring-1 ring-white/20">
-            {initialsFromName(profile.name)}
-          </div>
+          <button
+            onClick={onOpenSettings}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/14 ring-1 ring-white/20 transition hover:bg-white/20"
+            aria-label="Настройки профиля"
+          >
+            <Settings size={20} />
+          </button>
         </div>
       </div>
 
       <div className="grid gap-3 px-5 py-4">
-        <div className="rounded-2xl bg-stone-50 px-4 py-4">
-          <p className="text-sm font-medium text-stone-500">Телефон</p>
-          <p className="mt-1 text-base font-semibold text-stone-900">{formatPhone(profile.phone)}</p>
-        </div>
-
-        <div className="rounded-2xl border border-stone-100 px-4 py-4" style={{ backgroundColor: nextLesson ? brandSoft : undefined }}>
+        <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-stone-500">Ближайшее занятие</p>
+              <p className="text-sm font-medium text-stone-500">Ближайшая запись</p>
               <p className="mt-1 text-base font-semibold text-stone-900">
                 {nextLesson ? formatDate(nextLesson.slot.date) + ', ' + nextLesson.slot.time : 'Пока нет активных записей'}
               </p>
               <p className="mt-1 truncate text-sm text-stone-500">
                 {nextLesson
                   ? (nextLesson.instructor?.name ?? 'Инструктор') + ' · ' + (nextLesson.branch?.name ?? 'Филиал')
-                  : 'Когда вы запишетесь, занятие появится здесь.'}
+                  : 'Нажмите "Записаться на занятие", когда будете готовы.'}
               </p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white">
@@ -193,14 +236,18 @@ function StudentProfileCard({
 function StudentDashboard({
   availableSlotsCount,
   brandColor,
+  isProfileComplete,
   nextLesson,
   onOpenSchedule,
+  onOpenSettings,
   onStartBooking,
 }: {
   availableSlotsCount: number
   brandColor: string
+  isProfileComplete: boolean
   nextLesson: StudentLesson | null
   onOpenSchedule: () => void
+  onOpenSettings: () => void
   onStartBooking: () => void
 }) {
   return (
@@ -223,9 +270,9 @@ function StudentDashboard({
         <Button
           size="lg"
           className="mt-5 w-full min-h-14 text-lg"
-          onClick={onStartBooking}
+          onClick={isProfileComplete ? onStartBooking : onOpenSettings}
         >
-          Записаться на занятие
+          {isProfileComplete ? 'Записаться на занятие' : 'Заполнить профиль'}
           <ArrowRight size={20} />
         </Button>
       </div>
@@ -353,6 +400,197 @@ function ScheduleOverview({
   )
 }
 
+function ProfileSettingsPanel({
+  branch,
+  brandColor,
+  form,
+  onBack,
+  onChange,
+  onCopyCredentials,
+  onRequestBranchChange,
+  onSave,
+  profile,
+}: {
+  branch: Branch | null
+  brandColor: string
+  form: FormState
+  onBack: () => void
+  onChange: (patch: Partial<FormState>) => void
+  onCopyCredentials: () => void
+  onRequestBranchChange: () => void
+  onSave: () => void
+  profile: StudentProfile | null
+}) {
+  const complete = isProfileComplete(profile)
+
+  return (
+    <section className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+      <BackButton onClick={onBack} label="Назад в профиль" />
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+          <Settings size={24} />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-900">Настройки профиля</h1>
+          <p className="mt-2 text-base leading-relaxed text-stone-500">
+            Заполните данные один раз. Потом запись будет быстрее, а профиль станет вашим личным кабинетом.
+          </p>
+        </div>
+      </div>
+
+      {!complete ? (
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
+          Перед записью заполните ФИО, телефон, e-mail и пароль. Так автошкола сможет найти ваш профиль, а вы сможете войти снова.
+        </div>
+      ) : null}
+
+      <div className="mt-6 space-y-4">
+        <Input
+          label="ФИО"
+          placeholder="Анна Иванова"
+          disabled={Boolean(profile)}
+          helperText={profile ? 'ФИО меняет администратор автошколы.' : undefined}
+          value={form.name}
+          onChange={(event) => onChange({ name: event.target.value })}
+        />
+        <Input
+          label="Телефон"
+          placeholder="+7 (999) 123-45-67"
+          value={form.phone}
+          onChange={(event) => onChange({ phone: event.target.value })}
+        />
+        <Input
+          label="E-mail"
+          type="email"
+          placeholder="name@example.ru"
+          value={form.email}
+          onChange={(event) => onChange({ email: event.target.value })}
+        />
+        <Input
+          label={profile?.passwordSet ? 'Новый пароль' : 'Пароль'}
+          type="password"
+          placeholder={profile?.passwordSet ? 'Оставьте пустым, если не меняете' : 'Минимум 6 символов'}
+          value={form.password}
+          onChange={(event) => onChange({ password: event.target.value })}
+        />
+        <Input
+          label="Аватарка"
+          placeholder="Ссылка на фото"
+          helperText="Пока используем ссылку на изображение. Загрузку файла подключим позже."
+          value={form.avatarUrl}
+          onChange={(event) => onChange({ avatarUrl: event.target.value })}
+        />
+
+        <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+          <div className="flex items-start gap-3">
+            <MapPin size={20} className="mt-0.5 shrink-0 text-blue-700" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-stone-500">Филиал</p>
+              <p className="mt-1 text-base font-semibold text-stone-900">
+                {branch?.name ?? 'Филиал пока не закреплён'}
+              </p>
+              <p className="mt-1 text-sm text-stone-500">
+                {branch?.address ?? 'Если нужен другой филиал, отправьте запрос администратору.'}
+              </p>
+              <button
+                className="mt-3 text-sm font-semibold text-blue-700"
+                onClick={onRequestBranchChange}
+                type="button"
+              >
+                Запросить смену филиала
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-3">
+        <Button
+          size="lg"
+          className="w-full min-h-14 text-lg"
+          style={{ backgroundColor: brandColor, borderColor: brandColor }}
+          onClick={onSave}
+        >
+          Сохранить профиль
+          <Check size={18} />
+        </Button>
+        <Button
+          size="lg"
+          variant="secondary"
+          className="w-full min-h-14 text-lg"
+          onClick={onCopyCredentials}
+        >
+          <Copy size={18} />
+          Скопировать логин и пароль
+        </Button>
+      </div>
+    </section>
+  )
+}
+
+function StudentLoginPanel({
+  brandColor,
+  errors,
+  login,
+  onBack,
+  onChange,
+  onLogin,
+  isSubmitting,
+}: {
+  brandColor: string
+  errors: Partial<LoginState>
+  login: LoginState
+  onBack: () => void
+  onChange: (patch: Partial<LoginState>) => void
+  onLogin: () => void
+  isSubmitting: boolean
+}) {
+  return (
+    <section className="rounded-[1.65rem] border border-stone-200 bg-white p-6 shadow-card">
+      <BackButton onClick={onBack} label="Назад к записи" />
+      <div
+        className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-soft"
+        style={{ background: `linear-gradient(135deg, ${brandColor}, #2563eb)` }}
+      >
+        <LockKeyhole size={24} />
+      </div>
+      <h1 className="text-2xl font-semibold text-stone-900">Войти в профиль</h1>
+      <p className="mt-2 text-base leading-relaxed text-stone-500">
+        Если вы уже создавали профиль, введите телефон и пароль. Сайт откроет личный кабинет без повторного ввода данных.
+      </p>
+
+      <div className="mt-7 space-y-4">
+        <Input
+          label="Телефон"
+          placeholder="+7 (999) 123-45-67"
+          value={login.phone}
+          error={errors.phone}
+          onChange={(event) => onChange({ phone: event.target.value })}
+        />
+        <Input
+          label="Пароль"
+          type="password"
+          placeholder="Ваш пароль"
+          value={login.password}
+          error={errors.password}
+          onChange={(event) => onChange({ password: event.target.value })}
+        />
+      </div>
+
+      <Button
+        size="lg"
+        className="mt-7 w-full min-h-14 text-lg"
+        style={{ backgroundColor: brandColor, borderColor: brandColor }}
+        onClick={onLogin}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Проверяем...' : 'Войти'}
+        <ArrowRight size={20} />
+      </Button>
+    </section>
+  )
+}
+
 function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button
@@ -362,6 +600,25 @@ function BackButton({ onClick, label }: { onClick: () => void; label: string }) 
       <ArrowLeft size={18} />
       {label}
     </button>
+  )
+}
+
+function VirazhLogo({ color }: { color: string }) {
+  return (
+    <div
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-soft"
+      style={{ background: `linear-gradient(135deg, ${color}, #2563eb 58%, #0f172a)` }}
+    >
+      <div className="absolute -right-3 -top-4 h-9 w-9 rounded-full bg-white/18" />
+      <div className="absolute -bottom-3 -left-2 h-8 w-8 rounded-full bg-cyan-200/20" />
+      <div className="relative h-6 w-7">
+        <div className="absolute left-1 top-2 h-3.5 w-5 rounded-[0.45rem] border-2 border-white" />
+        <div className="absolute left-2 top-0 h-4 w-3 rotate-45 rounded-sm border-l-2 border-t-2 border-white" />
+        <div className="absolute bottom-0 left-0 h-1.5 w-1.5 rounded-full bg-white" />
+        <div className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-white" />
+        <div className="absolute right-0 top-1 h-1 w-1 rounded-full bg-sky-200" />
+      </div>
+    </div>
   )
 }
 
@@ -381,13 +638,17 @@ export function SchoolPage() {
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null)
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([])
-  const [form, setForm] = useState<FormState>({ name: '', phone: '' })
+  const [form, setForm] = useState<FormState>({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
+  const [loginForm, setLoginForm] = useState<LoginState>({ phone: '', password: '' })
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isBookingStarted, setIsBookingStarted] = useState(false)
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<FormState>>({})
+  const [loginErrors, setLoginErrors] = useState<Partial<LoginState>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const dateOptions = useMemo(() => getNext7Days(), [])
@@ -453,6 +714,14 @@ export function SchoolPage() {
     }
   }, [school, branches, instructors])
 
+  const profileBranch = useMemo(() => {
+    if (!studentProfile) return null
+    if (studentProfile.assignedBranchId) {
+      return branches.find((branch) => branch.id === studentProfile.assignedBranchId) ?? null
+    }
+    return selectedBranch ?? branches[0] ?? null
+  }, [branches, selectedBranch, studentProfile])
+
   useEffect(() => {
     if (!slug) return
 
@@ -464,11 +733,11 @@ export function SchoolPage() {
       const profile = getStudentProfile(currentSchool.id)
       setStudentProfile(profile)
       if (profile) {
-        setForm({ name: profile.name, phone: profile.phone })
+        setForm({ name: profile.name, phone: profile.phone, email: profile.email, password: '', avatarUrl: profile.avatarUrl })
         setIsEditingProfile(false)
         setIsBookingStarted(false)
       } else {
-        setForm({ name: '', phone: '' })
+        setForm({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
         setIsEditingProfile(false)
         setIsBookingStarted(true)
         if (currentSchool.branchSelectionMode === 'fixed_first') {
@@ -690,8 +959,16 @@ export function SchoolPage() {
   }
 
   function startBookingFlow(): void {
+    if (studentProfile && !isProfileComplete(studentProfile)) {
+      setIsProfileSettingsOpen(true)
+      setIsScheduleOpen(false)
+      showToast('Перед записью заполните профиль.', 'info')
+      return
+    }
     setCreatedBookingId(null)
     setIsScheduleOpen(false)
+    setIsProfileSettingsOpen(false)
+    setIsLoginOpen(false)
     if (school?.branchSelectionMode === 'fixed_first' && branches[0]) {
       setSelectedBranch(branches[0])
       setStep(2)
@@ -714,13 +991,142 @@ export function SchoolPage() {
     navigate(`/booking/${createdBookingId}`)
   }
 
-  function createProfileAndContinue(): void {
+  async function loginStudent(): Promise<void> {
+    if (!school) return
+
+    const nextErrors: Partial<LoginState> = {}
+    if (!normalizePhone(loginForm.phone)) nextErrors.phone = 'Введите телефон'
+    if (!loginForm.password.trim()) nextErrors.password = 'Введите пароль'
+    setLoginErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+
+    setIsSubmitting(true)
+    try {
+      const student = await loginStudentInSupabase({
+        schoolId: school.id,
+        phone: loginForm.phone,
+        password: loginForm.password,
+      })
+
+      if (!student) {
+        setLoginErrors({ password: 'Телефон или пароль не подошли' })
+        return
+      }
+
+      const profile = saveStudentProfile(
+        school.id,
+        {
+          name: student.name,
+          phone: student.phone,
+          email: student.email,
+          password: '',
+          avatarUrl: student.avatarUrl,
+        },
+        {
+          passwordSet: true,
+          assignedBranchId: student.assignedBranchId || undefined,
+        },
+      )
+
+      setStudentProfile(profile)
+      setForm({ name: profile.name, phone: profile.phone, email: profile.email, password: '', avatarUrl: profile.avatarUrl })
+      setLoginForm({ phone: '', password: '' })
+      setIsLoginOpen(false)
+      setIsBookingStarted(false)
+      setIsScheduleOpen(false)
+      setIsProfileSettingsOpen(false)
+      setStep(1)
+      showToast('Профиль открыт.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось войти в профиль.', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  function validateProfileSettings(requirePassword: boolean): boolean {
+    if (!form.name.trim()) {
+      showToast('Введите ФИО.', 'error')
+      return false
+    }
+    if (!isValidRussianPhone(form.phone)) {
+      showToast('Введите корректный телефон.', 'error')
+      return false
+    }
+    if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      showToast('Введите e-mail.', 'error')
+      return false
+    }
+    if (requirePassword && form.password.trim().length < 6) {
+      showToast('Пароль должен быть минимум 6 символов.', 'error')
+      return false
+    }
+    return true
+  }
+
+  async function saveProfileSettings(options?: { continueToBooking?: boolean }): Promise<void> {
+    if (!school) return
+    const requirePassword = !studentProfile?.passwordSet || Boolean(options?.continueToBooking)
+    if (!validateProfileSettings(requirePassword)) return
+
+    try {
+      await updateStudentProfileInSupabase({
+        schoolId: school.id,
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        password: form.password,
+        avatarUrl: form.avatarUrl,
+      })
+      const profile = saveStudentProfile(school.id, form, {
+        passwordSet: true,
+        assignedBranchId: profileBranch?.id,
+      })
+      setStudentProfile(profile)
+      setForm({ name: profile.name, phone: profile.phone, email: profile.email, password: '', avatarUrl: profile.avatarUrl })
+      setIsProfileSettingsOpen(false)
+      showToast('Профиль сохранён.', 'success')
+      if (options?.continueToBooking && createdBookingId) {
+        navigate(`/booking/${createdBookingId}`)
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось сохранить профиль.', 'error')
+    }
+  }
+
+  async function copyCredentials(): Promise<void> {
+    const login = normalizePhone(form.phone || studentProfile?.phone || '')
+    const password = form.password.trim()
+    if (!login || !password) {
+      showToast('Введите телефон и пароль, чтобы скопировать доступ.', 'info')
+      return
+    }
+    await navigator.clipboard.writeText(`Логин: ${formatPhone(login)}\nПароль: ${password}`)
+    showToast('Логин и пароль скопированы.', 'success')
+  }
+
+  async function requestBranchChange(): Promise<void> {
+    if (!school || !studentProfile) return
+    try {
+      await requestBranchChangeInSupabase({
+        schoolId: school.id,
+        phone: studentProfile.phone,
+        note: 'Ученик запросил смену филиала из профиля.',
+      })
+      const profile = saveStudentProfile(school.id, form, {
+        ...studentProfile,
+        branchChangeRequestedAt: new Date().toISOString(),
+      })
+      setStudentProfile(profile)
+      showToast('Запрос отправлен администратору.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось отправить запрос.', 'error')
+    }
+  }
+
+  async function createProfileAndContinue(): Promise<void> {
     if (!school || !createdBookingId) return
-    const profile = saveStudentProfile(school.id, form)
-    setStudentProfile(profile)
-    setForm({ name: profile.name, phone: profile.phone })
-    showToast('Профиль создан. Следующая запись будет быстрее.', 'success')
-    navigate(`/booking/${createdBookingId}`)
+    await saveProfileSettings({ continueToBooking: true })
   }
 
   if (schoolMissing) {
@@ -757,16 +1163,13 @@ export function SchoolPage() {
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-4">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-soft overflow-hidden shrink-0"
-              style={{ backgroundColor: brandColor }}
-            >
-              {school.logoUrl ? (
+            {school.logoUrl ? (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-soft">
                 <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
-              ) : (
-                <Car size={20} className="text-white" />
-              )}
-            </div>
+              </div>
+            ) : (
+              <VirazhLogo color={brandColor} />
+            )}
             <div className="text-left">
               <p className="text-base font-semibold text-stone-900 leading-tight">{school.name}</p>
               <p className="text-sm text-stone-400">
@@ -792,16 +1195,42 @@ export function SchoolPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          {studentProfile && !isBookingStarted && !isScheduleOpen ? (
+          {!studentProfile && isLoginOpen ? (
+            <StudentLoginPanel
+              brandColor={brandColor}
+              errors={loginErrors}
+              isSubmitting={isSubmitting}
+              login={loginForm}
+              onBack={() => setIsLoginOpen(false)}
+              onChange={(patch) => {
+                setLoginForm((current) => ({ ...current, ...patch }))
+                setLoginErrors({})
+              }}
+              onLogin={() => void loginStudent()}
+            />
+          ) : studentProfile && !isBookingStarted && !isScheduleOpen && !isProfileSettingsOpen ? (
             <StudentProfileCard
               brandColor={brandColor}
-              brandSoft={brandSoft}
+              branch={profileBranch}
               nextLesson={studentStats.nextLesson}
+              onOpenSettings={() => setIsProfileSettingsOpen(true)}
               profile={studentProfile}
             />
           ) : null}
 
-          {studentProfile && isScheduleOpen ? (
+          {studentProfile && isProfileSettingsOpen ? (
+            <ProfileSettingsPanel
+              branch={profileBranch}
+              brandColor={brandColor}
+              form={form}
+              onBack={() => setIsProfileSettingsOpen(false)}
+              onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
+              onCopyCredentials={() => void copyCredentials()}
+              onRequestBranchChange={() => void requestBranchChange()}
+              onSave={() => void saveProfileSettings()}
+              profile={studentProfile}
+            />
+          ) : studentProfile && isScheduleOpen ? (
             <ScheduleOverview
               brandColor={brandColor}
               onBack={() => setIsScheduleOpen(false)}
@@ -811,11 +1240,13 @@ export function SchoolPage() {
             <StudentDashboard
               availableSlotsCount={schoolSummary.availableSlotsCount}
               brandColor={brandColor}
+              isProfileComplete={isProfileComplete(studentProfile)}
               nextLesson={studentStats.nextLesson}
               onOpenSchedule={() => setIsScheduleOpen(true)}
+              onOpenSettings={() => setIsProfileSettingsOpen(true)}
               onStartBooking={startBookingFlow}
             />
-          ) : (
+          ) : !isLoginOpen ? (
           <>
           {/* Step card */}
           <div className="min-h-[calc(100vh-7rem)] overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card sm:min-h-0">
@@ -826,7 +1257,27 @@ export function SchoolPage() {
                 {/* ── Step 1: Филиал ── */}
                 {step === 1 ? (
                   <motion.div key="step1" {...fadeSlide}>
-                    <BackButton onClick={returnFromBooking} label={studentProfile ? 'Назад в профиль' : 'На главную'} />
+                    <div className="mb-6 flex items-center justify-between gap-3">
+                      <button
+                        onClick={returnFromBooking}
+                        className="inline-flex items-center gap-2 text-base text-stone-500 transition-colors hover:text-stone-900"
+                      >
+                        <ArrowLeft size={18} />
+                        {studentProfile ? 'Назад в профиль' : 'На главную'}
+                      </button>
+                      {!studentProfile ? (
+                        <button
+                          onClick={() => {
+                            setIsLoginOpen(true)
+                            setLoginErrors({})
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          <LockKeyhole size={15} />
+                          Войти
+                        </button>
+                      ) : null}
+                    </div>
                     <h1 className="text-2xl font-semibold text-stone-900 mb-1">
                       {STEP_TITLES[1]}
                     </h1>
@@ -1305,10 +1756,54 @@ export function SchoolPage() {
                       личный кабинет и сможете записаться быстрее.
                     </p>
 
-                    <div className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4">
-                      <p className="text-sm font-medium text-stone-500">Данные профиля</p>
-                      <p className="mt-2 text-lg font-semibold text-stone-900">{form.name.trim()}</p>
-                      <p className="mt-1 text-base text-stone-500">{formatPhone(normalizePhone(form.phone))}</p>
+                    <div className="mt-6 space-y-4">
+                      <Input
+                        label="ФИО"
+                        placeholder="Анна Иванова"
+                        value={form.name}
+                        onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))}
+                      />
+                      <Input
+                        label="Телефон"
+                        placeholder="+7 (999) 123-45-67"
+                        value={form.phone}
+                        onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))}
+                      />
+                      <Input
+                        label="E-mail"
+                        type="email"
+                        placeholder="name@example.ru"
+                        value={form.email}
+                        onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+                      />
+                      <Input
+                        label="Пароль"
+                        type="password"
+                        placeholder="Минимум 6 символов"
+                        value={form.password}
+                        onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))}
+                      />
+                      <Input
+                        label="Аватарка"
+                        placeholder="Ссылка на фото, можно оставить пустой"
+                        value={form.avatarUrl}
+                        onChange={(e) => setForm((c) => ({ ...c, avatarUrl: e.target.value }))}
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { icon: UserRound, text: 'ФИО' },
+                          { icon: Mail, text: 'E-mail' },
+                          { icon: LockKeyhole, text: 'Пароль' },
+                        ].map((item) => {
+                          const Icon = item.icon
+                          return (
+                            <div key={item.text} className="rounded-2xl bg-stone-50 px-3 py-3 text-center">
+                              <Icon size={18} className="mx-auto text-stone-400" />
+                              <p className="mt-1 text-xs font-medium text-stone-500">{item.text}</p>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
 
                     <div className="mt-8 space-y-3">
@@ -1316,9 +1811,18 @@ export function SchoolPage() {
                         size="lg"
                         className="w-full min-h-14 text-lg"
                         style={{ backgroundColor: brandColor, borderColor: brandColor }}
-                        onClick={createProfileAndContinue}
+                        onClick={() => void createProfileAndContinue()}
                       >
                         Создать профиль
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="secondary"
+                        className="w-full min-h-14 text-lg"
+                        onClick={() => void copyCredentials()}
+                      >
+                        <Copy size={18} />
+                        Скопировать логин и пароль
                       </Button>
                       <Button
                         size="lg"
@@ -1335,7 +1839,7 @@ export function SchoolPage() {
             </div>
           </div>
           </>
-          )}
+          ) : null}
         </motion.div>
       </main>
     </div>

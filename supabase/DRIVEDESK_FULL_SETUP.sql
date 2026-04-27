@@ -21,6 +21,9 @@ drop function if exists public.public_update_school_settings(text, text, text, t
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer);
 drop function if exists public.public_update_slot_status(text, text);
 drop function if exists public.public_delete_slot(text);
+drop function if exists public.public_update_student_profile(text, text, text, text, text, text);
+drop function if exists public.public_login_student(text, text, text);
+drop function if exists public.public_request_branch_change(text, text, text);
 
 create table public.schools (
   id text primary key,
@@ -81,8 +84,12 @@ create table public.students (
   phone text not null,
   normalized_phone text not null,
   email text not null default '',
+  password_hash text,
+  avatar_url text,
   assigned_branch_id text references public.branches(id) on delete set null,
   assigned_instructor_id text references public.instructors(id) on delete set null,
+  branch_change_requested_at timestamptz,
+  branch_change_note text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (school_id, normalized_phone)
@@ -725,6 +732,156 @@ begin
 end;
 $$;
 
+create or replace function public.public_update_student_profile(
+  p_school_id text,
+  p_phone text,
+  p_name text,
+  p_email text,
+  p_password text,
+  p_avatar_url text
+)
+returns table (
+  student_id text,
+  student_phone text,
+  profile_ready boolean
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_normalized_phone text;
+  v_student_id text;
+begin
+  v_normalized_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(v_normalized_phone) = 11 and left(v_normalized_phone, 1) = '8' then
+    v_normalized_phone := '7' || substring(v_normalized_phone from 2);
+  elsif length(v_normalized_phone) = 10 and left(v_normalized_phone, 1) = '9' then
+    v_normalized_phone := '7' || v_normalized_phone;
+  end if;
+
+  if v_normalized_phone !~ '^7[0-9]{10}$' then
+    raise exception 'Phone is invalid.';
+  end if;
+
+  if p_name is null or length(trim(p_name)) < 2 then
+    raise exception 'Student name is required.';
+  end if;
+
+  if not exists (
+    select 1 from public.students
+    where school_id = p_school_id
+      and normalized_phone = v_normalized_phone
+      and password_hash is not null
+  ) and (p_password is null or length(p_password) < 6) then
+    raise exception 'Password is too short.';
+  end if;
+
+  insert into public.students (
+    id, school_id, name, phone, normalized_phone, email, password_hash, avatar_url
+  ) values (
+    'stu-' || replace(gen_random_uuid()::text, '-', ''),
+    p_school_id,
+    trim(p_name),
+    v_normalized_phone,
+    v_normalized_phone,
+    coalesce(trim(p_email), ''),
+    case when p_password is not null and length(p_password) >= 6 then extensions.crypt(p_password, extensions.gen_salt('bf')) else null end,
+    nullif(trim(coalesce(p_avatar_url, '')), '')
+  )
+  on conflict (school_id, normalized_phone)
+  do update set
+    name = excluded.name,
+    phone = excluded.phone,
+    email = excluded.email,
+    password_hash = coalesce(excluded.password_hash, public.students.password_hash),
+    avatar_url = excluded.avatar_url,
+    updated_at = now()
+  returning public.students.id into v_student_id;
+
+  student_id := v_student_id;
+  student_phone := v_normalized_phone;
+  profile_ready := true;
+  return next;
+end;
+$$;
+
+create or replace function public.public_login_student(
+  p_school_id text,
+  p_phone text,
+  p_password text
+)
+returns table (
+  student_id text,
+  name text,
+  phone text,
+  email text,
+  avatar_url text,
+  assigned_branch_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_normalized_phone text;
+begin
+  v_normalized_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(v_normalized_phone) = 11 and left(v_normalized_phone, 1) = '8' then
+    v_normalized_phone := '7' || substring(v_normalized_phone from 2);
+  elsif length(v_normalized_phone) = 10 and left(v_normalized_phone, 1) = '9' then
+    v_normalized_phone := '7' || v_normalized_phone;
+  end if;
+
+  return query
+  select s.id, s.name, s.phone, s.email, s.avatar_url, s.assigned_branch_id
+  from public.students s
+  where s.school_id = p_school_id
+    and s.normalized_phone = v_normalized_phone
+    and s.password_hash is not null
+    and s.password_hash = extensions.crypt(p_password, s.password_hash)
+  limit 1;
+end;
+$$;
+
+create or replace function public.public_request_branch_change(
+  p_school_id text,
+  p_phone text,
+  p_note text
+)
+returns table (
+  student_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_normalized_phone text;
+begin
+  v_normalized_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(v_normalized_phone) = 11 and left(v_normalized_phone, 1) = '8' then
+    v_normalized_phone := '7' || substring(v_normalized_phone from 2);
+  elsif length(v_normalized_phone) = 10 and left(v_normalized_phone, 1) = '9' then
+    v_normalized_phone := '7' || v_normalized_phone;
+  end if;
+
+  update public.students
+    set branch_change_requested_at = now(),
+        branch_change_note = nullif(trim(coalesce(p_note, '')), ''),
+        updated_at = now()
+    where school_id = p_school_id
+      and normalized_phone = v_normalized_phone
+    returning id into student_id;
+
+  if not found then
+    raise exception 'Student not found.';
+  end if;
+
+  return next;
+end;
+$$;
+
 alter table public.schools enable row level security;
 alter table public.branches enable row level security;
 alter table public.instructors enable row level security;
@@ -768,3 +925,6 @@ grant execute on function public.public_update_school_settings(text, text, text,
 grant execute on function public.public_create_slot(text, text, text, text, text, text, integer) to anon, authenticated;
 grant execute on function public.public_update_slot_status(text, text) to anon, authenticated;
 grant execute on function public.public_delete_slot(text) to anon, authenticated;
+grant execute on function public.public_update_student_profile(text, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.public_login_student(text, text, text) to anon, authenticated;
+grant execute on function public.public_request_branch_change(text, text, text) to anon, authenticated;

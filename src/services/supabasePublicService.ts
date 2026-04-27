@@ -119,6 +119,12 @@ function mapStudent(row: StudentRow): Student {
     phone: row.phone,
     normalizedPhone: row.normalized_phone,
     email: row.email,
+    avatarUrl: row.avatar_url ?? undefined,
+    assignedBranchId: row.assigned_branch_id ?? undefined,
+    assignedInstructorId: row.assigned_instructor_id ?? undefined,
+    branchChangeRequestedAt: row.branch_change_requested_at ?? undefined,
+    branchChangeNote: row.branch_change_note ?? undefined,
+    hasPassword: Boolean(row.password_hash),
     createdAt: row.created_at,
   }
 }
@@ -220,4 +226,77 @@ export async function getBookingByIdFromSupabase(bookingId: string): Promise<{
     slot: slotResult.data ? mapSlot(slotResult.data) : null,
     student: studentResult.data ? mapStudent(studentResult.data) : null,
   }
+}
+
+export async function updateStudentProfileInSupabase(params: {
+  schoolId: string
+  name: string
+  phone: string
+  email: string
+  password: string
+  avatarUrl: string
+}): Promise<{ studentId: string; normalizedPhone: string }> {
+  const { data, error } = await supabase.rpc('public_update_student_profile', {
+    p_school_id: params.schoolId,
+    p_phone: params.phone,
+    p_name: params.name,
+    p_email: params.email,
+    p_password: params.password,
+    p_avatar_url: params.avatarUrl,
+  })
+
+  if (error) throw error
+  const row = data?.[0]
+  if (!row) throw new Error('Student profile was not saved.')
+
+  return {
+    studentId: row.student_id,
+    normalizedPhone: row.student_phone,
+  }
+}
+
+export async function loginStudentInSupabase(params: {
+  schoolId: string
+  phone: string
+  password: string
+}): Promise<{
+  studentId: string
+  name: string
+  phone: string
+  email: string
+  avatarUrl: string
+  assignedBranchId: string
+} | null> {
+  const { data, error } = await supabase.rpc('public_login_student', {
+    p_school_id: params.schoolId,
+    p_phone: params.phone,
+    p_password: params.password,
+  })
+
+  if (error) throw error
+  const row = data?.[0]
+  if (!row) return null
+
+  return {
+    studentId: row.student_id,
+    name: row.name,
+    phone: row.phone,
+    email: row.email,
+    avatarUrl: row.avatar_url ?? '',
+    assignedBranchId: row.assigned_branch_id ?? '',
+  }
+}
+
+export async function requestBranchChangeInSupabase(params: {
+  schoolId: string
+  phone: string
+  note: string
+}): Promise<void> {
+  const { error } = await supabase.rpc('public_request_branch_change', {
+    p_school_id: params.schoolId,
+    p_phone: params.phone,
+    p_note: params.note,
+  })
+
+  if (error) throw error
 }

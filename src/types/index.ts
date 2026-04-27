@@ -88,6 +88,12 @@ export interface Student {
   phone: string
   normalizedPhone: string
   email: string
+  avatarUrl?: string
+  assignedBranchId?: string
+  assignedInstructorId?: string
+  branchChangeRequestedAt?: string
+  branchChangeNote?: string
+  hasPassword?: boolean
   createdAt: string
 }
 
