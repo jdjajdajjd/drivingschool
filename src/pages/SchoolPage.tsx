@@ -9,7 +9,9 @@ import {
   CircleUserRound,
   Copy,
   Clock3,
+  AlertTriangle,
   LockKeyhole,
+  LogOut,
   Mail,
   MapPin,
   Phone,
@@ -130,6 +132,10 @@ function saveStudentProfile(schoolId: string, form: FormState, extra?: Partial<S
   return profile
 }
 
+function removeStudentProfile(schoolId: string): void {
+  localStorage.removeItem(getProfileKey(schoolId))
+}
+
 function isProfileComplete(profile: StudentProfile | null): boolean {
   return Boolean(profile?.name?.trim() && profile.phone && profile.email?.trim() && profile.passwordSet)
 }
@@ -166,13 +172,17 @@ function StepProgress({ step, total = 6 }: { step: BookingStep; total?: number }
 function StudentProfileCard({
   brandColor,
   branch,
+  isComplete,
   nextLesson,
+  onLogout,
   onOpenSettings,
   profile,
 }: {
   brandColor: string
   branch: Branch | null
+  isComplete: boolean
   nextLesson: StudentLesson | null
+  onLogout: () => void
   onOpenSettings: () => void
   profile: StudentProfile
 }) {
@@ -199,17 +209,38 @@ function StudentProfileCard({
               {branch?.address ?? 'Филиал уточнит администратор'}
             </p>
           </div>
-          <button
-            onClick={onOpenSettings}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/14 ring-1 ring-white/20 transition hover:bg-white/20"
-            aria-label="Настройки профиля"
-          >
-            <Settings size={20} />
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button
+              onClick={onOpenSettings}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/14 ring-1 ring-white/20 transition hover:bg-white/20"
+              aria-label="Настройки профиля"
+            >
+              <Settings size={20} />
+            </button>
+            <button
+              onClick={onLogout}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/14 ring-1 ring-white/20 transition hover:bg-white/20"
+              aria-label="Выйти из профиля"
+            >
+              <LogOut size={19} />
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-3 px-5 py-4">
+        {!isComplete ? (
+          <button
+            onClick={onOpenSettings}
+            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left text-red-900 transition hover:bg-red-100"
+          >
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-red-600" />
+            <span>
+              <span className="block text-sm font-semibold">Профиль заполнен не до конца</span>
+              <span className="mt-0.5 block text-sm text-red-700">Заполните e-mail и пароль, чтобы записываться без повторного ввода данных.</span>
+            </span>
+          </button>
+        ) : null}
         <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -236,18 +267,14 @@ function StudentProfileCard({
 function StudentDashboard({
   availableSlotsCount,
   brandColor,
-  isProfileComplete,
   nextLesson,
   onOpenSchedule,
-  onOpenSettings,
   onStartBooking,
 }: {
   availableSlotsCount: number
   brandColor: string
-  isProfileComplete: boolean
   nextLesson: StudentLesson | null
   onOpenSchedule: () => void
-  onOpenSettings: () => void
   onStartBooking: () => void
 }) {
   return (
@@ -270,9 +297,9 @@ function StudentDashboard({
         <Button
           size="lg"
           className="mt-5 w-full min-h-14 text-lg"
-          onClick={isProfileComplete ? onStartBooking : onOpenSettings}
+          onClick={onStartBooking}
         >
-          {isProfileComplete ? 'Записаться на занятие' : 'Заполнить профиль'}
+          Записаться на занятие
           <ArrowRight size={20} />
         </Button>
       </div>
@@ -591,6 +618,43 @@ function StudentLoginPanel({
   )
 }
 
+function ProfileRequiredDialog({
+  onClose,
+  onOpenSettings,
+}: {
+  onClose: () => void
+  onOpenSettings: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 px-4 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+        transition={{ duration: 0.18 }}
+        className="w-full max-w-sm rounded-[1.5rem] border border-red-100 bg-white p-5 shadow-2xl"
+      >
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+          <AlertTriangle size={24} />
+        </div>
+        <h2 className="mt-4 text-2xl font-semibold text-stone-900">Заполните профиль</h2>
+        <p className="mt-2 text-base leading-relaxed text-stone-500">
+          Перед записью нужны e-mail и пароль. Так автошкола сможет связать запись с вашим профилем, а вы потом войдёте без повторного ввода данных.
+        </p>
+        <div className="mt-6 space-y-3">
+          <Button size="lg" className="w-full min-h-14 text-lg" onClick={onOpenSettings}>
+            Заполнить профиль
+            <ArrowRight size={20} />
+          </Button>
+          <Button size="lg" variant="secondary" className="w-full min-h-14 text-lg" onClick={onClose}>
+            Позже
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button
@@ -606,17 +670,15 @@ function BackButton({ onClick, label }: { onClick: () => void; label: string }) 
 function VirazhLogo({ color }: { color: string }) {
   return (
     <div
-      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-soft"
-      style={{ background: `linear-gradient(135deg, ${color}, #2563eb 58%, #0f172a)` }}
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/5"
+      style={{ background: `linear-gradient(145deg, ${color}, #1d4ed8)` }}
     >
-      <div className="absolute -right-3 -top-4 h-9 w-9 rounded-full bg-white/18" />
-      <div className="absolute -bottom-3 -left-2 h-8 w-8 rounded-full bg-cyan-200/20" />
-      <div className="relative h-6 w-7">
-        <div className="absolute left-1 top-2 h-3.5 w-5 rounded-[0.45rem] border-2 border-white" />
-        <div className="absolute left-2 top-0 h-4 w-3 rotate-45 rounded-sm border-l-2 border-t-2 border-white" />
-        <div className="absolute bottom-0 left-0 h-1.5 w-1.5 rounded-full bg-white" />
-        <div className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-white" />
-        <div className="absolute right-0 top-1 h-1 w-1 rounded-full bg-sky-200" />
+      <div className="absolute inset-x-2 top-2 h-px bg-white/30" />
+      <div className="absolute inset-x-2 bottom-2 h-px bg-white/20" />
+      <div className="relative h-7 w-7">
+        <div className="absolute left-[3px] top-0 h-7 w-2 origin-top rounded-full bg-white shadow-sm [transform:skewX(-23deg)]" />
+        <div className="absolute right-[3px] top-0 h-7 w-2 origin-top rounded-full bg-white/95 shadow-sm [transform:skewX(23deg)]" />
+        <div className="absolute left-[11px] top-[8px] h-4 w-[3px] rounded-full bg-blue-600/80" />
       </div>
     </div>
   )
@@ -643,6 +705,7 @@ export function SchoolPage() {
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
+  const [isProfileRequiredOpen, setIsProfileRequiredOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isBookingStarted, setIsBookingStarted] = useState(false)
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
@@ -960,9 +1023,8 @@ export function SchoolPage() {
 
   function startBookingFlow(): void {
     if (studentProfile && !isProfileComplete(studentProfile)) {
-      setIsProfileSettingsOpen(true)
       setIsScheduleOpen(false)
-      showToast('Перед записью заполните профиль.', 'info')
+      setIsProfileRequiredOpen(true)
       return
     }
     setCreatedBookingId(null)
@@ -989,6 +1051,21 @@ export function SchoolPage() {
   function continueToConfirmation(): void {
     if (!createdBookingId) return
     navigate(`/booking/${createdBookingId}`)
+  }
+
+  function logoutStudent(): void {
+    if (!school) return
+    removeStudentProfile(school.id)
+    setStudentProfile(null)
+    setForm({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
+    setLoginForm({ phone: '', password: '' })
+    setIsProfileSettingsOpen(false)
+    setIsProfileRequiredOpen(false)
+    setIsScheduleOpen(false)
+    setIsLoginOpen(false)
+    setIsBookingStarted(true)
+    setStep(1)
+    showToast('Вы вышли из профиля.', 'success')
   }
 
   async function loginStudent(): Promise<void> {
@@ -1212,7 +1289,9 @@ export function SchoolPage() {
             <StudentProfileCard
               brandColor={brandColor}
               branch={profileBranch}
+              isComplete={isProfileComplete(studentProfile)}
               nextLesson={studentStats.nextLesson}
+              onLogout={logoutStudent}
               onOpenSettings={() => setIsProfileSettingsOpen(true)}
               profile={studentProfile}
             />
@@ -1240,10 +1319,8 @@ export function SchoolPage() {
             <StudentDashboard
               availableSlotsCount={schoolSummary.availableSlotsCount}
               brandColor={brandColor}
-              isProfileComplete={isProfileComplete(studentProfile)}
               nextLesson={studentStats.nextLesson}
               onOpenSchedule={() => setIsScheduleOpen(true)}
-              onOpenSettings={() => setIsProfileSettingsOpen(true)}
               onStartBooking={startBookingFlow}
             />
           ) : !isLoginOpen ? (
@@ -1842,6 +1919,18 @@ export function SchoolPage() {
           ) : null}
         </motion.div>
       </main>
+
+      <AnimatePresence>
+        {isProfileRequiredOpen ? (
+          <ProfileRequiredDialog
+            onClose={() => setIsProfileRequiredOpen(false)}
+            onOpenSettings={() => {
+              setIsProfileRequiredOpen(false)
+              setIsProfileSettingsOpen(true)
+            }}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }

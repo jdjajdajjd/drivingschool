@@ -14,6 +14,7 @@ import { validateDataIntegrity } from '../../services/integrityService'
 import { db } from '../../services/storage'
 import { getStudentsBySchool, getStudentStats } from '../../services/studentService'
 import { getSlotsBySchool } from '../../services/slotService'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
 function getSchool() {
   return db.schools.bySlug('virazh')
@@ -149,7 +150,7 @@ export function AdminDashboard() {
           title="Ближайшие занятия"
           description="Только активные записи. Ближайшие слоты наверху."
           actions={
-            <Button variant="ghost" size="sm" onClick={() => (window.location.href = '/admin/bookings')}>
+            <Button variant="ghost" size="sm" onClick={() => (window.location.href = `${ADMIN_BASE_PATH}/bookings`)}>
               Все записи
             </Button>
           }

@@ -9,6 +9,7 @@ import { useToast } from '../../components/ui/Toast'
 import { formatPrice } from '../../lib/utils'
 import { MODULE_CATEGORY_LABELS, disableModule, enableModule, getModuleById, isModuleEnabled } from '../../services/modules'
 import { db } from '../../services/storage'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   MessageSquare,
@@ -37,7 +38,7 @@ export function AdminModuleDetail() {
         <EmptyState
           title="Модуль не найден"
           description="Проверьте ссылку или вернитесь в каталог модулей."
-          action={<Button onClick={() => navigate('/admin/modules')}>К каталогу</Button>}
+          action={<Button onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}>К каталогу</Button>}
         />
       </div>
     )
@@ -58,19 +59,19 @@ export function AdminModuleDetail() {
     if (enabled) {
       disableModule(currentSchool.id, currentModule.id)
       showToast('Модуль отключён', 'success')
-      navigate('/admin/modules')
+      navigate(`${ADMIN_BASE_PATH}/modules`)
       return
     }
 
     enableModule(currentSchool.id, currentModule.id)
     showToast(currentModule.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Модуль подключён', 'success')
-    navigate('/admin/modules')
+    navigate(`${ADMIN_BASE_PATH}/modules`)
   }
 
   return (
     <div className="max-w-5xl p-6 md:p-8">
       <button
-        onClick={() => navigate('/admin/modules')}
+        onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}
         className="mb-4 inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
       >
         <ArrowLeft size={15} />

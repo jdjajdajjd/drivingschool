@@ -1,20 +1,16 @@
 import { motion } from 'framer-motion'
 import {
   ArrowRight,
-  BookOpen,
-  CalendarClock,
   Car,
   ClipboardList,
   GraduationCap,
   LayoutDashboard,
-  Settings,
   ShieldCheck,
   UserCog,
-  UserRound,
-  UsersRound,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
+import { ADMIN_LOGIN_PATH, SUPERADMIN_LOGIN_PATH } from '../services/accessControl'
 
 const primaryEntrances = [
   {
@@ -28,7 +24,7 @@ const primaryEntrances = [
   {
     title: 'Войти как администратор',
     text: 'Рабочая панель автошколы: записи, ученики, расписание и настройки.',
-    path: '/admin',
+    path: ADMIN_LOGIN_PATH,
     icon: UserCog,
     tone: 'bg-stone-900 text-white',
     button: 'Открыть админку',
@@ -36,7 +32,7 @@ const primaryEntrances = [
   {
     title: 'Войти как супер-админ',
     text: 'Управление школами, модулями и общей витриной сервиса.',
-    path: '/superadmin',
+    path: SUPERADMIN_LOGIN_PATH,
     icon: ShieldCheck,
     tone: 'bg-indigo-600 text-white',
     button: 'Открыть superadmin',
@@ -44,13 +40,8 @@ const primaryEntrances = [
 ]
 
 const quickLinks = [
-  { label: 'Записи автошколы', path: '/admin/bookings', icon: ClipboardList },
-  { label: 'Расписание и слоты', path: '/admin/slots', icon: CalendarClock },
-  { label: 'Ученики', path: '/admin/students', icon: UsersRound },
-  { label: 'Инструкторы', path: '/admin/instructors', icon: UserRound },
-  { label: 'Филиалы', path: '/admin/branches', icon: Car },
-  { label: 'Настройки школы', path: '/admin/settings', icon: Settings },
-  { label: 'Модули', path: '/admin/modules', icon: BookOpen },
+  { label: 'Служебный вход школы', path: ADMIN_LOGIN_PATH, icon: ClipboardList },
+  { label: 'Вход супер-админа', path: SUPERADMIN_LOGIN_PATH, icon: ShieldCheck },
   { label: 'Кабинет инструктора', path: '/instructor/tok-petrov-2024', icon: LayoutDashboard },
 ]
 

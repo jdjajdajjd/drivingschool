@@ -19,6 +19,7 @@ import {
   getSlotDateTime,
   rescheduleBooking,
 } from '../../services/bookingService'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { db } from '../../services/storage'
 import { getAvailableSlots } from '../../services/slotService'
 
@@ -279,7 +280,7 @@ export function AdminBookings() {
                         </td>
                         <td className="px-4 py-4">
                           {entry.student ? (
-                            <Link to={`/admin/students/${entry.student.id}`} className="font-medium text-stone-900 hover:text-forest-700">
+                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-medium text-stone-900 hover:text-forest-700">
                               {entry.booking.studentName}
                             </Link>
                           ) : (

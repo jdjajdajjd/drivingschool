@@ -6,6 +6,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { createSchool } from '../../services/schoolService'
+import { SUPERADMIN_BASE_PATH } from '../../services/accessControl'
 
 export function SuperAdminSchoolNew() {
   const navigate = useNavigate()
@@ -39,7 +40,7 @@ export function SuperAdminSchoolNew() {
     }
 
     showToast('Автошкола создана.', 'success')
-    navigate(`/superadmin/schools/${result.school.id}`)
+    navigate(`${SUPERADMIN_BASE_PATH}/schools/${result.school.id}`)
   }
 
   return (
@@ -63,7 +64,7 @@ export function SuperAdminSchoolNew() {
           </div>
           <div className="mt-4 flex gap-3">
             <Button onClick={handleCreate}>Создать автошколу</Button>
-            <Button variant="secondary" onClick={() => navigate('/superadmin/schools')}>Назад</Button>
+            <Button variant="secondary" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools`)}>Назад</Button>
           </div>
         </Section>
       </div>

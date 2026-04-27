@@ -18,6 +18,7 @@ import {
   getModulesCatalog,
   isModuleEnabled,
 } from '../../services/modules'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { db } from '../../services/storage'
 import type { Module, ModuleCategory } from '../../types'
 
@@ -223,7 +224,7 @@ export function AdminModules() {
                       >
                         {enabledState ? 'Отключить' : 'Подключить'}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/modules/${module.id}`)}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`${ADMIN_BASE_PATH}/modules/${module.id}`)}>
                         Подробнее
                       </Button>
                     </div>

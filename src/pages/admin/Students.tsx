@@ -9,6 +9,7 @@ import { Section } from '../../components/ui/Section'
 import { formatPhone } from '../../lib/utils'
 import { db } from '../../services/storage'
 import { getStudentsBySchool, getStudentStats } from '../../services/studentService'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
 type StudentFilter = 'all' | 'active' | 'inactive' | 'cancelled' | 'limit'
 
@@ -101,7 +102,7 @@ export function AdminStudents() {
               {rows.map(({ student, stats }) => (
                 <Link
                   key={student.id}
-                  to={`/admin/students/${student.id}`}
+                  to={`${ADMIN_BASE_PATH}/students/${student.id}`}
                   className="rounded-2xl border border-stone-200 bg-white p-5 transition hover:border-stone-300"
                 >
                   <div className="flex items-start justify-between gap-3">

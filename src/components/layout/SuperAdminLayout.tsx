@@ -1,13 +1,14 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Building2, Car, Menu, Plus, Shield } from 'lucide-react'
+import { Building2, Car, LogOut, Menu, Plus, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '../../lib/utils'
 import { NavLink } from 'react-router-dom'
+import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 
 const NAV = [
-  { to: '/superadmin', label: 'Обзор', icon: Shield, end: true },
-  { to: '/superadmin/schools', label: 'Автошколы', icon: Building2 },
-  { to: '/superadmin/schools/new', label: 'Создать автошколу', icon: Plus },
+  { to: SUPERADMIN_BASE_PATH, label: 'Обзор', icon: Shield, end: true },
+  { to: `${SUPERADMIN_BASE_PATH}/schools`, label: 'Автошколы', icon: Building2 },
+  { to: `${SUPERADMIN_BASE_PATH}/schools/new`, label: 'Создать автошколу', icon: Plus },
 ]
 
 export function SuperAdminLayout() {
@@ -83,11 +84,21 @@ export function SuperAdminLayout() {
         </nav>
         <div className="border-t border-stone-100 px-3 py-4">
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate(ADMIN_BASE_PATH)}
             className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
           >
             <Building2 size={15} className="text-stone-400" />
             Открыть админку школы
+          </button>
+          <button
+            onClick={() => {
+              clearAccess('superadmin')
+              navigate('/')
+            }}
+            className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-red-600 transition hover:bg-red-50"
+          >
+            <LogOut size={15} />
+            Выйти из супер-админки
           </button>
         </div>
       </aside>

@@ -1,4 +1,4 @@
-import { Compass, Home, LayoutDashboard } from 'lucide-react'
+import { Compass, Home } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { PublicNav } from '../components/layout/PublicNav'
 import { Button } from '../components/ui/Button'
@@ -30,10 +30,6 @@ export function NotFoundPage() {
               </Button>
               <Button variant="secondary" onClick={() => navigate('/school/virazh')}>
                 Открыть демо записи
-              </Button>
-              <Button variant="ghost" onClick={() => navigate('/admin')}>
-                <LayoutDashboard size={16} />
-                Открыть админку
               </Button>
             </div>
           </Card>

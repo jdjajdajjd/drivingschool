@@ -13,6 +13,7 @@ import { formatPhone } from '../../lib/utils'
 import { cancelBooking, completeBooking, getBookingsByStudent } from '../../services/bookingService'
 import { getStudentById, getStudentStats } from '../../services/studentService'
 import { db } from '../../services/storage'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
 export function AdminStudentDetail() {
   const { studentId } = useParams<{ studentId: string }>()
@@ -55,7 +56,7 @@ export function AdminStudentDetail() {
           title="Ученик не найден"
           description="В localStorage нет данных по этому ученику или ссылка устарела."
           action={
-            <Button onClick={() => navigate('/admin/students')}>К списку учеников</Button>
+            <Button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}>К списку учеников</Button>
           }
         />
       </div>
@@ -65,7 +66,7 @@ export function AdminStudentDetail() {
   return (
     <div className="max-w-7xl p-6 md:p-8">
       <button
-        onClick={() => navigate('/admin/students')}
+        onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}
         className="mb-4 inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
       >
         <ArrowLeft size={16} />
@@ -165,7 +166,7 @@ export function AdminStudentDetail() {
                   {entry.booking.status === 'active' ? (
                     <div className="mt-3">
                       <Link
-                        to="/admin/bookings"
+                        to={`${ADMIN_BASE_PATH}/bookings`}
                         className="inline-flex items-center gap-2 text-sm text-forest-700 transition hover:text-forest-800"
                       >
                         <RotateCcw size={15} />

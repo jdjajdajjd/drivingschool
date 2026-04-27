@@ -6,6 +6,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { formatPrice } from '../../lib/utils'
 import { getSchoolOverview, getSchools } from '../../services/schoolService'
+import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH } from '../../services/accessControl'
 
 export function SuperAdminSchools() {
   const navigate = useNavigate()
@@ -19,7 +20,7 @@ export function SuperAdminSchools() {
         eyebrow="Superadmin"
         title="Автошколы"
         description="Все школы, их загрузка, подключённые модули и текущая демо-стоимость в месяц."
-        actions={<Button onClick={() => navigate('/superadmin/schools/new')}>Создать автошколу</Button>}
+        actions={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/new`)}>Создать автошколу</Button>}
       />
 
       <div className="mt-8">
@@ -60,11 +61,11 @@ export function SuperAdminSchools() {
                         <ExternalLink size={14} />
                         Публичная
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => navigate('/admin')}>
+                      <Button variant="secondary" size="sm" onClick={() => navigate(ADMIN_BASE_PATH)}>
                         <ExternalLink size={14} />
                         Демо-админка
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => navigate(`/superadmin/schools/${item.school.id}`)}>
+                      <Button variant="secondary" size="sm" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/${item.school.id}`)}>
                         <Settings2 size={14} />
                         Настройки
                       </Button>

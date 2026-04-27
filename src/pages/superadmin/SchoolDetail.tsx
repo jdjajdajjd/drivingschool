@@ -10,6 +10,7 @@ import { formatPrice } from '../../lib/utils'
 import { getEnabledModules } from '../../services/modules'
 import { getSchoolOverview } from '../../services/schoolService'
 import { db } from '../../services/storage'
+import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH } from '../../services/accessControl'
 
 export function SuperAdminSchoolDetail() {
   const { schoolId } = useParams<{ schoolId: string }>()
@@ -35,7 +36,7 @@ export function SuperAdminSchoolDetail() {
         <EmptyState
           title="Школа не найдена"
           description="Проверьте ссылку или вернитесь в список автошкол."
-          action={<Button onClick={() => navigate('/superadmin/schools')}>К списку школ</Button>}
+          action={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools`)}>К списку школ</Button>}
         />
       </div>
     )
@@ -53,7 +54,7 @@ export function SuperAdminSchoolDetail() {
               <ExternalLink size={15} />
               Публичная страница
             </Button>
-            <Button variant="secondary" onClick={() => navigate('/admin/settings')}>
+            <Button variant="secondary" onClick={() => navigate(`${ADMIN_BASE_PATH}/settings`)}>
               Открыть настройки школы
             </Button>
           </div>

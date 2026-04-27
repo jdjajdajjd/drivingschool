@@ -16,13 +16,16 @@ import { AdminBranches } from './pages/admin/Branches'
 import { AdminModules } from './pages/admin/Modules'
 import { AdminModuleDetail } from './pages/admin/ModuleDetail'
 import { AdminSettings } from './pages/admin/Settings'
+import { StaffLoginPage } from './pages/StaffLoginPage'
 import { InstructorPage } from './pages/InstructorPage'
 import { SuperAdminOverview } from './pages/SuperAdmin'
 import { SuperAdminSchools } from './pages/superadmin/Schools'
 import { SuperAdminSchoolNew } from './pages/superadmin/SchoolNew'
 import { SuperAdminSchoolDetail } from './pages/superadmin/SchoolDetail'
 import { SuperAdminLayout } from './components/layout/SuperAdminLayout'
+import { ProtectedAccess } from './components/layout/ProtectedAccess'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
 
 function App() {
   const [isReady, setIsReady] = useState(false)
@@ -44,24 +47,30 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/school/:slug" element={<SchoolPage />} />
         <Route path="/booking/:bookingId" element={<BookingConfirmation />} />
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="bookings" element={<AdminBookings />} />
-          <Route path="slots" element={<AdminSlots />} />
-          <Route path="students" element={<AdminStudents />} />
-          <Route path="students/:studentId" element={<AdminStudentDetail />} />
-          <Route path="instructors" element={<AdminInstructors />} />
-          <Route path="branches" element={<AdminBranches />} />
-          <Route path="modules" element={<AdminModules />} />
-          <Route path="modules/:moduleId" element={<AdminModuleDetail />} />
-          <Route path="settings" element={<AdminSettings />} />
+        <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" />} />
+        <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
+        <Route element={<ProtectedAccess role="admin" />}>
+          <Route path={ADMIN_BASE_PATH} element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="slots" element={<AdminSlots />} />
+            <Route path="students" element={<AdminStudents />} />
+            <Route path="students/:studentId" element={<AdminStudentDetail />} />
+            <Route path="instructors" element={<AdminInstructors />} />
+            <Route path="branches" element={<AdminBranches />} />
+            <Route path="modules" element={<AdminModules />} />
+            <Route path="modules/:moduleId" element={<AdminModuleDetail />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
         </Route>
         <Route path="/instructor/:token" element={<InstructorPage />} />
-        <Route path="/superadmin" element={<SuperAdminLayout />}>
-          <Route index element={<SuperAdminOverview />} />
-          <Route path="schools" element={<SuperAdminSchools />} />
-          <Route path="schools/new" element={<SuperAdminSchoolNew />} />
-          <Route path="schools/:schoolId" element={<SuperAdminSchoolDetail />} />
+        <Route element={<ProtectedAccess role="superadmin" />}>
+          <Route path={SUPERADMIN_BASE_PATH} element={<SuperAdminLayout />}>
+            <Route index element={<SuperAdminOverview />} />
+            <Route path="schools" element={<SuperAdminSchools />} />
+            <Route path="schools/new" element={<SuperAdminSchoolNew />} />
+            <Route path="schools/:schoolId" element={<SuperAdminSchoolDetail />} />
+          </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

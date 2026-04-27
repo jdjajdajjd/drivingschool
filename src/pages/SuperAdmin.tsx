@@ -10,6 +10,7 @@ import { getBillingSummary } from '../services/modules'
 import { performDemoReset } from '../services/schoolService'
 import { db } from '../services/storage'
 import { validateDataIntegrity } from '../services/integrityService'
+import { SUPERADMIN_BASE_PATH } from '../services/accessControl'
 
 export function SuperAdminOverview() {
   const schools = db.schools.all()
@@ -62,7 +63,7 @@ export function SuperAdminOverview() {
             variant="secondary"
             onClick={() => {
               performDemoReset()
-              window.location.href = '/superadmin'
+              window.location.href = SUPERADMIN_BASE_PATH
             }}
           >
             <RefreshCw size={15} />

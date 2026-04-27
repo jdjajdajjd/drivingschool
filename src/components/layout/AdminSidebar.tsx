@@ -13,16 +13,17 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 
 const NAV = [
-  { to: '/admin', label: 'Обзор', icon: LayoutDashboard, end: true },
-  { to: '/admin/bookings', label: 'Записи', icon: CalendarDays },
-  { to: '/admin/slots', label: 'Слоты', icon: Clock3 },
-  { to: '/admin/students', label: 'Ученики', icon: UserRound },
-  { to: '/admin/instructors', label: 'Инструкторы', icon: Users },
-  { to: '/admin/branches', label: 'Филиалы', icon: MapPin },
-  { to: '/admin/modules', label: 'Модули', icon: Puzzle },
-  { to: '/admin/settings', label: 'Настройки', icon: Settings2 },
+  { to: ADMIN_BASE_PATH, label: 'Обзор', icon: LayoutDashboard, end: true },
+  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: CalendarDays },
+  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Слоты', icon: Clock3 },
+  { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound },
+  { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users },
+  { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: MapPin },
+  { to: `${ADMIN_BASE_PATH}/modules`, label: 'Модули', icon: Puzzle },
+  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2 },
 ]
 
 interface AdminSidebarProps {
@@ -112,13 +113,24 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           </button>
           <button
             onClick={() => {
-              navigate('/superadmin')
+              navigate(SUPERADMIN_BASE_PATH)
               onClose()
             }}
             className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
           >
             <Puzzle size={15} className="text-stone-400" />
             Суперадмин
+          </button>
+          <button
+            onClick={() => {
+              clearAccess('admin')
+              navigate('/')
+              onClose()
+            }}
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-red-600 transition hover:bg-red-50"
+          >
+            <X size={15} />
+            Выйти из админки
           </button>
         </div>
       </aside>

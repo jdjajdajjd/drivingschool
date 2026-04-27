@@ -12,6 +12,7 @@ import { formatDuration, hexToRgba } from '../../lib/utils'
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
 import { performDemoReset, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { db } from '../../services/storage'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
 export function AdminSettings() {
   const navigate = useNavigate()
@@ -112,7 +113,7 @@ export function AdminSettings() {
 
     showToast('Настройки автошколы сохранены.', 'success')
     if (result.school?.slug !== school.slug) {
-      navigate('/admin/settings', { replace: true })
+      navigate(`${ADMIN_BASE_PATH}/settings`, { replace: true })
     }
   }
 
@@ -120,7 +121,7 @@ export function AdminSettings() {
     performDemoReset()
     setResetOpen(false)
     showToast('Демо-данные сброшены и заново созданы.', 'success')
-    window.location.href = '/admin/settings'
+    window.location.href = `${ADMIN_BASE_PATH}/settings`
   }
 
   if (!school) {
@@ -297,7 +298,7 @@ export function AdminSettings() {
             ))}
           </div>
           <div className="mt-4">
-            <Button variant="secondary" onClick={() => navigate('/admin/modules')}>
+            <Button variant="secondary" onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}>
               Перейти в каталог модулей
             </Button>
           </div>
