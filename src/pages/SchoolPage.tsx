@@ -1,23 +1,28 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
+  Camera,
   Check,
   CheckCircle2,
+  ChevronRight,
+  Clock,
   Copy,
   LogIn,
   LogOut,
+  MapPin,
   Phone,
   Settings,
   ShieldCheck,
+  X,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
-import { Input, Textarea } from '../components/ui/Input'
+import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { useToast } from '../components/ui/Toast'
 import { formatDuration, formatPhone, generateId, pluralize } from '../lib/utils'
@@ -66,6 +71,7 @@ interface StudentProfile {
   avatarUrl: string
   passwordSet: boolean
   assignedBranchId?: string
+  pendingBranchId?: string
   branchChangeRequestedAt?: string
   updatedAt: string
   createdByConsent: boolean
@@ -81,6 +87,8 @@ interface ResolvedLesson {
 const stepOrder: BookingStep[] = ['category', 'branch', 'instructor', 'date', 'time', 'details', 'review', 'profile']
 const emptyForm: FormState = { name: '', phone: '', email: '', password: '', avatarUrl: '' }
 
+// ─── Storage ─────────────────────────────────────────────────────────────────
+
 function getProfileKey(schoolId: string): string {
   return `dd:student_profile:${schoolId}`
 }
@@ -91,12 +99,7 @@ function loadStudentProfile(schoolId: string): StudentProfile | null {
     if (!raw) return null
     const profile = JSON.parse(raw) as StudentProfile
     if (!profile.createdByConsent || !profile.name || !profile.phone) return null
-    return {
-      ...profile,
-      email: profile.email ?? '',
-      avatarUrl: profile.avatarUrl ?? '',
-      passwordSet: Boolean(profile.passwordSet),
-    }
+    return { ...profile, email: profile.email ?? '', avatarUrl: profile.avatarUrl ?? '', passwordSet: Boolean(profile.passwordSet) }
   } catch {
     return null
   }
@@ -127,32 +130,80 @@ function isProfileComplete(profile: StudentProfile | null): boolean {
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'У'
+  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || 'У'
 }
 
 function slotDateTime(slot: Slot): Date {
   return new Date(`${slot.date}T${slot.time}:00`)
 }
 
-function selectClassName(): string {
-  return 'h-9 w-full rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100'
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = h * 60 + m + minutes
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
 }
 
 function getVisibleDrivingCategories(school: School, instructors: Instructor[]) {
-  const supported = new Set(instructors.flatMap((item) => item.categories ?? []))
+  const supported = new Set(instructors.flatMap((i) => i.categories ?? []))
   const configured = school.enabledCategoryCodes?.length ? new Set(school.enabledCategoryCodes) : supported
-  return DRIVING_CATEGORIES.filter((category) => configured.has(category.code) && supported.has(category.code))
+  return DRIVING_CATEGORIES.filter((c) => configured.has(c.code) && supported.has(c.code))
+}
+
+async function compressAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const size = 240
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('canvas')); return }
+        const min = Math.min(img.width, img.height)
+        ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, size, size)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.onerror = reject
+      img.src = e.target?.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+// ─── Atoms ───────────────────────────────────────────────────────────────────
+
+function FreeBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80">
+      Свободно
+    </span>
+  )
+}
+
+function BookedBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200/80">
+      Вы записаны
+    </span>
+  )
 }
 
 function StepHeader({ current, total }: { current: number; total: number }) {
+  const pct = Math.round((current / total) * 100)
   return (
-    <div className="border-b border-stone-100 px-5 py-3">
-      <div className="flex items-center justify-between text-xs font-medium text-stone-400">
-        <span>Шаг {current} из {total}</span>
-        <span>{Math.round((current / total) * 100)}%</span>
+    <div className="border-b border-slate-100 px-5 py-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-slate-400">Шаг {current} из {total}</span>
+        <span className="text-xs font-bold text-blue-600">{pct}%</span>
       </div>
-      <div className="mt-2 h-1 rounded-full bg-stone-100">
-        <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${(current / total) * 100}%` }} />
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   )
@@ -160,8 +211,8 @@ function StepHeader({ current, total }: { current: number; total: number }) {
 
 function BackButton({ onClick, label = 'Назад' }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 hover:text-stone-700 transition-colors">
-      <ArrowLeft size={14} />
+    <button onClick={onClick} className="mb-4 -ml-1 inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm font-medium text-slate-400 transition hover:text-slate-900">
+      <ArrowLeft size={15} />
       {label}
     </button>
   )
@@ -169,29 +220,101 @@ function BackButton({ onClick, label = 'Назад' }: { onClick: () => void; la
 
 function VirazhLogo({ color }: { color: string }) {
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-stone-200">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div className="relative h-6 w-6">
         <div className="absolute left-0 top-0 h-6 w-2 rounded-full" style={{ backgroundColor: color }} />
-        <div className="absolute left-2 top-2 h-2 w-4 rounded-full bg-stone-900" />
-        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-stone-900 bg-white" />
+        <div className="absolute left-2 top-2 h-2 w-4 rounded-full bg-slate-900" />
+        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-900 bg-white" />
       </div>
     </div>
   )
 }
 
 function LessonCard({ lesson }: { lesson: ResolvedLesson }) {
+  const endTime = addMinutesToTime(lesson.slot.time, lesson.slot.duration)
+  const photo = lesson.instructor ? getInstructorPhoto(lesson.instructor) : undefined
   return (
-    <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-stone-900">{formatDate(lesson.slot.date)}, {lesson.slot.time}</p>
-          <p className="mt-0.5 text-xs text-stone-500 truncate">{lesson.instructor?.name ?? 'Инструктор'} · {lesson.branch?.name ?? 'Филиал'} · {formatDuration(lesson.slot.duration)}</p>
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl" style={{ backgroundColor: '#EFF6FF' }}>
+        {photo
+          ? <img src={photo} alt={lesson.instructor?.name} className="h-full w-full object-cover" />
+          : <CalendarDays size={18} className="text-blue-500" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-slate-900">{formatDate(lesson.slot.date)}, {lesson.slot.time} – {endTime}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{lesson.instructor?.name ?? 'Инструктор'} · {lesson.branch?.name ?? 'Филиал'}</p>
+      </div>
+      <BookedBadge />
+    </div>
+  )
+}
+
+// ─── BranchChangeModal ────────────────────────────────────────────────────────
+
+function BranchChangeModal({
+  branches,
+  currentBranchId,
+  onClose,
+  onSubmit,
+  open,
+}: {
+  branches: Branch[]
+  currentBranchId?: string
+  onClose: () => void
+  onSubmit: (branchId: string) => void
+  open: boolean
+}) {
+  const [selected, setSelected] = useState(currentBranchId ?? '')
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative z-10 w-full max-w-md rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900">Выберите филиал</h2>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+            <X size={16} />
+          </button>
         </div>
-        <CalendarDays size={15} className="shrink-0 text-blue-500" />
+        <div className="space-y-2">
+          {branches.map((branch) => {
+            const active = selected === branch.id
+            return (
+              <button
+                key={branch.id}
+                onClick={() => setSelected(branch.id)}
+                className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${
+                  active ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${active ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`}>
+                  {active && <Check size={11} className="text-white" strokeWidth={3} />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">{branch.name}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{branch.address}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        <div className="mt-5 grid gap-2">
+          <Button size="lg" className="w-full" disabled={!selected || selected === currentBranchId} onClick={() => selected && onSubmit(selected)}>
+            Подать заявку
+          </Button>
+          <Button variant="secondary" className="w-full" onClick={onClose}>Отмена</Button>
+        </div>
       </div>
     </div>
   )
 }
+
+// ─── SchoolHome ───────────────────────────────────────────────────────────────
 
 function SchoolHome({
   branches,
@@ -213,121 +336,158 @@ function SchoolHome({
   school: School
 }) {
   const futureSlots = db.slots.bySchool(school.id)
-    .filter((slot) => slot.status === 'available' && slotDateTime(slot) > new Date())
-    .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
+    .filter((s) => s.status === 'available' && slotDateTime(s) > new Date())
+    .sort((a, b) => slotDateTime(a).getTime() - slotDateTime(b).getTime())
   const visibleCategories = getVisibleDrivingCategories(school, instructors).slice(0, 12)
-  const instructorCards = instructors.slice(0, 6).map((instructor) => {
-    const nextSlot = futureSlots.find((slot) => slot.instructorId === instructor.id) ?? null
-    return {
-      instructor,
-      branch: branches.find((branch) => branch.id === instructor.branchId) ?? null,
-      nextSlot,
-    }
-  })
+  const instructorCards = instructors.slice(0, 6).map((instructor) => ({
+    instructor,
+    branch: branches.find((b) => b.id === instructor.branchId) ?? null,
+    nextSlot: futureSlots.find((s) => s.instructorId === instructor.id) ?? null,
+  }))
 
   return (
-    <section className="space-y-5">
-      <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-card">
-        <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">Автошкола</p>
-        <h1 className="mt-1 text-xl font-bold leading-tight text-stone-950">{school.name}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-stone-500">{school.description}</p>
-        <div className="mt-4 grid gap-2">
-          <Button size="lg" onClick={onStartBooking} className="w-full">
-            Записаться
-            <ArrowRight size={16} />
-          </Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" onClick={onLogin}>
-              <LogIn size={15} />
-              Войти
-            </Button>
-            <Button variant="secondary" onClick={onOpenSchedule}>
-              <CalendarDays size={15} />
-              Расписание
-            </Button>
+    <section className="space-y-4">
+      {/* Hero card */}
+      <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+        <div className="px-6 pb-5 pt-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Автошкола</p>
+          <h1 className="mt-1.5 text-2xl font-bold leading-tight text-slate-900">{school.name}</h1>
+          {school.description ? <p className="mt-2 text-sm leading-relaxed text-slate-500">{school.description}</p> : null}
+          <div className="mt-5 space-y-2.5">
+            <button
+              onClick={onStartBooking}
+              className="flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left font-semibold text-white shadow-md transition hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: brandColor }}
+            >
+              <span className="text-base">Записаться на занятие</span>
+              <ArrowRight size={18} />
+            </button>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                onClick={onLogin}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <LogIn size={16} className="text-slate-500" />
+                Войти
+              </button>
+              <button
+                onClick={onOpenSchedule}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <CalendarDays size={16} className="text-slate-500" />
+                Расписание
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats strip */}
+        <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
+          <div className="py-4 text-center">
+            <p className="text-xl font-bold tabular-nums text-slate-900">{branches.length}</p>
+            <p className="mt-0.5 text-[11px] font-medium text-slate-400">филиала</p>
+          </div>
+          <div className="py-4 text-center">
+            <p className="text-xl font-bold tabular-nums text-slate-900">{instructors.length}</p>
+            <p className="mt-0.5 text-[11px] font-medium text-slate-400">инструкторов</p>
+          </div>
+          <div className="py-4 text-center">
+            <p className="text-xl font-bold tabular-nums" style={{ color: brandColor }}>{futureSlots.length}</p>
+            <p className="mt-0.5 text-[11px] font-medium text-slate-400">свободных мест</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-center">
-          <p className="text-lg font-bold tabular-nums text-stone-900">{branches.length}</p>
-          <p className="text-[11px] text-stone-400">филиала</p>
-        </div>
-        <div className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-center">
-          <p className="text-lg font-bold tabular-nums text-stone-900">{instructors.length}</p>
-          <p className="text-[11px] text-stone-400">инструкторов</p>
-        </div>
-        <div className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-center">
-          <p className="text-lg font-bold tabular-nums text-stone-900">{futureSlots.length}</p>
-          <p className="text-[11px] text-stone-400">свободных мест</p>
-        </div>
-      </div>
-
-      {visibleCategories.length > 0 ? (
-        <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-stone-800">Категории прав</h2>
-            <ShieldCheck size={16} style={{ color: brandColor }} />
+      {/* Instructors */}
+      {instructorCards.length > 0 && (
+        <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+          <div className="flex items-center justify-between px-6 pt-5">
+            <h2 className="text-base font-bold text-slate-900">Инструкторы</h2>
+            <button
+              onClick={onStartBooking}
+              className="text-sm font-semibold"
+              style={{ color: brandColor }}
+            >
+              Записаться →
+            </button>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {visibleCategories.map((category) => (
+          <div className="mt-4 space-y-2 px-4 pb-5">
+            {instructorCards.map(({ branch, instructor, nextSlot }) => {
+              const photo = getInstructorPhoto(instructor)
+              return (
+                <button
+                  key={instructor.id}
+                  type="button"
+                  onClick={() => onSelectCategory(instructor.categories?.[0] ?? '')}
+                  className="flex w-full items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-slate-200 hover:bg-white active:scale-[0.99]"
+                >
+                  <Avatar
+                    initials={instructor.avatarInitials}
+                    color={instructor.avatarColor}
+                    src={photo}
+                    alt={instructor.name}
+                    size="lg"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-900">{instructor.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      {(instructor.categories ?? []).map((cat) => (
+                        <span key={cat} className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">{cat}</span>
+                      ))}
+                      {branch && <span className="truncate text-[11px] text-slate-400">{branch.name}</span>}
+                    </div>
+                  </div>
+                  {nextSlot && (
+                    <div className="shrink-0 text-right">
+                      <p className="text-[11px] font-semibold text-slate-400">ближайший</p>
+                      <p className="text-xs font-bold" style={{ color: brandColor }}>{formatDate(nextSlot.date)}</p>
+                      <p className="text-xs text-slate-500">{nextSlot.time}</p>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Categories */}
+      {visibleCategories.length > 0 && (
+        <div className="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200/60">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900">Категории прав</h2>
+            <ShieldCheck size={18} style={{ color: brandColor }} />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {visibleCategories.map((cat) => (
               <button
-                key={category.code}
-                onClick={() => onSelectCategory(category.code)}
-                className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-left transition hover:border-blue-200 hover:bg-blue-50"
+                key={cat.code}
+                onClick={() => onSelectCategory(cat.code)}
+                className="group rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.98]"
               >
-                <p className="text-sm font-bold text-stone-900">{category.code}</p>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-stone-400">{category.title}</p>
+                <p className="text-lg font-black text-slate-900 group-hover:text-blue-700">{cat.code}</p>
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-400">{cat.title}</p>
               </button>
             ))}
           </div>
         </div>
-      ) : null}
+      )}
 
-      {instructorCards.length > 0 ? (
-        <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-stone-800">Инструкторы</h2>
-            <Button variant="secondary" size="sm" onClick={onStartBooking}>Записаться</Button>
-          </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {instructorCards.map(({ branch, instructor, nextSlot }) => (
-              <button
-                key={instructor.id}
-                type="button"
-                onClick={() => onSelectCategory(instructor.categories?.[0] ?? '')}
-                className="flex w-full items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50"
-              >
-                <Avatar
-                  initials={instructor.avatarInitials}
-                  color={instructor.avatarColor}
-                  src={getInstructorPhoto(instructor)}
-                  alt={instructor.name}
-                  size="md"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-stone-900">{instructor.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-stone-500">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
-                  <p className="mt-0.5 truncate text-xs text-stone-400">{branch?.name ?? 'Филиал уточняется'} · {(instructor.categories ?? []).join(', ')}</p>
-                  <p className="mt-1 text-xs font-semibold text-blue-600">
-                    {nextSlot ? `${formatDate(nextSlot.date)}, ${nextSlot.time}` : 'Время уточняется'}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-soft">
-        <h2 className="text-sm font-bold text-stone-800">Филиалы</h2>
-        <div className="mt-3 space-y-2">
+      {/* Branches */}
+      <div className="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200/60">
+        <h2 className="text-base font-bold text-slate-900">Филиалы</h2>
+        <div className="mt-4 space-y-2">
           {branches.map((branch) => (
-            <div key={branch.id} className="rounded-xl bg-stone-50 px-4 py-3">
-              <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
-              <p className="mt-0.5 text-xs text-stone-500">{branch.address}</p>
-              {branch.phone ? <p className="mt-0.5 text-xs text-stone-400">{formatPhone(branch.phone)}</p> : null}
+            <div key={branch.id} className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3.5">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                <MapPin size={15} style={{ color: brandColor }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">{branch.name}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{branch.address}</p>
+                {branch.phone && <p className="mt-0.5 text-xs text-slate-400">{formatPhone(branch.phone)}</p>}
+              </div>
             </div>
           ))}
         </div>
@@ -335,6 +495,8 @@ function SchoolHome({
     </section>
   )
 }
+
+// ─── StudentDashboard ─────────────────────────────────────────────────────────
 
 function StudentDashboard({
   branch,
@@ -361,64 +523,106 @@ function StudentDashboard({
 
   return (
     <section className="space-y-4">
-      <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold text-white" style={{ backgroundColor: brandColor }}>
-            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" /> : initialsFromName(profile.name)}
+      {/* Profile card */}
+      <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+        {/* Header */}
+        <div className="flex items-center gap-4 px-5 pt-5">
+          <div className="relative shrink-0">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl text-lg font-bold text-white" style={{ backgroundColor: brandColor }}>
+              {profile.avatarUrl
+                ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+                : initialsFromName(profile.name)}
+            </div>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wide">Кабинет ученика</p>
-            <h1 className="truncate text-base font-bold text-stone-950">{profile.name}</h1>
-            <p className="text-xs text-stone-400">{branch?.address ?? 'Филиал уточнит администратор'}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Кабинет ученика</p>
+            <p className="mt-0.5 truncate text-base font-bold text-slate-900">{profile.name}</p>
+            {branch && <p className="mt-0.5 truncate text-xs text-slate-500"><MapPin size={10} className="mr-0.5 inline" />{branch.name}</p>}
+            {profile.pendingBranchId && (
+              <p className="mt-1 text-[11px] font-semibold text-amber-600">⏳ Заявка на смену филиала — ожидает подтверждения</p>
+            )}
           </div>
-          <div className="flex gap-1.5">
-            <button onClick={onOpenSettings} className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:border-stone-300 hover:text-stone-900">
-              <Settings size={14} />
+          <div className="flex gap-1.5 shrink-0">
+            <button onClick={onOpenSettings} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900">
+              <Settings size={15} />
             </button>
-            <button onClick={onLogout} className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:border-stone-300 hover:text-stone-900">
-              <LogOut size={14} />
+            <button onClick={onLogout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:text-red-600">
+              <LogOut size={15} />
             </button>
           </div>
         </div>
 
-        {!isComplete ? (
-          <button onClick={onOpenSettings} className="mt-3 w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-left transition hover:border-rose-300">
-            <p className="text-xs font-semibold text-rose-900">Профиль не заполнен до конца</p>
-            <p className="mt-0.5 text-xs text-rose-700">Добавьте e-mail и пароль для входа с другого устройства.</p>
+        {/* Incomplete profile warning */}
+        {!isComplete && (
+          <button onClick={onOpenSettings} className="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left transition hover:border-amber-300">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">!</div>
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Профиль не заполнен</p>
+              <p className="text-xs text-amber-700">Добавьте e-mail и пароль для входа с других устройств</p>
+            </div>
+            <ChevronRight size={16} className="ml-auto shrink-0 text-amber-400" />
           </button>
-        ) : null}
+        )}
 
-        <div className="mt-3 rounded-xl bg-stone-50 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Ближайшее занятие</p>
-          {nextLesson ? (
-            <>
-              <p className="mt-1 text-sm font-bold text-stone-950">{formatDate(nextLesson.slot.date)}, {nextLesson.slot.time}</p>
-              <p className="mt-0.5 text-xs text-stone-500">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-stone-500">Активных записей пока нет</p>
-          )}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button size="lg" className="w-full" onClick={onStartBooking}>
+        {/* Next lesson */}
+        <div className="mx-5 mt-4 mb-5 overflow-hidden rounded-2xl" style={{ backgroundColor: brandColor }}>
+          <div className="px-4 pt-4 pb-3">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Ближайшее занятие</p>
+            {nextLesson ? (
+              <>
+                <p className="mt-1 text-xl font-black text-white">
+                  {formatDate(nextLesson.slot.date)}, {nextLesson.slot.time} – {addMinutesToTime(nextLesson.slot.time, nextLesson.slot.duration)}
+                </p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  {nextLesson.instructor && (
+                    <Avatar
+                      initials={nextLesson.instructor.avatarInitials}
+                      color="rgba(255,255,255,0.3)"
+                      src={getInstructorPhoto(nextLesson.instructor)}
+                      alt={nextLesson.instructor.name}
+                      size="sm"
+                    />
+                  )}
+                  <p className="text-sm font-medium text-white/80">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
+                </div>
+              </>
+            ) : (
+              <p className="mt-1 text-base font-semibold text-white/80">Нет активных записей</p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 border-t border-white/20 px-4 py-3">
+            <button
+              onClick={onStartBooking}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-white py-2.5 text-sm font-bold transition hover:bg-white/90"
+              style={{ color: brandColor }}
+            >
               Записаться
               <ArrowRight size={14} />
-            </Button>
-            <Button variant="secondary" className="w-full" onClick={onOpenSchedule}>
+            </button>
+            <button
+              onClick={onOpenSchedule}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
               <CalendarDays size={14} />
               Расписание
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-bold text-stone-800">Мои записи</h2>
-          {futureLessons.length > 0 ? <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500">{futureLessons.length}</span> : null}
+      {/* Upcoming lessons */}
+      <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+        <div className="flex items-center justify-between px-6 pt-5">
+          <h2 className="text-base font-bold text-slate-900">Мои записи</h2>
+          {futureLessons.length > 0 && (
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ backgroundColor: `${brandColor}15`, color: brandColor }}>
+              {futureLessons.length}
+            </span>
+          )}
         </div>
-        <div className="mt-2.5 space-y-2">
+        <div className="mt-3 space-y-2 px-4 pb-5">
           {futureLessons.length === 0 ? (
-            <EmptyState title="Записей пока нет" description="Когда вы запишетесь на занятие, оно появится здесь." />
+            <EmptyState title="Записей пока нет" description="Когда вы запишетесь, занятия появятся здесь." />
           ) : (
             futureLessons.map((lesson) => <LessonCard key={lesson.booking.id} lesson={lesson} />)
           )}
@@ -428,103 +632,176 @@ function StudentDashboard({
   )
 }
 
-function ScheduleOverview({ brandColor, onBack, onSelectSlot, school }: {
+// ─── ScheduleOverview ─────────────────────────────────────────────────────────
+
+function ScheduleOverview({
+  brandColor,
+  onBack,
+  onSelectSlot,
+  profile,
+  school,
+}: {
   brandColor: string
   onBack: () => void
   onSelectSlot: (slot: Slot) => void
+  profile: StudentProfile | null
   school: School
 }) {
   const [branchId, setBranchId] = useState('')
   const [category, setCategory] = useState('')
   const [onlyAvailable, setOnlyAvailable] = useState(true)
   const days = useMemo(() => getNext14Days(), [])
-  const branches = db.branches.bySchool(school.id).filter((item) => item.isActive)
-  const instructors = db.instructors.bySchool(school.id).filter((item) => item.isActive)
+  const branches = db.branches.bySchool(school.id).filter((b) => b.isActive)
+  const instructors = db.instructors.bySchool(school.id).filter((i) => i.isActive)
   const categoryOptions = getVisibleDrivingCategories(school, instructors)
+  const studentPhone = profile ? normalizePhone(profile.phone) : null
 
   const visibleSlots = days.map((date) => {
     const slots = db.slots.bySchool(school.id)
-      .filter((slot) => slot.date === date)
-      .filter((slot) => branchId ? slot.branchId === branchId : true)
-      .filter((slot) => onlyAvailable ? slot.status === 'available' : true)
-      .filter((slot) => {
+      .filter((s) => s.date === date)
+      .filter((s) => branchId ? s.branchId === branchId : true)
+      .filter((s) => onlyAvailable ? s.status === 'available' : true)
+      .filter((s) => {
         if (!category) return true
-        const instructor = db.instructors.byId(slot.instructorId)
-        return Boolean(instructor?.categories?.includes(category))
+        const ins = db.instructors.byId(s.instructorId)
+        return Boolean(ins?.categories?.includes(category))
       })
-      .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
+      .sort((a, b) => slotDateTime(a).getTime() - slotDateTime(b).getTime())
     return { date, slots }
-  })
-  const freeCount = visibleSlots.reduce((sum, group) => sum + group.slots.filter((slot) => slot.status === 'available').length, 0)
+  }).filter((g) => g.slots.length > 0)
+
+  const freeCount = visibleSlots.reduce((sum, g) => sum + g.slots.filter((s) => s.status === 'available').length, 0)
+
+  function isMySlot(slot: Slot): boolean {
+    if (!studentPhone) return false
+    const booking = db.bookings.bySchool(school.id).find(
+      (b) => b.slotId === slot.id && b.status === 'active' && b.studentPhone === studentPhone
+    )
+    return Boolean(booking)
+  }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
-      <BackButton onClick={onBack} />
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-base font-bold text-stone-950">Расписание</h1>
-          <p className="text-xs text-stone-400">Ближайшие 14 дней. Нажмите на слот, чтобы записаться.</p>
-        </div>
-        <div className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-center">
-          <p className="text-base font-bold tabular-nums text-blue-700">{freeCount}</p>
-          <p className="text-[10px] font-semibold text-blue-600/70">свободно</p>
-        </div>
-      </div>
-
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
-          <option value="">Все филиалы</option>
-          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-        </select>
-        <select value={category} onChange={(event) => setCategory(event.target.value)} className={selectClassName()}>
-          <option value="">Все категории</option>
-          {categoryOptions.map((item) => <option key={item.code} value={item.code}>{item.code} — {item.title}</option>)}
-        </select>
-        <label className="flex h-9 items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-3 text-sm text-stone-600 cursor-pointer">
-          <input type="checkbox" checked={onlyAvailable} onChange={(event) => setOnlyAvailable(event.target.checked)} />
-          Только свободные
-        </label>
-      </div>
-
-      <div className="mt-3 space-y-2.5">
-        {visibleSlots.map((group) => (
-          <div key={group.date} className="rounded-xl border border-stone-100 bg-stone-50/70 p-2.5">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
-              {group.slots.length > 3 ? <p className="shrink-0 text-[10px] text-stone-400">листайте →</p> : null}
-            </div>
-            {group.slots.length === 0 ? (
-              <div className="rounded-lg bg-white px-3 py-2 text-xs text-stone-400">Нет подходящих мест.</div>
-            ) : (
-              <div className="-mx-0.5 overflow-x-auto px-0.5 pb-0.5">
-                <div className="flex min-w-max gap-2">
-                  {group.slots.map((slot) => {
-                    const instructor = db.instructors.byId(slot.instructorId)
-                    const disabled = slot.status !== 'available'
-                    return (
-                      <button
-                        key={slot.id}
-                        disabled={disabled}
-                        onClick={() => onSelectSlot(slot)}
-                        className="min-h-[68px] w-[108px] shrink-0 rounded-lg border border-stone-200 bg-white px-3 py-2 text-left transition hover:border-blue-300 disabled:bg-stone-100 disabled:text-stone-400"
-                      >
-                        <p className="text-base font-bold text-stone-950">{slot.time}</p>
-                        <p className="mt-1 truncate text-[10px] text-stone-400">{instructor?.name ?? 'Инструктор'}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold" style={{ color: disabled ? undefined : brandColor }}>
-                          {disabled ? 'занято' : formatDuration(slot.duration)}
-                        </p>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+    <section className="space-y-4">
+      {/* Header */}
+      <div className="rounded-3xl bg-white px-5 py-5 shadow-sm ring-1 ring-slate-200/60">
+        <BackButton onClick={onBack} />
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-black text-slate-900">Расписание</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Ближайшие 14 дней</p>
           </div>
-        ))}
+          <div className="rounded-2xl px-3.5 py-2.5 text-center" style={{ backgroundColor: `${brandColor}12` }}>
+            <p className="text-2xl font-black tabular-nums" style={{ color: brandColor }}>{freeCount}</p>
+            <p className="text-[10px] font-semibold text-slate-500">свободно</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-4 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="">Все филиалы</option>
+              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="">Все категории</option>
+              {categoryOptions.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.title}</option>)}
+            </select>
+          </div>
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={onlyAvailable}
+              onChange={(e) => setOnlyAvailable(e.target.checked)}
+              className="h-4 w-4 rounded accent-blue-600"
+            />
+            <span className="text-sm font-medium text-slate-700">Только свободные</span>
+          </label>
+        </div>
       </div>
+
+      {/* Slot list */}
+      {visibleSlots.length === 0 ? (
+        <div className="rounded-3xl bg-white px-5 py-10 shadow-sm ring-1 ring-slate-200/60">
+          <EmptyState title="Нет подходящих мест" description="Попробуйте изменить фильтры или выберите другой период." />
+        </div>
+      ) : (
+        visibleSlots.map((group) => {
+          const dayLabel = formatDayOfWeek(group.date)
+          const dateLabel = formatDateFull(group.date)
+          return (
+            <div key={group.date}>
+              <p className="mb-2 px-1 text-sm font-bold capitalize text-slate-700">{dayLabel}, {dateLabel}</p>
+              <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+                {group.slots.map((slot, idx) => {
+                  const instructor = db.instructors.byId(slot.instructorId)
+                  const branch = db.branches.byId(slot.branchId)
+                  const free = slot.status === 'available'
+                  const mine = isMySlot(slot)
+                  const endTime = addMinutesToTime(slot.time, slot.duration)
+                  const photo = instructor ? getInstructorPhoto(instructor) : undefined
+
+                  return (
+                    <div
+                      key={slot.id}
+                      className={`relative flex items-center gap-4 px-4 py-4 ${idx < group.slots.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    >
+                      {/* Left accent */}
+                      <div
+                        className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full"
+                        style={{ backgroundColor: mine ? '#16a34a' : free ? brandColor : '#e2e8f0' }}
+                      />
+
+                      {/* Instructor photo */}
+                      <div className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                        {photo
+                          ? <img src={photo} alt={instructor?.name} className="h-full w-full object-cover" />
+                          : <Avatar initials={instructor?.avatarInitials ?? '?'} color={instructor?.avatarColor} size="md" />}
+                      </div>
+
+                      {/* Info */}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-black text-slate-900">{slot.time} – {endTime}</p>
+                        <p className="mt-0.5 text-sm font-medium text-slate-600">{formatDuration(slot.duration)}</p>
+                        <p className="mt-0.5 truncate text-xs text-slate-400">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
+                      </div>
+
+                      {/* Status + CTA */}
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        {mine ? <BookedBadge /> : free ? <FreeBadge /> : (
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">занято</span>
+                        )}
+                        {free && !mine && (
+                          <button
+                            onClick={() => onSelectSlot(slot)}
+                            className="rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95"
+                            style={{ backgroundColor: brandColor }}
+                          >
+                            Записаться
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })
+      )}
     </section>
   )
 }
+
+// ─── LoginPanel ───────────────────────────────────────────────────────────────
 
 function LoginPanel({ errors, login, onBack, onChange, onLogin, submitting }: {
   errors: Partial<LoginState>
@@ -535,68 +812,172 @@ function LoginPanel({ errors, login, onBack, onChange, onLogin, submitting }: {
   submitting: boolean
 }) {
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
-      <BackButton onClick={onBack} />
-      <h1 className="text-base font-bold text-stone-950">Вход в кабинет</h1>
-      <p className="mt-1 text-xs text-stone-400">Телефон и пароль, которые указывали при создании кабинета.</p>
-      <div className="mt-4 space-y-3">
-        <Input label="Телефон" value={login.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => onChange({ phone: event.target.value })} />
-        <Input label="Пароль" type="password" value={login.password} error={errors.password} placeholder="Ваш пароль" onChange={(event) => onChange({ password: event.target.value })} />
-        <Button size="lg" className="w-full" disabled={submitting} onClick={onLogin}>
+    <section className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+      <div className="px-6 pt-6">
+        <BackButton onClick={onBack} />
+        <h1 className="text-xl font-black text-slate-900">Вход в кабинет</h1>
+        <p className="mt-1 text-sm text-slate-500">Телефон и пароль, которые указывали при создании кабинета</p>
+      </div>
+      <div className="space-y-4 px-6 pb-6 pt-5">
+        <Input
+          label="Телефон"
+          value={login.phone}
+          error={errors.phone}
+          placeholder="+7 (999) 123-45-67"
+          onChange={(e) => onChange({ phone: e.target.value })}
+        />
+        <Input
+          label="Пароль"
+          type="password"
+          value={login.password}
+          error={errors.password}
+          placeholder="Ваш пароль"
+          onChange={(e) => onChange({ password: e.target.value })}
+        />
+        <button
+          disabled={submitting}
+          onClick={onLogin}
+          className="flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: '#2563EB' }}
+        >
           {submitting ? 'Проверяем...' : 'Войти'}
-        </Button>
+        </button>
       </div>
     </section>
   )
 }
 
-function ProfileSettings({ branch, branchRequestNote, form, onBack, onBranchRequestNoteChange, onChange, onCopy, onRequestBranchChange, onSave, profile }: {
+// ─── ProfileSettings ──────────────────────────────────────────────────────────
+
+function ProfileSettings({
+  branch,
+  branches,
+  form,
+  onAvatarFile,
+  onBack,
+  onChange,
+  onCopy,
+  onOpenBranchChange,
+  onSave,
+  profile,
+  submitting,
+}: {
   branch: Branch | null
-  branchRequestNote: string
+  branches: Branch[]
   form: FormState
+  onAvatarFile: (file: File) => void
   onBack: () => void
-  onBranchRequestNoteChange: (value: string) => void
   onChange: (patch: Partial<FormState>) => void
   onCopy: () => void
-  onRequestBranchChange: () => void
+  onOpenBranchChange: () => void
   onSave: () => void
   profile: StudentProfile
+  submitting: boolean
 }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-card">
-      <BackButton onClick={onBack} label="В кабинет" />
-      <h1 className="text-base font-bold text-stone-950">Настройки профиля</h1>
-      <p className="mt-1 text-xs text-stone-400">ФИО меняйте через администратора, если ошибка в документах.</p>
-      <div className="mt-3 rounded-xl bg-stone-50 px-4 py-3">
-        <p className="text-sm font-semibold text-stone-900">{profile.name}</p>
-        <p className="text-xs text-stone-400">{branch?.address ?? 'Филиал не закреплен'}</p>
+    <section className="space-y-4">
+      {/* Avatar + profile info */}
+      <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+        <div className="px-6 pt-6">
+          <BackButton onClick={onBack} label="В кабинет" />
+          <h1 className="text-xl font-black text-slate-900">Настройки профиля</h1>
+        </div>
+
+        {/* Avatar upload */}
+        <div className="mt-5 flex flex-col items-center pb-6">
+          <div className="relative">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl text-2xl font-black text-white shadow-md" style={{ backgroundColor: '#2563EB' }}>
+              {form.avatarUrl
+                ? <img src={form.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+                : initialsFromName(profile.name)}
+            </div>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-800 text-white shadow-md transition hover:bg-slate-700"
+            >
+              <Camera size={14} />
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onAvatarFile(f) }}
+            />
+          </div>
+          <p className="mt-3 text-base font-bold text-slate-900">{profile.name}</p>
+          <p className="mt-0.5 text-sm text-slate-500">{branch?.name ?? 'Филиал не закреплён'}</p>
+          {branch?.address && <p className="mt-0.5 text-xs text-slate-400">{branch.address}</p>}
+        </div>
       </div>
-      <div className="mt-3 space-y-3">
-        <Input label="Телефон" value={form.phone} onChange={(event) => onChange({ phone: event.target.value })} />
-        <Input label="E-mail" type="email" value={form.email} onChange={(event) => onChange({ email: event.target.value })} />
-        <Input label="Новый пароль" type="password" helperText="Оставьте пустым, если не хотите менять." value={form.password} onChange={(event) => onChange({ password: event.target.value })} />
-        <Input label="Аватарка" placeholder="Ссылка на фото, можно оставить пустой" value={form.avatarUrl} onChange={(event) => onChange({ avatarUrl: event.target.value })} />
-        <Textarea
-          label="Запрос на смену филиала"
-          rows={2}
-          placeholder="Например: хочу заниматься ближе к дому, филиал на Ленина."
-          value={branchRequestNote}
-          onChange={(event) => onBranchRequestNoteChange(event.target.value)}
-        />
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button size="lg" onClick={onSave}>Сохранить</Button>
-          <Button variant="secondary" onClick={onCopy}>
-            <Copy size={14} />
-            Скопировать доступ
-          </Button>
-          <Button variant="secondary" className="sm:col-span-2" onClick={onRequestBranchChange}>
-            Запросить смену филиала
-          </Button>
+
+      {/* Branch change */}
+      {branches.length > 1 && (
+        <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+          <div className="px-6 py-5">
+            <h2 className="text-sm font-bold text-slate-700">Филиал</h2>
+            {profile.pendingBranchId ? (
+              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-sm font-semibold text-amber-900">Заявка отправлена</p>
+                <p className="mt-0.5 text-xs text-amber-700">Администратор рассмотрит запрос на смену филиала и свяжется с вами.</p>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenBranchChange}
+                className="mt-3 flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 transition hover:border-slate-300 hover:bg-white"
+              >
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-slate-900">Сменить филиал</p>
+                  <p className="mt-0.5 text-xs text-slate-500">Текущий: {branch?.name ?? 'не указан'}</p>
+                </div>
+                <ChevronRight size={16} className="text-slate-400" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Form */}
+      <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+        <div className="px-6 py-5">
+          <h2 className="mb-4 text-sm font-bold text-slate-700">Контакты и доступ</h2>
+          <div className="space-y-4">
+            <Input label="Телефон" value={form.phone} onChange={(e) => onChange({ phone: e.target.value })} />
+            <Input label="E-mail" type="email" value={form.email} onChange={(e) => onChange({ email: e.target.value })} />
+            <Input
+              label="Новый пароль"
+              type="password"
+              helperText="Оставьте пустым, если не хотите менять"
+              value={form.password}
+              onChange={(e) => onChange({ password: e.target.value })}
+            />
+          </div>
+          <div className="mt-5 space-y-2.5">
+            <button
+              disabled={submitting}
+              onClick={onSave}
+              className="flex h-12 w-full items-center justify-center rounded-2xl text-sm font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#2563EB' }}
+            >
+              {submitting ? 'Сохраняем...' : 'Сохранить'}
+            </button>
+            <button
+              onClick={onCopy}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              <Copy size={14} />
+              Скопировать логин и пароль
+            </button>
+          </div>
         </div>
       </div>
     </section>
   )
 }
+
+// ─── SchoolPage (main) ────────────────────────────────────────────────────────
 
 export function SchoolPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -604,6 +985,7 @@ export function SchoolPage() {
   const { showToast } = useToast()
   const sessionId = useRef(generateId('session'))
   const finalizing = useRef(false)
+
   const [school, setSchool] = useState<School | null>(null)
   const [missing, setMissing] = useState(false)
   const [branches, setBranches] = useState<Branch[]>([])
@@ -623,72 +1005,52 @@ export function SchoolPage() {
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([])
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
-  const [branchRequestNote, setBranchRequestNote] = useState('')
+  const [branchChangeOpen, setBranchChangeOpen] = useState(false)
 
   useEffect(() => {
     if (!slug) return
-
-    const applySchool = (nextSchool: School, nextBranches: Branch[], nextInstructors: Instructor[]) => {
-      setSchool(nextSchool)
-      setBranches(nextBranches.filter((branch) => branch.isActive))
-      setInstructors(nextInstructors.filter((instructor) => instructor.isActive))
-      const savedProfile = loadStudentProfile(nextSchool.id)
-      setProfile(savedProfile)
-      if (savedProfile) {
-        setForm({
-          name: savedProfile.name,
-          phone: savedProfile.phone,
-          email: savedProfile.email,
-          password: '',
-          avatarUrl: savedProfile.avatarUrl,
-        })
+    const applySchool = (s: School, b: Branch[], ins: Instructor[]) => {
+      setSchool(s)
+      setBranches(b.filter((x) => x.isActive))
+      setInstructors(ins.filter((x) => x.isActive))
+      const saved = loadStudentProfile(s.id)
+      setProfile(saved)
+      if (saved) {
+        setForm({ name: saved.name, phone: saved.phone, email: saved.email, password: '', avatarUrl: saved.avatarUrl })
         setView('dashboard')
       }
     }
-
     void getPublicSchoolBundle(slug)
       .then((bundle) => {
         if (!bundle) {
-          const fallback = db.schools.bySlug(slug)
-          if (!fallback) {
-            setMissing(true)
-            return
-          }
-          applySchool(fallback, db.branches.bySchool(fallback.id), db.instructors.bySchool(fallback.id))
+          const fb = db.schools.bySlug(slug)
+          if (!fb) { setMissing(true); return }
+          applySchool(fb, db.branches.bySchool(fb.id), db.instructors.bySchool(fb.id))
           return
         }
-
         db.schools.upsert(bundle.school)
-        bundle.branches.forEach((branch) => db.branches.upsert(branch))
-        bundle.instructors.forEach((instructor) => db.instructors.upsert(instructor))
-        bundle.slots.forEach((slot) => db.slots.upsert(slot))
-        bundle.students.forEach((student) => db.students.upsert(student))
-        bundle.bookings.forEach((booking) => db.bookings.upsert(booking))
+        bundle.branches.forEach((x) => db.branches.upsert(x))
+        bundle.instructors.forEach((x) => db.instructors.upsert(x))
+        bundle.slots.forEach((x) => db.slots.upsert(x))
+        bundle.students.forEach((x) => db.students.upsert(x))
+        bundle.bookings.forEach((x) => db.bookings.upsert(x))
         applySchool(bundle.school, bundle.branches, bundle.instructors)
       })
       .catch(() => {
-        const fallback = db.schools.bySlug(slug)
-        if (!fallback) {
-          setMissing(true)
-          return
-        }
-        applySchool(fallback, db.branches.bySchool(fallback.id), db.instructors.bySchool(fallback.id))
+        const fb = db.schools.bySlug(slug ?? '')
+        if (!fb) { setMissing(true); return }
+        applySchool(fb, db.branches.bySchool(fb.id), db.instructors.bySchool(fb.id))
       })
   }, [slug])
 
   useEffect(() => {
-    const refreshLock = () => {
-      selectedSlots.forEach((slot) => acquireSlotLock(slot.id, sessionId.current))
-    }
-    refreshLock()
-    const id = window.setInterval(refreshLock, 30_000)
-    return () => {
-      window.clearInterval(id)
-      if (!finalizing.current) releaseSessionLocks(sessionId.current)
-    }
+    const refresh = () => selectedSlots.forEach((s) => acquireSlotLock(s.id, sessionId.current))
+    refresh()
+    const id = window.setInterval(refresh, 30_000)
+    return () => { window.clearInterval(id); if (!finalizing.current) releaseSessionLocks(sessionId.current) }
   }, [selectedSlots])
 
-  const brandColor = school?.primaryColor === '#1f5b43' ? '#3157C8' : (school?.primaryColor ?? '#3157C8')
+  const brandColor = school?.primaryColor === '#1f5b43' ? '#2563EB' : (school?.primaryColor ?? '#2563EB')
   const dates = useMemo(() => getNext7Days(), [])
   const maxSlots = Math.max(1, school?.maxSlotsPerBooking ?? 1)
   const currentStep = stepOrder.indexOf(step) + 1
@@ -704,84 +1066,56 @@ export function SchoolPage() {
     if (!school || !profile) return []
     const phone = normalizePhone(profile.phone)
     return db.bookings.bySchool(school.id)
-      .filter((booking) => booking.status === 'active' && booking.studentPhone === phone)
+      .filter((b) => b.status === 'active' && b.studentPhone === phone)
       .map((booking) => {
         const slot = db.slots.byId(booking.slotId)
         if (!slot || slotDateTime(slot) <= new Date()) return null
-        return {
-          booking,
-          slot,
-          branch: db.branches.byId(booking.branchId),
-          instructor: db.instructors.byId(booking.instructorId),
-        }
+        return { booking, slot, branch: db.branches.byId(booking.branchId), instructor: db.instructors.byId(booking.instructorId) }
       })
-      .filter((item): item is ResolvedLesson => Boolean(item))
-      .sort((left, right) => slotDateTime(left.slot).getTime() - slotDateTime(right.slot).getTime())
+      .filter((x): x is ResolvedLesson => Boolean(x))
+      .sort((a, b) => slotDateTime(a.slot).getTime() - slotDateTime(b.slot).getTime())
   }, [profile, school])
 
-  const visibleInstructors = useMemo(() => {
-    return instructors
-      .filter((instructor) => selectedBranch ? instructor.branchId === selectedBranch.id : true)
-      .filter((instructor) => selectedCategory ? instructor.categories?.includes(selectedCategory) : true)
-  }, [instructors, selectedBranch, selectedCategory])
-  const bookingCategoryOptions = useMemo(() => {
-    return school ? getVisibleDrivingCategories(school, instructors) : []
-  }, [instructors, school])
+  const visibleInstructors = useMemo(() =>
+    instructors
+      .filter((i) => selectedBranch ? i.branchId === selectedBranch.id : true)
+      .filter((i) => selectedCategory ? i.categories?.includes(selectedCategory) : true),
+    [instructors, selectedBranch, selectedCategory])
+
+  const bookingCategoryOptions = useMemo(() =>
+    school ? getVisibleDrivingCategories(school, instructors) : [],
+    [instructors, school])
 
   const slotsByDate = useMemo(() => {
     if (!selectedInstructor) return []
-    return selectedDates.map((date) => ({
-      date,
-      slots: getAvailableSlots(selectedInstructor.id, date, sessionId.current),
-    }))
+    return selectedDates.map((date) => ({ date, slots: getAvailableSlots(selectedInstructor.id, date, sessionId.current) }))
   }, [selectedDates, selectedInstructor])
 
   function resetBooking(): void {
     releaseSessionLocks(sessionId.current)
-    setStep('category')
-    setSelectedCategory('')
-    setSelectedBranch(null)
-    setSelectedInstructor(null)
-    setSelectedDates([])
-    setSelectedSlots([])
-    setErrors({})
-    setCreatedBookingId(null)
+    setStep('category'); setSelectedCategory(''); setSelectedBranch(null)
+    setSelectedInstructor(null); setSelectedDates([]); setSelectedSlots([])
+    setErrors({}); setCreatedBookingId(null)
   }
 
   function startBooking(category = ''): void {
-    if (profile && !isProfileComplete(profile)) {
-      setProfileRequiredOpen(true)
-      return
-    }
-    resetBooking()
-    setSelectedCategory(category)
-    setView('booking')
+    if (profile && !isProfileComplete(profile)) { setProfileRequiredOpen(true); return }
+    resetBooking(); setSelectedCategory(category); setView('booking')
     if (category) setStep('branch')
   }
 
   function backFromBooking(): void {
-    resetBooking()
-    setView(profile ? 'dashboard' : 'home')
+    resetBooking(); setView(profile ? 'dashboard' : 'home')
   }
 
   function selectSlot(slot: Slot): void {
-    const active = selectedSlots.some((item) => item.id === slot.id)
-    if (active) {
-      releaseSlotLock(slot.id, sessionId.current)
-      setSelectedSlots((current) => current.filter((item) => item.id !== slot.id))
-      return
-    }
-    if (selectedSlots.length >= maxSlots) {
-      showToast(`Можно выбрать не больше ${maxSlots}.`, 'error')
-      return
-    }
+    const active = selectedSlots.some((s) => s.id === slot.id)
+    if (active) { releaseSlotLock(slot.id, sessionId.current); setSelectedSlots((c) => c.filter((s) => s.id !== slot.id)); return }
+    if (selectedSlots.length >= maxSlots) { showToast(`Можно выбрать не больше ${maxSlots}.`, 'error'); return }
     const result = acquireSlotLock(slot.id, sessionId.current)
-    if (!result.ok) {
-      showToast(result.error ?? 'Это время уже недоступно.', 'error')
-      return
-    }
+    if (!result.ok) { showToast(result.error ?? 'Это время уже недоступно.', 'error'); return }
     const fresh = db.slots.byId(slot.id)
-    setSelectedSlots((current) => [...current, fresh ?? slot].sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime()))
+    setSelectedSlots((c) => [...c, fresh ?? slot].sort((a, b) => slotDateTime(a).getTime() - slotDateTime(b).getTime()))
   }
 
   function validateDetails(requireEmail = false): boolean {
@@ -796,49 +1130,29 @@ export function SchoolPage() {
 
   async function submitBooking(): Promise<void> {
     if (!school || selectedSlots.length === 0 || !validateDetails()) return
-    finalizing.current = true
-    setSubmitting(true)
+    finalizing.current = true; setSubmitting(true)
     try {
-      const result = await createSupabaseBooking({
-        schoolId: school.id,
-        studentName: form.name,
-        studentPhone: form.phone,
-        slotIds: selectedSlots.map((slot) => slot.id),
-      })
+      const result = await createSupabaseBooking({ schoolId: school.id, studentName: form.name, studentPhone: form.phone, slotIds: selectedSlots.map((s) => s.id) })
       const student = getOrCreateStudent(school.id, form.name, form.phone)
-      selectedSlots.forEach((slot, index) => {
-        const bookingId = result.bookingIds[index] ?? generateId('booking')
+      selectedSlots.forEach((slot, idx) => {
+        const bookingId = result.bookingIds[idx] ?? generateId('booking')
         const booking: Booking = {
-          id: bookingId,
-          bookingGroupId: result.bookingGroupId || undefined,
-          schoolId: school.id,
-          slotId: slot.id,
-          branchId: slot.branchId,
-          instructorId: slot.instructorId,
-          studentId: student.id,
-          studentName: student.name,
-          studentPhone: student.normalizedPhone,
-          studentEmail: student.email,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          id: bookingId, bookingGroupId: result.bookingGroupId || undefined,
+          schoolId: school.id, slotId: slot.id, branchId: slot.branchId, instructorId: slot.instructorId,
+          studentId: student.id, studentName: student.name, studentPhone: student.normalizedPhone,
+          studentEmail: student.email, status: 'active',
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         }
         db.bookings.upsert(booking)
         db.slots.upsert({ ...slot, status: 'booked', bookingId })
       })
       releaseSessionLocks(sessionId.current)
-      setCreatedBookingId(result.bookingIds[0] ?? null)
-      setSelectedSlots([])
-      setSubmitting(false)
-      finalizing.current = false
-      if (profile) {
-        navigate(`/booking/${result.bookingIds[0]}`)
-        return
-      }
+      setCreatedBookingId(result.bookingIds[0] ?? null); setSelectedSlots([])
+      setSubmitting(false); finalizing.current = false
+      if (profile) { navigate(`/booking/${result.bookingIds[0]}`); return }
       setStep('profile')
     } catch (error) {
-      setSubmitting(false)
-      finalizing.current = false
+      setSubmitting(false); finalizing.current = false
       showToast(error instanceof Error ? error.message : 'Не удалось создать запись.', 'error')
       setStep('time')
     }
@@ -849,33 +1163,16 @@ export function SchoolPage() {
     setSubmitting(true)
     try {
       const saved = saveStudentProfile(school.id, form, { passwordSet: true })
-      const result = await updateStudentProfileInSupabase({
-        schoolId: school.id,
-        name: form.name,
-        phone: form.phone,
-        email: form.email,
-        password: form.password,
-        avatarUrl: form.avatarUrl,
-      })
+      const result = await updateStudentProfileInSupabase({ schoolId: school.id, name: form.name, phone: form.phone, email: form.email, password: form.password, avatarUrl: form.avatarUrl })
       const student = db.students.byNormalizedPhone(school.id, result.normalizedPhone)
-      if (student) {
-        db.students.upsert({
-          ...student,
-          name: form.name.trim(),
-          email: form.email.trim(),
-          avatarUrl: form.avatarUrl.trim() || undefined,
-          hasPassword: true,
-        })
-      }
+      if (student) db.students.upsert({ ...student, name: form.name.trim(), email: form.email.trim(), avatarUrl: form.avatarUrl.trim() || undefined, hasPassword: true })
       setProfile(saved)
       showToast('Кабинет ученика создан.', 'success')
       if (createdBookingId) navigate(`/booking/${createdBookingId}`)
       else setView('dashboard')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось сохранить профиль.', 'error')
-    } finally {
-      setSubmitting(false)
-    }
+    } finally { setSubmitting(false) }
   }
 
   async function loginStudent(): Promise<void> {
@@ -888,147 +1185,127 @@ export function SchoolPage() {
     setSubmitting(true)
     try {
       const student = await loginStudentInSupabase({ schoolId: school.id, phone: login.phone, password: login.password })
-      if (!student) {
-        showToast('Телефон или пароль не подошли.', 'error')
-        return
-      }
-      const saved = saveStudentProfile(school.id, {
-        name: student.name,
-        phone: student.phone,
-        email: student.email,
-        password: '',
-        avatarUrl: student.avatarUrl,
-      }, { assignedBranchId: student.assignedBranchId, passwordSet: true })
-      setProfile(saved)
-      setForm({ name: saved.name, phone: saved.phone, email: saved.email, password: '', avatarUrl: saved.avatarUrl })
-      setView('dashboard')
-      showToast('Вы вошли в кабинет.', 'success')
+      if (!student) { showToast('Телефон или пароль не подошли.', 'error'); return }
+      const saved = saveStudentProfile(school.id, { name: student.name, phone: student.phone, email: student.email, password: '', avatarUrl: student.avatarUrl }, { assignedBranchId: student.assignedBranchId, passwordSet: true })
+      setProfile(saved); setForm({ name: saved.name, phone: saved.phone, email: saved.email, password: '', avatarUrl: saved.avatarUrl })
+      setView('dashboard'); showToast('Вы вошли в кабинет.', 'success')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось войти.', 'error')
-    } finally {
-      setSubmitting(false)
-    }
+    } finally { setSubmitting(false) }
   }
 
   async function saveSettings(): Promise<void> {
-    if (!school || !profile) return
-    if (!validateDetails(false)) return
+    if (!school || !profile || !validateDetails(false)) return
     setSubmitting(true)
     try {
-      const saved = saveStudentProfile(school.id, form, {
-        assignedBranchId: profile.assignedBranchId,
-        branchChangeRequestedAt: profile.branchChangeRequestedAt,
-        passwordSet: profile.passwordSet || Boolean(form.password.trim()),
-      })
+      const saved = saveStudentProfile(school.id, form, { assignedBranchId: profile.assignedBranchId, pendingBranchId: profile.pendingBranchId, branchChangeRequestedAt: profile.branchChangeRequestedAt, passwordSet: profile.passwordSet || Boolean(form.password.trim()) })
       if (form.email.trim() && form.password.trim()) {
-        await updateStudentProfileInSupabase({
-          schoolId: school.id,
-          name: saved.name,
-          phone: saved.phone,
-          email: saved.email,
-          password: form.password.trim(),
-          avatarUrl: saved.avatarUrl,
-        })
+        await updateStudentProfileInSupabase({ schoolId: school.id, name: saved.name, phone: saved.phone, email: saved.email, password: form.password.trim(), avatarUrl: saved.avatarUrl })
       }
-      setProfile(saved)
-      showToast('Профиль сохранен.', 'success')
-      setView('dashboard')
+      setProfile(saved); showToast('Профиль сохранен.', 'success'); setView('dashboard')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось сохранить профиль.', 'error')
-    } finally {
-      setSubmitting(false)
-    }
+    } finally { setSubmitting(false) }
   }
 
   async function copyCredentials(): Promise<void> {
     const loginText = normalizePhone(form.phone || profile?.phone || '')
     const password = form.password.trim()
-    if (!loginText || !password) {
-      showToast('Введите телефон и пароль перед копированием.', 'error')
-      return
-    }
+    if (!loginText || !password) { showToast('Введите телефон и пароль перед копированием.', 'error'); return }
     await navigator.clipboard.writeText(`Логин: ${loginText}\nПароль: ${password}`)
     showToast('Логин и пароль скопированы.', 'success')
   }
 
-  async function requestBranchChange(): Promise<void> {
+  async function handleAvatarFile(file: File): Promise<void> {
+    try {
+      const dataUrl = await compressAvatar(file)
+      setForm((c) => ({ ...c, avatarUrl: dataUrl }))
+    } catch {
+      showToast('Не удалось загрузить фото.', 'error')
+    }
+  }
+
+  async function submitBranchChange(branchId: string): Promise<void> {
     if (!school || !profile) return
-    const note = branchRequestNote.trim() || 'Прошу связаться для смены филиала.'
-    await requestBranchChangeInSupabase({ schoolId: school.id, phone: profile.phone, note })
-    const saved = saveStudentProfile(school.id, form, {
-      ...profile,
-      branchChangeRequestedAt: new Date().toISOString(),
-    })
+    setBranchChangeOpen(false)
+    const targetBranch = branches.find((b) => b.id === branchId)
+    await requestBranchChangeInSupabase({ schoolId: school.id, phone: profile.phone, note: `Запрос на смену филиала на: ${targetBranch?.name ?? branchId}` })
+    const saved = saveStudentProfile(school.id, form, { ...profile, pendingBranchId: branchId, branchChangeRequestedAt: new Date().toISOString() })
     setProfile(saved)
-    setBranchRequestNote('')
-    showToast('Запрос отправлен администратору.', 'success')
+    showToast('Заявка отправлена. Администратор свяжется с вами.', 'success')
   }
 
   if (missing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
-        <EmptyState title="Автошкола не найдена" description="Проверьте ссылку или откройте страницу автошколы Вираж." action={<Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>} />
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+        <EmptyState title="Автошкола не найдена" description="Проверьте ссылку или откройте страницу автошколы." action={<Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>} />
       </div>
     )
   }
 
-  if (!school) return <div className="min-h-screen bg-stone-50" />
+  if (!school) return <div className="min-h-screen bg-slate-100" />
 
   return (
-    <div className="min-h-screen bg-[#f6f4ef]">
-      <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1120px] items-center justify-between px-4 py-3">
+    <div className="min-h-screen bg-slate-100">
+      {/* Header */}
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <button onClick={() => setView(profile ? 'dashboard' : 'home')} className="flex min-w-0 items-center gap-3 text-left">
             {school.logoUrl ? (
-              <div className="h-10 w-10 overflow-hidden rounded-xl border border-stone-200 bg-white">
+              <div className="h-10 w-10 overflow-hidden rounded-xl border border-slate-200">
                 <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
               </div>
-            ) : (
-              <VirazhLogo color={brandColor} />
-            )}
+            ) : <VirazhLogo color={brandColor} />}
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-semibold text-stone-950">{school.name}</p>
-              <p className="text-xs text-stone-500">
-                {view === 'dashboard' ? 'Кабинет ученика' : view === 'booking' ? 'Запись на занятие' : view === 'schedule' ? 'Расписание' : 'Страница автошколы'}
+              <p className="truncate text-[15px] font-bold text-slate-900">{school.name}</p>
+              <p className="text-xs text-slate-500">
+                {view === 'dashboard' ? 'Кабинет ученика' : view === 'booking' ? 'Запись на занятие' : view === 'schedule' ? 'Расписание' : view === 'settings' ? 'Настройки' : view === 'login' ? 'Вход' : 'Страница школы'}
               </p>
             </div>
           </button>
-          {school.phone ? (
-            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 sm:flex">
-              <Phone size={16} />
+          {school.phone && (
+            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:flex">
+              <Phone size={15} />
               {formatPhone(school.phone)}
             </a>
-          ) : null}
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1120px] px-4 py-4 pb-20">
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <main className="mx-auto max-w-2xl px-4 py-4 pb-28">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+
           {view === 'login' ? (
             <LoginPanel
-              errors={loginErrors}
-              login={login}
+              errors={loginErrors} login={login}
               onBack={() => setView('home')}
-              onChange={(patch) => {
-                setLogin((current) => ({ ...current, ...patch }))
-                setLoginErrors({})
-              }}
+              onChange={(patch) => { setLogin((c) => ({ ...c, ...patch })); setLoginErrors({}) }}
               onLogin={() => void loginStudent()}
               submitting={submitting}
             />
           ) : view === 'settings' && profile ? (
-            <ProfileSettings
-              branch={profileBranch}
-              branchRequestNote={branchRequestNote}
-              form={form}
-              onBack={() => setView('dashboard')}
-              onBranchRequestNoteChange={setBranchRequestNote}
-              onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
-              onCopy={() => void copyCredentials()}
-              onRequestBranchChange={() => void requestBranchChange()}
-              onSave={() => void saveSettings()}
-              profile={profile}
-            />
+            <>
+              <ProfileSettings
+                branch={profileBranch}
+                branches={branches}
+                form={form}
+                onAvatarFile={(f) => void handleAvatarFile(f)}
+                onBack={() => setView('dashboard')}
+                onChange={(patch) => setForm((c) => ({ ...c, ...patch }))}
+                onCopy={() => void copyCredentials()}
+                onOpenBranchChange={() => setBranchChangeOpen(true)}
+                onSave={() => void saveSettings()}
+                profile={profile}
+                submitting={submitting}
+              />
+              <BranchChangeModal
+                branches={branches}
+                currentBranchId={profile.assignedBranchId ?? branches[0]?.id}
+                onClose={() => setBranchChangeOpen(false)}
+                onSubmit={(id) => void submitBranchChange(id)}
+                open={branchChangeOpen}
+              />
+            </>
           ) : view === 'schedule' ? (
             <ScheduleOverview
               brandColor={brandColor}
@@ -1036,14 +1313,12 @@ export function SchoolPage() {
               onSelectSlot={(slot) => {
                 const instructor = db.instructors.byId(slot.instructorId)
                 const branch = db.branches.byId(slot.branchId)
-                setSelectedBranch(branch)
-                setSelectedInstructor(instructor)
+                setSelectedBranch(branch); setSelectedInstructor(instructor)
                 setSelectedCategory(instructor?.categories?.[0] ?? '')
-                setSelectedDates([slot.date])
-                setSelectedSlots([slot])
-                setView('booking')
-                setStep('details')
+                setSelectedDates([slot.date]); setSelectedSlots([slot])
+                setView('booking'); setStep('details')
               }}
+              profile={profile}
               school={school}
             />
           ) : view === 'dashboard' && profile ? (
@@ -1052,85 +1327,103 @@ export function SchoolPage() {
               brandColor={brandColor}
               futureLessons={futureLessons}
               isComplete={isProfileComplete(profile)}
-              onLogout={() => {
-                removeStudentProfile(school.id)
-                setProfile(null)
-                setForm(emptyForm)
-                setView('home')
-              }}
+              onLogout={() => { removeStudentProfile(school.id); setProfile(null); setForm(emptyForm); setView('home') }}
               onOpenSchedule={() => setView('schedule')}
               onOpenSettings={() => setView('settings')}
               onStartBooking={() => startBooking()}
               profile={profile}
             />
           ) : view === 'booking' ? (
-            <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-card">
+            <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
               <StepHeader current={Math.min(currentStep, totalSteps)} total={totalSteps} />
-              <div className="px-5 py-4">
-                {step === 'category' ? (
+              <div className="px-5 py-5">
+
+                {step === 'category' && (
                   <>
                     <BackButton onClick={backFromBooking} label={profile ? 'В кабинет' : 'На главную'} />
-                    <h1 className="text-base font-bold text-stone-950">Какая категория нужна?</h1>
-                    <p className="mt-1 text-xs text-stone-400">Если не уверены — пропустите, выберете с инструктором.</p>
-                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {bookingCategoryOptions.map((category) => (
-                        <button key={category.code} onClick={() => { setSelectedCategory(category.code); setStep('branch') }} className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-left hover:border-blue-300 hover:bg-blue-50 transition">
-                          <p className="text-sm font-bold text-stone-950">{category.code}</p>
-                          <p className="mt-0.5 line-clamp-2 text-[11px] text-stone-400">{category.title}</p>
+                    <h1 className="text-xl font-black text-slate-900">Какая категория?</h1>
+                    <p className="mt-1 text-sm text-slate-500">Если не уверены — пропустите</p>
+                    <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                      {bookingCategoryOptions.map((cat) => (
+                        <button
+                          key={cat.code}
+                          onClick={() => { setSelectedCategory(cat.code); setStep('branch') }}
+                          className="group rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.98]"
+                        >
+                          <p className="text-2xl font-black text-slate-900 group-hover:text-blue-700">{cat.code}</p>
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-400">{cat.title}</p>
                         </button>
                       ))}
                     </div>
-                    <Button variant="secondary" className="mt-3 w-full" onClick={() => setStep('branch')}>Пропустить</Button>
+                    <button onClick={() => setStep('branch')} className="mt-4 w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50">
+                      Пропустить, выберу с инструктором
+                    </button>
                   </>
-                ) : null}
+                )}
 
-                {step === 'branch' ? (
+                {step === 'branch' && (
                   <>
                     <BackButton onClick={() => setStep('category')} />
-                    <h1 className="text-base font-bold text-stone-950">Выберите филиал</h1>
-                    <div className="mt-3 space-y-2">
+                    <h1 className="text-xl font-black text-slate-900">Выберите филиал</h1>
+                    <div className="mt-4 space-y-2">
                       {branches.map((branch) => (
-                        <button key={branch.id} onClick={() => { setSelectedBranch(branch); setSelectedInstructor(null); setStep('instructor') }} className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-blue-300 transition">
-                          <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
-                          <p className="mt-0.5 text-xs text-stone-400">{branch.address}</p>
+                        <button
+                          key={branch.id}
+                          onClick={() => { setSelectedBranch(branch); setSelectedInstructor(null); setStep('instructor') }}
+                          className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.99]"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+                            <MapPin size={16} className="text-slate-500" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-slate-900">{branch.name}</p>
+                            <p className="mt-0.5 text-sm text-slate-500">{branch.address}</p>
+                          </div>
+                          <ChevronRight size={16} className="shrink-0 text-slate-400" />
                         </button>
                       ))}
                     </div>
                   </>
-                ) : null}
+                )}
 
-                {step === 'instructor' ? (
+                {step === 'instructor' && (
                   <>
                     <BackButton onClick={() => setStep('branch')} />
-                    <h1 className="text-base font-bold text-stone-950">Выберите инструктора</h1>
-                    <div className="mt-3 space-y-2">
-                      {visibleInstructors.length === 0 ? <EmptyState title="Инструкторов нет" description="Выберите другой филиал или категорию." /> : visibleInstructors.map((instructor) => (
-                        <button key={instructor.id} onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }} className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-blue-300 transition">
-                          <div className="flex items-center gap-3">
-                            <Avatar
-                              initials={instructor.avatarInitials}
-                              color={instructor.avatarColor}
-                              src={getInstructorPhoto(instructor)}
-                              alt={instructor.name}
-                              size="md"
-                            />
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-stone-900">{instructor.name}</p>
-                              <p className="mt-0.5 text-xs text-stone-500">{instructor.car ?? 'Автомобиль уточняется'}</p>
-                              <p className="mt-0.5 text-xs text-stone-400">{(instructor.categories ?? []).join(', ')}</p>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                    <h1 className="text-xl font-black text-slate-900">Выберите инструктора</h1>
+                    <div className="mt-4 space-y-2">
+                      {visibleInstructors.length === 0
+                        ? <EmptyState title="Нет инструкторов" description="Выберите другой филиал или категорию." />
+                        : visibleInstructors.map((instructor) => {
+                          const photo = getInstructorPhoto(instructor)
+                          return (
+                            <button
+                              key={instructor.id}
+                              onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }}
+                              className="flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.99]"
+                            >
+                              <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} src={photo} alt={instructor.name} size="lg" />
+                              <div className="min-w-0 flex-1">
+                                <p className="font-bold text-slate-900">{instructor.name}</p>
+                                <p className="mt-0.5 text-sm text-slate-500">{instructor.car ?? 'Учебный автомобиль'}</p>
+                                <div className="mt-1.5 flex flex-wrap gap-1">
+                                  {(instructor.categories ?? []).map((c) => (
+                                    <span key={c} className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">{c}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <ChevronRight size={16} className="shrink-0 text-slate-400" />
+                            </button>
+                          )
+                        })}
                     </div>
                   </>
-                ) : null}
+                )}
 
-                {step === 'date' ? (
+                {step === 'date' && (
                   <>
                     <BackButton onClick={() => setStep('instructor')} />
-                    <h1 className="text-base font-bold text-stone-950">Выберите день</h1>
-                    <div className="mt-3 space-y-2">
+                    <h1 className="text-xl font-black text-slate-900">Выберите день</h1>
+                    <div className="mt-4 space-y-2">
                       {dates.map((date) => {
                         const count = selectedInstructor ? getAvailableSlots(selectedInstructor.id, date, sessionId.current).length : 0
                         const active = selectedDates.includes(date)
@@ -1138,119 +1431,179 @@ export function SchoolPage() {
                           <button
                             key={date}
                             disabled={count === 0}
-                            onClick={() => setSelectedDates(active ? selectedDates.filter((item) => item !== date) : [...selectedDates, date])}
-                            className={`w-full rounded-xl border px-4 py-3 text-left transition ${active ? 'border-blue-500 bg-blue-50' : 'border-stone-200 bg-white'} disabled:bg-stone-50 disabled:text-stone-400`}
+                            onClick={() => setSelectedDates(active ? selectedDates.filter((d) => d !== date) : [...selectedDates, date])}
+                            className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition ${active ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60`}
                           >
-                            <p className="text-sm font-semibold capitalize">{formatDayOfWeek(date)}, {formatDate(date)}</p>
-                            <p className="mt-0.5 text-xs text-stone-400">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
+                            <div>
+                              <p className="font-bold capitalize text-slate-900">{formatDayOfWeek(date)}, {formatDate(date)}</p>
+                              <p className="mt-0.5 text-sm text-slate-500">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
+                            </div>
+                            {active && <Check size={18} className="text-blue-600" />}
                           </button>
                         )
                       })}
                     </div>
-                    <Button size="lg" className="mt-4 w-full" disabled={selectedDates.length === 0} onClick={() => setStep('time')}>Выбрать время</Button>
+                    <button
+                      disabled={selectedDates.length === 0}
+                      onClick={() => setStep('time')}
+                      className="mt-4 flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      Выбрать время
+                    </button>
                   </>
-                ) : null}
+                )}
 
-                {step === 'time' ? (
+                {step === 'time' && (
                   <>
                     <BackButton onClick={() => setStep('date')} />
-                    <h1 className="text-base font-bold text-stone-950">Выберите время</h1>
-                    <p className="mt-1 text-xs text-stone-400">Можно выбрать до {maxSlots} занятий.</p>
-                    <div className="mt-3 space-y-3">
+                    <h1 className="text-xl font-black text-slate-900">Выберите время</h1>
+                    <p className="mt-1 text-sm text-slate-500">Можно выбрать до {maxSlots} {maxSlots === 1 ? 'занятия' : 'занятий'}</p>
+                    <div className="mt-4 space-y-3">
                       {slotsByDate.map((group) => (
-                        <div key={group.date} className="rounded-xl border border-stone-100 bg-stone-50/70 p-2.5">
-                          <div className="mb-2 flex items-center justify-between gap-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
-                            {group.slots.length > 3 ? <p className="shrink-0 text-[10px] text-stone-400">листайте →</p> : null}
-                          </div>
-                          <div className="-mx-0.5 overflow-x-auto px-0.5 pb-0.5">
-                            <div className="flex min-w-max gap-2">
-                              {group.slots.map((slot) => {
-                                const active = selectedSlots.some((item) => item.id === slot.id)
-                                return (
-                                  <button
-                                    key={slot.id}
-                                    onClick={() => selectSlot(slot)}
-                                    className={`min-h-[76px] w-[96px] shrink-0 rounded-lg border px-3 py-2 text-center transition ${active ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-200 bg-white hover:border-blue-300'}`}
-                                  >
-                                    <p className="text-base font-bold">{slot.time}</p>
-                                    <p className="mt-1 text-[10px] opacity-80">{formatDuration(slot.duration)}</p>
-                                  </button>
-                                )
-                              })}
-                            </div>
+                        <div key={group.date}>
+                          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+                          <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+                            {group.slots.map((slot, idx) => {
+                              const active = selectedSlots.some((s) => s.id === slot.id)
+                              const endTime = addMinutesToTime(slot.time, slot.duration)
+                              return (
+                                <button
+                                  key={slot.id}
+                                  onClick={() => selectSlot(slot)}
+                                  className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition ${idx < group.slots.length - 1 ? 'border-b border-slate-100' : ''} ${active ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                                >
+                                  <div>
+                                    <p className="text-base font-black text-slate-900">{slot.time} – {endTime}</p>
+                                    <p className="mt-0.5 text-xs text-slate-400">{formatDuration(slot.duration)}</p>
+                                  </div>
+                                  <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${active ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`}>
+                                    {active && <Check size={13} className="text-white" strokeWidth={3} />}
+                                  </div>
+                                </button>
+                              )
+                            })}
                           </div>
                         </div>
                       ))}
                     </div>
-                    <Button size="lg" className="mt-4 w-full" disabled={selectedSlots.length === 0} onClick={() => setStep('details')}>Дальше</Button>
+                    <button
+                      disabled={selectedSlots.length === 0}
+                      onClick={() => setStep('details')}
+                      className="mt-4 flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      Продолжить
+                      {selectedSlots.length > 0 && <span className="ml-2 rounded-full bg-white/30 px-2 py-0.5 text-sm">{selectedSlots.length}</span>}
+                    </button>
                   </>
-                ) : null}
+                )}
 
-                {step === 'details' ? (
+                {step === 'details' && (
                   <>
                     <BackButton onClick={() => setStep('time')} />
-                    <h1 className="text-base font-bold text-stone-950">Ваши данные</h1>
-                    <p className="mt-1 text-xs text-stone-400">Только имя и телефон — этого достаточно для записи.</p>
-                    <div className="mt-4 space-y-3">
-                      <Input label="Имя" value={form.name} error={errors.name} placeholder="Анна Иванова" onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-                      <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
+                    <h1 className="text-xl font-black text-slate-900">Ваши данные</h1>
+                    <p className="mt-1 text-sm text-slate-500">Только имя и телефон — этого достаточно для записи</p>
+                    <div className="mt-5 space-y-4">
+                      <Input label="Имя" value={form.name} error={errors.name} placeholder="Анна Иванова" onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))} />
+                      <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))} />
                     </div>
-                    <Button size="lg" className="mt-4 w-full" onClick={() => validateDetails() && setStep('review')}>Проверить запись</Button>
+                    <button
+                      onClick={() => validateDetails() && setStep('review')}
+                      className="mt-5 flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      Проверить запись
+                    </button>
                   </>
-                ) : null}
+                )}
 
-                {step === 'review' ? (
+                {step === 'review' && (
                   <>
                     <BackButton onClick={() => setStep('details')} />
-                    <h1 className="text-base font-bold text-stone-950">Проверьте запись</h1>
-                    <div className="mt-3 space-y-2">
+                    <h1 className="text-xl font-black text-slate-900">Всё верно?</h1>
+                    <div className="mt-4 space-y-3">
                       {selectedSlots.map((slot) => {
-                        const branch = db.branches.byId(slot.branchId)
-                        const instructor = db.instructors.byId(slot.instructorId)
+                        const b = db.branches.byId(slot.branchId)
+                        const ins = db.instructors.byId(slot.instructorId)
+                        const endTime = addMinutesToTime(slot.time, slot.duration)
                         return (
-                          <div key={slot.id} className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
-                            <p className="text-sm font-semibold text-stone-950">{formatDate(slot.date)}, {slot.time}</p>
-                            <p className="mt-0.5 text-xs text-stone-500">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
+                          <div key={slot.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                            <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                                <Clock size={16} className="text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-black text-slate-900">{slot.time} – {endTime}</p>
+                                <p className="text-sm text-slate-500">{formatDate(slot.date)}</p>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              <p className="text-sm font-semibold text-slate-700">{ins?.name ?? 'Инструктор'}</p>
+                              <p className="mt-0.5 text-xs text-slate-400">{b?.name ?? 'Филиал'} · {formatDuration(slot.duration)}</p>
+                            </div>
                           </div>
                         )
                       })}
-                      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-                        <p className="text-sm font-semibold text-stone-900">{form.name}</p>
-                        <p className="text-xs text-stone-400">{formatPhone(normalizePhone(form.phone))}</p>
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5">
+                        <p className="font-bold text-slate-900">{form.name}</p>
+                        <p className="mt-0.5 text-sm text-slate-500">{formatPhone(normalizePhone(form.phone))}</p>
                       </div>
                     </div>
-                    <Button size="lg" className="mt-4 w-full" disabled={submitting} style={!submitting ? { backgroundColor: brandColor, borderColor: brandColor } : undefined} onClick={() => void submitBooking()}>
-                      {submitting ? 'Сохраняем...' : 'Записаться'}
-                      {!submitting ? <Check size={15} /> : null}
-                    </Button>
+                    <button
+                      disabled={submitting}
+                      onClick={() => void submitBooking()}
+                      className="mt-5 flex h-13 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      {submitting ? 'Записываем...' : (<><Check size={18} strokeWidth={3} /> Записаться</>)}
+                    </button>
                   </>
-                ) : null}
+                )}
 
-                {step === 'profile' ? (
+                {step === 'profile' && (
                   <>
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                      <CheckCircle2 size={24} />
+                    <div className="flex flex-col items-center pb-2 pt-2">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50">
+                        <CheckCircle2 size={32} className="text-emerald-600" />
+                      </div>
+                      <h1 className="mt-4 text-center text-xl font-black text-slate-900">Вы записаны!</h1>
+                      <p className="mt-1 max-w-xs text-center text-sm leading-relaxed text-slate-500">
+                        Создайте кабинет — управляйте записями и входите быстро в следующий раз
+                      </p>
                     </div>
-                    <h1 className="mt-4 text-center text-base font-bold text-stone-950">Запись создана!</h1>
-                    <p className="mx-auto mt-1 max-w-sm text-center text-xs leading-relaxed text-stone-400">Создайте кабинет, чтобы видеть занятия и записываться быстрее в следующий раз.</p>
-                    <div className="mt-4 space-y-3">
-                      <Input label="ФИО" value={form.name} error={errors.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-                      <Input label="Телефон" value={form.phone} error={errors.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-                      <Input label="E-mail" type="email" value={form.email} error={errors.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-                      <Input label="Пароль" type="password" value={form.password} error={errors.password} helperText="Минимум 6 символов." onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
-                      <Input label="Аватарка" value={form.avatarUrl} placeholder="Ссылка на фото (не обязательно)" onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))} />
+                    <div className="mt-5 space-y-4">
+                      <Input label="ФИО" value={form.name} error={errors.name} onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))} />
+                      <Input label="Телефон" value={form.phone} error={errors.phone} onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))} />
+                      <Input label="E-mail" type="email" value={form.email} error={errors.email} onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))} />
+                      <Input label="Пароль" type="password" helperText="Минимум 6 символов" value={form.password} error={errors.password} onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))} />
                     </div>
-                    <div className="mt-4 grid gap-2">
-                      <Button size="lg" className="w-full" disabled={submitting} onClick={() => void createProfile()}>Создать кабинет</Button>
-                      <Button variant="secondary" className="w-full" onClick={() => void copyCredentials()}>
+                    <div className="mt-5 space-y-2.5">
+                      <button
+                        disabled={submitting}
+                        onClick={() => void createProfile()}
+                        className="flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+                        style={{ backgroundColor: brandColor }}
+                      >
+                        {submitting ? 'Создаём...' : 'Создать кабинет'}
+                      </button>
+                      <button
+                        onClick={() => void copyCredentials()}
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                      >
                         <Copy size={14} />
-                        Скопировать логин и пароль
-                      </Button>
-                      <Button variant="secondary" className="w-full" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : setView('home')}>Готово</Button>
+                        Скопировать данные для входа
+                      </button>
+                      <button
+                        onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : setView('home')}
+                        className="flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+                      >
+                        Пропустить
+                      </button>
                     </div>
                   </>
-                ) : null}
+                )}
+
               </div>
             </section>
           ) : (
@@ -1260,7 +1613,7 @@ export function SchoolPage() {
               instructors={instructors}
               onLogin={() => setView('login')}
               onOpenSchedule={() => setView('schedule')}
-              onSelectCategory={(category) => startBooking(category)}
+              onSelectCategory={(cat) => startBooking(cat)}
               onStartBooking={() => startBooking()}
               school={school}
             />
@@ -1268,21 +1621,49 @@ export function SchoolPage() {
         </motion.div>
       </main>
 
+      {/* Profile required modal */}
       <Modal open={profileRequiredOpen} onClose={() => setProfileRequiredOpen(false)} title="Заполните профиль">
         <div className="space-y-4 px-6 py-5">
-          <p className="text-base leading-relaxed text-stone-600">Чтобы записываться из кабинета без повторного ввода данных, добавьте e-mail и пароль.</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button size="lg" className="min-h-12 text-base" onClick={() => { setProfileRequiredOpen(false); setView('settings') }}>Заполнить профиль</Button>
-            <Button size="lg" variant="secondary" className="min-h-12 text-base" onClick={() => setProfileRequiredOpen(false)}>Позже</Button>
+          <p className="text-sm leading-relaxed text-slate-600">Чтобы записываться из кабинета, добавьте e-mail и пароль.</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button size="lg" onClick={() => { setProfileRequiredOpen(false); setView('settings') }}>Заполнить</Button>
+            <Button variant="secondary" size="lg" onClick={() => setProfileRequiredOpen(false)}>Позже</Button>
           </div>
         </div>
       </Modal>
 
-      <div className="fixed bottom-4 left-1/2 z-20 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-3xl border border-stone-200 bg-white/95 p-2 shadow-modal backdrop-blur sm:hidden">
-        <div className="grid grid-cols-3 gap-2">
-          <button onClick={() => setView(profile ? 'dashboard' : 'home')} className="rounded-2xl px-3 py-2 text-sm font-semibold text-stone-700">Главная</button>
-          <button onClick={() => setView('schedule')} className="rounded-2xl px-3 py-2 text-sm font-semibold text-stone-700">Расписание</button>
-          <button onClick={() => profile ? startBooking() : setView('login')} className="rounded-2xl px-3 py-2 text-sm font-semibold text-white" style={{ backgroundColor: brandColor }}>{profile ? 'Запись' : 'Войти'}</button>
+      {/* Bottom nav */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur-md sm:hidden">
+        <div className="mx-auto flex max-w-2xl items-center">
+          <button
+            onClick={() => setView(profile ? 'dashboard' : 'home')}
+            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition ${(view === 'home' || view === 'dashboard') ? 'text-blue-600' : 'text-slate-400'}`}
+          >
+            <div className={`rounded-xl p-1.5 ${(view === 'home' || view === 'dashboard') ? 'bg-blue-50' : ''}`}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            Главная
+          </button>
+          <button
+            onClick={() => setView('schedule')}
+            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition ${view === 'schedule' ? 'text-blue-600' : 'text-slate-400'}`}
+          >
+            <div className={`rounded-xl p-1.5 ${view === 'schedule' ? 'bg-blue-50' : ''}`}>
+              <CalendarDays size={20} />
+            </div>
+            Расписание
+          </button>
+          <div className="flex flex-1 items-center justify-center py-2">
+            <button
+              onClick={() => profile ? startBooking() : setView('login')}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-lg transition hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: brandColor }}
+            >
+              {profile ? <ArrowRight size={20} /> : <LogIn size={18} />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
