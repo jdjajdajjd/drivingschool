@@ -41,6 +41,7 @@ function mapSchool(row: SchoolRow): School {
     branchSelectionMode: row.branch_selection_mode,
     maxSlotsPerBooking: row.max_slots_per_booking,
     defaultLessonDuration: row.default_lesson_duration,
+    enabledCategoryCodes: row.enabled_category_codes?.length ? row.enabled_category_codes : undefined,
     isActive: row.is_active,
   }
 }

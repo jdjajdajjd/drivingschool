@@ -67,6 +67,7 @@ export async function updateSupabaseSchoolSettings(
     branchSelectionMode?: School['branchSelectionMode']
     maxSlotsPerBooking?: number
     defaultLessonDuration?: number
+    enabledCategoryCodes?: string[]
   },
 ): Promise<void> {
   await runAdminMutation(
@@ -82,6 +83,7 @@ export async function updateSupabaseSchoolSettings(
       p_branch_selection_mode: patch.branchSelectionMode ?? 'student_choice',
       p_max_slots_per_booking: patch.maxSlotsPerBooking ?? 1,
       p_default_lesson_duration: patch.defaultLessonDuration ?? 90,
+      p_enabled_category_codes: patch.enabledCategoryCodes?.length ? patch.enabledCategoryCodes : ['B'],
       p_staff_password: getAdminPassword(),
     }),
   )
@@ -124,6 +126,7 @@ export async function upsertSupabaseInstructor(instructorId: string, input: Inst
       p_is_active: input.isActive,
       p_car: input.car ?? '',
       p_transmission: input.transmission ?? null,
+      p_categories: input.categories?.length ? input.categories : ['B'],
       p_staff_password: getAdminPassword(),
     }),
   )

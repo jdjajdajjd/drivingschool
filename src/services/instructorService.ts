@@ -13,6 +13,7 @@ export interface InstructorInput {
   bio?: string
   car?: string
   transmission?: Transmission
+  categories?: string[]
   isActive: boolean
 }
 
@@ -75,7 +76,7 @@ export function createInstructor(input: InstructorInput): { ok: boolean; instruc
     bio: input.bio?.trim() ?? '',
     experience: 0,
     isActive: input.isActive,
-    categories: ['B'],
+    categories: input.categories?.length ? input.categories : ['B'],
     avatarInitials: createInitials(trimmedName),
     avatarColor: colorFromName(trimmedName),
     car: input.car?.trim() || undefined,
@@ -115,6 +116,7 @@ export function updateInstructor(
     bio: input.bio?.trim() ?? '',
     car: input.car?.trim() || undefined,
     transmission: input.transmission,
+    categories: input.categories?.length ? input.categories : current.categories?.length ? current.categories : ['B'],
     isActive: input.isActive,
     avatarInitials: createInitials(trimmedName),
     avatarColor: colorFromName(trimmedName),
@@ -133,6 +135,7 @@ export function updateInstructor(
         bio: input.bio,
         car: input.car,
         transmission: input.transmission,
+        categories: input.categories,
         isActive: input.isActive,
       },
       nextInstructor.token,

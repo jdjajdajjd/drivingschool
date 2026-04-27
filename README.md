@@ -1,189 +1,108 @@
 # DriveDesk
 
-SaaS MVP для автошкол на `Vite + React + TypeScript + Tailwind + React Router + localStorage`.
+DriveDesk is a React + Supabase demo product for driving schools. The current focus is not a marketing landing page, but a working product panel: student booking, school admin panel, super-admin panel, schedule, profiles, and launch settings.
 
-Проект пока работает без backend, без Supabase и без auth. Все данные хранятся локально в браузере, поэтому это демо-режим с рабочей онлайн-записью, админкой школы, каталогом модулей, настройками школы и базовой суперадминкой.
+## Current Entrances
 
-## Стек
+- Demo hub: `/`
+- Student page: `/school/virazh`
+- School staff login: `/staff-entrance-73q`
+- School admin panel after login: `/virazh-office-73q`
+- Super-admin login: `/root-entrance-91x`
+- Super-admin panel after login: `/drivedesk-root-91x`
+- Instructor demo cabinet: `/instructor/tok-petrov-2024`
 
-- Vite
-- React
+Default demo credentials are defined in `src/services/accessControl.ts` and can be overridden with Vite environment variables.
+
+## Stack
+
+- React 18
 - TypeScript
-- Tailwind CSS
-- React Router
-- localStorage service layer
+- Vite
+- TailwindCSS
+- Supabase/Postgres
+- Cloudflare Pages
 
-## Запуск
+## Local Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Открыть: `http://localhost:5173`
-
-## Ключевые роуты
-
-### Публичные
-
-- `/` — главная страница продукта
-- `/school/:slug` — публичная запись в автошколу
-- `/booking/:bookingId` — подтверждение записи, `.ics`, отмена
-- `/instructor/:token` — личная страница инструктора
-
-### Админка автошколы
-
-- `/admin` — обзор и операционная панель
-- `/admin/bookings` — записи
-- `/admin/slots` — слоты
-- `/admin/students` — ученики
-- `/admin/students/:studentId` — профиль и история ученика
-- `/admin/instructors` — инструкторы
-- `/admin/branches` — филиалы
-- `/admin/modules` — каталог модулей
-- `/admin/modules/:moduleId` — карточка модуля
-- `/admin/settings` — настройки школы, лимиты, брендирование, сброс демо-данных
-
-### Суперадминка
-
-- `/superadmin` — обзор по всем школам
-- `/superadmin/schools` — список автошкол
-- `/superadmin/schools/new` — создание автошколы
-- `/superadmin/schools/:schoolId` — карточка автошколы
-
-## Что уже работает
-
-### Booking flow
-
-- выбор филиала
-- выбор инструктора
-- выбор даты
-- выбор времени
-- ввод имени и телефона
-- нормализация телефона к виду `7xxxxxxxxxx`
-- поиск или создание `student` по `normalizedPhone`
-- создание `booking`
-- перевод `slot.status` в `booked`
-- редирект на `/booking/:bookingId`
-- скачивание `.ics`
-- отмена записи
-- лимит будущих активных записей на ученика
-
-### Админка школы
-
-- dashboard с метриками, ближайшими занятиями и диагностикой
-- записи с фильтрами, отменой, проведением и переносом
-- слоты с одиночным и массовым созданием
-- ученики с историей записей
-- инструкторы с личной ссылкой
-- филиалы с безопасным удалением
-- настройки школы
-- сброс демо-данных
-
-### Product layer
-
-- базовая цена: `4 990 ₽/мес`
-- каталог подключаемых модулей
-- расчёт ежемесячной суммы и разовых услуг
-- summary по стоимости школы
-- superadmin overview по школам
-
-## Модель монетизации
-
-Без тарифов `Start / Plus / Pro`.
-
-Модель сейчас такая:
-
-- база: `4 990 ₽/мес`
-- плюс подключаемые модули
-
-История ученика входит в базу и не считается модулем.
-
-## Демо-данные
-
-При первом запуске автоматически создаются:
-
-- автошкола `Вираж`
-- 3 филиала
-- 5 инструкторов
-- слоты на ближайшие дни
-- активные, проведённые и отменённые записи
-- ученики с историей
-- лимит записей `2`
-- несколько подключённых модулей для примера
-
-Seed создаётся только если данных ещё нет или если увеличилась `SEED_VERSION`.
-
-## Сброс демо-данных
-
-В `/admin/settings` и `/superadmin` есть действие `Сбросить демо-данные`.
-
-После сброса:
-
-- localStorage проекта очищается
-- demo seed создаётся заново
-- публичная страница, настройки и модули возвращаются в исходное демо-состояние
-
-## Как показать демо директору
-
-1. Открыть главную `/`
-2. Нажать `Открыть демо записи`
-3. Создать запись ученика на `/school/virazh`
-4. Показать страницу подтверждения `/booking/:bookingId`
-5. Открыть `/admin/bookings` и показать запись в админке
-6. Открыть `/instructor/:token` и показать расписание инструктора
-7. Открыть `/admin/modules` и показать модель `4 990 ₽/мес + модули`
-8. Открыть `/admin/settings` и показать настройки школы и брендирование
-
-## Как протестировать demo flow
-
-### Публичная запись
-
-1. Открыть `/school/virazh`
-2. Выбрать филиал, инструктора, дату и слот
-3. Ввести имя и телефон
-4. Создать запись
-5. Открыть `/booking/:bookingId`
-6. Скачать `.ics`
-7. Отменить запись
-
-### Product layer
-
-1. Открыть `/admin/modules`
-2. Подключить или отключить модули
-3. Проверить summary стоимости
-4. Открыть `/admin/settings`
-5. Изменить название, описание и цвет
-6. Открыть `/school/:slug` и проверить брендирование
-7. Открыть `/superadmin`
-
-## Команды
+Before shipping:
 
 ```bash
-npm run dev
 npm run typecheck
 npm run build
 ```
 
-Скрипта `npm run lint` сейчас нет.
+## Environment
 
-## Ограничения текущего этапа
+Frontend variables:
 
-- backend пока не подключён
-- Supabase пока не подключён
-- auth пока нет
-- данные живут в localStorage
-- нет настоящей оплаты
-- нет настоящих SMS/Telegram API
-- нет полноценной синхронизации между вкладками
-- нет полноценного browser E2E внутри проекта
+```bash
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_ADMIN_LOGIN=...
+VITE_ADMIN_PASSWORD=...
+VITE_SUPERADMIN_LOGIN=...
+VITE_SUPERADMIN_PASSWORD=...
+```
 
-Это не production backend-ready версия, а сильный frontend MVP с рабочей продуктовой моделью и понятной демо-обвязкой.
+For applying SQL from the terminal:
 
-## Что логично делать следующим этапом
+```bash
+SUPABASE_DATABASE_URL=postgresql://...
+npm run supabase:apply
+```
 
-- подключить backend и постоянное хранилище
-- добавить auth и роли
-- внедрить реальный billing/payment слой
-- подключить реальные каналы уведомлений
-- добавить browser E2E и сценарии регрессии
+If direct database DNS is unavailable on the machine, open `supabase/DRIVEDESK_FULL_SETUP.sql`, copy only the safe patch block between `-- BEGIN DRIVEDESK_SAFE_PATCH` and `-- END DRIVEDESK_SAFE_PATCH`, paste it into Supabase SQL Editor, and run it there.
+
+## Supabase
+
+The single SQL source of truth is:
+
+```text
+supabase/DRIVEDESK_FULL_SETUP.sql
+```
+
+The default script applies only the safe patch section between:
+
+```text
+-- BEGIN DRIVEDESK_SAFE_PATCH
+-- END DRIVEDESK_SAFE_PATCH
+```
+
+The safe patch must not drop production data. Do not paste the full SQL file into a live database: the full reset part is only for rebuilding a disposable demo database.
+
+## Product State
+
+Done or partially done:
+
+- Public student page with booking flow.
+- Student login by phone + password.
+- Optional profile creation after booking.
+- Student dashboard with next lessons and schedule.
+- Admin login and hidden admin URLs.
+- Admin management for bookings, branches, instructors, slots, settings.
+- Multi-slot booking limit controlled by school settings.
+- Category-based booking and category settings.
+- Instructor profile photos.
+- Supabase-backed booking and profile RPCs.
+- Cloudflare Pages deployment through the `drivingschool` project.
+
+Still transitional:
+
+- The app still syncs Supabase data into localStorage on startup. This keeps the demo fast, but it is not the final architecture.
+- Admin authentication is still a demo gate, not production-grade role-based auth.
+- Some admin screens write locally first and then persist to Supabase through RPCs.
+
+## Next Product Priorities
+
+1. Move admin reads/writes fully to Supabase and keep localStorage only for local session convenience.
+2. Replace demo staff passwords with real Supabase Auth roles.
+3. Add admin-visible student profile completeness, branch-change requests, and assigned instructor/branch flows.
+4. Add a practical launch checklist for a new school: school data, branches, instructors, categories, slots, booking rules, public link.
+5. Add browser smoke tests for student booking, profile creation, returning login, admin booking management, and settings persistence.
+6. Polish the mobile student flow after the data layer is stable.

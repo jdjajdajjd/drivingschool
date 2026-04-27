@@ -15,6 +15,9 @@ create table if not exists public.staff_access_credentials (
   updated_at timestamptz not null default now()
 );
 
+alter table public.schools
+  add column if not exists enabled_category_codes text[] not null default array['B'];
+
 insert into public.staff_access_credentials (role, password_sha256) values
   ('admin', '94754e78d07756488a78665a5b7bb3a1d636dabb002e682e4f8fac946250603d'),
   ('superadmin', 'ddc85ebe831f77142817db5a756d377c954b92c87c0c1e5fa4746a872b7f6588')
@@ -48,12 +51,14 @@ drop function if exists public.public_cancel_booking(text, text);
 drop function if exists public.public_complete_booking(text, text);
 drop function if exists public.public_reschedule_booking(text, text, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text);
+drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text);
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer, text);
 drop function if exists public.public_update_slot_status(text, text, text);
 drop function if exists public.public_delete_slot(text, text);
 drop function if exists public.public_upsert_branch(text, text, text, text, text, boolean, text);
 drop function if exists public.public_delete_branch(text, text);
 drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text);
+drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text);
 drop function if exists public.public_update_instructor_active(text, boolean, text);
 
 create or replace function public.public_cancel_booking(
@@ -235,6 +240,7 @@ create or replace function public.public_update_school_settings(
   p_branch_selection_mode text,
   p_max_slots_per_booking integer,
   p_default_lesson_duration integer,
+  p_enabled_category_codes text[],
   p_staff_password text
 )
 returns table (
@@ -286,6 +292,7 @@ begin
         branch_selection_mode = p_branch_selection_mode,
         max_slots_per_booking = p_max_slots_per_booking,
         default_lesson_duration = p_default_lesson_duration,
+        enabled_category_codes = coalesce(nullif(p_enabled_category_codes, '{}'), array['B']),
         updated_at = now()
     where id = p_school_id;
 
@@ -532,6 +539,7 @@ create or replace function public.public_upsert_instructor(
   p_is_active boolean,
   p_car text,
   p_transmission text,
+  p_categories text[],
   p_staff_password text
 )
 returns table (
@@ -574,7 +582,7 @@ begin
     coalesce(p_bio, ''),
     0,
     coalesce(p_is_active, true),
-    array['B'],
+    coalesce(nullif(p_categories, '{}'), array['B']),
     upper(left(trim(p_name), 1)),
     '#2a5d86',
     nullif(p_car, ''),
@@ -588,6 +596,7 @@ begin
     email = excluded.email,
     bio = excluded.bio,
     is_active = excluded.is_active,
+    categories = excluded.categories,
     car = excluded.car,
     transmission = excluded.transmission,
     updated_at = now();
@@ -632,13 +641,13 @@ grant usage on schema public to anon, authenticated;
 grant execute on function public.public_cancel_booking(text, text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text, text) to anon, authenticated;
-grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text) to anon, authenticated;
+grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text) to anon, authenticated;
 grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text) to anon, authenticated;
 grant execute on function public.public_update_slot_status(text, text, text) to anon, authenticated;
 grant execute on function public.public_delete_slot(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_branch(text, text, text, text, text, boolean, text) to anon, authenticated;
 grant execute on function public.public_delete_branch(text, text) to anon, authenticated;
-grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text) to anon, authenticated;
+grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text) to anon, authenticated;
 grant execute on function public.public_update_instructor_active(text, boolean, text) to anon, authenticated;
 
 -- END DRIVEDESK_SAFE_PATCH
@@ -664,6 +673,7 @@ drop function if exists public.public_reschedule_booking(text, text);
 drop function if exists public.public_reschedule_booking(text, text, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text);
+drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text);
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer);
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer, text);
 drop function if exists public.public_update_slot_status(text, text);
@@ -673,6 +683,7 @@ drop function if exists public.public_delete_slot(text, text);
 drop function if exists public.public_upsert_branch(text, text, text, text, text, boolean, text);
 drop function if exists public.public_delete_branch(text, text);
 drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text);
+drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text);
 drop function if exists public.public_update_instructor_active(text, boolean, text);
 drop function if exists public.public_update_student_profile(text, text, text, text, text, text);
 drop function if exists public.public_login_student(text, text, text);
@@ -727,6 +738,7 @@ create table public.schools (
     check (branch_selection_mode in ('student_choice', 'fixed_first')),
   max_slots_per_booking integer not null default 1 check (max_slots_per_booking between 1 and 6),
   default_lesson_duration integer not null default 90 check (default_lesson_duration between 30 and 240),
+  enabled_category_codes text[] not null default array['B'],
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -847,7 +859,7 @@ create index bookings_student_id_idx on public.bookings(student_id);
 insert into public.schools (
   id, name, slug, description, phone, email, address, primary_color,
   booking_limit_enabled, max_active_bookings_per_student, branch_selection_mode,
-  max_slots_per_booking, default_lesson_duration, is_active, created_at
+  max_slots_per_booking, default_lesson_duration, enabled_category_codes, is_active, created_at
 ) values (
   'school-virazh',
   'Автошкола «Вираж»',
@@ -862,6 +874,7 @@ insert into public.schools (
   'student_choice',
   2,
   90,
+  array['B', 'A', 'C'],
   true,
   '2024-01-15T10:00:00Z'
 );
@@ -1236,6 +1249,7 @@ create or replace function public.public_update_school_settings(
   p_branch_selection_mode text,
   p_max_slots_per_booking integer,
   p_default_lesson_duration integer,
+  p_enabled_category_codes text[],
   p_staff_password text
 )
 returns table (
@@ -1287,6 +1301,7 @@ begin
         branch_selection_mode = p_branch_selection_mode,
         max_slots_per_booking = p_max_slots_per_booking,
         default_lesson_duration = p_default_lesson_duration,
+        enabled_category_codes = coalesce(nullif(p_enabled_category_codes, '{}'), array['B']),
         updated_at = now()
     where id = p_school_id;
 
@@ -1533,6 +1548,7 @@ create or replace function public.public_upsert_instructor(
   p_is_active boolean,
   p_car text,
   p_transmission text,
+  p_categories text[],
   p_staff_password text
 )
 returns table (
@@ -1575,7 +1591,7 @@ begin
     coalesce(p_bio, ''),
     0,
     coalesce(p_is_active, true),
-    array['B'],
+    coalesce(nullif(p_categories, '{}'), array['B']),
     upper(left(trim(p_name), 1)),
     '#2a5d86',
     nullif(p_car, ''),
@@ -1589,6 +1605,7 @@ begin
     email = excluded.email,
     bio = excluded.bio,
     is_active = excluded.is_active,
+    categories = excluded.categories,
     car = excluded.car,
     transmission = excluded.transmission,
     updated_at = now();
@@ -1817,13 +1834,13 @@ grant execute on function public.public_create_booking(text, text, text, text[])
 grant execute on function public.public_cancel_booking(text, text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text, text) to anon, authenticated;
-grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text) to anon, authenticated;
+grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text) to anon, authenticated;
 grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text) to anon, authenticated;
 grant execute on function public.public_update_slot_status(text, text, text) to anon, authenticated;
 grant execute on function public.public_delete_slot(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_branch(text, text, text, text, text, boolean, text) to anon, authenticated;
 grant execute on function public.public_delete_branch(text, text) to anon, authenticated;
-grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text) to anon, authenticated;
+grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text) to anon, authenticated;
 grant execute on function public.public_update_instructor_active(text, boolean, text) to anon, authenticated;
 grant execute on function public.public_update_student_profile(text, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.public_login_student(text, text, text) to anon, authenticated;

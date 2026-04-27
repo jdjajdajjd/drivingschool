@@ -12,6 +12,7 @@ import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatPhone } from '../../lib/utils'
 import { getUpcomingBookings, validateRussianPhone } from '../../services/bookingService'
+import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
 import { createInstructor, getInstructorsBySchool, toggleInstructorActive, updateInstructor } from '../../services/instructorService'
 import { getInstructorPhoto } from '../../services/instructorPhotos'
 import { db } from '../../services/storage'
@@ -26,6 +27,7 @@ const initialForm = {
   bio: '',
   car: '',
   transmission: 'manual' as Transmission,
+  categories: ['B'],
   isActive: true,
 }
 
@@ -78,6 +80,7 @@ export function AdminInstructors() {
       bio: instructor.bio,
       car: instructor.car ?? '',
       transmission: instructor.transmission ?? 'manual',
+      categories: instructor.categories?.length ? instructor.categories : ['B'],
       isActive: instructor.isActive,
     })
     setModalOpen(true)
@@ -105,6 +108,20 @@ export function AdminInstructors() {
 
     setModalOpen(false)
     showToast(editingId ? 'Инструктор обновлён.' : 'Инструктор создан.', 'success')
+  }
+
+  function toggleCategory(code: string): void {
+    setForm((current) => {
+      const active = current.categories.includes(code)
+      const nextCategories = active
+        ? current.categories.filter((item) => item !== code)
+        : [...current.categories, code]
+
+      return {
+        ...current,
+        categories: nextCategories.length ? nextCategories : ['B'],
+      }
+    })
   }
 
   async function copyLink(instructor: Instructor): Promise<void> {
@@ -169,6 +186,13 @@ export function AdminInstructors() {
                         </Badge>
                       </div>
                       <p className="mt-2 text-sm text-stone-500">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(instructor.categories?.length ? instructor.categories : ['B']).map((code) => (
+                          <Badge key={code} variant="default">
+                            {DRIVING_CATEGORIES.find((category) => category.code === code)?.title ?? code}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -251,6 +275,29 @@ export function AdminInstructors() {
           </div>
 
           <Textarea label="Описание" value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} rows={4} />
+
+          <FormField label="Категории, по которым инструктор доступен для записи">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {DRIVING_CATEGORIES.map((category) => {
+                const active = form.categories.includes(category.code)
+                return (
+                  <button
+                    key={category.code}
+                    type="button"
+                    onClick={() => toggleCategory(category.code)}
+                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                      active
+                        ? 'border-forest-600 bg-forest-50 text-stone-950'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                    }`}
+                  >
+                    <span className="text-sm font-semibold">{category.title}</span>
+                    <span className="mt-1 block text-xs text-stone-500">{category.description}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </FormField>
 
           <label className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
             <input

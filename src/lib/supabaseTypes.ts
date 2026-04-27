@@ -25,6 +25,7 @@ export interface Database {
           branch_selection_mode: 'student_choice' | 'fixed_first'
           max_slots_per_booking: number
           default_lesson_duration: number
+          enabled_category_codes: string[]
           is_active: boolean
           created_at: string
           updated_at: string
@@ -257,6 +258,7 @@ export interface Database {
           p_branch_selection_mode: 'student_choice' | 'fixed_first'
           p_max_slots_per_booking: number
           p_default_lesson_duration: number
+          p_enabled_category_codes: string[]
           p_staff_password: string
         }
         Returns: Array<{
@@ -333,6 +335,7 @@ export interface Database {
           p_is_active: boolean
           p_car: string
           p_transmission: 'manual' | 'auto' | null
+          p_categories: string[]
           p_staff_password: string
         }
         Returns: Array<{

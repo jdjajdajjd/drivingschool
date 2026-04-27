@@ -178,6 +178,7 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
       branchSelectionMode: updated.branchSelectionMode,
       maxSlotsPerBooking: updated.maxSlotsPerBooking,
       defaultLessonDuration: updated.defaultLessonDuration,
+      enabledCategoryCodes: updated.enabledCategoryCodes,
     }),
   )
   return { ok: true, school: updated }

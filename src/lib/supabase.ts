@@ -4,12 +4,17 @@ import type { Database } from './supabaseTypes'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
+const configured = Boolean(supabaseUrl && supabaseAnonKey)
+
+if (!configured) {
+  console.warn('Supabase is not configured. Public demo data will be used where possible.')
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient<Database>(
+  supabaseUrl ?? 'https://example.supabase.co',
+  supabaseAnonKey ?? 'public-anon-key',
+)
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(supabaseUrl && supabaseAnonKey)
+  return configured
 }

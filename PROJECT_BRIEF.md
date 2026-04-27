@@ -1,140 +1,74 @@
-# PROJECT BRIEF — DriveDesk
+# DriveDesk Project Brief
 
-## Продукт
+## Product Goal
 
-DriveDesk — SaaS для автошкол с онлайн-записью, операционной админкой школы и базовой superadmin-панелью владельца платформы.
+DriveDesk is a SaaS-style operating panel for driving schools. The demo should show the actual product, not a marketing site:
 
-Текущий этап:
+- student booking and personal cabinet;
+- school administrator panel;
+- super-admin panel for DriveDesk;
+- schedule, branches, instructors, students, bookings, and school settings.
 
-- frontend-only MVP
-- localStorage как источник данных
-- без backend
-- без Supabase
-- без auth
+The target user for the public booking flow is often 40+, so the interface must stay simple, readable, and low-noise.
 
-## Модель монетизации
+## Core UX Rules
 
-Не тарифы `Start / Plus / Pro`.
+- One clear main action per student screen.
+- Large buttons and readable text.
+- No decorative clutter in booking.
+- Student profile shows only real, useful information.
+- Admin pages are practical and dense enough for daily work.
+- Demo hub at `/` gives direct entrances into product roles.
 
-Модель такая:
+## Current Important URLs
 
-- база: `4 990 ₽/мес`
-- плюс подключаемые модули
+- `/` product demo hub
+- `/school/virazh` student flow
+- `/staff-entrance-73q` school admin login
+- `/virazh-office-73q` school admin panel
+- `/root-entrance-91x` super-admin login
+- `/drivedesk-root-91x` super-admin panel
 
-Клиент должен видеть:
+## Current Data Model
 
-- что входит в базу
-- какие модули доступны
-- какие подключены
-- сколько он платит в месяц
-- какие разовые услуги подключены
+Supabase contains the production-shaped data:
 
-## Что входит в базу
+- schools
+- branches
+- instructors
+- students
+- slots
+- booking groups
+- bookings
+- staff access credentials
 
-База `4 990 ₽/мес` включает:
+The app still has a compatibility layer that loads Supabase data and writes it into localStorage. This is temporary and should be reduced as the product moves toward sale.
 
-- публичную страницу автошколы
-- онлайн-запись ученика
-- выбор филиала
-- выбор инструктора
-- выбор даты и слота
-- админку автошколы
-- управление филиалами
-- управление инструкторами
-- управление слотами
-- список записей
-- отмену и перенос записи
-- личную ссылку инструктора
-- расписание инструктора
-- историю записей
-- историю ученика
-- базовую статистику
+## What Was Recently Added
 
-История ученика входит в базу и не является модулем.
+- Student profile with phone + password login.
+- Profile creation after booking.
+- Logout from student profile.
+- Admin/super-admin login pages and hidden URLs.
+- Multi-slot booking support.
+- Category selection for school and instructors.
+- School settings for max slots, lesson duration, branch selection, and categories.
+- Public schedule view.
+- Instructor photos.
+- Safer Supabase setup file with a safe patch section.
 
-## Каталог модулей
+## Biggest Remaining Risks
 
-Примеры модулей:
+- Staff auth is still demo-level and should be replaced by real roles.
+- Some settings may feel saved locally before Supabase confirms them.
+- Direct database patching may fail on machines without Supabase DB DNS; SQL Editor remains the fallback.
+- There are no automated browser smoke tests yet.
 
-- SMS-уведомления
-- Telegram-уведомления
-- Брендирование страницы
-- Виджет записи на сайт
-- Онлайн-оплата
-- Расширенная аналитика
-- Роли и дополнительные админы
-- Автонапоминания
-- Импорт из Excel
-- Дополнительный инструктор
-- Дополнительный филиал
+## Recommended Next Work
 
-Подключение модулей сейчас хранится в localStorage через `schoolModules`.
-
-## Основные зоны продукта
-
-### Публичная часть
-
-- `/`
-- `/school/:slug`
-- `/booking/:bookingId`
-- `/instructor/:token`
-
-### Админка школы
-
-- `/admin`
-- `/admin/bookings`
-- `/admin/slots`
-- `/admin/students`
-- `/admin/students/:studentId`
-- `/admin/instructors`
-- `/admin/branches`
-- `/admin/modules`
-- `/admin/modules/:moduleId`
-- `/admin/settings`
-
-### Superadmin
-
-- `/superadmin`
-- `/superadmin/schools`
-- `/superadmin/schools/new`
-- `/superadmin/schools/:schoolId`
-
-## Демо-режим
-
-Приложение сейчас работает в демо-режиме на localStorage:
-
-- данные хранятся в браузере
-- seed создаётся автоматически
-- reset демо-данных восстанавливает исходное состояние
-- branding и settings сразу влияют на публичную страницу школы
-
-## Seed и демо-данные
-
-В seed сейчас заложены:
-
-- автошкола `Вираж`
-- 3 филиала
-- 5 инструкторов
-- правдоподобные имена, машины и коробки передач
-- слоты на ближайшие 7–14 дней
-- активные, проведённые и отменённые записи
-- ученики с историей
-- лимит будущих записей `2`
-- 1–2 подключённых модуля для примера
-
-## Ограничения этапа
-
-- нет backend API
-- нет авторизации
-- нет runtime-ролей
-- нет реальных платёжных интеграций
-- нет реальных SMS/Telegram интеграций
-- нет надёжной многопользовательской синхронизации
-
-## Следующий логичный этап
-
-- backend и постоянное хранилище
-- auth и роли
-- реальный billing/payment слой
-- реальные каналы уведомлений
-- browser E2E и регрессионные сценарии
+1. Verify every admin setting persists after reload and affects the student page.
+2. Move school admin screens to direct Supabase reads and writes.
+3. Add real staff/student auth.
+4. Finish student profile truthfulness: no fake progress, only known data.
+5. Add launch checklist for new schools.
+6. Add smoke tests before every deploy.
