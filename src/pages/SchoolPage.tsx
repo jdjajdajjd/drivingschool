@@ -423,29 +423,189 @@ function ScheduleOverview({
   onBack: () => void
   school: School
 }) {
+  const [branchId, setBranchId] = useState('')
+  const [category, setCategory] = useState('')
+  const [instructorId, setInstructorId] = useState('')
+  const [transmission, setTransmission] = useState('')
+  const [onlyAvailable, setOnlyAvailable] = useState(false)
   const days = useMemo(() => getNext14Days(), [])
-  const slotsByDate = useMemo(
+  const branches = useMemo(() => db.branches.bySchool(school.id).filter((item) => item.isActive), [school.id])
+  const instructors = useMemo(() => db.instructors.bySchool(school.id).filter((item) => item.isActive), [school.id])
+  const categoryOptions = useMemo(
     () =>
-      days.map((date) => ({
-        date,
-        slots: db.slots
-          .bySchool(school.id)
-          .filter((slot) => slot.date === date)
-          .sort((left, right) => left.time.localeCompare(right.time)),
-      })),
-    [days, school.id],
+      DRIVING_CATEGORIES.filter((item) =>
+        instructors.some((instructor) => instructor.categories?.includes(item.code)),
+      ),
+    [instructors],
   )
+  const visibleInstructors = useMemo(
+    () =>
+      instructors
+        .filter((item) => (branchId ? item.branchId === branchId : true))
+        .filter((item) => (category ? item.categories?.includes(category) : true))
+        .filter((item) => (transmission ? item.transmission === transmission : true)),
+    [branchId, category, instructors, transmission],
+  )
+  const visibleInstructorIds = useMemo(
+    () => new Set(visibleInstructors.map((item) => item.id)),
+    [visibleInstructors],
+  )
+  const slotsByDate = useMemo(
+    () => {
+      const slots = db.slots
+        .bySchool(school.id)
+        .filter((slot) => days.includes(slot.date))
+        .filter((slot) => (branchId ? slot.branchId === branchId : true))
+        .filter((slot) => (instructorId ? slot.instructorId === instructorId : visibleInstructorIds.has(slot.instructorId)))
+        .filter((slot) => (onlyAvailable ? slot.status === 'available' : true))
+        .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
+
+      return days.map((date) => ({
+        date,
+        slots: slots.filter((slot) => slot.date === date),
+      }))
+    },
+    [branchId, days, instructorId, onlyAvailable, school.id, visibleInstructorIds],
+  )
+  const filteredSlotCount = slotsByDate.reduce((sum, group) => sum + group.slots.length, 0)
+  const freeSlotCount = slotsByDate.reduce(
+    (sum, group) => sum + group.slots.filter((slot) => slot.status === 'available').length,
+    0,
+  )
+
+  function resetFilters(): void {
+    setBranchId('')
+    setCategory('')
+    setInstructorId('')
+    setTransmission('')
+    setOnlyAvailable(false)
+  }
+
+  function selectClassName(): string {
+    return 'h-11 w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100'
+  }
 
   return (
     <section className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
-      <BackButton onClick={onBack} label="Назад в профиль" />
-      <h1 className="text-2xl font-semibold text-stone-900">Расписание автошколы</h1>
-      <p className="mt-2 text-base leading-relaxed text-stone-500">
-        Ближайшие две недели. Зеленым отмечены свободные занятия, серым - уже занятые.
-      </p>
+      <BackButton onClick={onBack} label="Назад" />
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-900">Расписание автошколы</h1>
+          <p className="mt-2 text-base leading-relaxed text-stone-500">
+            Ближайшие две недели. Можно быстро отфильтровать по филиалу, категории, инструктору и коробке.
+          </p>
+        </div>
+        <div className="hidden rounded-2xl bg-blue-50 px-4 py-3 text-right sm:block">
+          <p className="text-2xl font-semibold text-blue-700">{freeSlotCount}</p>
+          <p className="text-xs font-medium text-blue-700/70">свободно</p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-stone-600">Филиал</label>
+            <select
+              className={selectClassName()}
+              value={branchId}
+              onChange={(event) => {
+                setBranchId(event.target.value)
+                setInstructorId('')
+              }}
+            >
+              <option value="">Все филиалы</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>{branch.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-stone-600">Категория</label>
+            <select
+              className={selectClassName()}
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value)
+                setInstructorId('')
+              }}
+            >
+              <option value="">Все категории</option>
+              {categoryOptions.map((item) => (
+                <option key={item.code} value={item.code}>{item.code} · {item.title}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-stone-600">Инструктор</label>
+            <select
+              className={selectClassName()}
+              value={instructorId}
+              onChange={(event) => setInstructorId(event.target.value)}
+            >
+              <option value="">Все инструкторы</option>
+              {visibleInstructors.map((instructor) => (
+                <option key={instructor.id} value={instructor.id}>{instructor.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-stone-600">Коробка</label>
+            <select
+              className={selectClassName()}
+              value={transmission}
+              onChange={(event) => {
+                setTransmission(event.target.value)
+                setInstructorId('')
+              }}
+            >
+              <option value="">Любая</option>
+              <option value="manual">Механика</option>
+              <option value="auto">Автомат</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-stone-700">
+            <input
+              type="checkbox"
+              checked={onlyAvailable}
+              onChange={(event) => setOnlyAvailable(event.target.checked)}
+              className="h-4 w-4 accent-blue-600"
+            />
+            Только свободные
+          </label>
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="rounded-2xl px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+          >
+            Сбросить фильтры
+          </button>
+        </div>
+      </div>
 
       <div className="mt-6 space-y-4">
-        {slotsByDate.map((group) => (
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-600">
+            Найдено: {pluralize(filteredSlotCount, 'слот', 'слота', 'слотов')}
+          </span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Свободно: {freeSlotCount}
+          </span>
+        </div>
+
+        {filteredSlotCount === 0 ? (
+          <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center">
+            <Clock3 size={28} className="mx-auto text-stone-300" />
+            <p className="mt-3 text-base font-semibold text-stone-800">По фильтрам ничего не найдено</p>
+            <p className="mt-1 text-sm text-stone-500">Сбросьте фильтры или выберите другой филиал.</p>
+            <button type="button" onClick={resetFilters} className="mt-4 text-sm font-semibold text-blue-700">
+              Сбросить фильтры
+            </button>
+          </div>
+        ) : null}
+
+        {slotsByDate.filter((group) => group.slots.length > 0).map((group) => (
           <div key={group.date} className="rounded-2xl border border-stone-200 p-4">
             <div>
               <p className="text-base font-semibold capitalize text-stone-900">
@@ -462,6 +622,8 @@ function ScheduleOverview({
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {group.slots.map((slot) => {
                   const available = slot.status === 'available'
+                  const instructor = db.instructors.byId(slot.instructorId)
+                  const branch = db.branches.byId(slot.branchId)
                   return (
                     <div
                       key={slot.id}
@@ -470,11 +632,18 @@ function ScheduleOverview({
                         (available ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50')
                       }
                     >
-                      <p className="text-base font-semibold text-stone-900">{slot.time}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-base font-semibold text-stone-900">{slot.time}</p>
+                        <span className={'rounded-full px-2 py-0.5 text-[11px] font-semibold ' + (available ? 'bg-white text-emerald-700' : 'bg-white text-stone-500')}>
+                          {available ? 'свободно' : 'занято'}
+                        </span>
+                      </div>
                       <p className={'mt-1 text-sm ' + (available ? 'text-emerald-700' : 'text-stone-500')}>
-                        {available ? 'Свободно' : 'Занято'}
+                        {instructor?.name ?? 'Инструктор'}
                       </p>
-                      <p className="mt-1 text-xs text-stone-400">{formatDuration(slot.duration)}</p>
+                      <p className="mt-1 text-xs text-stone-400">
+                        {branch?.name ?? 'Филиал'} · {formatDuration(slot.duration)}
+                      </p>
                     </div>
                   )
                 })}
@@ -766,6 +935,7 @@ function PublicSchoolHome({
   instructors,
   onLogin,
   onOpenSchedule,
+  onSelectCategory,
   onStartBooking,
   school,
 }: {
@@ -774,6 +944,7 @@ function PublicSchoolHome({
   instructors: Instructor[]
   onLogin: () => void
   onOpenSchedule: () => void
+  onSelectCategory: (category: string) => void
   onStartBooking: () => void
   school: School
 }) {
@@ -849,9 +1020,13 @@ function PublicSchoolHome({
             const Icon = categoryIcon(category)
             const active = supportedCategoryCodes.has(category.code)
             return (
-              <div
+              <button
                 key={category.code}
-                className={'flex items-start gap-3 rounded-2xl border px-4 py-3 ' + (active ? 'border-blue-100 bg-blue-50/70' : 'border-stone-100 bg-stone-50')}
+                type="button"
+                onClick={() => {
+                  if (active) onSelectCategory(category.code)
+                }}
+                className={'flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ' + (active ? 'border-blue-100 bg-blue-50/70 hover:border-blue-200 hover:bg-blue-50' : 'border-stone-100 bg-stone-50')}
               >
                 <div className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' + (active ? 'bg-white text-blue-700' : 'bg-white text-stone-400')}>
                   <Icon size={18} />
@@ -863,9 +1038,12 @@ function PublicSchoolHome({
                       {active ? 'доступно' : 'не подключено'}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm leading-snug text-stone-500">{category.description}</p>
+                  <p className="mt-1 text-sm leading-snug text-stone-500">
+                    {category.description}
+                    {active ? ' Нажмите, чтобы перейти к записи по этой категории.' : ''}
+                  </p>
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>
@@ -961,6 +1139,7 @@ export function SchoolPage() {
   const [isBookingStarted, setIsBookingStarted] = useState(false)
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
+  const [preferredCategory, setPreferredCategory] = useState('')
   const [errors, setErrors] = useState<Partial<FormState>>({})
   const [loginErrors, setLoginErrors] = useState<Partial<LoginState>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -971,8 +1150,9 @@ export function SchoolPage() {
     () =>
       selectedBranch
         ? instructors.filter((i) => i.branchId === selectedBranch.id && i.isActive)
+          .filter((i) => (preferredCategory ? i.categories?.includes(preferredCategory) : true))
         : [],
-    [instructors, selectedBranch],
+    [instructors, preferredCategory, selectedBranch],
   )
 
   const maxSlotsPerBooking = Math.max(1, school?.maxSlotsPerBooking ?? 1)
@@ -1275,6 +1455,27 @@ export function SchoolPage() {
   }
 
   function startBookingFlow(): void {
+    setPreferredCategory('')
+    if (studentProfile && !isProfileComplete(studentProfile)) {
+      setIsScheduleOpen(false)
+      setIsProfileRequiredOpen(true)
+      return
+    }
+    setCreatedBookingId(null)
+    setIsScheduleOpen(false)
+    setIsProfileSettingsOpen(false)
+    setIsLoginOpen(false)
+    if (school?.branchSelectionMode === 'fixed_first' && branches[0]) {
+      setSelectedBranch(branches[0])
+      setStep(2)
+    } else {
+      setStep(1)
+    }
+    setIsBookingStarted(true)
+  }
+
+  function startBookingForCategory(category: string): void {
+    setPreferredCategory(category)
     if (studentProfile && !isProfileComplete(studentProfile)) {
       setIsScheduleOpen(false)
       setIsProfileRequiredOpen(true)
@@ -1594,6 +1795,7 @@ export function SchoolPage() {
                 setLoginErrors({})
               }}
               onOpenSchedule={() => setIsScheduleOpen(true)}
+              onSelectCategory={startBookingForCategory}
               onStartBooking={startBookingFlow}
               school={school}
             />
@@ -1699,13 +1901,24 @@ export function SchoolPage() {
                       {STEP_TITLES[2]}
                     </h1>
                     <p className="text-base text-stone-500 mb-6">
-                      Показываем инструкторов выбранного филиала.
+                      {preferredCategory
+                        ? `Показываем инструкторов выбранного филиала по категории ${preferredCategory}.`
+                        : 'Показываем инструкторов выбранного филиала.'}
                     </p>
+                    {preferredCategory ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreferredCategory('')}
+                        className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-left text-sm font-semibold text-blue-700"
+                      >
+                        Категория {preferredCategory} выбрана. Нажмите, чтобы показать всех инструкторов.
+                      </button>
+                    ) : null}
 
                     {branchInstructors.length === 0 ? (
                       <EmptyState
                         title="Нет доступных инструкторов"
-                        description="Выберите другой филиал или попробуйте позже."
+                        description={preferredCategory ? 'Для этой категории в филиале нет активных инструкторов.' : 'Выберите другой филиал или попробуйте позже.'}
                       />
                     ) : (
                       <div className="space-y-3">
@@ -1739,6 +1952,13 @@ export function SchoolPage() {
                                       : ''}
                                   </p>
                                 ) : null}
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {(instructor.categories ?? []).map((code) => (
+                                    <span key={code} className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600">
+                                      {code}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
                               <ArrowRight size={20} className="text-stone-300 shrink-0" />
                             </div>
