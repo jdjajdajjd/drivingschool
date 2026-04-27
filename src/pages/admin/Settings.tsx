@@ -9,6 +9,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatDuration, hexToRgba } from '../../lib/utils'
+import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
 import { performDemoReset, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { db } from '../../services/storage'
@@ -30,12 +31,15 @@ export function AdminSettings() {
     branchSelectionMode: 'student_choice' as 'student_choice' | 'fixed_first',
     maxSlotsPerBooking: 1,
     defaultLessonDuration: 90,
+    enabledCategoryCodes: [] as string[],
   })
 
   useEffect(() => {
     if (!school) {
       return
     }
+
+    const instructorCategoryCodes = Array.from(new Set(db.instructors.bySchool(school.id).flatMap((instructor) => instructor.categories ?? [])))
 
     setForm({
       name: school.name,
@@ -48,14 +52,28 @@ export function AdminSettings() {
       branchSelectionMode: school.branchSelectionMode ?? 'student_choice',
       maxSlotsPerBooking: school.maxSlotsPerBooking ?? 1,
       defaultLessonDuration: school.defaultLessonDuration ?? 90,
+      enabledCategoryCodes: school.enabledCategoryCodes?.length ? school.enabledCategoryCodes : instructorCategoryCodes,
     })
   }, [school])
 
   const publicUrl = useMemo(() => `${window.location.origin}/school/${form.slug}`, [form.slug])
+  const selectedCategories = DRIVING_CATEGORIES.filter((category) => form.enabledCategoryCodes.includes(category.code))
 
   async function copyPublicLink(): Promise<void> {
     await navigator.clipboard.writeText(publicUrl)
     showToast('Ссылка скопирована.', 'success')
+  }
+
+  function toggleCategory(code: string): void {
+    setForm((current) => {
+      const enabled = current.enabledCategoryCodes.includes(code)
+      return {
+        ...current,
+        enabledCategoryCodes: enabled
+          ? current.enabledCategoryCodes.filter((item) => item !== code)
+          : [...current.enabledCategoryCodes, code],
+      }
+    })
   }
 
   function handleSave(): void {
@@ -104,6 +122,7 @@ export function AdminSettings() {
       branchSelectionMode: form.branchSelectionMode,
       maxSlotsPerBooking: form.maxSlotsPerBooking,
       defaultLessonDuration: form.defaultLessonDuration,
+      enabledCategoryCodes: form.enabledCategoryCodes,
     })
 
     if (!result.ok) {
@@ -198,8 +217,60 @@ export function AdminSettings() {
               <p className="mt-2 text-sm leading-relaxed text-stone-500">
                 {form.description || 'Описание школы будет показано на публичной странице записи.'}
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(selectedCategories.length ? selectedCategories : DRIVING_CATEGORIES.slice(0, 1)).slice(0, 5).map((category) => (
+                  <span key={category.code} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">
+                    {category.code}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-2xl bg-stone-50 px-3 py-3">
+                  <p className="text-lg font-semibold text-stone-900">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
+                  <p className="text-xs text-stone-500">филиала</p>
+                </div>
+                <div className="rounded-2xl bg-stone-50 px-3 py-3">
+                  <p className="text-lg font-semibold text-stone-900">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
+                  <p className="text-xs text-stone-500">инструкторов</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: form.primaryColor || '#1f5b43' }}>
+                Записаться
+              </div>
             </div>
           </div>
+        </Section>
+
+        <Section title="Категории обучения" description="Выберите категории прав, которые видит ученик на странице школы и в записи.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {DRIVING_CATEGORIES.map((category) => {
+              const enabled = form.enabledCategoryCodes.includes(category.code)
+              return (
+                <button
+                  key={category.code}
+                  type="button"
+                  onClick={() => toggleCategory(category.code)}
+                  className={`rounded-2xl border px-4 py-4 text-left transition ${
+                    enabled
+                      ? 'border-blue-300 bg-blue-50 text-stone-950'
+                      : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                  }`}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="text-lg font-semibold">{category.code}</span>
+                    <span className={`h-3 w-3 rounded-full ${enabled ? 'bg-blue-600' : 'bg-stone-200'}`} />
+                  </span>
+                  <span className="mt-1 block text-sm font-medium">{category.title}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-stone-500">{category.description}</span>
+                </button>
+              )
+            })}
+          </div>
+          {selectedCategories.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Выберите хотя бы одну категорию, иначе ученики не увидят варианты записи.
+            </div>
+          ) : null}
         </Section>
 
         <Section title="Ограничения записи" description="Действуют только на публичную запись. Администратор может управлять записями вручную.">

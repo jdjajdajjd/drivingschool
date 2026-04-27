@@ -1,6 +1,7 @@
 import { addDays, isAfter, subDays } from 'date-fns'
 import { generateId } from '../lib/utils'
 import type { School, SchoolOverview } from '../types'
+import { DRIVING_CATEGORIES } from './drivingCategories'
 import { getBillingSummary } from './modules'
 import { resetDemoData } from './seed'
 import { db } from './storage'
@@ -27,6 +28,14 @@ export function validatePrimaryColor(color: string): boolean {
   return /^#([0-9a-fA-F]{6})$/.test(color)
 }
 
+const VALID_CATEGORY_CODES = new Set(DRIVING_CATEGORIES.map((category) => category.code))
+
+function normalizeCategoryCodes(codes?: string[]): string[] | undefined {
+  if (!codes) return undefined
+  const normalized = codes.filter((code, index) => VALID_CATEGORY_CODES.has(code) && codes.indexOf(code) === index)
+  return normalized.length > 0 ? normalized : undefined
+}
+
 export interface SchoolInput {
   name: string
   slug: string
@@ -41,6 +50,7 @@ export interface SchoolInput {
   branchSelectionMode?: School['branchSelectionMode']
   maxSlotsPerBooking?: number
   defaultLessonDuration?: number
+  enabledCategoryCodes?: string[]
   isActive?: boolean
 }
 
@@ -80,6 +90,7 @@ export function createSchool(input: SchoolInput): { ok: boolean; school?: School
     branchSelectionMode: input.branchSelectionMode ?? 'student_choice',
     maxSlotsPerBooking: input.maxSlotsPerBooking ?? 1,
     defaultLessonDuration: input.defaultLessonDuration ?? 90,
+    enabledCategoryCodes: normalizeCategoryCodes(input.enabledCategoryCodes) ?? ['B'],
     isActive: input.isActive ?? true,
   }
 
@@ -129,6 +140,11 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
     return { ok: false, error: 'Длительность занятия должна быть от 30 минут до 4 часов.' }
   }
 
+  const enabledCategoryCodes =
+    patch.enabledCategoryCodes !== undefined
+      ? normalizeCategoryCodes(patch.enabledCategoryCodes)
+      : school.enabledCategoryCodes
+
   const updated: School = {
     ...school,
     ...patch,
@@ -145,6 +161,7 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
     branchSelectionMode: patch.branchSelectionMode ?? school.branchSelectionMode ?? 'student_choice',
     maxSlotsPerBooking,
     defaultLessonDuration,
+    enabledCategoryCodes,
     isActive: patch.isActive ?? school.isActive,
   }
 

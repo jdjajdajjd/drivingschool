@@ -1,6 +1,6 @@
 import { addDays, format, isAfter, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { CalendarDays, CheckCircle2, ClipboardList, Copy, ExternalLink, MapPin, Users } from 'lucide-react'
+import { ArrowRight, CalendarDays, CheckCircle2, ClipboardList, Copy, ExternalLink, MapPin, Users } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
@@ -54,11 +54,11 @@ export function AdminDashboard() {
     })
 
     const launchItems = [
-      { label: 'Данные школы заполнены', done: Boolean(school.name && school.phone && school.address) },
-      { label: 'Филиалы добавлены', done: branches.some((branch) => branch.isActive) },
-      { label: 'Инструкторы добавлены', done: instructors.some((instructor) => instructor.isActive) },
-      { label: 'Расписание создано', done: freeSlots7d.length > 0 },
-      { label: 'Ссылка для учеников готова', done: Boolean(school.slug) },
+      { label: 'Данные школы заполнены', text: 'Название, адрес, телефон и категории.', done: Boolean(school.name && school.phone && school.address), to: `${ADMIN_BASE_PATH}/settings` },
+      { label: 'Филиалы добавлены', text: 'Где ученики начинают занятия.', done: branches.some((branch) => branch.isActive), to: `${ADMIN_BASE_PATH}/branches` },
+      { label: 'Инструкторы добавлены', text: 'Кто ведет занятия и на каких машинах.', done: instructors.some((instructor) => instructor.isActive), to: `${ADMIN_BASE_PATH}/instructors` },
+      { label: 'Расписание создано', text: 'Свободные окна на ближайшие дни.', done: freeSlots7d.length > 0, to: `${ADMIN_BASE_PATH}/slots` },
+      { label: 'Ссылка для учеников готова', text: 'Откройте страницу и проверьте запись.', done: Boolean(school.slug), to: `/school/${school.slug}`, external: true },
     ]
 
     return {
@@ -150,14 +150,37 @@ export function AdminDashboard() {
 
         <div className="space-y-6">
           <Section title="Мастер запуска" description="Что нужно проверить перед тем, как давать ссылку ученикам.">
+            <div className="mb-4 rounded-2xl bg-stone-50 px-4 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-stone-700">
+                  Готово {data.launchItems.filter((item) => item.done).length} из {data.launchItems.length}
+                </p>
+                <p className="text-sm text-stone-500">Запуск школы</p>
+              </div>
+              <div className="mt-3 h-2 rounded-full bg-white">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-all"
+                  style={{ width: `${(data.launchItems.filter((item) => item.done).length / data.launchItems.length) * 100}%` }}
+                />
+              </div>
+            </div>
             <div className="space-y-3">
               {data.launchItems.map((item) => (
-                <div key={item.label} className="flex items-center gap-3 rounded-2xl bg-stone-50 px-4 py-3">
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => item.external ? window.open(item.to, '_blank') : navigate(item.to)}
+                  className="flex w-full items-center gap-3 rounded-2xl bg-stone-50 px-4 py-3 text-left transition hover:bg-blue-50"
+                >
                   <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.done ? 'bg-blue-50 text-blue-700' : 'bg-white text-stone-300'}`}>
                     <CheckCircle2 size={19} />
                   </div>
-                  <p className="text-base font-medium text-stone-800">{item.label}</p>
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-medium text-stone-800">{item.label}</p>
+                    <p className="mt-0.5 text-sm text-stone-500">{item.text}</p>
+                  </div>
+                  <ArrowRight size={18} className="shrink-0 text-stone-400" />
+                </button>
               ))}
             </div>
             <div className="mt-4 grid gap-3">

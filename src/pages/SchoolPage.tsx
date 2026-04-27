@@ -138,6 +138,12 @@ function selectClassName(): string {
   return 'h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-base text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100'
 }
 
+function getVisibleDrivingCategories(school: School, instructors: Instructor[]) {
+  const supported = new Set(instructors.flatMap((item) => item.categories ?? []))
+  const configured = school.enabledCategoryCodes?.length ? new Set(school.enabledCategoryCodes) : supported
+  return DRIVING_CATEGORIES.filter((category) => configured.has(category.code) && supported.has(category.code))
+}
+
 function StepHeader({ current, total }: { current: number; total: number }) {
   return (
     <div className="border-b border-stone-100 px-5 py-4">
@@ -210,8 +216,15 @@ function SchoolHome({
   const futureSlots = db.slots.bySchool(school.id)
     .filter((slot) => slot.status === 'available' && slotDateTime(slot) > new Date())
     .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
-  const supported = new Set(instructors.flatMap((item) => item.categories ?? []))
-  const visibleCategories = DRIVING_CATEGORIES.filter((category) => supported.has(category.code)).slice(0, 12)
+  const visibleCategories = getVisibleDrivingCategories(school, instructors).slice(0, 12)
+  const instructorCards = instructors.slice(0, 6).map((instructor) => {
+    const nextSlot = futureSlots.find((slot) => slot.instructorId === instructor.id) ?? null
+    return {
+      instructor,
+      branch: branches.find((branch) => branch.id === instructor.branchId) ?? null,
+      nextSlot,
+    }
+  })
 
   return (
     <section className="space-y-5">
@@ -270,6 +283,46 @@ function SchoolHome({
               >
                 <p className="text-lg font-semibold text-stone-900">{category.code}</p>
                 <p className="mt-1 line-clamp-2 text-sm leading-snug text-stone-500">{category.title}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {instructorCards.length > 0 ? (
+        <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-stone-900">Инструкторы</h2>
+              <p className="mt-1 text-base text-stone-500">Живые люди, учебные машины и ближайшее свободное время.</p>
+            </div>
+            <Button variant="secondary" size="sm" onClick={onStartBooking}>
+              Записаться
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {instructorCards.map(({ branch, instructor, nextSlot }) => (
+              <button
+                key={instructor.id}
+                type="button"
+                onClick={() => onSelectCategory(instructor.categories?.[0] ?? '')}
+                className="flex w-full items-center gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
+              >
+                <Avatar
+                  initials={instructor.avatarInitials}
+                  color={instructor.avatarColor}
+                  src={getInstructorPhoto(instructor)}
+                  alt={instructor.name}
+                  size="lg"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-stone-950">{instructor.name}</p>
+                  <p className="mt-1 truncate text-sm text-stone-600">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
+                  <p className="mt-1 truncate text-sm text-stone-500">{branch?.name ?? 'Филиал уточняется'} · {(instructor.categories ?? []).join(', ')}</p>
+                  <p className="mt-2 text-sm font-medium text-blue-700">
+                    {nextSlot ? `${formatDate(nextSlot.date)}, ${nextSlot.time}` : 'Свободное время уточняется'}
+                  </p>
+                </div>
               </button>
             ))}
           </div>
@@ -394,9 +447,7 @@ function ScheduleOverview({ brandColor, onBack, onSelectSlot, school }: {
   const days = useMemo(() => getNext14Days(), [])
   const branches = db.branches.bySchool(school.id).filter((item) => item.isActive)
   const instructors = db.instructors.bySchool(school.id).filter((item) => item.isActive)
-  const categoryOptions = DRIVING_CATEGORIES.filter((categoryItem) =>
-    instructors.some((instructor) => instructor.categories?.includes(categoryItem.code)),
-  )
+  const categoryOptions = getVisibleDrivingCategories(school, instructors)
 
   const visibleSlots = days.map((date) => {
     const slots = db.slots.bySchool(school.id)
@@ -675,6 +726,9 @@ export function SchoolPage() {
       .filter((instructor) => selectedBranch ? instructor.branchId === selectedBranch.id : true)
       .filter((instructor) => selectedCategory ? instructor.categories?.includes(selectedCategory) : true)
   }, [instructors, selectedBranch, selectedCategory])
+  const bookingCategoryOptions = useMemo(() => {
+    return school ? getVisibleDrivingCategories(school, instructors) : []
+  }, [instructors, school])
 
   const slotsByDate = useMemo(() => {
     if (!selectedInstructor) return []
@@ -1021,7 +1075,7 @@ export function SchoolPage() {
                     <h1 className="text-2xl font-semibold text-stone-950">Какая категория нужна?</h1>
                     <p className="mt-2 text-base text-stone-600">Если не уверены, можно пропустить и выбрать инструктора.</p>
                     <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {DRIVING_CATEGORIES.filter((category) => instructors.some((instructor) => instructor.categories?.includes(category.code))).map((category) => (
+                      {bookingCategoryOptions.map((category) => (
                         <button key={category.code} onClick={() => { setSelectedCategory(category.code); setStep('branch') }} className="rounded-2xl border border-stone-200 bg-stone-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50">
                           <p className="text-xl font-semibold text-stone-950">{category.code}</p>
                           <p className="mt-1 line-clamp-2 text-sm text-stone-500">{category.title}</p>

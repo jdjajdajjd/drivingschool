@@ -20,6 +20,7 @@ const SCHOOL: School = {
   branchSelectionMode: 'student_choice',
   maxSlotsPerBooking: 2,
   defaultLessonDuration: 90,
+  enabledCategoryCodes: ['B', 'C', 'D'],
   isActive: true,
 }
 

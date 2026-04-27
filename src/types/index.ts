@@ -14,6 +14,7 @@ export interface School {
   branchSelectionMode?: 'student_choice' | 'fixed_first'
   maxSlotsPerBooking?: number
   defaultLessonDuration?: number
+  enabledCategoryCodes?: string[]
   isActive?: boolean
 }
 
