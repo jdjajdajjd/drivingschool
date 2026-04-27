@@ -10,12 +10,16 @@ import {
   Copy,
   Clock3,
   AlertTriangle,
+  Bike,
+  Bus,
+  Car,
   LockKeyhole,
   LogOut,
   Mail,
   MapPin,
   Phone,
   Settings,
+  Truck,
   UserRound,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
@@ -40,6 +44,7 @@ import {
   requestBranchChangeInSupabase,
   updateStudentProfileInSupabase,
 } from '../services/supabasePublicService'
+import { DRIVING_CATEGORIES, type DrivingCategoryInfo } from '../services/drivingCategories'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatDate, formatDateFull, formatDayOfWeek, getNext14Days, getNext7Days } from '../utils/date'
 
@@ -748,6 +753,188 @@ function VirazhLogo({ color }: { color: string }) {
   )
 }
 
+function categoryIcon(category: DrivingCategoryInfo) {
+  if (category.group === 'moto') return Bike
+  if (category.group === 'truck') return Truck
+  if (category.group === 'bus' || category.group === 'special') return Bus
+  return Car
+}
+
+function PublicSchoolHome({
+  brandColor,
+  branches,
+  instructors,
+  onLogin,
+  onOpenSchedule,
+  onStartBooking,
+  school,
+}: {
+  brandColor: string
+  branches: Branch[]
+  instructors: Instructor[]
+  onLogin: () => void
+  onOpenSchedule: () => void
+  onStartBooking: () => void
+  school: School
+}) {
+  const supportedCategoryCodes = useMemo(
+    () => new Set(instructors.flatMap((instructor) => instructor.categories ?? [])),
+    [instructors],
+  )
+  const supportedCategories = DRIVING_CATEGORIES.filter((category) => supportedCategoryCodes.has(category.code))
+  const futureSlots = db.slots
+    .bySchool(school.id)
+    .filter((slot) => slot.status === 'available' && slotDateTime(slot) >= new Date())
+    .sort((left, right) => slotDateTime(left).getTime() - slotDateTime(right).getTime())
+  const nextSlot = futureSlots[0] ?? null
+  const activeInstructors = instructors.filter((instructor) => instructor.isActive)
+
+  return (
+    <section className="space-y-4">
+      <div className="overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card">
+        <div className="relative px-5 pb-6 pt-6 text-white" style={{ background: `linear-gradient(135deg, ${brandColor} 0%, #2563eb 56%, #111827 100%)` }}>
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-white/10" />
+          <div className="relative flex items-start gap-4">
+            <VirazhLogo color={brandColor} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/68">Страница автошколы</p>
+              <h1 className="mt-2 text-3xl font-semibold leading-tight">{school.name}</h1>
+              <p className="mt-3 text-base leading-relaxed text-white/78">{school.description}</p>
+            </div>
+          </div>
+          <div className="relative mt-6 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white/12 px-4 py-3 ring-1 ring-white/16">
+              <p className="text-2xl font-semibold">{supportedCategories.length || 0}</p>
+              <p className="mt-1 text-sm text-white/72">категорий в школе</p>
+            </div>
+            <div className="rounded-2xl bg-white/12 px-4 py-3 ring-1 ring-white/16">
+              <p className="text-2xl font-semibold">{branches.length}</p>
+              <p className="mt-1 text-sm text-white/72">филиалов</p>
+            </div>
+            <div className="rounded-2xl bg-white/12 px-4 py-3 ring-1 ring-white/16">
+              <p className="text-2xl font-semibold">{futureSlots.length}</p>
+              <p className="mt-1 text-sm text-white/72">свободных мест</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-5">
+          <Button size="lg" className="min-h-14 w-full text-lg" style={{ backgroundColor: brandColor, borderColor: brandColor }} onClick={onStartBooking}>
+            Записаться на занятие
+            <ArrowRight size={20} />
+          </Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button size="lg" variant="secondary" className="min-h-13 w-full" onClick={onLogin}>
+              Войти в профиль
+            </Button>
+            <Button size="lg" variant="secondary" className="min-h-13 w-full" onClick={onOpenSchedule}>
+              Расписание
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-stone-900">Категории прав</h2>
+            <p className="mt-1 text-sm leading-relaxed text-stone-500">
+              Показываем все категории, но активными отмечены только те, где у школы есть инструкторы.
+            </p>
+          </div>
+          <Car size={22} style={{ color: brandColor }} />
+        </div>
+        <div className="mt-4 grid gap-2">
+          {DRIVING_CATEGORIES.map((category) => {
+            const Icon = categoryIcon(category)
+            const active = supportedCategoryCodes.has(category.code)
+            return (
+              <div
+                key={category.code}
+                className={'flex items-start gap-3 rounded-2xl border px-4 py-3 ' + (active ? 'border-blue-100 bg-blue-50/70' : 'border-stone-100 bg-stone-50')}
+              >
+                <div className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' + (active ? 'bg-white text-blue-700' : 'bg-white text-stone-400')}>
+                  <Icon size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-stone-900">{category.code} · {category.title}</p>
+                    <span className={'rounded-full px-2.5 py-1 text-xs font-semibold ' + (active ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-500')}>
+                      {active ? 'доступно' : 'не подключено'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm leading-snug text-stone-500">{category.description}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+          <h2 className="text-xl font-semibold text-stone-900">Ближайшее свободное время</h2>
+          {nextSlot ? (
+            <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-4">
+              <p className="text-lg font-semibold text-stone-900">{formatDateFull(nextSlot.date)} в {nextSlot.time}</p>
+              <p className="mt-1 text-sm text-stone-500">
+                {(db.instructors.byId(nextSlot.instructorId)?.name ?? 'Инструктор') + ' · ' + (db.branches.byId(nextSlot.branchId)?.name ?? 'Филиал')}
+              </p>
+              <Button className="mt-4 w-full" onClick={onStartBooking}>
+                Выбрать занятие
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-3 rounded-2xl bg-stone-50 px-4 py-4 text-sm text-stone-500">Свободных мест пока нет. Можно посмотреть расписание или связаться с автошколой.</p>
+          )}
+        </div>
+
+        <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+          <h2 className="text-xl font-semibold text-stone-900">Филиалы</h2>
+          <div className="mt-4 space-y-2">
+            {branches.map((branch) => (
+              <div key={branch.id} className="rounded-2xl bg-stone-50 px-4 py-3">
+                <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
+                <p className="mt-1 text-sm text-stone-500">{branch.address}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+          <h2 className="text-xl font-semibold text-stone-900">Инструкторы</h2>
+          <div className="mt-4 space-y-2">
+            {activeInstructors.slice(0, 4).map((instructor) => (
+              <div key={instructor.id} className="flex items-start gap-3 rounded-2xl bg-stone-50 px-4 py-3">
+                <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-stone-900">{instructor.name}</p>
+                  <p className="mt-1 text-sm text-stone-500">
+                    {(instructor.categories ?? []).join(', ') || 'Категория не указана'} · {instructor.car ?? 'Автомобиль уточняется'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[1.65rem] border border-stone-200 bg-white p-5 shadow-card">
+        <h2 className="text-xl font-semibold text-stone-900">Контакты</h2>
+        <div className="mt-4 grid gap-2">
+          <a className="rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900" href={`tel:${school.phone}`}>
+            {formatPhone(school.phone)}
+          </a>
+          <a className="rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900" href={`mailto:${school.email}`}>
+            {school.email}
+          </a>
+          <p className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-500">{school.address}</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function SchoolPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
@@ -866,7 +1053,7 @@ export function SchoolPage() {
       } else {
         setForm({ name: '', phone: '', email: '', password: '', avatarUrl: '' })
         setIsEditingProfile(false)
-        setIsBookingStarted(true)
+        setIsBookingStarted(false)
         if (currentSchool.branchSelectionMode === 'fixed_first') {
           const firstBranch = nextBranches.filter((b) => b.isActive)[0]
           if (firstBranch) {
@@ -1111,7 +1298,7 @@ export function SchoolPage() {
       setIsBookingStarted(false)
       return
     }
-    navigate('/')
+    setIsBookingStarted(false)
   }
 
   function continueToConfirmation(): void {
@@ -1390,6 +1577,25 @@ export function SchoolPage() {
               nextLesson={studentStats.nextLesson}
               onOpenSchedule={() => setIsScheduleOpen(true)}
               onStartBooking={startBookingFlow}
+            />
+          ) : !studentProfile && isScheduleOpen ? (
+            <ScheduleOverview
+              brandColor={brandColor}
+              onBack={() => setIsScheduleOpen(false)}
+              school={school}
+            />
+          ) : !isBookingStarted && !studentProfile ? (
+            <PublicSchoolHome
+              brandColor={brandColor}
+              branches={branches}
+              instructors={instructors}
+              onLogin={() => {
+                setIsLoginOpen(true)
+                setLoginErrors({})
+              }}
+              onOpenSchedule={() => setIsScheduleOpen(true)}
+              onStartBooking={startBookingFlow}
+              school={school}
             />
           ) : !isLoginOpen ? (
           <>
