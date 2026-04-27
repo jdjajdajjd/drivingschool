@@ -417,10 +417,14 @@ function StudentDashboard({
 function ScheduleOverview({
   brandColor,
   onBack,
+  onSelectCategory,
+  onStartBooking,
   school,
 }: {
   brandColor: string
   onBack: () => void
+  onSelectCategory?: (category: string) => void
+  onStartBooking: () => void
   school: School
 }) {
   const [branchId, setBranchId] = useState('')
@@ -653,14 +657,33 @@ function ScheduleOverview({
         ))}
       </div>
 
-      <Button
-        size="lg"
-        className="mt-6 w-full min-h-14 text-lg"
-        style={{ backgroundColor: brandColor, borderColor: brandColor }}
-        onClick={onBack}
-      >
-        Понятно
-      </Button>
+      <div className="mt-6 space-y-3">
+        {freeSlotCount > 0 ? (
+          <Button
+            size="lg"
+            className="w-full min-h-14 text-lg"
+            style={{ backgroundColor: brandColor, borderColor: brandColor }}
+            onClick={() => {
+              if (category && onSelectCategory) {
+                onSelectCategory(category)
+                return
+              }
+              onStartBooking()
+            }}
+          >
+            Записаться на свободное время
+            <ArrowRight size={20} />
+          </Button>
+        ) : null}
+        <Button
+          size="lg"
+          variant="secondary"
+          className="w-full min-h-14 text-lg"
+          onClick={onBack}
+        >
+          Назад
+        </Button>
+      </div>
     </section>
   )
 }
@@ -1704,7 +1727,13 @@ export function SchoolPage() {
             <div className="text-left">
               <p className="text-base font-semibold text-stone-900 leading-tight">{school.name}</p>
               <p className="text-sm text-stone-400">
-                {isBookingStarted ? 'Запись на занятие' : isScheduleOpen ? 'Расписание автошколы' : 'Профиль ученика'}
+                {isBookingStarted
+                  ? 'Запись на занятие'
+                  : isScheduleOpen
+                    ? 'Расписание автошколы'
+                    : studentProfile
+                      ? 'Профиль ученика'
+                      : 'Страница автошколы'}
               </p>
             </div>
           </button>
@@ -1768,6 +1797,8 @@ export function SchoolPage() {
             <ScheduleOverview
               brandColor={brandColor}
               onBack={() => setIsScheduleOpen(false)}
+              onSelectCategory={startBookingForCategory}
+              onStartBooking={startBookingFlow}
               school={school}
             />
           ) : !isBookingStarted && studentProfile ? (
@@ -1783,6 +1814,8 @@ export function SchoolPage() {
             <ScheduleOverview
               brandColor={brandColor}
               onBack={() => setIsScheduleOpen(false)}
+              onSelectCategory={startBookingForCategory}
+              onStartBooking={startBookingFlow}
               school={school}
             />
           ) : !isBookingStarted && !studentProfile ? (
