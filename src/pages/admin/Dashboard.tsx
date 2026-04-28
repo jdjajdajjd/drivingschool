@@ -5,7 +5,8 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
@@ -76,7 +77,7 @@ export function AdminDashboard() {
   if (!school || !data) {
     return (
       <div className="max-w-7xl p-4 md:p-6">
-        <EmptyState title="Школа не найдена" description="Откройте страницу школы или проверьте подключение данных." />
+        <StateView kind="error" title="Школа не найдена" description="Откройте страницу школы или проверьте подключение данных." />
       </div>
     )
   }
@@ -120,28 +121,30 @@ export function AdminDashboard() {
           }
         >
           {data.upcoming.length === 0 ? (
-            <EmptyState title="Ближайших занятий пока нет" description="Когда ученики запишутся, занятия появятся здесь." />
+            <StateView title="Ближайших занятий пока нет" description="Когда ученики запишутся, занятия появятся здесь." />
           ) : (
             <div className="space-y-2.5">
               {data.upcoming.map((entry) => (
                 <Link
                   key={entry.booking.id}
                   to={`/booking/${entry.booking.id}`}
-                  className="ui-card-hover flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-3.5 md:flex-row md:items-center"
+                  className="block"
                 >
-                  <div className="min-w-[150px]">
-                    <p className="text-sm font-black text-ink-900">
-                      {entry.slot
-                        ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMMM, HH:mm', { locale: ru })
-                        : 'Время не найдено'}
-                    </p>
-                    <p className="text-xs font-medium text-slate-600">{entry.branch?.name ?? 'Филиал не найден'}</p>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-ink-900">{entry.booking.studentName}</p>
-                    <p className="truncate text-sm text-slate-600">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
-                  </div>
-                  <StatusBadge status={entry.booking.status} />
+                  <DataRow className="flex flex-col gap-2.5 md:flex-row md:items-center">
+                    <div className="min-w-[150px]">
+                      <p className="text-sm font-black text-ink-900">
+                        {entry.slot
+                          ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMMM, HH:mm', { locale: ru })
+                          : 'Время не найдено'}
+                      </p>
+                      <p className="text-xs font-medium text-slate-600">{entry.branch?.name ?? 'Филиал не найден'}</p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-black text-ink-900">{entry.booking.studentName}</p>
+                      <p className="truncate text-sm text-slate-600">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
+                    </div>
+                    <StatusBadge status={entry.booking.status} />
+                  </DataRow>
                 </Link>
               ))}
             </div>
@@ -170,7 +173,7 @@ export function AdminDashboard() {
                   key={item.label}
                   type="button"
                   onClick={() => item.external ? window.open(item.to, '_blank') : navigate(item.to)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/60"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/60"
                 >
                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${item.done ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-slate-100 bg-white text-slate-300'}`}>
                     <CheckCircle2 size={19} />
@@ -208,7 +211,7 @@ export function AdminDashboard() {
           <Section title="Филиалы" description="Короткая проверка, что ученику понятно куда ехать.">
             <div className="space-y-2.5">
               {data.branches.map((branch) => (
-                <div key={branch.id} className="flex gap-3 rounded-xl bg-stone-50 px-3.5 py-3.5">
+                <div key={branch.id} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3.5 py-3.5">
                   <MapPin size={19} className="mt-0.5 shrink-0 text-stone-400" />
                   <div>
                     <p className="text-sm font-semibold text-stone-900">{branch.name}</p>

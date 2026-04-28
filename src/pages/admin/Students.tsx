@@ -2,7 +2,8 @@ import { Search, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow, DataToolbar } from '../../components/ui/DataList'
 import { FormField } from '../../components/ui/FormField'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
@@ -55,7 +56,7 @@ export function AdminStudents() {
   if (!school) {
     return (
       <div className="max-w-7xl p-6 md:p-8">
-        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+        <StateView kind="error" title="Школа не найдена" description="Демо-данные не загружены." />
       </div>
     )
   }
@@ -69,8 +70,8 @@ export function AdminStudents() {
       />
 
       <div className="mt-6 space-y-5">
-        <Section title="Поиск и фильтры" description="Ищите по имени, телефону или статусу активности.">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_280px]">
+        <DataToolbar>
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_280px]">
             <FormField label="Поиск">
               <div className="relative">
                 <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
@@ -92,54 +93,56 @@ export function AdminStudents() {
               </select>
             </FormField>
           </div>
-        </Section>
+        </DataToolbar>
 
         <Section title="Список учеников" description={`Найдено ${rows.length} учеников.`}>
           {rows.length === 0 ? (
-            <EmptyState title="Ученики не найдены" description="Измените фильтры или создайте запись на публичной странице." />
+            <StateView kind="no-results" title="Ученики не найдены" description="Измените фильтры или создайте запись на публичной странице." />
           ) : (
             <div className="grid gap-3">
               {rows.map(({ student, stats }) => (
                 <Link
                   key={student.id}
                   to={`${ADMIN_BASE_PATH}/students/${student.id}`}
-                  className="ui-card-hover rounded-2xl border border-slate-200 bg-white p-4"
+                  className="block"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                        <UserRound size={18} />
+                  <DataRow>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                          <UserRound size={18} />
+                        </div>
+                        <div>
+                          <p className="text-base font-black text-ink-900">{student.name}</p>
+                          <p className="text-sm font-medium text-slate-600">{formatPhone(student.normalizedPhone)}</p>
+                        </div>
+                      </div>
+                      {stats.limitReached ? <Badge variant="warning">Лимит достигнут</Badge> : <Badge variant={stats.activeFutureBookings > 0 ? 'success' : 'muted'}>{stats.activeFutureBookings > 0 ? 'Есть запись' : 'Без активных'}</Badge>}
+                    </div>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                      <div>
+                        <p className="text-xs font-bold text-slate-500">Всего записей</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{stats.totalBookings}</p>
                       </div>
                       <div>
-                        <p className="text-base font-black text-ink-900">{student.name}</p>
-                        <p className="text-sm font-medium text-slate-600">{formatPhone(student.normalizedPhone)}</p>
+                        <p className="text-xs font-bold text-slate-500">Будущих активных</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{stats.activeFutureBookings}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-500">Последняя запись</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">
+                          {stats.lastBooking ? new Date(stats.lastBooking.createdAt).toLocaleDateString('ru-RU') : 'Нет'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-500">Ближайшая запись</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">
+                          {stats.nextBooking ? stats.nextBooking.id : 'Нет'}
+                        </p>
                       </div>
                     </div>
-                    {stats.limitReached ? <Badge variant="warning">Лимит достигнут</Badge> : null}
-                  </div>
-
-                  <div className="mt-4 grid gap-2 sm:grid-cols-4">
-                    <div>
-                      <p className="text-xs font-bold text-slate-500">Всего записей</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">{stats.totalBookings}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-500">Будущих активных</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">{stats.activeFutureBookings}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-500">Последняя запись</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">
-                        {stats.lastBooking ? new Date(stats.lastBooking.createdAt).toLocaleDateString('ru-RU') : 'Нет'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-500">Ближайшая запись</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">
-                        {stats.nextBooking ? stats.nextBooking.id : 'Нет'}
-                      </p>
-                    </div>
-                  </div>
+                  </DataRow>
                 </Link>
               ))}
             </div>

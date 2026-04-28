@@ -17,6 +17,7 @@ import {
   Phone,
   Settings,
   ShieldCheck,
+  Home,
   X,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
@@ -24,6 +25,10 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
+import { BottomNav } from '../components/ui/BottomNav'
+import { StateView } from '../components/ui/StateView'
+import { SelectionMark, Stepper } from '../components/ui/Stepper'
+import { AvailabilityBadge } from '../components/ui/Badge'
 import { useToast } from '../components/ui/Toast'
 import { formatDuration, formatPhone, generateId, pluralize } from '../lib/utils'
 import {
@@ -38,7 +43,7 @@ import {
 import { DRIVING_CATEGORIES } from '../services/drivingCategories'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { db } from '../services/storage'
-import { getTenantTheme } from '../services/tenantTheme'
+import { getTenantTheme, type TenantTheme } from '../services/tenantTheme'
 import {
   createSupabaseBooking,
   getPublicSchoolBundle,
@@ -176,37 +181,11 @@ async function compressAvatar(file: File): Promise<string> {
 
 // ─── Atoms ───────────────────────────────────────────────────────────────────
 
-function FreeBadge() {
-  return (
-    <span className="inline-flex shrink-0 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-      Свободно
-    </span>
-  )
-}
-
 function BookedBadge() {
   return (
     <span className="inline-flex shrink-0 items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
       Вы записаны
     </span>
-  )
-}
-
-function StepHeader({ current, total }: { current: number; total: number }) {
-  const pct = Math.round((current / total) * 100)
-  return (
-    <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-4">
-      <div className="flex items-center justify-between">
-        <span className="ui-kicker">Шаг {current} из {total}</span>
-        <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-blue-700 shadow-sm">{pct}%</span>
-      </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white shadow-inner">
-        <div
-          className="h-full rounded-full bg-blue-700 transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
   )
 }
 
@@ -326,6 +305,7 @@ function SchoolHome({
   onSelectCategory,
   onStartBooking,
   school,
+  theme,
 }: {
   branches: Branch[]
   brandColor: string
@@ -335,6 +315,7 @@ function SchoolHome({
   onSelectCategory: (category: string) => void
   onStartBooking: () => void
   school: School
+  theme: TenantTheme
 }) {
   const futureSlots = db.slots.bySchool(school.id)
     .filter((s) => s.status === 'available' && slotDateTime(s) > new Date())
@@ -348,24 +329,23 @@ function SchoolHome({
 
   return (
     <section className="space-y-5">
-      {/* Hero card */}
-      <div className="overflow-hidden rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
-        <div className="px-6 pb-5 pt-6">
-          <div className="flex items-start gap-3">
+      <div className="overflow-hidden rounded-[1.8rem] border border-slate-200/70 bg-white shadow-card">
+        <div className="px-6 pb-5 pt-6 sm:px-7 sm:pt-7">
+          <div className="flex items-start gap-3.5">
             <VirazhLogo color={brandColor} />
             <div className="min-w-0">
-              <p className="ui-kicker">Автошкола</p>
-              <h1 className="mt-1 text-3xl font-black leading-tight tracking-normal text-ink-900">{school.name}</h1>
+              <p className="ui-kicker">{theme.hero.eyebrow}</p>
+              <h1 className="mt-1 text-[2rem] font-black leading-[1.05] tracking-normal text-ink-900 sm:text-4xl">{theme.hero.title}</h1>
             </div>
           </div>
-          {school.description ? <p className="mt-4 text-[15px] leading-relaxed text-slate-600">{school.description}</p> : null}
+          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-slate-600">{theme.hero.description}</p>
           <div className="mt-6 space-y-3">
             <button
               onClick={onStartBooking}
               className="flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left font-bold text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 active:scale-[0.98]"
               style={{ backgroundColor: brandColor }}
             >
-              <span className="text-base">Записаться на занятие</span>
+              <span className="text-base">{theme.cta.book}</span>
               <ArrowRight size={18} />
             </button>
             <div className="grid grid-cols-2 gap-2.5">
@@ -374,14 +354,14 @@ function SchoolHome({
                 className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/50"
               >
                 <LogIn size={16} className="text-slate-500" />
-                Войти
+                {theme.cta.login}
               </button>
               <button
                 onClick={onOpenSchedule}
                 className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/50"
               >
                 <CalendarDays size={16} className="text-slate-500" />
-                Расписание
+                {theme.cta.schedule}
               </button>
             </div>
           </div>
@@ -389,18 +369,12 @@ function SchoolHome({
 
         {/* Stats strip */}
         <div className="grid grid-cols-3 gap-px border-t border-slate-100 bg-slate-100">
-          <div className="bg-slate-50/80 py-4 text-center">
-            <p className="text-xl font-black tabular-nums text-ink-900">{branches.length}</p>
-            <p className="mt-0.5 text-[11px] font-bold text-slate-500">филиала</p>
-          </div>
-          <div className="bg-slate-50/80 py-4 text-center">
-            <p className="text-xl font-black tabular-nums text-ink-900">{instructors.length}</p>
-            <p className="mt-0.5 text-[11px] font-bold text-slate-500">инструкторов</p>
-          </div>
-          <div className="bg-slate-50/80 py-4 text-center">
-            <p className="text-xl font-black tabular-nums" style={{ color: brandColor }}>{futureSlots.length}</p>
-            <p className="mt-0.5 text-[11px] font-bold text-slate-500">свободных мест</p>
-          </div>
+          {theme.trustMetrics.map((metric, index) => (
+            <div key={metric.label} className="bg-slate-50/80 py-4 text-center">
+              <p className="text-xl font-black tabular-nums" style={{ color: index === 2 ? brandColor : undefined }}>{metric.value}</p>
+              <p className="mt-0.5 text-[11px] font-bold text-slate-500">{metric.label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -628,7 +602,7 @@ function StudentDashboard({
         </div>
         <div className="mt-3 space-y-2 px-4 pb-5">
           {futureLessons.length === 0 ? (
-            <EmptyState title="Записей пока нет" description="Когда вы запишетесь, занятия появятся здесь." />
+            <StateView title="Записей пока нет" description="Когда вы запишетесь, ближайшие занятия появятся здесь." action={<Button onClick={onStartBooking}>Записаться</Button>} />
           ) : (
             futureLessons.map((lesson) => <LessonCard key={lesson.booking.id} lesson={lesson} />)
           )}
@@ -737,7 +711,7 @@ function ScheduleOverview({
       {/* Slot list */}
       {visibleSlots.length === 0 ? (
         <div className="rounded-[1.7rem] border border-slate-200/70 bg-white px-5 py-10 shadow-card">
-          <EmptyState title="Нет подходящих мест" description="Попробуйте изменить фильтры или выберите другой период." />
+          <StateView kind="no-results" title="Нет подходящих мест" description="Попробуйте изменить фильтры или откройте все слоты." action={onlyAvailable ? <Button variant="secondary" onClick={() => setOnlyAvailable(false)}>Показать все</Button> : null} />
         </div>
       ) : (
         visibleSlots.map((group) => {
@@ -782,9 +756,7 @@ function ScheduleOverview({
 
                       {/* Status + CTA */}
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        {mine ? <BookedBadge /> : free ? <FreeBadge /> : (
-                          <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">занято</span>
-                        )}
+                        {mine ? <BookedBadge /> : <AvailabilityBadge available={free} label={free ? 'Свободно' : 'Занято'} />}
                         {free && !mine && (
                           <button
                             onClick={() => onSelectSlot(slot)}
@@ -1056,8 +1028,9 @@ export function SchoolPage() {
     return () => { window.clearInterval(id); if (!finalizing.current) releaseSessionLocks(sessionId.current) }
   }, [selectedSlots])
 
-  const tenantTheme = school ? getTenantTheme(school) : null
-  const brandColor = tenantTheme?.primaryColor ?? '#2563EB'
+  const freeSlotsCount = school ? db.slots.bySchool(school.id).filter((s) => s.status === 'available' && slotDateTime(s) > new Date()).length : 0
+  const tenantTheme = school ? getTenantTheme({ school, branchesCount: branches.length, instructorsCount: instructors.length, freeSlotsCount }) : null
+  const brandColor = tenantTheme?.brandColors.primary ?? '#2563EB'
   const dates = useMemo(() => getNext7Days(), [])
   const maxSlots = Math.max(1, school?.maxSlotsPerBooking ?? 1)
   const currentStep = stepOrder.indexOf(step) + 1
@@ -1342,7 +1315,7 @@ export function SchoolPage() {
             />
           ) : view === 'booking' ? (
             <section className="overflow-hidden rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
-              <StepHeader current={Math.min(currentStep, totalSteps)} total={totalSteps} />
+              <Stepper current={Math.min(currentStep, totalSteps)} total={totalSteps} />
               <div className="px-5 py-5">
 
                 {step === 'category' && (
@@ -1399,7 +1372,7 @@ export function SchoolPage() {
                     <h1 className="text-2xl font-black text-ink-900">Выберите инструктора</h1>
                     <div className="mt-4 space-y-2">
                       {visibleInstructors.length === 0
-                        ? <EmptyState title="Нет инструкторов" description="Выберите другой филиал или категорию." />
+                        ? <StateView kind="no-results" title="Нет инструкторов под этот выбор" description="Попробуйте другой филиал или пропустите категорию, чтобы увидеть больше вариантов." />
                         : visibleInstructors.map((instructor) => {
                           const photo = getInstructorPhoto(instructor)
                           return (
@@ -1445,7 +1418,7 @@ export function SchoolPage() {
                               <p className="font-black capitalize text-ink-900">{formatDayOfWeek(date)}, {formatDate(date)}</p>
                               <p className="mt-0.5 text-sm font-medium text-slate-600">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
                             </div>
-                            {active && <Check size={18} className="text-blue-600" />}
+                            <SelectionMark active={active} />
                           </button>
                         )
                       })}
@@ -1484,9 +1457,7 @@ export function SchoolPage() {
                                       <p className="text-xl font-black text-ink-900">{slot.time} – {endTime}</p>
                                       <p className="mt-0.5 text-sm font-medium text-slate-600">{formatDuration(slot.duration)}</p>
                                     </div>
-                                  <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${active ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`}>
-                                    {active && <Check size={13} className="text-white" strokeWidth={3} />}
-                                  </div>
+                                  <SelectionMark active={active} />
                                 </button>
                               )
                             })}
@@ -1623,6 +1594,7 @@ export function SchoolPage() {
               onSelectCategory={(cat) => startBooking(cat)}
               onStartBooking={() => startBooking()}
               school={school}
+              theme={tenantTheme!}
             />
           )}
         </motion.div>
@@ -1639,39 +1611,35 @@ export function SchoolPage() {
         </div>
       </Modal>
 
-      {/* Bottom nav */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/80 bg-white/90 backdrop-blur-xl sm:hidden">
-        <div className="mx-auto flex max-w-2xl items-center px-2">
-          <button
-            onClick={() => setView(profile ? 'dashboard' : 'home')}
-            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition ${(view === 'home' || view === 'dashboard') ? 'text-blue-700' : 'text-slate-400'}`}
-          >
-            <div className={`rounded-xl p-1.5 ${(view === 'home' || view === 'dashboard') ? 'bg-blue-50' : ''}`}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-            </div>
-            Главная
-          </button>
-          <button
-            onClick={() => setView('schedule')}
-            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition ${view === 'schedule' ? 'text-blue-700' : 'text-slate-400'}`}
-          >
-            <div className={`rounded-xl p-1.5 ${view === 'schedule' ? 'bg-blue-50' : ''}`}>
-              <CalendarDays size={20} />
-            </div>
-            Расписание
-          </button>
-          <div className="flex flex-1 items-center justify-center py-2">
+      <div className="sm:hidden">
+        <BottomNav
+          items={[
+            {
+              key: 'home',
+              label: profile ? 'Кабинет' : 'Главная',
+              icon: <Home size={20} />,
+              active: view === 'home' || view === 'dashboard',
+              onClick: () => setView(profile ? 'dashboard' : 'home'),
+            },
+            {
+              key: 'schedule',
+              label: 'Расписание',
+              icon: <CalendarDays size={20} />,
+              active: view === 'schedule',
+              onClick: () => setView('schedule'),
+            },
+          ]}
+          action={
             <button
               onClick={() => profile ? startBooking() : setView('login')}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-[0_14px_30px_rgba(37,99,235,0.25)] transition hover:brightness-105 active:scale-95"
+              className="flex h-12 min-h-12 w-14 items-center justify-center rounded-2xl text-white shadow-[0_14px_30px_rgba(37,99,235,0.25)] transition hover:brightness-105 active:scale-95"
               style={{ backgroundColor: brandColor }}
+              aria-label={profile ? 'Записаться' : 'Войти'}
             >
               {profile ? <ArrowRight size={20} /> : <LogIn size={18} />}
             </button>
-          </div>
-        </div>
+          }
+        />
       </div>
     </div>
   )

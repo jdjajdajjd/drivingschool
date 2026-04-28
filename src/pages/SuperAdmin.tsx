@@ -3,7 +3,8 @@ import { AlertTriangle, BarChart3, Building2, CalendarDays, Puzzle, RefreshCw } 
 import { PageHeader } from '../components/ui/PageHeader'
 import { Section } from '../components/ui/Section'
 import { StatCard } from '../components/ui/StatCard'
-import { EmptyState } from '../components/ui/EmptyState'
+import { StateView } from '../components/ui/StateView'
+import { DataRow } from '../components/ui/DataList'
 import { Button } from '../components/ui/Button'
 import { formatPrice } from '../lib/utils'
 import { getBillingSummary } from '../services/modules'
@@ -85,11 +86,11 @@ export function SuperAdminOverview() {
       <div className="mt-6">
         <Section title="Сигналы по школам" description="Куда смотреть в первую очередь, если демо-данные выглядят проблемно.">
           {metrics.length === 0 ? (
-            <EmptyState title="Автошкол пока нет" description="Создайте первую автошколу в панели владельца сервиса." />
+            <StateView title="Автошкол пока нет" description="Создайте первую автошколу в панели владельца сервиса." />
           ) : (
             <div className="space-y-3">
               {metrics.map((item) => (
-                <div key={item.school.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/30">
+                <DataRow key={item.school.id}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <p className="text-sm font-black text-ink-900">{item.school.name}</p>
@@ -103,7 +104,7 @@ export function SuperAdminOverview() {
                       {!item.noSlots && item.warnings.length === 0 ? <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Стабильно</span> : null}
                     </div>
                   </div>
-                </div>
+                </DataRow>
               ))}
             </div>
           )}

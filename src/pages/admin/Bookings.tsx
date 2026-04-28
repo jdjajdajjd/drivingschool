@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow, DataToolbar, TableShell } from '../../components/ui/DataList'
 import { FormField } from '../../components/ui/FormField'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -173,7 +174,7 @@ export function AdminBookings() {
   if (!school) {
     return (
       <div className="max-w-7xl p-6 md:p-8">
-        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+        <StateView kind="error" title="Школа не найдена" description="Демо-данные не загружены." />
       </div>
     )
   }
@@ -188,6 +189,7 @@ export function AdminBookings() {
 
       <div className="mt-6 space-y-5">
         <Section title="Фильтры" description="Ищите по ученику, телефону, периоду и статусу.">
+          <DataToolbar>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
@@ -247,6 +249,7 @@ export function AdminBookings() {
               </select>
             </FormField>
           </div>
+          </DataToolbar>
         </Section>
 
         <Section
@@ -254,10 +257,10 @@ export function AdminBookings() {
           description={`Найдено ${filteredBookings.length} записей.`}
         >
           {filteredBookings.length === 0 ? (
-            <EmptyState title="Записей не найдено" description="Измените фильтры или создайте новую запись на публичной странице." />
+            <StateView kind="no-results" title="Записей не найдено" description="Измените фильтры или создайте новую запись на публичной странице." />
           ) : (
             <>
-              <div className="hidden overflow-hidden rounded-2xl border border-slate-200 xl:block">
+              <TableShell className="hidden xl:block">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr className="text-left text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -345,11 +348,11 @@ export function AdminBookings() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableShell>
 
               <div className="grid gap-3 xl:hidden">
                 {filteredBookings.map((entry) => (
-                  <div key={entry.booking.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <DataRow key={entry.booking.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-base font-black text-ink-900">{entry.booking.studentName}</p>
@@ -408,7 +411,7 @@ export function AdminBookings() {
                         Отменить
                       </Button>
                     </div>
-                  </div>
+                  </DataRow>
                 ))}
               </div>
             </>
@@ -468,7 +471,7 @@ export function AdminBookings() {
           </div>
 
           {rescheduleCandidates.length === 0 ? (
-            <EmptyState title="Свободных слотов не найдено" description="Измените фильтры или создайте новые слоты в разделе «Слоты»." />
+            <StateView kind="no-results" title="Свободных слотов не найдено" description="Измените фильтры или создайте новые слоты в разделе «Слоты»." />
           ) : (
             <div className="grid max-h-[360px] gap-3 overflow-y-auto sm:grid-cols-2">
               {rescheduleCandidates.map((slot) => {
@@ -480,10 +483,10 @@ export function AdminBookings() {
                   <button
                     key={slot.id}
                     onClick={() => setSelectedNewSlotId(slot.id)}
-                    className={`rounded-3xl border px-4 py-4 text-left transition ${
+                    className={`rounded-2xl border px-4 py-4 text-left transition ${
                       selected
-                        ? 'border-forest-700 bg-forest-50'
-                        : 'border-stone-200 bg-white hover:border-stone-300'
+                        ? 'ui-selected'
+                        : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'
                     }`}
                   >
                     <p className="text-sm font-semibold text-stone-900">

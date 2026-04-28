@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
 interface BadgeProps {
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'forest' | 'outline'
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'forest' | 'outline' | 'info' | 'muted'
   size?: 'sm' | 'md'
   children: ReactNode
   className?: string
@@ -20,7 +20,7 @@ export function Badge({
     <span
       style={style}
       className={cn(
-        'inline-flex items-center rounded-lg border font-sans font-bold whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-lg border font-sans font-bold whitespace-nowrap',
         {
           default: 'border-slate-200 bg-slate-100 text-slate-700',
           success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -28,6 +28,8 @@ export function Badge({
           error: 'border-red-200 bg-red-50 text-red-700',
           forest: 'border-blue-200 bg-blue-50 text-blue-700',
           outline: 'border-slate-200 bg-white text-slate-600',
+          info: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+          muted: 'border-slate-200 bg-slate-50 text-slate-500',
         }[variant],
         {
           sm: 'px-2.5 py-1 text-xs',
@@ -54,4 +56,8 @@ export function StatusBadge({ status, kind = 'booking' }: { status: string; kind
 
   const entry = map[status] ?? { label: status, variant: 'default' as const }
   return <Badge variant={entry.variant}>{entry.label}</Badge>
+}
+
+export function AvailabilityBadge({ available, label }: { available: boolean; label?: string }) {
+  return <Badge variant={available ? 'success' : 'muted'}>{label ?? (available ? 'Свободно' : 'Нет мест')}</Badge>
 }
