@@ -145,14 +145,14 @@ export function AdminSettings() {
 
   if (!school) {
     return (
-      <div className="max-w-7xl p-6 md:p-8">
+      <div className="max-w-7xl p-4 md:p-6">
         <EmptyState title="Школа не найдена" description="Проверьте подключение данных школы." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-6 md:p-8">
+    <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow={school.name}
         title="Настройки"

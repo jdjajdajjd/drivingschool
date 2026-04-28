@@ -16,9 +16,9 @@ export function SuperAdminLayout() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa]">
+    <div className="ui-shell">
       <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-stone-200 bg-white/90 px-4 py-3 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl">
           <button
             onClick={() => setOpen(true)}
             className="flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-700"
@@ -36,7 +36,7 @@ export function SuperAdminLayout() {
 
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-stone-950/20 backdrop-blur-sm transition-opacity md:hidden',
+          'fixed inset-0 z-30 bg-ink-950/20 backdrop-blur-sm transition-opacity md:hidden',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={() => setOpen(false)}
@@ -44,18 +44,18 @@ export function SuperAdminLayout() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-stone-200 bg-white transition-transform duration-200 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-slate-200 bg-white/95 shadow-card backdrop-blur-xl transition-transform duration-200 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="border-b border-stone-100 px-5 py-5">
+        <div className="border-b border-slate-100 px-5 py-5">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-forest-700 shadow-soft">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-800 shadow-soft">
               <Car size={18} className="text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-stone-900">DriveDesk</p>
-              <p className="text-xs text-stone-400">Superadmin</p>
+              <p className="text-sm font-black text-ink-900">DriveDesk</p>
+              <p className="text-xs font-medium text-slate-500">Superadmin</p>
             </div>
           </button>
         </div>
@@ -68,14 +68,14 @@ export function SuperAdminLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium transition-colors',
-                  isActive ? 'bg-forest-50 text-forest-700' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+                  'flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-bold transition-colors',
+                  isActive ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-ink-900',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? 'text-forest-700' : 'text-stone-400'} />
+                  <Icon size={16} className={isActive ? 'text-blue-700' : 'text-slate-400'} />
                   <span>{label}</span>
                 </>
               )}

@@ -27,7 +27,7 @@ type StatusFilter = 'all' | 'active' | 'cancelled' | 'completed'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 outline-none transition focus:border-forest-300 focus:ring-4 focus:ring-forest-100'
+  return 'ui-field h-11 rounded-2xl'
 }
 
 export function AdminBookings() {
@@ -179,14 +179,14 @@ export function AdminBookings() {
   }
 
   return (
-    <div className="max-w-7xl p-6 md:p-8">
+    <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow={school.name}
         title="Записи"
         description="Поиск, фильтры, отмена, проведение и перенос занятий без выхода из панели."
       />
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-6 space-y-5">
         <Section title="Фильтры" description="Ищите по ученику, телефону, периоду и статусу.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
@@ -196,7 +196,7 @@ export function AdminBookings() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Ученик или телефон"
-                  className="h-11 w-full rounded-2xl border border-stone-200 bg-white pl-10 pr-3.5 text-[15px] text-stone-900 outline-none transition focus:border-forest-300 focus:ring-4 focus:ring-forest-100"
+                  className="ui-field h-11 rounded-2xl pl-10"
                 />
               </div>
             </FormField>
@@ -257,10 +257,10 @@ export function AdminBookings() {
             <EmptyState title="Записей не найдено" description="Измените фильтры или создайте новую запись на публичной странице." />
           ) : (
             <>
-              <div className="hidden overflow-hidden rounded-2xl border border-stone-200 xl:block">
-                <table className="min-w-full divide-y divide-stone-200">
-                  <thead className="bg-stone-50">
-                    <tr className="text-left text-xs font-medium text-stone-500">
+              <div className="hidden overflow-hidden rounded-2xl border border-slate-200 xl:block">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
                       <th className="px-4 py-3">Дата</th>
                       <th className="px-4 py-3">Ученик</th>
                       <th className="px-4 py-3">Филиал</th>
@@ -270,31 +270,31 @@ export function AdminBookings() {
                       <th className="px-4 py-3 text-right">Действия</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-stone-100 bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {filteredBookings.map((entry) => (
-                      <tr key={entry.booking.id} className="align-top text-sm text-stone-600">
+                      <tr key={entry.booking.id} className="align-top text-sm text-slate-600 transition hover:bg-blue-50/30">
                         <td className="px-4 py-4">
-                          <p className="font-medium text-stone-900">
+                          <p className="font-black text-ink-900">
                             {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
                           </p>
                         </td>
                         <td className="px-4 py-4">
                           {entry.student ? (
-                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-medium text-stone-900 hover:text-forest-700">
+                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-black text-ink-900 hover:text-blue-700">
                               {entry.booking.studentName}
                             </Link>
                           ) : (
-                            <p className="font-medium text-stone-900">{entry.booking.studentName}</p>
+                            <p className="font-black text-ink-900">{entry.booking.studentName}</p>
                           )}
-                          <p className="text-stone-500">{formatPhone(entry.booking.studentPhone)}</p>
+                          <p className="text-slate-500">{formatPhone(entry.booking.studentPhone)}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="font-medium text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
-                          <p className="text-stone-500">{entry.branch?.address ?? 'Без адреса'}</p>
+                          <p className="font-bold text-ink-900">{entry.branch?.name ?? 'Не найдено'}</p>
+                          <p className="text-slate-500">{entry.branch?.address ?? 'Без адреса'}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="font-medium text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
-                          <p className="text-stone-500">
+                          <p className="font-bold text-ink-900">{entry.instructor?.name ?? 'Не найдено'}</p>
+                          <p className="text-slate-500">
                             {entry.instructor?.car ?? 'Машина не указана'}
                             {entry.instructor?.transmission
                               ? ` · ${entry.instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}`
@@ -304,7 +304,7 @@ export function AdminBookings() {
                         <td className="px-4 py-4">
                           <StatusBadge status={entry.booking.status} />
                         </td>
-                        <td className="px-4 py-4 text-stone-500">
+                        <td className="px-4 py-4 text-slate-500">
                           {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
                         </td>
                         <td className="px-4 py-4">
@@ -347,13 +347,13 @@ export function AdminBookings() {
                 </table>
               </div>
 
-              <div className="grid gap-4 xl:hidden">
+              <div className="grid gap-3 xl:hidden">
                 {filteredBookings.map((entry) => (
-                  <div key={entry.booking.id} className="rounded-2xl border border-stone-200 bg-white p-4">
+                  <div key={entry.booking.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-base font-semibold text-stone-900">{entry.booking.studentName}</p>
-                        <p className="text-sm text-stone-500">{formatPhone(entry.booking.studentPhone)}</p>
+                        <p className="text-base font-black text-ink-900">{entry.booking.studentName}</p>
+                        <p className="text-sm font-medium text-slate-600">{formatPhone(entry.booking.studentPhone)}</p>
                       </div>
                       <StatusBadge status={entry.booking.status} />
                     </div>

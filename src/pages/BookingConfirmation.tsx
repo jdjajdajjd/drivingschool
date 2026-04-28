@@ -88,14 +88,14 @@ function DetailRow({
   icon: typeof CalendarDays
 }) {
   return (
-    <div className="flex items-start gap-4 border-b border-stone-100 px-5 py-4 last:border-b-0">
-      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-forest-50">
-        <Icon size={18} className="text-forest-700" />
+    <div className="flex items-start gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0">
+      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+        <Icon size={18} className="text-blue-700" />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-stone-500">{label}</p>
-        <p className="mt-1 text-lg font-semibold leading-snug text-stone-900">{value}</p>
-        {subtitle ? <p className="mt-1 text-base leading-snug text-stone-500">{subtitle}</p> : null}
+        <p className="text-sm font-bold text-slate-500">{label}</p>
+        <p className="mt-1 text-lg font-black leading-snug text-ink-900">{value}</p>
+        {subtitle ? <p className="mt-1 text-base leading-snug text-slate-600">{subtitle}</p> : null}
       </div>
     </div>
   )
@@ -235,13 +235,13 @@ export function BookingConfirmation() {
 
   if (bundles.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-100">
-            <XCircle size={28} className="text-stone-400" />
+      <div className="ui-shell flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-6 py-8 text-center shadow-card">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+            <XCircle size={28} className="text-slate-400" />
           </div>
-          <h1 className="mt-5 text-2xl font-semibold text-stone-900">Запись не найдена</h1>
-          <p className="mt-2 text-base leading-relaxed text-stone-500">
+          <h1 className="mt-5 text-2xl font-black text-ink-900">Запись не найдена</h1>
+          <p className="mt-2 text-base leading-relaxed text-slate-600">
             Проверьте ссылку или откройте страницу автошколы ещё раз.
           </p>
           <Button size="lg" className="mt-6 w-full min-h-14 text-lg" onClick={() => navigate('/school/virazh')}>
@@ -260,20 +260,20 @@ export function BookingConfirmation() {
   const lessonCount = bundles.length
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb]">
+    <div className="ui-shell">
       <main className="mx-auto flex min-h-screen max-w-xl flex-col px-4 py-6">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex min-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[1.65rem] border border-stone-200 bg-white shadow-card"
+          className="flex min-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[1.65rem] border border-slate-200 bg-white shadow-card"
         >
-          <div className="bg-gradient-to-br from-forest-700 via-blue-600 to-indigo-700 px-6 pb-7 pt-8 text-center text-white">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/16 ring-1 ring-white/20">
+          <div className="bg-blue-800 px-6 pb-7 pt-8 text-center text-white">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
               {isCancelled ? <XCircle size={30} className="text-red-100" /> : <CheckCircle2 size={30} />}
             </div>
-            <p className="mt-5 text-base font-medium text-white/75">{school?.name ?? 'Автошкола'}</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+            <p className="mt-5 text-base font-bold text-white/75">{school?.name ?? 'Автошкола'}</p>
+            <h1 className="mt-2 text-3xl font-black tracking-normal">
               {isCancelled
                 ? lessonCount > 1 ? 'Записи отменены' : 'Запись отменена'
                 : lessonCount > 1 ? 'Вы записаны на занятия' : 'Вы записаны'}
@@ -289,11 +289,11 @@ export function BookingConfirmation() {
             ) : null}
           </div>
 
-          <div className="mx-6 mt-6 overflow-hidden rounded-2xl border border-stone-200">
+          <div className="mx-6 mt-6 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
             {bundles.map((item, index) => (
-              <div key={item.booking.id} className={index < bundles.length - 1 ? 'border-b border-stone-200' : ''}>
-                <div className="bg-stone-50 px-5 py-3">
-                  <p className="text-sm font-semibold text-stone-700">
+              <div key={item.booking.id} className={index < bundles.length - 1 ? 'border-b border-slate-200' : ''}>
+                <div className="bg-slate-50 px-5 py-3">
+                  <p className="text-sm font-black text-slate-700">
                     {lessonCount > 1 ? `Занятие ${index + 1}` : 'Занятие'}
                   </p>
                 </div>

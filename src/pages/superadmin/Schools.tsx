@@ -15,7 +15,7 @@ export function SuperAdminSchools() {
     .filter((item): item is NonNullable<ReturnType<typeof getSchoolOverview>> => Boolean(item))
 
   return (
-    <div className="max-w-7xl p-6 md:p-8">
+    <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow="Superadmin"
         title="Автошколы"
@@ -23,36 +23,36 @@ export function SuperAdminSchools() {
         actions={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/new`)}>Создать автошколу</Button>}
       />
 
-      <div className="mt-8">
+      <div className="mt-6">
         <Section title="Список школ" description={`Найдено ${rows.length} автошкол.`}>
           {rows.length === 0 ? (
             <EmptyState title="Автошкол пока нет" description="Создайте первую школу, чтобы увидеть её в каталоге." />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {rows.map((item) => (
-                <div key={item.school.id} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+                <div key={item.school.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/30">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Школа</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{item.school.name}</p>
-                        <p className="text-sm text-stone-500">/{item.school.slug}</p>
+                        <p className="ui-kicker">Школа</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{item.school.name}</p>
+                        <p className="text-sm text-slate-500">/{item.school.slug}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Филиалы / инструкторы</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{item.branchCount} / {item.instructorCount}</p>
+                        <p className="ui-kicker">Филиалы / инструкторы</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{item.branchCount} / {item.instructorCount}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Ученики / активные записи</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{item.studentCount} / {item.activeBookingsCount}</p>
+                        <p className="ui-kicker">Ученики / активные записи</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{item.studentCount} / {item.activeBookingsCount}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Записи 30 дней / слоты 7 дней</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
+                        <p className="ui-kicker">Записи 30 дней / слоты 7 дней</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Модули / сумма</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
+                        <p className="ui-kicker">Модули / сумма</p>
+                        <p className="mt-1 text-sm font-black text-ink-900">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
                       </div>
                     </div>
 

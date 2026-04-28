@@ -51,7 +51,7 @@ export function AdminStudentDetail() {
 
   if (!student || !stats) {
     return (
-      <div className="max-w-7xl p-6 md:p-8">
+      <div className="max-w-7xl p-4 md:p-6">
         <EmptyState
           title="Ученик не найден"
           description="В localStorage нет данных по этому ученику или ссылка устарела."
@@ -64,7 +64,7 @@ export function AdminStudentDetail() {
   }
 
   return (
-    <div className="max-w-7xl p-6 md:p-8">
+    <div className="max-w-7xl p-4 md:p-6">
       <button
         onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}
         className="mb-4 inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"

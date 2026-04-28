@@ -109,7 +109,7 @@ export function AdminDashboard() {
         <StatCard label="Активных инструкторов" value={data.instructors.filter((item) => item.isActive).length} icon={<Users size={18} />} />
       </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
+      <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
         <Section
           title="Ближайшие занятия"
           description="Только реальные активные записи. Ближайшие занятия сверху."
@@ -127,19 +127,19 @@ export function AdminDashboard() {
                 <Link
                   key={entry.booking.id}
                   to={`/booking/${entry.booking.id}`}
-                  className="flex flex-col gap-2.5 rounded-xl border border-stone-200 px-3.5 py-3.5 transition hover:border-blue-200 hover:bg-blue-50/30 md:flex-row md:items-center"
+                  className="ui-card-hover flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-3.5 md:flex-row md:items-center"
                 >
                   <div className="min-w-[150px]">
-                    <p className="text-sm font-semibold text-stone-900">
+                    <p className="text-sm font-black text-ink-900">
                       {entry.slot
                         ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMMM, HH:mm', { locale: ru })
                         : 'Время не найдено'}
                     </p>
-                    <p className="text-xs text-stone-500">{entry.branch?.name ?? 'Филиал не найден'}</p>
+                    <p className="text-xs font-medium text-slate-600">{entry.branch?.name ?? 'Филиал не найден'}</p>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-stone-900">{entry.booking.studentName}</p>
-                    <p className="truncate text-sm text-stone-500">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
+                    <p className="text-sm font-black text-ink-900">{entry.booking.studentName}</p>
+                    <p className="truncate text-sm text-slate-600">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
                   </div>
                   <StatusBadge status={entry.booking.status} />
                 </Link>
@@ -150,16 +150,16 @@ export function AdminDashboard() {
 
         <div className="space-y-4">
           <Section title="Мастер запуска" description="Что нужно проверить перед тем, как давать ссылку ученикам.">
-            <div className="mb-3 rounded-xl bg-stone-50 px-3.5 py-3.5">
+            <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-3.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-stone-700">
+                <p className="text-sm font-black text-ink-900">
                   Готово {data.launchItems.filter((item) => item.done).length} из {data.launchItems.length}
                 </p>
-                <p className="text-sm text-stone-500">Запуск школы</p>
+                <p className="text-sm font-medium text-slate-600">Запуск школы</p>
               </div>
-              <div className="mt-3 h-2 rounded-full bg-white">
+              <div className="mt-3 h-2 rounded-full bg-white shadow-inner">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all"
+                  className="h-full rounded-full bg-blue-700 transition-all"
                   style={{ width: `${(data.launchItems.filter((item) => item.done).length / data.launchItems.length) * 100}%` }}
                 />
               </div>
@@ -170,14 +170,14 @@ export function AdminDashboard() {
                   key={item.label}
                   type="button"
                   onClick={() => item.external ? window.open(item.to, '_blank') : navigate(item.to)}
-                  className="flex w-full items-center gap-3 rounded-xl bg-stone-50 px-3.5 py-3 text-left transition hover:bg-blue-50"
+                  className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/60"
                 >
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.done ? 'bg-blue-50 text-blue-700' : 'bg-white text-stone-300'}`}>
+                   <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${item.done ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-slate-100 bg-white text-slate-300'}`}>
                     <CheckCircle2 size={19} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-stone-800">{item.label}</p>
-                    <p className="mt-0.5 text-sm text-stone-500">{item.text}</p>
+                    <p className="text-sm font-bold text-ink-800">{item.label}</p>
+                    <p className="mt-0.5 text-sm text-slate-600">{item.text}</p>
                   </div>
                   <ArrowRight size={18} className="shrink-0 text-stone-400" />
                 </button>

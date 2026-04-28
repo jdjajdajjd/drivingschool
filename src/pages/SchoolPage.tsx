@@ -38,6 +38,7 @@ import {
 import { DRIVING_CATEGORIES } from '../services/drivingCategories'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { db } from '../services/storage'
+import { getTenantTheme } from '../services/tenantTheme'
 import {
   createSupabaseBooking,
   getPublicSchoolBundle,
@@ -177,7 +178,7 @@ async function compressAvatar(file: File): Promise<string> {
 
 function FreeBadge() {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80">
+    <span className="inline-flex shrink-0 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
       Свободно
     </span>
   )
@@ -185,7 +186,7 @@ function FreeBadge() {
 
 function BookedBadge() {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200/80">
+    <span className="inline-flex shrink-0 items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
       Вы записаны
     </span>
   )
@@ -194,14 +195,14 @@ function BookedBadge() {
 function StepHeader({ current, total }: { current: number; total: number }) {
   const pct = Math.round((current / total) * 100)
   return (
-    <div className="border-b border-slate-100 px-5 py-3">
+    <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-400">Шаг {current} из {total}</span>
-        <span className="text-xs font-bold text-blue-600">{pct}%</span>
+        <span className="ui-kicker">Шаг {current} из {total}</span>
+        <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-blue-700 shadow-sm">{pct}%</span>
       </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white shadow-inner">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
+          className="h-full rounded-full bg-blue-700 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -211,7 +212,7 @@ function StepHeader({ current, total }: { current: number; total: number }) {
 
 function BackButton({ onClick, label = 'Назад' }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="mb-4 -ml-1 inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm font-medium text-slate-400 transition hover:text-slate-900">
+    <button onClick={onClick} className="mb-4 -ml-1 inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm font-semibold text-slate-500 transition hover:text-ink-900">
       <ArrowLeft size={15} />
       {label}
     </button>
@@ -220,11 +221,11 @@ function BackButton({ onClick, label = 'Назад' }: { onClick: () => void; la
 
 function VirazhLogo({ color }: { color: string }) {
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="relative h-6 w-6">
-        <div className="absolute left-0 top-0 h-6 w-2 rounded-full" style={{ backgroundColor: color }} />
-        <div className="absolute left-2 top-2 h-2 w-4 rounded-full bg-slate-900" />
-        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-900 bg-white" />
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="relative h-7 w-7">
+        <div className="absolute inset-y-0 left-1 w-2 rounded-full" style={{ backgroundColor: color }} />
+        <div className="absolute left-3 top-1.5 h-4 w-3 rounded-r-full bg-slate-900" />
+        <div className="absolute bottom-1 right-0 h-3 w-3 rounded-full border-2 border-slate-900 bg-white" />
       </div>
     </div>
   )
@@ -234,15 +235,15 @@ function LessonCard({ lesson }: { lesson: ResolvedLesson }) {
   const endTime = addMinutesToTime(lesson.slot.time, lesson.slot.duration)
   const photo = lesson.instructor ? getInstructorPhoto(lesson.instructor) : undefined
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl" style={{ backgroundColor: '#EFF6FF' }}>
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm">
+      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl" style={{ backgroundColor: '#EFF6FF' }}>
         {photo
           ? <img src={photo} alt={lesson.instructor?.name} className="h-full w-full object-cover" />
           : <CalendarDays size={18} className="text-blue-500" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-slate-900">{formatDate(lesson.slot.date)}, {lesson.slot.time} – {endTime}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-500">{lesson.instructor?.name ?? 'Инструктор'} · {lesson.branch?.name ?? 'Филиал'}</p>
+        <p className="text-sm font-black text-ink-900">{formatDate(lesson.slot.date)}, {lesson.slot.time} – {endTime}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-600">{lesson.instructor?.name ?? 'Инструктор'} · {lesson.branch?.name ?? 'Филиал'}</p>
       </div>
       <BookedBadge />
     </div>
@@ -346,17 +347,22 @@ function SchoolHome({
   }))
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       {/* Hero card */}
-      <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+      <div className="overflow-hidden rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
         <div className="px-6 pb-5 pt-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Автошкола</p>
-          <h1 className="mt-1.5 text-2xl font-bold leading-tight text-slate-900">{school.name}</h1>
-          {school.description ? <p className="mt-2 text-sm leading-relaxed text-slate-500">{school.description}</p> : null}
-          <div className="mt-5 space-y-2.5">
+          <div className="flex items-start gap-3">
+            <VirazhLogo color={brandColor} />
+            <div className="min-w-0">
+              <p className="ui-kicker">Автошкола</p>
+              <h1 className="mt-1 text-3xl font-black leading-tight tracking-normal text-ink-900">{school.name}</h1>
+            </div>
+          </div>
+          {school.description ? <p className="mt-4 text-[15px] leading-relaxed text-slate-600">{school.description}</p> : null}
+          <div className="mt-6 space-y-3">
             <button
               onClick={onStartBooking}
-              className="flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left font-semibold text-white shadow-md transition hover:opacity-90 active:scale-[0.98]"
+              className="flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left font-bold text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 active:scale-[0.98]"
               style={{ backgroundColor: brandColor }}
             >
               <span className="text-base">Записаться на занятие</span>
@@ -365,14 +371,14 @@ function SchoolHome({
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={onLogin}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/50"
               >
                 <LogIn size={16} className="text-slate-500" />
                 Войти
               </button>
               <button
                 onClick={onOpenSchedule}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/50"
               >
                 <CalendarDays size={16} className="text-slate-500" />
                 Расписание
@@ -382,27 +388,27 @@ function SchoolHome({
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
-          <div className="py-4 text-center">
-            <p className="text-xl font-bold tabular-nums text-slate-900">{branches.length}</p>
-            <p className="mt-0.5 text-[11px] font-medium text-slate-400">филиала</p>
+        <div className="grid grid-cols-3 gap-px border-t border-slate-100 bg-slate-100">
+          <div className="bg-slate-50/80 py-4 text-center">
+            <p className="text-xl font-black tabular-nums text-ink-900">{branches.length}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-slate-500">филиала</p>
           </div>
-          <div className="py-4 text-center">
-            <p className="text-xl font-bold tabular-nums text-slate-900">{instructors.length}</p>
-            <p className="mt-0.5 text-[11px] font-medium text-slate-400">инструкторов</p>
+          <div className="bg-slate-50/80 py-4 text-center">
+            <p className="text-xl font-black tabular-nums text-ink-900">{instructors.length}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-slate-500">инструкторов</p>
           </div>
-          <div className="py-4 text-center">
-            <p className="text-xl font-bold tabular-nums" style={{ color: brandColor }}>{futureSlots.length}</p>
-            <p className="mt-0.5 text-[11px] font-medium text-slate-400">свободных мест</p>
+          <div className="bg-slate-50/80 py-4 text-center">
+            <p className="text-xl font-black tabular-nums" style={{ color: brandColor }}>{futureSlots.length}</p>
+            <p className="mt-0.5 text-[11px] font-bold text-slate-500">свободных мест</p>
           </div>
         </div>
       </div>
 
       {/* Instructors */}
       {instructorCards.length > 0 && (
-        <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+        <div className="rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
           <div className="flex items-center justify-between px-6 pt-5">
-            <h2 className="text-base font-bold text-slate-900">Инструкторы</h2>
+            <h2 className="text-lg font-black text-ink-900">Инструкторы</h2>
             <button
               onClick={onStartBooking}
               className="text-sm font-semibold"
@@ -411,7 +417,7 @@ function SchoolHome({
               Записаться →
             </button>
           </div>
-          <div className="mt-4 space-y-2 px-4 pb-5">
+          <div className="mt-4 space-y-2.5 px-4 pb-5">
             {instructorCards.map(({ branch, instructor, nextSlot }) => {
               const photo = getInstructorPhoto(instructor)
               return (
@@ -419,7 +425,7 @@ function SchoolHome({
                   key={instructor.id}
                   type="button"
                   onClick={() => onSelectCategory(instructor.categories?.[0] ?? '')}
-                  className="flex w-full items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 text-left transition hover:border-slate-200 hover:bg-white active:scale-[0.99]"
+                  className="ui-card-hover flex w-full items-center gap-3.5 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3.5 text-left active:scale-[0.99]"
                 >
                   <Avatar
                     initials={instructor.avatarInitials}
@@ -429,11 +435,11 @@ function SchoolHome({
                     size="lg"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900">{instructor.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
+                    <p className="text-sm font-black text-ink-900">{instructor.name}</p>
+                    <p className="mt-0.5 truncate text-xs font-medium text-slate-600">{instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}</p>
                     <div className="mt-1.5 flex items-center gap-2">
                       {(instructor.categories ?? []).map((cat) => (
-                        <span key={cat} className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">{cat}</span>
+                        <span key={cat} className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">{cat}</span>
                       ))}
                       {branch && <span className="truncate text-[11px] text-slate-400">{branch.name}</span>}
                     </div>
@@ -454,9 +460,9 @@ function SchoolHome({
 
       {/* Categories */}
       {visibleCategories.length > 0 && (
-        <div className="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200/60">
+        <div className="rounded-[1.7rem] border border-slate-200/70 bg-white px-6 py-5 shadow-card">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900">Категории прав</h2>
+            <h2 className="text-lg font-black text-ink-900">Категории прав</h2>
             <ShieldCheck size={18} style={{ color: brandColor }} />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -464,10 +470,10 @@ function SchoolHome({
               <button
                 key={cat.code}
                 onClick={() => onSelectCategory(cat.code)}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.98]"
+                className="group rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.98]"
               >
-                <p className="text-lg font-black text-slate-900 group-hover:text-blue-700">{cat.code}</p>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-400">{cat.title}</p>
+                 <p className="text-2xl font-black text-ink-900 group-hover:text-blue-700">{cat.code}</p>
+                 <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-slate-600">{cat.title}</p>
               </button>
             ))}
           </div>
@@ -475,12 +481,12 @@ function SchoolHome({
       )}
 
       {/* Branches */}
-      <div className="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200/60">
-        <h2 className="text-base font-bold text-slate-900">Филиалы</h2>
+      <div className="rounded-[1.7rem] border border-slate-200/70 bg-white px-6 py-5 shadow-card">
+        <h2 className="text-lg font-black text-ink-900">Филиалы</h2>
         <div className="mt-4 space-y-2">
           {branches.map((branch) => (
-            <div key={branch.id} className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3.5">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+            <div key={branch.id} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3.5">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
                 <MapPin size={15} style={{ color: brandColor }} />
               </div>
               <div className="min-w-0">
@@ -522,31 +528,31 @@ function StudentDashboard({
   const nextLesson = futureLessons[0] ?? null
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       {/* Profile card */}
-      <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+      <div className="overflow-hidden rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
         {/* Header */}
         <div className="flex items-center gap-4 px-5 pt-5">
           <div className="relative shrink-0">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl text-lg font-bold text-white" style={{ backgroundColor: brandColor }}>
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl text-lg font-black text-white shadow-sm" style={{ backgroundColor: brandColor }}>
               {profile.avatarUrl
                 ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
                 : initialsFromName(profile.name)}
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Кабинет ученика</p>
-            <p className="mt-0.5 truncate text-base font-bold text-slate-900">{profile.name}</p>
-            {branch && <p className="mt-0.5 truncate text-xs text-slate-500"><MapPin size={10} className="mr-0.5 inline" />{branch.name}</p>}
+            <p className="ui-kicker">Кабинет ученика</p>
+            <p className="mt-0.5 truncate text-lg font-black text-ink-900">{profile.name}</p>
+            {branch && <p className="mt-0.5 truncate text-xs font-medium text-slate-600"><MapPin size={10} className="mr-0.5 inline" />{branch.name}</p>}
             {profile.pendingBranchId && (
               <p className="mt-1 text-[11px] font-semibold text-amber-600">⏳ Заявка на смену филиала — ожидает подтверждения</p>
             )}
           </div>
           <div className="flex gap-1.5 shrink-0">
-            <button onClick={onOpenSettings} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900">
+            <button onClick={onOpenSettings} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
               <Settings size={15} />
             </button>
-            <button onClick={onLogout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:text-red-600">
+            <button onClick={onLogout} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
               <LogOut size={15} />
             </button>
           </div>
@@ -554,7 +560,7 @@ function StudentDashboard({
 
         {/* Incomplete profile warning */}
         {!isComplete && (
-          <button onClick={onOpenSettings} className="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left transition hover:border-amber-300">
+          <button onClick={onOpenSettings} className="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left transition hover:border-amber-300 hover:bg-amber-50/80">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">!</div>
             <div>
               <p className="text-sm font-semibold text-amber-900">Профиль не заполнен</p>
@@ -565,12 +571,12 @@ function StudentDashboard({
         )}
 
         {/* Next lesson */}
-        <div className="mx-5 mt-4 mb-5 overflow-hidden rounded-2xl" style={{ backgroundColor: brandColor }}>
-          <div className="px-4 pt-4 pb-3">
+        <div className="mx-5 mt-4 mb-5 overflow-hidden rounded-3xl shadow-[0_18px_42px_rgba(37,99,235,0.18)]" style={{ backgroundColor: brandColor }}>
+          <div className="px-5 pt-5 pb-4">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Ближайшее занятие</p>
             {nextLesson ? (
               <>
-                <p className="mt-1 text-xl font-black text-white">
+                <p className="mt-2 text-2xl font-black leading-tight text-white">
                   {formatDate(nextLesson.slot.date)}, {nextLesson.slot.time} – {addMinutesToTime(nextLesson.slot.time, nextLesson.slot.duration)}
                 </p>
                 <div className="mt-1.5 flex items-center gap-2">
@@ -583,17 +589,17 @@ function StudentDashboard({
                       size="sm"
                     />
                   )}
-                  <p className="text-sm font-medium text-white/80">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
+                  <p className="text-sm font-semibold text-white/85">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</p>
                 </div>
               </>
             ) : (
-              <p className="mt-1 text-base font-semibold text-white/80">Нет активных записей</p>
+              <p className="mt-2 text-base font-semibold text-white/85">Нет активных записей</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2 border-t border-white/20 px-4 py-3">
+          <div className="grid grid-cols-2 gap-2 border-t border-white/20 px-4 py-3.5">
             <button
               onClick={onStartBooking}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-white py-2.5 text-sm font-bold transition hover:bg-white/90"
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-white py-3 text-sm font-black transition hover:bg-white/90"
               style={{ color: brandColor }}
             >
               Записаться
@@ -601,7 +607,7 @@ function StudentDashboard({
             </button>
             <button
               onClick={onOpenSchedule}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10 py-3 text-sm font-bold text-white transition hover:bg-white/20"
             >
               <CalendarDays size={14} />
               Расписание
@@ -611,9 +617,9 @@ function StudentDashboard({
       </div>
 
       {/* Upcoming lessons */}
-      <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+      <div className="rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
         <div className="flex items-center justify-between px-6 pt-5">
-          <h2 className="text-base font-bold text-slate-900">Мои записи</h2>
+          <h2 className="text-lg font-black text-ink-900">Мои записи</h2>
           {futureLessons.length > 0 && (
             <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ backgroundColor: `${brandColor}15`, color: brandColor }}>
               {futureLessons.length}
@@ -681,18 +687,18 @@ function ScheduleOverview({
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       {/* Header */}
-      <div className="rounded-3xl bg-white px-5 py-5 shadow-sm ring-1 ring-slate-200/60">
+      <div className="rounded-[1.7rem] border border-slate-200/70 bg-white px-5 py-5 shadow-card">
         <BackButton onClick={onBack} />
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-black text-slate-900">Расписание</h1>
-            <p className="mt-0.5 text-sm text-slate-500">Ближайшие 14 дней</p>
+            <h1 className="text-2xl font-black text-ink-900">Расписание</h1>
+            <p className="mt-1 text-sm font-medium text-slate-600">Ближайшие 14 дней</p>
           </div>
-          <div className="rounded-2xl px-3.5 py-2.5 text-center" style={{ backgroundColor: `${brandColor}12` }}>
+          <div className="rounded-2xl border border-blue-100 px-4 py-3 text-center shadow-sm" style={{ backgroundColor: `${brandColor}12` }}>
             <p className="text-2xl font-black tabular-nums" style={{ color: brandColor }}>{freeCount}</p>
-            <p className="text-[10px] font-semibold text-slate-500">свободно</p>
+            <p className="text-[10px] font-bold text-slate-600">свободно</p>
           </div>
         </div>
 
@@ -702,7 +708,7 @@ function ScheduleOverview({
             <select
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="ui-field h-10 bg-slate-50"
             >
               <option value="">Все филиалы</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -710,13 +716,13 @@ function ScheduleOverview({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="ui-field h-10 bg-slate-50"
             >
               <option value="">Все категории</option>
               {categoryOptions.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.title}</option>)}
             </select>
           </div>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:border-blue-200">
             <input
               type="checkbox"
               checked={onlyAvailable}
@@ -730,7 +736,7 @@ function ScheduleOverview({
 
       {/* Slot list */}
       {visibleSlots.length === 0 ? (
-        <div className="rounded-3xl bg-white px-5 py-10 shadow-sm ring-1 ring-slate-200/60">
+        <div className="rounded-[1.7rem] border border-slate-200/70 bg-white px-5 py-10 shadow-card">
           <EmptyState title="Нет подходящих мест" description="Попробуйте изменить фильтры или выберите другой период." />
         </div>
       ) : (
@@ -739,8 +745,8 @@ function ScheduleOverview({
           const dateLabel = formatDateFull(group.date)
           return (
             <div key={group.date}>
-              <p className="mb-2 px-1 text-sm font-bold capitalize text-slate-700">{dayLabel}, {dateLabel}</p>
-              <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+              <p className="mb-2 px-1 text-sm font-black capitalize text-ink-800">{dayLabel}, {dateLabel}</p>
+              <div className="overflow-hidden rounded-[1.4rem] border border-slate-200/70 bg-white shadow-card">
                 {group.slots.map((slot, idx) => {
                   const instructor = db.instructors.byId(slot.instructorId)
                   const branch = db.branches.byId(slot.branchId)
@@ -752,7 +758,7 @@ function ScheduleOverview({
                   return (
                     <div
                       key={slot.id}
-                      className={`relative flex items-center gap-4 px-4 py-4 ${idx < group.slots.length - 1 ? 'border-b border-slate-100' : ''}`}
+                      className={`relative flex items-center gap-4 px-4 py-4 transition hover:bg-slate-50/80 ${idx < group.slots.length - 1 ? 'border-b border-slate-100' : ''}`}
                     >
                       {/* Left accent */}
                       <div
@@ -769,20 +775,20 @@ function ScheduleOverview({
 
                       {/* Info */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-base font-black text-slate-900">{slot.time} – {endTime}</p>
-                        <p className="mt-0.5 text-sm font-medium text-slate-600">{formatDuration(slot.duration)}</p>
+                        <p className="text-lg font-black text-ink-900">{slot.time} – {endTime}</p>
+                        <p className="mt-0.5 text-sm font-semibold text-slate-600">{formatDuration(slot.duration)}</p>
                         <p className="mt-0.5 truncate text-xs text-slate-400">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
                       </div>
 
                       {/* Status + CTA */}
                       <div className="flex shrink-0 flex-col items-end gap-2">
                         {mine ? <BookedBadge /> : free ? <FreeBadge /> : (
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">занято</span>
+                          <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">занято</span>
                         )}
                         {free && !mine && (
                           <button
                             onClick={() => onSelectSlot(slot)}
-                            className="rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95"
+                            className="rounded-xl px-3.5 py-2 text-xs font-black text-white shadow-sm transition hover:brightness-105 active:scale-95"
                             style={{ backgroundColor: brandColor }}
                           >
                             Записаться
@@ -815,8 +821,8 @@ function LoginPanel({ errors, login, onBack, onChange, onLogin, submitting }: {
     <section className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
       <div className="px-6 pt-6">
         <BackButton onClick={onBack} />
-        <h1 className="text-xl font-black text-slate-900">Вход в кабинет</h1>
-        <p className="mt-1 text-sm text-slate-500">Телефон и пароль, которые указывали при создании кабинета</p>
+        <h1 className="text-2xl font-black text-ink-900">Вход в кабинет</h1>
+        <p className="mt-1 text-sm font-medium text-slate-600">Телефон и пароль, которые указывали при создании кабинета</p>
       </div>
       <div className="space-y-4 px-6 pb-6 pt-5">
         <Input
@@ -837,7 +843,7 @@ function LoginPanel({ errors, login, onBack, onChange, onLogin, submitting }: {
         <button
           disabled={submitting}
           onClick={onLogin}
-          className="flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center rounded-2xl text-base font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 disabled:opacity-50"
           style={{ backgroundColor: '#2563EB' }}
         >
           {submitting ? 'Проверяем...' : 'Войти'}
@@ -1050,7 +1056,8 @@ export function SchoolPage() {
     return () => { window.clearInterval(id); if (!finalizing.current) releaseSessionLocks(sessionId.current) }
   }, [selectedSlots])
 
-  const brandColor = school?.primaryColor === '#1f5b43' ? '#2563EB' : (school?.primaryColor ?? '#2563EB')
+  const tenantTheme = school ? getTenantTheme(school) : null
+  const brandColor = tenantTheme?.primaryColor ?? '#2563EB'
   const dates = useMemo(() => getNext7Days(), [])
   const maxSlots = Math.max(1, school?.maxSlotsPerBooking ?? 1)
   const currentStep = stepOrder.indexOf(step) + 1
@@ -1237,34 +1244,34 @@ export function SchoolPage() {
 
   if (missing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="ui-shell flex min-h-screen items-center justify-center px-4">
         <EmptyState title="Автошкола не найдена" description="Проверьте ссылку или откройте страницу автошколы." action={<Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>} />
       </div>
     )
   }
 
-  if (!school) return <div className="min-h-screen bg-slate-100" />
+  if (!school) return <div className="ui-shell" />
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="ui-shell">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <button onClick={() => setView(profile ? 'dashboard' : 'home')} className="flex min-w-0 items-center gap-3 text-left">
             {school.logoUrl ? (
-              <div className="h-10 w-10 overflow-hidden rounded-xl border border-slate-200">
+              <div className="h-11 w-11 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
               </div>
             ) : <VirazhLogo color={brandColor} />}
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-bold text-slate-900">{school.name}</p>
-              <p className="text-xs text-slate-500">
+              <p className="truncate text-[15px] font-black text-ink-900">{school.name}</p>
+              <p className="text-xs font-medium text-slate-500">
                 {view === 'dashboard' ? 'Кабинет ученика' : view === 'booking' ? 'Запись на занятие' : view === 'schedule' ? 'Расписание' : view === 'settings' ? 'Настройки' : view === 'login' ? 'Вход' : 'Страница школы'}
               </p>
             </div>
           </button>
           {school.phone && (
-            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:flex">
+            <a href={`tel:${school.phone}`} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/50 sm:flex">
               <Phone size={15} />
               {formatPhone(school.phone)}
             </a>
@@ -1272,7 +1279,7 @@ export function SchoolPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-4 pb-28">
+      <main className="mx-auto max-w-2xl px-4 py-5 pb-28">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
 
           {view === 'login' ? (
@@ -1334,28 +1341,28 @@ export function SchoolPage() {
               profile={profile}
             />
           ) : view === 'booking' ? (
-            <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60">
+            <section className="overflow-hidden rounded-[1.7rem] border border-slate-200/70 bg-white shadow-card">
               <StepHeader current={Math.min(currentStep, totalSteps)} total={totalSteps} />
               <div className="px-5 py-5">
 
                 {step === 'category' && (
                   <>
                     <BackButton onClick={backFromBooking} label={profile ? 'В кабинет' : 'На главную'} />
-                    <h1 className="text-xl font-black text-slate-900">Какая категория?</h1>
-                    <p className="mt-1 text-sm text-slate-500">Если не уверены — пропустите</p>
+                    <h1 className="text-2xl font-black text-ink-900">Какая категория?</h1>
+                    <p className="mt-1 text-sm font-medium text-slate-600">Если не уверены — можно пропустить</p>
                     <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                       {bookingCategoryOptions.map((cat) => (
                         <button
                           key={cat.code}
                           onClick={() => { setSelectedCategory(cat.code); setStep('branch') }}
-                          className="group rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.98]"
+                          className={`group rounded-2xl border px-4 py-4 text-left transition active:scale-[0.98] ${selectedCategory === cat.code ? 'ui-selected' : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50'}`}
                         >
-                          <p className="text-2xl font-black text-slate-900 group-hover:text-blue-700">{cat.code}</p>
-                          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-400">{cat.title}</p>
+                          <p className="text-3xl font-black text-ink-900 group-hover:text-blue-700">{cat.code}</p>
+                          <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-slate-600">{cat.title}</p>
                         </button>
                       ))}
                     </div>
-                    <button onClick={() => setStep('branch')} className="mt-4 w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50">
+                    <button onClick={() => setStep('branch')} className="mt-4 w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50/50">
                       Пропустить, выберу с инструктором
                     </button>
                   </>
@@ -1364,20 +1371,20 @@ export function SchoolPage() {
                 {step === 'branch' && (
                   <>
                     <BackButton onClick={() => setStep('category')} />
-                    <h1 className="text-xl font-black text-slate-900">Выберите филиал</h1>
+                    <h1 className="text-2xl font-black text-ink-900">Выберите филиал</h1>
                     <div className="mt-4 space-y-2">
                       {branches.map((branch) => (
                         <button
                           key={branch.id}
                           onClick={() => { setSelectedBranch(branch); setSelectedInstructor(null); setStep('instructor') }}
-                          className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.99]"
+                          className={`ui-card-hover flex w-full items-center gap-3 rounded-2xl border p-4 text-left active:scale-[0.99] ${selectedBranch?.id === branch.id ? 'ui-selected' : 'border-slate-200 bg-white'}`}
                         >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
-                            <MapPin size={16} className="text-slate-500" />
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                            <MapPin size={17} className="text-blue-600" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-slate-900">{branch.name}</p>
-                            <p className="mt-0.5 text-sm text-slate-500">{branch.address}</p>
+                            <p className="font-black text-ink-900">{branch.name}</p>
+                            <p className="mt-0.5 text-sm font-medium text-slate-600">{branch.address}</p>
                           </div>
                           <ChevronRight size={16} className="shrink-0 text-slate-400" />
                         </button>
@@ -1389,7 +1396,7 @@ export function SchoolPage() {
                 {step === 'instructor' && (
                   <>
                     <BackButton onClick={() => setStep('branch')} />
-                    <h1 className="text-xl font-black text-slate-900">Выберите инструктора</h1>
+                    <h1 className="text-2xl font-black text-ink-900">Выберите инструктора</h1>
                     <div className="mt-4 space-y-2">
                       {visibleInstructors.length === 0
                         ? <EmptyState title="Нет инструкторов" description="Выберите другой филиал или категорию." />
@@ -1399,15 +1406,15 @@ export function SchoolPage() {
                             <button
                               key={instructor.id}
                               onClick={() => { setSelectedInstructor(instructor); setSelectedDates([]); setSelectedSlots([]); setStep('date') }}
-                              className="flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.99]"
+                              className={`ui-card-hover flex w-full items-center gap-4 rounded-2xl border p-4 text-left active:scale-[0.99] ${selectedInstructor?.id === instructor.id ? 'ui-selected' : 'border-slate-200 bg-white'}`}
                             >
                               <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} src={photo} alt={instructor.name} size="lg" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-bold text-slate-900">{instructor.name}</p>
-                                <p className="mt-0.5 text-sm text-slate-500">{instructor.car ?? 'Учебный автомобиль'}</p>
+                                <p className="font-black text-ink-900">{instructor.name}</p>
+                                <p className="mt-0.5 text-sm font-medium text-slate-600">{instructor.car ?? 'Учебный автомобиль'}</p>
                                 <div className="mt-1.5 flex flex-wrap gap-1">
                                   {(instructor.categories ?? []).map((c) => (
-                                    <span key={c} className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">{c}</span>
+                                    <span key={c} className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">{c}</span>
                                   ))}
                                 </div>
                               </div>
@@ -1422,7 +1429,7 @@ export function SchoolPage() {
                 {step === 'date' && (
                   <>
                     <BackButton onClick={() => setStep('instructor')} />
-                    <h1 className="text-xl font-black text-slate-900">Выберите день</h1>
+                    <h1 className="text-2xl font-black text-ink-900">Выберите день</h1>
                     <div className="mt-4 space-y-2">
                       {dates.map((date) => {
                         const count = selectedInstructor ? getAvailableSlots(selectedInstructor.id, date, sessionId.current).length : 0
@@ -1432,11 +1439,11 @@ export function SchoolPage() {
                             key={date}
                             disabled={count === 0}
                             onClick={() => setSelectedDates(active ? selectedDates.filter((d) => d !== date) : [...selectedDates, date])}
-                            className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition ${active ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60`}
+                            className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition ${active ? 'ui-selected' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60`}
                           >
                             <div>
-                              <p className="font-bold capitalize text-slate-900">{formatDayOfWeek(date)}, {formatDate(date)}</p>
-                              <p className="mt-0.5 text-sm text-slate-500">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
+                              <p className="font-black capitalize text-ink-900">{formatDayOfWeek(date)}, {formatDate(date)}</p>
+                              <p className="mt-0.5 text-sm font-medium text-slate-600">{count > 0 ? pluralize(count, 'свободное время', 'свободных времени', 'свободных времен') : 'Нет мест'}</p>
                             </div>
                             {active && <Check size={18} className="text-blue-600" />}
                           </button>
@@ -1446,7 +1453,7 @@ export function SchoolPage() {
                     <button
                       disabled={selectedDates.length === 0}
                       onClick={() => setStep('time')}
-                      className="mt-4 flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl text-base font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ backgroundColor: brandColor }}
                     >
                       Выбрать время
@@ -1457,26 +1464,26 @@ export function SchoolPage() {
                 {step === 'time' && (
                   <>
                     <BackButton onClick={() => setStep('date')} />
-                    <h1 className="text-xl font-black text-slate-900">Выберите время</h1>
-                    <p className="mt-1 text-sm text-slate-500">Можно выбрать до {maxSlots} {maxSlots === 1 ? 'занятия' : 'занятий'}</p>
+                    <h1 className="text-2xl font-black text-ink-900">Выберите время</h1>
+                    <p className="mt-1 text-sm font-medium text-slate-600">Можно выбрать до {maxSlots} {maxSlots === 1 ? 'занятия' : 'занятий'}</p>
                     <div className="mt-4 space-y-3">
                       {slotsByDate.map((group) => (
                         <div key={group.date}>
-                          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
-                          <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
-                            {group.slots.map((slot, idx) => {
+                          <p className="mb-2 ui-kicker capitalize">{formatDayOfWeek(group.date)}, {formatDateFull(group.date)}</p>
+                          <div className="space-y-2">
+                            {group.slots.map((slot) => {
                               const active = selectedSlots.some((s) => s.id === slot.id)
                               const endTime = addMinutesToTime(slot.time, slot.duration)
                               return (
                                 <button
                                   key={slot.id}
                                   onClick={() => selectSlot(slot)}
-                                  className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition ${idx < group.slots.length - 1 ? 'border-b border-slate-100' : ''} ${active ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
-                                >
-                                  <div>
-                                    <p className="text-base font-black text-slate-900">{slot.time} – {endTime}</p>
-                                    <p className="mt-0.5 text-xs text-slate-400">{formatDuration(slot.duration)}</p>
-                                  </div>
+                                    className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition active:scale-[0.99] ${active ? 'ui-selected' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'}`}
+                                  >
+                                    <div>
+                                      <p className="text-xl font-black text-ink-900">{slot.time} – {endTime}</p>
+                                      <p className="mt-0.5 text-sm font-medium text-slate-600">{formatDuration(slot.duration)}</p>
+                                    </div>
                                   <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${active ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`}>
                                     {active && <Check size={13} className="text-white" strokeWidth={3} />}
                                   </div>
@@ -1490,7 +1497,7 @@ export function SchoolPage() {
                     <button
                       disabled={selectedSlots.length === 0}
                       onClick={() => setStep('details')}
-                      className="mt-4 flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl text-base font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ backgroundColor: brandColor }}
                     >
                       Продолжить
@@ -1502,15 +1509,15 @@ export function SchoolPage() {
                 {step === 'details' && (
                   <>
                     <BackButton onClick={() => setStep('time')} />
-                    <h1 className="text-xl font-black text-slate-900">Ваши данные</h1>
-                    <p className="mt-1 text-sm text-slate-500">Только имя и телефон — этого достаточно для записи</p>
+                    <h1 className="text-2xl font-black text-ink-900">Ваши данные</h1>
+                    <p className="mt-1 text-sm font-medium text-slate-600">Только имя и телефон — этого достаточно для записи</p>
                     <div className="mt-5 space-y-4">
                       <Input label="Имя" value={form.name} error={errors.name} placeholder="Анна Иванова" onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))} />
                       <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))} />
                     </div>
                     <button
                       onClick={() => validateDetails() && setStep('review')}
-                      className="mt-5 flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90"
+                      className="mt-5 flex h-12 w-full items-center justify-center rounded-2xl text-base font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105"
                       style={{ backgroundColor: brandColor }}
                     >
                       Проверить запись
@@ -1521,39 +1528,39 @@ export function SchoolPage() {
                 {step === 'review' && (
                   <>
                     <BackButton onClick={() => setStep('details')} />
-                    <h1 className="text-xl font-black text-slate-900">Всё верно?</h1>
+                    <h1 className="text-2xl font-black text-ink-900">Всё верно?</h1>
                     <div className="mt-4 space-y-3">
                       {selectedSlots.map((slot) => {
                         const b = db.branches.byId(slot.branchId)
                         const ins = db.instructors.byId(slot.instructorId)
                         const endTime = addMinutesToTime(slot.time, slot.duration)
                         return (
-                          <div key={slot.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                            <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5">
+                          <div key={slot.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3.5">
                               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
                                 <Clock size={16} className="text-blue-600" />
                               </div>
                               <div>
-                                <p className="font-black text-slate-900">{slot.time} – {endTime}</p>
-                                <p className="text-sm text-slate-500">{formatDate(slot.date)}</p>
+                                <p className="font-black text-ink-900">{slot.time} – {endTime}</p>
+                                <p className="text-sm font-medium text-slate-600">{formatDate(slot.date)}</p>
                               </div>
                             </div>
                             <div className="px-4 py-3">
-                              <p className="text-sm font-semibold text-slate-700">{ins?.name ?? 'Инструктор'}</p>
+                              <p className="text-sm font-bold text-slate-800">{ins?.name ?? 'Инструктор'}</p>
                               <p className="mt-0.5 text-xs text-slate-400">{b?.name ?? 'Филиал'} · {formatDuration(slot.duration)}</p>
                             </div>
                           </div>
                         )
                       })}
-                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5">
-                        <p className="font-bold text-slate-900">{form.name}</p>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3.5">
+                        <p className="font-black text-ink-900">{form.name}</p>
                         <p className="mt-0.5 text-sm text-slate-500">{formatPhone(normalizePhone(form.phone))}</p>
                       </div>
                     </div>
                     <button
                       disabled={submitting}
                       onClick={() => void submitBooking()}
-                      className="mt-5 flex h-13 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+                      className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-base font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 disabled:opacity-50"
                       style={{ backgroundColor: brandColor }}
                     >
                       {submitting ? 'Записываем...' : (<><Check size={18} strokeWidth={3} /> Записаться</>)}
@@ -1567,8 +1574,8 @@ export function SchoolPage() {
                       <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50">
                         <CheckCircle2 size={32} className="text-emerald-600" />
                       </div>
-                      <h1 className="mt-4 text-center text-xl font-black text-slate-900">Вы записаны!</h1>
-                      <p className="mt-1 max-w-xs text-center text-sm leading-relaxed text-slate-500">
+                      <h1 className="mt-4 text-center text-2xl font-black text-ink-900">Вы записаны!</h1>
+                      <p className="mt-1 max-w-xs text-center text-sm font-medium leading-relaxed text-slate-600">
                         Создайте кабинет — управляйте записями и входите быстро в следующий раз
                       </p>
                     </div>
@@ -1582,21 +1589,21 @@ export function SchoolPage() {
                       <button
                         disabled={submitting}
                         onClick={() => void createProfile()}
-                        className="flex h-13 w-full items-center justify-center rounded-2xl text-base font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
+                        className="flex h-12 w-full items-center justify-center rounded-2xl text-base font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.20)] transition hover:brightness-105 disabled:opacity-50"
                         style={{ backgroundColor: brandColor }}
                       >
                         {submitting ? 'Создаём...' : 'Создать кабинет'}
                       </button>
                       <button
                         onClick={() => void copyCredentials()}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/50"
                       >
                         <Copy size={14} />
                         Скопировать данные для входа
                       </button>
                       <button
                         onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : setView('home')}
-                        className="flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+                        className="flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-500 transition hover:bg-slate-50"
                       >
                         Пропустить
                       </button>
@@ -1633,11 +1640,11 @@ export function SchoolPage() {
       </Modal>
 
       {/* Bottom nav */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur-md sm:hidden">
-        <div className="mx-auto flex max-w-2xl items-center">
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/80 bg-white/90 backdrop-blur-xl sm:hidden">
+        <div className="mx-auto flex max-w-2xl items-center px-2">
           <button
             onClick={() => setView(profile ? 'dashboard' : 'home')}
-            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition ${(view === 'home' || view === 'dashboard') ? 'text-blue-600' : 'text-slate-400'}`}
+            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition ${(view === 'home' || view === 'dashboard') ? 'text-blue-700' : 'text-slate-400'}`}
           >
             <div className={`rounded-xl p-1.5 ${(view === 'home' || view === 'dashboard') ? 'bg-blue-50' : ''}`}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1648,7 +1655,7 @@ export function SchoolPage() {
           </button>
           <button
             onClick={() => setView('schedule')}
-            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition ${view === 'schedule' ? 'text-blue-600' : 'text-slate-400'}`}
+            className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition ${view === 'schedule' ? 'text-blue-700' : 'text-slate-400'}`}
           >
             <div className={`rounded-xl p-1.5 ${view === 'schedule' ? 'bg-blue-50' : ''}`}>
               <CalendarDays size={20} />
@@ -1658,7 +1665,7 @@ export function SchoolPage() {
           <div className="flex flex-1 items-center justify-center py-2">
             <button
               onClick={() => profile ? startBooking() : setView('login')}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-lg transition hover:opacity-90 active:scale-95"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-[0_14px_30px_rgba(37,99,235,0.25)] transition hover:brightness-105 active:scale-95"
               style={{ backgroundColor: brandColor }}
             >
               {profile ? <ArrowRight size={20} /> : <LogIn size={18} />}

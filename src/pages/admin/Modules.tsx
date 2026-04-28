@@ -84,14 +84,14 @@ export function AdminModules() {
 
   if (!school || !billing) {
     return (
-      <div className="max-w-7xl p-6 md:p-8">
+      <div className="max-w-7xl p-4 md:p-6">
         <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-6 md:p-8">
+    <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow={school.name}
         title="Модули"

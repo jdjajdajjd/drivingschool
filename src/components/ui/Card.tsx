@@ -17,13 +17,13 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-xl border border-stone-200 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.04)]',
-        hover && 'cursor-pointer transition-all duration-200 hover:border-stone-300',
+        'rounded-2xl border border-slate-200/75 bg-white/95 shadow-card',
+        hover && 'ui-card-hover cursor-pointer',
         {
           none: '',
           sm: 'p-3.5',
           md: 'p-4',
-          lg: 'p-5',
+          lg: 'p-6',
         }[padding],
         className,
       )}

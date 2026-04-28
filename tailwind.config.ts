@@ -9,6 +9,19 @@ export default {
         sans: ['"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Manrope"', 'sans-serif'],
       },
       colors: {
+        ink: {
+          50: '#F8FAFC',
+          100: '#EEF2F7',
+          200: '#DDE5F0',
+          300: '#BBC7D7',
+          400: '#8291A8',
+          500: '#64748B',
+          600: '#475569',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#111827',
+          950: '#070B13',
+        },
         forest: {
           50: '#F5F7FF',
           100: '#EBF0FF',
@@ -24,10 +37,11 @@ export default {
         },
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04)',
-        card: '0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 30px rgba(15, 23, 42, 0.04)',
-        'card-hover': '0 2px 6px rgba(15, 23, 42, 0.06), 0 16px 36px rgba(15, 23, 42, 0.06)',
+        soft: '0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 30px rgba(37, 56, 88, 0.06)',
+        card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 48px rgba(34, 48, 72, 0.07)',
+        'card-hover': '0 3px 10px rgba(15, 23, 42, 0.07), 0 24px 58px rgba(34, 48, 72, 0.1)',
         modal: '0 12px 40px rgba(15, 23, 42, 0.14)',
+        focus: '0 0 0 4px rgba(82, 104, 224, 0.12)',
       },
       borderRadius: {
         '4xl': '2rem',
