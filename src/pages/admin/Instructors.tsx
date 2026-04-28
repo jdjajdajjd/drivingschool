@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react'
 import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow } from '../../components/ui/DataList'
 import { FormField } from '../../components/ui/FormField'
 import { Input, Textarea } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
@@ -142,7 +143,7 @@ export function AdminInstructors() {
   if (!school) {
     return (
       <div className="max-w-7xl p-4 md:p-6">
-        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+        <StateView kind="error" title="Школа не найдена" description="Демо-данные не загружены." />
       </div>
     )
   }
@@ -164,11 +165,12 @@ export function AdminInstructors() {
       <div className="mt-8">
         <Section title="Команда" description={`В школе ${rows.length} инструкторов.`}>
           {rows.length === 0 ? (
-            <EmptyState title="Инструкторов пока нет" description="Создайте первого инструктора, чтобы он появился в записи и расписании." />
+            <StateView title="Инструкторов пока нет" description="Создайте первого инструктора, чтобы он появился в записи и расписании." action={<Button onClick={openCreate}>Создать инструктора</Button>} />
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-3">
               {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
-                <div key={instructor.id} className="rounded-2xl border border-stone-200 bg-white p-5">
+                <DataRow key={instructor.id} className="p-4">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)_250px] xl:items-center">
                   <div className="flex items-start gap-4">
                     <Avatar
                       initials={instructor.avatarInitials}
@@ -180,12 +182,12 @@ export function AdminInstructors() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-lg font-semibold text-stone-900">{instructor.name}</p>
+                        <p className="text-lg font-black text-ink-900">{instructor.name}</p>
                         <Badge variant={instructor.isActive ? 'success' : 'default'}>
                           {instructor.isActive ? 'Активен' : 'Выключен'}
                         </Badge>
                       </div>
-                      <p className="mt-2 text-sm text-stone-500">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
+                      <p className="mt-2 text-sm text-slate-600">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {(instructor.categories?.length ? instructor.categories : ['B']).map((code) => (
                           <Badge key={code} variant="default">
@@ -196,36 +198,37 @@ export function AdminInstructors() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-medium text-stone-500">Филиал</p>
-                      <p className="mt-1 text-sm font-semibold text-stone-900">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                      <p className="ui-kicker">Филиал</p>
+                      <p className="mt-1 text-sm font-black text-ink-900">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-stone-500">Телефон</p>
-                      <p className="mt-1 text-sm font-semibold text-stone-900">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                      <p className="ui-kicker">Телефон</p>
+                      <p className="mt-1 text-sm font-black text-ink-900">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-stone-500">Машина</p>
-                      <p className="mt-1 text-sm font-semibold text-stone-900">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                      <p className="ui-kicker">Машина</p>
+                      <p className="mt-1 text-sm font-black text-ink-900">
                         {instructor.car ?? 'Не указана'}
                         {instructor.transmission ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-stone-500">Будущие занятия / свободные слоты</p>
-                      <p className="mt-1 text-sm font-semibold text-stone-900">{futureLessons} / {freeSlots7d}</p>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                      <p className="ui-kicker">Записи / слоты</p>
+                      <p className="mt-1 text-sm font-black text-blue-700">{futureLessons} / {freeSlots7d}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-4">
-                    <p className="text-xs font-medium text-stone-500">Личная ссылка</p>
-                    <p className="mt-2 break-all text-sm font-medium text-stone-700">
+                  <div>
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                    <p className="ui-kicker">Личная ссылка</p>
+                    <p className="mt-2 break-all text-sm font-medium text-slate-700">
                       {window.location.origin}/instructor/{instructor.token}
                     </p>
                   </div>
 
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)}>
                       Редактировать
                     </Button>
@@ -242,7 +245,9 @@ export function AdminInstructors() {
                       {instructor.isActive ? 'Выключить' : 'Включить'}
                     </Button>
                   </div>
-                </div>
+                  </div>
+                  </div>
+                </DataRow>
               ))}
             </div>
           )}

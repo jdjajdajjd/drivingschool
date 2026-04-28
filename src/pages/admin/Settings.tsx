@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
 import { Input, Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
@@ -146,7 +146,7 @@ export function AdminSettings() {
   if (!school) {
     return (
       <div className="max-w-7xl p-4 md:p-6">
-        <EmptyState title="Школа не найдена" description="Проверьте подключение данных школы." />
+        <StateView kind="error" title="Школа не найдена" description="Проверьте подключение данных школы." />
       </div>
     )
   }
@@ -181,9 +181,9 @@ export function AdminSettings() {
         <Section title="Публичная страница" description="Ссылка, preview и быстрые действия по странице записи.">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-4">
-              <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Ссылка</p>
-                <p className="mt-2 break-all text-sm font-medium text-stone-900">{publicUrl}</p>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+                <p className="ui-kicker">Ссылка</p>
+                <p className="mt-2 break-all text-sm font-bold text-ink-900">{publicUrl}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button variant="secondary" onClick={() => void copyPublicLink()}>
@@ -198,7 +198,7 @@ export function AdminSettings() {
             </div>
 
             <div
-              className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft"
+              className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-card"
               style={{
                 boxShadow: `0 18px 48px ${hexToRgba(form.primaryColor || '#1f5b43', 0.08)}`,
               }}
@@ -213,25 +213,25 @@ export function AdminSettings() {
                   form.name.slice(0, 2).toUpperCase()
                 )}
               </div>
-              <p className="mt-4 text-lg font-semibold text-stone-900">{form.name || 'Автошкола'}</p>
-              <p className="mt-2 text-sm leading-relaxed text-stone-500">
+              <p className="mt-4 text-lg font-black text-ink-900">{form.name || 'Автошкола'}</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 {form.description || 'Описание школы будет показано на публичной странице записи.'}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(selectedCategories.length ? selectedCategories : DRIVING_CATEGORIES.slice(0, 1)).slice(0, 5).map((category) => (
-                  <span key={category.code} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">
+                  <span key={category.code} className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
                     {category.code}
                   </span>
                 ))}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-2xl bg-stone-50 px-3 py-3">
-                  <p className="text-lg font-semibold text-stone-900">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
-                  <p className="text-xs text-stone-500">филиала</p>
+                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                  <p className="text-lg font-black text-ink-900">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
+                  <p className="text-xs text-slate-500">филиала</p>
                 </div>
-                <div className="rounded-2xl bg-stone-50 px-3 py-3">
-                  <p className="text-lg font-semibold text-stone-900">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
-                  <p className="text-xs text-stone-500">инструкторов</p>
+                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                  <p className="text-lg font-black text-ink-900">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
+                  <p className="text-xs text-slate-500">инструкторов</p>
                 </div>
               </div>
               <div className="mt-4 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: form.primaryColor || '#1f5b43' }}>
@@ -364,7 +364,7 @@ export function AdminSettings() {
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {BASE_FEATURES.map((feature) => (
               <div key={feature} className="rounded-2xl border border-stone-100 bg-white px-4 py-3 text-sm text-stone-600">
-                {feature}
+                <span className="font-semibold text-slate-700">{feature}</span>
               </div>
             ))}
           </div>

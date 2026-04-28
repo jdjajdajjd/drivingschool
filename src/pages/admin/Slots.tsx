@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow, DataToolbar } from '../../components/ui/DataList'
 import { FormField } from '../../components/ui/FormField'
 import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -181,7 +182,7 @@ export function AdminSlots() {
   if (!school) {
     return (
       <div className="max-w-7xl p-4 md:p-6">
-        <EmptyState title="Школа не найдена" description="Проверьте данные школы." />
+        <StateView kind="error" title="Школа не найдена" description="Проверьте данные школы." />
       </div>
     )
   }
@@ -298,6 +299,7 @@ export function AdminSlots() {
         </Section>
 
         <Section title="Список занятий" description="Фильтры помогают быстро найти время, инструктора или запись ученика.">
+          <DataToolbar className="mt-1">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
@@ -341,37 +343,38 @@ export function AdminSlots() {
               </select>
             </FormField>
           </div>
+          </DataToolbar>
 
           <div className="mt-5">
             {filteredSlots.length === 0 ? (
-              <EmptyState title="Занятия не найдены" description="Измените фильтры или создайте занятия выше." />
+              <StateView kind="no-results" title="Занятия не найдены" description="Измените фильтры или создайте занятия выше." />
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {filteredSlots.map((entry) => (
-                  <div key={entry.slot.id} className="rounded-2xl border border-stone-200 bg-white p-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  <DataRow key={entry.slot.id}>
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <div>
-                          <p className="text-xs font-medium text-stone-500">Дата и время</p>
-                          <p className="mt-1 text-sm font-semibold text-stone-900">{entry.slot.date}</p>
-                          <p className="text-sm text-stone-500">{entry.slot.time} · {formatDuration(entry.slot.duration)}</p>
+                          <p className="ui-kicker">Дата и время</p>
+                          <p className="mt-1 text-base font-black text-ink-900">{entry.slot.date}</p>
+                          <p className="text-sm font-semibold text-blue-700">{entry.slot.time} · {formatDuration(entry.slot.duration)}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-500">Филиал</p>
-                          <p className="mt-1 text-sm font-semibold text-stone-900">{entry.branch?.name ?? 'Не найден'}</p>
+                          <p className="ui-kicker">Филиал</p>
+                          <p className="mt-1 text-sm font-black text-ink-900">{entry.branch?.name ?? 'Не найден'}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-500">Инструктор</p>
-                          <p className="mt-1 text-sm font-semibold text-stone-900">{entry.instructor?.name ?? 'Не найден'}</p>
-                          <p className="text-sm text-stone-500">{entry.instructor?.car ?? 'Без машины'}</p>
+                          <p className="ui-kicker">Инструктор</p>
+                          <p className="mt-1 text-sm font-black text-ink-900">{entry.instructor?.name ?? 'Не найден'}</p>
+                          <p className="text-sm text-slate-500">{entry.instructor?.car ?? 'Без машины'}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-500">Статус</p>
+                          <p className="ui-kicker">Статус</p>
                           <div className="mt-1"><StatusBadge status={entry.slot.status} kind="slot" /></div>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-500">Ученик</p>
-                          <p className="mt-1 text-sm font-semibold text-stone-900">{entry.student?.name ?? 'Нет записи'}</p>
+                          <p className="ui-kicker">Ученик</p>
+                          <p className="mt-1 text-sm font-black text-ink-900">{entry.student?.name ?? 'Нет записи'}</p>
                         </div>
                       </div>
 
@@ -389,7 +392,7 @@ export function AdminSlots() {
                         </Button>
                       </div>
                     </div>
-                  </div>
+                  </DataRow>
                 ))}
               </div>
             )}

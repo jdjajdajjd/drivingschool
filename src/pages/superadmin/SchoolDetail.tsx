@@ -2,7 +2,8 @@ import { ExternalLink } from 'lucide-react'
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
@@ -33,7 +34,8 @@ export function SuperAdminSchoolDetail() {
   if (!overview || !collections) {
     return (
       <div className="max-w-6xl p-6 md:p-8">
-        <EmptyState
+        <StateView
+          kind="error"
           title="Школа не найдена"
           description="Проверьте ссылку или вернитесь в список автошкол."
           action={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools`)}>К списку школ</Button>}
@@ -71,21 +73,21 @@ export function SuperAdminSchoolDetail() {
       <div className="mt-8 space-y-6">
         <Section title="Настройки школы" description="Текущие ключевые параметры школы.">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Slug</p>
               <p className="mt-1 text-sm font-semibold text-stone-900">{overview.school.slug}</p>
             </div>
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Лимит записи</p>
               <p className="mt-1 text-sm font-semibold text-stone-900">
                 {overview.school.bookingLimitEnabled ? overview.school.maxActiveBookingsPerStudent : 'Выключен'}
               </p>
             </div>
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Свободные слоты на 7 дней</p>
               <p className="mt-1 text-sm font-semibold text-stone-900">{overview.freeSlots7Days}</p>
             </div>
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Предупреждения</p>
               <p className="mt-1 text-sm font-semibold text-stone-900">{overview.integrityWarnings}</p>
             </div>
@@ -96,18 +98,18 @@ export function SuperAdminSchoolDetail() {
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-3">
               {collections.branches.map((branch) => (
-                <div key={branch.id} className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
-                  <p className="mt-1 text-sm text-stone-500">{branch.address || 'Адрес не указан'}</p>
-                </div>
+                <DataRow key={branch.id}>
+                  <p className="text-sm font-black text-ink-900">{branch.name}</p>
+                  <p className="mt-1 text-sm text-slate-600">{branch.address || 'Адрес не указан'}</p>
+                </DataRow>
               ))}
             </div>
             <div className="space-y-3">
               {collections.instructors.map((instructor) => (
-                <div key={instructor.id} className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-stone-900">{instructor.name}</p>
-                  <p className="mt-1 text-sm text-stone-500">{instructor.car ?? 'Машина не указана'}</p>
-                </div>
+                <DataRow key={instructor.id}>
+                  <p className="text-sm font-black text-ink-900">{instructor.name}</p>
+                  <p className="mt-1 text-sm text-slate-600">{instructor.car ?? 'Машина не указана'}</p>
+                </DataRow>
               ))}
             </div>
           </div>
@@ -116,19 +118,19 @@ export function SuperAdminSchoolDetail() {
         <Section title="Подключённые модули и стоимость" description="Текущий состав product-layer этой школы.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {collections.enabledModules.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-                <p className="text-sm font-semibold text-stone-900">{item.module.name}</p>
-                <p className="mt-1 text-sm text-stone-500">
+              <DataRow key={item.id}>
+                <p className="text-sm font-black text-ink-900">{item.module.name}</p>
+                <p className="mt-1 text-sm text-slate-600">
                   {item.module.priceType === 'monthly'
                     ? `${formatPrice(item.module.monthlyPrice ?? 0)}/мес`
                     : item.module.priceType === 'one_time'
                       ? `${formatPrice(item.module.oneTimePrice ?? 0)} разово`
                       : item.module.usageNote ?? 'По факту использования'}
                 </p>
-              </div>
+              </DataRow>
             ))}
             {collections.enabledModules.length === 0 ? (
-              <EmptyState title="Подключённых модулей пока нет" description="Школа работает только на базовом пакете." />
+              <StateView title="Подключённых модулей пока нет" description="Школа работает только на базовом пакете." />
             ) : null}
           </div>
         </Section>

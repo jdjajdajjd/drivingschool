@@ -1,7 +1,8 @@
 import { ExternalLink, Settings2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
-import { EmptyState } from '../../components/ui/EmptyState'
+import { StateView } from '../../components/ui/StateView'
+import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { formatPrice } from '../../lib/utils'
@@ -26,16 +27,16 @@ export function SuperAdminSchools() {
       <div className="mt-6">
         <Section title="Список школ" description={`Найдено ${rows.length} автошкол.`}>
           {rows.length === 0 ? (
-            <EmptyState title="Автошкол пока нет" description="Создайте первую школу, чтобы увидеть её в каталоге." />
+            <StateView title="Автошкол пока нет" description="Создайте первую школу, чтобы увидеть её в каталоге." action={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/new`)}>Создать автошколу</Button>} />
           ) : (
             <div className="space-y-3">
               {rows.map((item) => (
-                <div key={item.school.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/30">
+                <DataRow key={item.school.id} className="p-4">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                       <div>
                         <p className="ui-kicker">Школа</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{item.school.name}</p>
+                        <p className="mt-1 text-base font-black text-ink-900">{item.school.name}</p>
                         <p className="text-sm text-slate-500">/{item.school.slug}</p>
                       </div>
                       <div>
@@ -71,7 +72,7 @@ export function SuperAdminSchools() {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </DataRow>
               ))}
             </div>
           )}

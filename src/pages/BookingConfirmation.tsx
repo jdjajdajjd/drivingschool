@@ -12,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
+import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
 import { formatDuration, formatPhone } from '../lib/utils'
 import { generateIcs, getSlotDateTime } from '../services/bookingService'
@@ -236,18 +237,7 @@ export function BookingConfirmation() {
   if (bundles.length === 0) {
     return (
       <div className="ui-shell flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-6 py-8 text-center shadow-card">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-            <XCircle size={28} className="text-slate-400" />
-          </div>
-          <h1 className="mt-5 text-2xl font-black text-ink-900">Запись не найдена</h1>
-          <p className="mt-2 text-base leading-relaxed text-slate-600">
-            Проверьте ссылку или откройте страницу автошколы ещё раз.
-          </p>
-          <Button size="lg" className="mt-6 w-full min-h-14 text-lg" onClick={() => navigate('/school/virazh')}>
-            К записи
-          </Button>
-        </div>
+        <StateView kind="error" title="Запись не найдена" description="Проверьте ссылку или откройте страницу автошколы ещё раз." action={<Button onClick={() => navigate('/school/virazh')}>К записи</Button>} />
       </div>
     )
   }
@@ -261,25 +251,26 @@ export function BookingConfirmation() {
 
   return (
     <div className="ui-shell">
-      <main className="mx-auto flex min-h-screen max-w-xl flex-col px-4 py-6">
+      <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-6 md:py-10">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex min-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[1.65rem] border border-slate-200 bg-white shadow-card"
+          className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-card lg:grid-cols-[380px_minmax(0,1fr)]"
         >
-          <div className="bg-blue-800 px-6 pb-7 pt-8 text-center text-white">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+          <div className="flex flex-col justify-between bg-blue-800 px-6 pb-7 pt-8 text-white md:px-8">
+            <div>
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
               {isCancelled ? <XCircle size={30} className="text-red-100" /> : <CheckCircle2 size={30} />}
             </div>
-            <p className="mt-5 text-base font-bold text-white/75">{school?.name ?? 'Автошкола'}</p>
-            <h1 className="mt-2 text-3xl font-black tracking-normal">
+            <p className="mt-6 text-base font-bold text-white/75">{school?.name ?? 'Автошкола'}</p>
+            <h1 className="mt-2 text-4xl font-black leading-tight tracking-normal">
               {isCancelled
                 ? lessonCount > 1 ? 'Записи отменены' : 'Запись отменена'
                 : lessonCount > 1 ? 'Вы записаны на занятия' : 'Вы записаны'}
             </h1>
             {!isCancelled ? (
-              <p className="mx-auto mt-2 max-w-sm text-base leading-relaxed text-white/78">
+              <p className="mt-4 max-w-sm text-base leading-relaxed text-white/78">
                 {hasProfile
                   ? 'Профиль создан. Следующая запись будет быстрее.'
                   : lessonCount > 1
@@ -287,52 +278,57 @@ export function BookingConfirmation() {
                     : 'Данные записи сохранены. Если нужно, автошкола свяжется с вами по телефону.'}
               </p>
             ) : null}
+            </div>
+            <div className="mt-8 rounded-2xl border border-white/15 bg-white/10 px-4 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/55">Следующий шаг</p>
+              <p className="mt-2 text-sm font-semibold leading-relaxed text-white/86">
+                {hasProfile ? 'Откройте профиль ученика: там будут все будущие занятия.' : 'Добавьте занятие в календарь или вернитесь на страницу школы.'}
+              </p>
+            </div>
           </div>
 
-          <div className="mx-6 mt-6 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-            {bundles.map((item, index) => (
-              <div key={item.booking.id} className={index < bundles.length - 1 ? 'border-b border-slate-200' : ''}>
-                <div className="bg-slate-50 px-5 py-3">
-                  <p className="text-sm font-black text-slate-700">
-                    {lessonCount > 1 ? `Занятие ${index + 1}` : 'Занятие'}
-                  </p>
+          <div className="flex flex-col p-5 md:p-7">
+            <div className="grid gap-3">
+              {bundles.map((item, index) => (
+                <div key={item.booking.id} className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+                    <p className="text-sm font-black text-ink-900">
+                      {lessonCount > 1 ? `Занятие ${index + 1}` : 'Занятие'}
+                    </p>
+                    {item.slot ? <p className="text-sm font-black text-blue-700">{item.slot.time}</p> : null}
+                  </div>
+                  <div className="grid md:grid-cols-2">
+                    {item.slot ? (
+                      <>
+                        <DetailRow label="Дата" value={formatDateFull(item.slot.date)} icon={CalendarDays} />
+                        <DetailRow label="Время" value={item.slot.time} subtitle={formatDuration(item.slot.duration)} icon={Clock3} />
+                      </>
+                    ) : null}
+                    {item.instructor ? (
+                      <DetailRow label="Инструктор" value={item.instructor.name} subtitle={item.instructor.car ?? undefined} icon={UserRound} />
+                    ) : null}
+                    {item.branch ? (
+                      <DetailRow label="Филиал" value={item.branch.name} subtitle={item.branch.address} icon={MapPin} />
+                    ) : null}
+                  </div>
                 </div>
-                {item.slot ? (
-                  <>
-                    <DetailRow label="Дата занятия" value={formatDateFull(item.slot.date)} icon={CalendarDays} />
-                    <DetailRow label="Время" value={item.slot.time} subtitle={formatDuration(item.slot.duration)} icon={Clock3} />
-                  </>
-                ) : null}
-                {item.instructor ? (
-                  <DetailRow label="Инструктор" value={item.instructor.name} subtitle={item.instructor.car ?? undefined} icon={UserRound} />
-                ) : null}
-                {item.branch ? (
-                  <DetailRow label="Филиал" value={item.branch.name} subtitle={item.branch.address} icon={MapPin} />
-                ) : null}
+              ))}
+              <div className="rounded-[1.35rem] border border-blue-100 bg-blue-50/40">
+                <DetailRow label="Ученик" value={booking.studentName} subtitle={formatPhone(booking.studentPhone)} icon={Phone} />
               </div>
-            ))}
-            <DetailRow label="Ученик" value={booking.studentName} subtitle={formatPhone(booking.studentPhone)} icon={Phone} />
-          </div>
+            </div>
 
-          <div className="mt-auto space-y-3 px-6 pb-6 pt-6">
-            {!isCancelled ? (
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-full min-h-14 text-lg"
-                onClick={handleDownloadIcs}
-              >
-                <CalendarPlus size={20} />
-                Добавить в календарь
+            <div className="mt-auto grid gap-3 pt-6 sm:grid-cols-2">
+              {!isCancelled ? (
+                <Button size="lg" variant="secondary" className="min-h-14 text-base" onClick={handleDownloadIcs}>
+                  <CalendarPlus size={20} />
+                  Добавить в календарь
+                </Button>
+              ) : null}
+              <Button size="lg" className="min-h-14 text-base" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}>
+                {hasProfile ? 'В профиль ученика' : 'К записи на занятие'}
               </Button>
-            ) : null}
-            <Button
-              size="lg"
-              className="w-full min-h-14 text-lg"
-              onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}
-            >
-              {hasProfile ? 'В профиль ученика' : 'К записи на занятие'}
-            </Button>
+            </div>
           </div>
         </motion.section>
       </main>

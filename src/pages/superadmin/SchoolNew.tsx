@@ -44,14 +44,14 @@ export function SuperAdminSchoolNew() {
   }
 
   return (
-    <div className="max-w-5xl p-6 md:p-8">
+    <div className="max-w-6xl p-4 md:p-6">
       <PageHeader
         eyebrow="Superadmin"
         title="Создать автошколу"
         description="Создайте новую автошколу для демо, расчёта стоимости и проверки продуктового сценария."
       />
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Section title="Данные школы" description="Минимум полей, чтобы школа уже появилась в системе.">
           <div className="grid gap-4 md:grid-cols-2">
             <Input label="Название" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
@@ -62,11 +62,27 @@ export function SuperAdminSchoolNew() {
           <div className="mt-4">
             <Textarea label="Описание" rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Button onClick={handleCreate}>Создать автошколу</Button>
             <Button variant="secondary" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools`)}>Назад</Button>
           </div>
         </Section>
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-card">
+          <p className="ui-kicker">White-label preview</p>
+          <div className="mt-5 flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-black text-white" style={{ backgroundColor: form.primaryColor || '#2563EB' }}>
+              {form.logoUrl ? <img src={form.logoUrl} alt={form.name} className="h-full w-full rounded-2xl object-cover" /> : (form.name.slice(0, 2).toUpperCase() || 'DS')}
+            </div>
+            <div>
+              <p className="text-lg font-black text-ink-900">{form.name || 'Новая автошкола'}</p>
+              <p className="text-sm text-slate-500">/{form.slug || 'school-slug'}</p>
+            </div>
+          </div>
+          <p className="mt-5 text-sm leading-relaxed text-slate-600">{form.description || 'Описание будет видно на публичной странице школы и в потоке записи.'}</p>
+          <div className="mt-5 rounded-2xl px-4 py-3 text-center text-sm font-black text-white" style={{ backgroundColor: form.primaryColor || '#2563EB' }}>
+            Записаться на занятие
+          </div>
+        </div>
       </div>
     </div>
   )
