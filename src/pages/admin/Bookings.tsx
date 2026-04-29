@@ -12,7 +12,8 @@ import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-import { formatPhone } from '../../lib/utils'
+import { formatInstructorName, formatPhone } from '../../lib/utils'
+import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import {
   cancelBooking,
   completeBooking,
@@ -193,7 +194,7 @@ export function AdminBookings() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-product-muted" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
@@ -261,9 +262,9 @@ export function AdminBookings() {
           ) : (
             <>
               <TableShell className="hidden xl:block">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <table className="min-w-full divide-y divide-product-border">
+                  <thead className="bg-product-alt">
+                    <tr className="text-left text-xs font-bold uppercase tracking-[0.08em] text-product-muted">
                       <th className="px-4 py-3">Дата</th>
                       <th className="px-4 py-3">Ученик</th>
                       <th className="px-4 py-3">Филиал</th>
@@ -273,31 +274,31 @@ export function AdminBookings() {
                       <th className="px-4 py-3 text-right">Действия</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-product-border bg-white">
                     {filteredBookings.map((entry) => (
-                      <tr key={entry.booking.id} className="align-top text-sm text-slate-600 transition hover:bg-blue-50/30">
+                      <tr key={entry.booking.id} className="align-top text-sm text-product-secondary transition hover:bg-product-primary-soft/45">
                         <td className="px-4 py-4">
-                          <p className="font-black text-ink-900">
-                            {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
+                          <p className="font-bold text-product-main">
+                            {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                           </p>
                         </td>
                         <td className="px-4 py-4">
                           {entry.student ? (
-                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-black text-ink-900 hover:text-blue-700">
+                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-bold text-product-main hover:text-product-primary">
                               {entry.booking.studentName}
                             </Link>
                           ) : (
-                            <p className="font-black text-ink-900">{entry.booking.studentName}</p>
+                            <p className="font-bold text-product-main">{entry.booking.studentName}</p>
                           )}
-                          <p className="text-slate-500">{formatPhone(entry.booking.studentPhone)}</p>
+                          <p className="text-product-muted">{formatPhone(entry.booking.studentPhone)}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="font-bold text-ink-900">{entry.branch?.name ?? 'Не найдено'}</p>
-                          <p className="text-slate-500">{entry.branch?.address ?? 'Без адреса'}</p>
+                          <p className="font-bold text-product-main">{entry.branch?.name ?? 'Не найдено'}</p>
+                          <p className="text-product-muted">{entry.branch?.address ?? 'Без адреса'}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="font-bold text-ink-900">{entry.instructor?.name ?? 'Не найдено'}</p>
-                          <p className="text-slate-500">
+                          <p className="font-bold text-product-main">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
+                          <p className="text-product-muted">
                             {entry.instructor?.car ?? 'Машина не указана'}
                             {entry.instructor?.transmission
                               ? ` · ${entry.instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}`
@@ -307,7 +308,7 @@ export function AdminBookings() {
                         <td className="px-4 py-4">
                           <StatusBadge status={entry.booking.status} />
                         </td>
-                        <td className="px-4 py-4 text-slate-500">
+                        <td className="px-4 py-4 text-product-muted">
                           {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
                         </td>
                         <td className="px-4 py-4">
@@ -355,29 +356,29 @@ export function AdminBookings() {
                   <DataRow key={entry.booking.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-base font-black text-ink-900">{entry.booking.studentName}</p>
-                        <p className="text-sm font-medium text-slate-600">{formatPhone(entry.booking.studentPhone)}</p>
+                        <p className="text-base font-bold text-product-main">{entry.booking.studentName}</p>
+                        <p className="text-sm font-medium text-product-secondary">{formatPhone(entry.booking.studentPhone)}</p>
                       </div>
                       <StatusBadge status={entry.booking.status} />
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-medium text-stone-500">Занятие</p>
-                        <p className="mt-1 text-sm font-medium text-stone-900">
-                          {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
+                        <p className="text-xs font-medium text-product-muted">Занятие</p>
+                        <p className="mt-1 text-sm font-medium text-product-main">
+                          {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-stone-500">Инструктор</p>
-                        <p className="mt-1 text-sm font-medium text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
+                        <p className="text-xs font-medium text-product-muted">Инструктор</p>
+                        <p className="mt-1 text-sm font-medium text-product-main">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-stone-500">Филиал</p>
-                        <p className="mt-1 text-sm font-medium text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
+                        <p className="text-xs font-medium text-product-muted">Филиал</p>
+                        <p className="mt-1 text-sm font-medium text-product-main">{entry.branch?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-stone-500">Создана</p>
-                        <p className="mt-1 text-sm font-medium text-stone-900">
+                        <p className="text-xs font-medium text-product-muted">Создана</p>
+                        <p className="mt-1 text-sm font-medium text-product-main">
                           {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
                         </p>
                       </div>
@@ -440,7 +441,7 @@ export function AdminBookings() {
 
       <Modal open={Boolean(rescheduleBookingId)} onClose={() => setRescheduleBookingId(null)} title="Перенести запись" size="lg">
         <div className="space-y-6 px-6 pb-6">
-          <div className="rounded-3xl border border-amber-100 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+          <div className="rounded-[24px] border border-product-warning-soft bg-product-warning-soft px-4 py-4 text-sm text-product-warning">
             Администратор может перенести запись даже при лимите будущих записей у ученика. Если лимит превышен, это будет отмечено в уведомлении.
           </div>
 
@@ -486,14 +487,14 @@ export function AdminBookings() {
                     className={`rounded-2xl border px-4 py-4 text-left transition ${
                       selected
                         ? 'ui-selected'
-                        : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'
+                        : 'border-product-border bg-white hover:border-product-primary-border hover:bg-product-primary-soft/45'
                     }`}
                   >
-                    <p className="text-sm font-semibold text-stone-900">
-                      {slot.date} · {slot.time}
+                    <p className="text-sm font-semibold text-product-main">
+                      {formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}
                     </p>
-                    <p className="mt-1 text-sm text-stone-500">{branch?.name ?? 'Филиал не найден'}</p>
-                    <p className="mt-1 text-sm text-stone-500">{instructor?.name ?? 'Инструктор не найден'}</p>
+                    <p className="mt-1 text-sm text-product-muted">{branch?.name ?? 'Филиал не найден'}</p>
+                    <p className="mt-1 text-sm text-product-muted">{instructor ? formatInstructorName(instructor.name) : 'Инструктор не найден'}</p>
                   </button>
                 )
               })}

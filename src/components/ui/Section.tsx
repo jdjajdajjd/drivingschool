@@ -11,10 +11,10 @@ interface SectionProps {
 export function Section({ title, description, actions, children }: SectionProps) {
   return (
     <Card padding="none">
-      <div className="flex flex-col gap-2.5 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-2.5 border-b border-product-border px-5 py-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-base font-bold text-ink-900">{title}</h2>
-          {description ? <p className="mt-1 text-sm leading-relaxed text-slate-600">{description}</p> : null}
+          <h2 className="text-base font-bold text-product-main">{title}</h2>
+          {description ? <p className="mt-1 text-sm leading-relaxed text-product-secondary">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>

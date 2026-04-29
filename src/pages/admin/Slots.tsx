@@ -12,7 +12,8 @@ import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-import { formatDuration } from '../../lib/utils'
+import { formatDuration, formatInstructorName } from '../../lib/utils'
+import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { createBulkSlots, createSlot, deleteSlot, getSlotsBySchool, updateSlotStatus } from '../../services/slotService'
 import { db } from '../../services/storage'
 
@@ -21,7 +22,7 @@ type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'
 type CreateMode = 'single' | 'bulk'
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100'
+  return 'h-11 w-full rounded-2xl border border-product-border bg-white px-3.5 text-[15px] text-product-main outline-none transition focus:border-product-primary-border focus:ring-4 focus:ring-product-primary-soft'
 }
 
 export function AdminSlots() {
@@ -252,7 +253,7 @@ export function AdminSlots() {
                           }))
                         }
                         className={`rounded-full border px-4 py-2 text-base transition ${
-                          active ? 'border-blue-700 bg-blue-50 text-blue-700' : 'border-stone-200 bg-white text-stone-600'
+                          active ? 'border-product-primary bg-product-primary-soft text-product-primary' : 'border-product-border bg-white text-product-secondary'
                         }`}
                       >
                         {day.label}
@@ -262,7 +263,7 @@ export function AdminSlots() {
                 </div>
               </FormField>
 
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-base text-blue-950">
+              <div className="rounded-2xl border border-product-primary-border bg-product-primary-soft px-4 py-4 text-base text-product-main">
                 Проверка перед созданием: система пропустит дубли и занятия в прошлом. Занятые времена не будут перезаписаны.
               </div>
 
@@ -303,12 +304,12 @@ export function AdminSlots() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-product-muted" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Инструктор, филиал, ученик"
-                  className="h-11 w-full rounded-2xl border border-stone-200 bg-white pl-10 pr-3.5 text-[15px] text-stone-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-2xl border border-product-border bg-white pl-10 pr-3.5 text-[15px] text-product-main outline-none transition focus:border-product-primary-border focus:ring-4 focus:ring-product-primary-soft"
                 />
               </div>
             </FormField>
@@ -356,17 +357,17 @@ export function AdminSlots() {
                       <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <div>
                           <p className="ui-kicker">Дата и время</p>
-                          <p className="mt-1 text-base font-black text-ink-900">{entry.slot.date}</p>
-                          <p className="text-sm font-semibold text-blue-700">{entry.slot.time} · {formatDuration(entry.slot.duration)}</p>
+                          <p className="mt-1 text-base font-bold text-product-main">{formatHumanDate(entry.slot.date, false)}</p>
+                          <p className="text-sm font-semibold text-product-primary">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
                         </div>
                         <div>
                           <p className="ui-kicker">Филиал</p>
-                          <p className="mt-1 text-sm font-black text-ink-900">{entry.branch?.name ?? 'Не найден'}</p>
+                          <p className="mt-1 text-sm font-bold text-product-main">{entry.branch?.name ?? 'Не найден'}</p>
                         </div>
                         <div>
                           <p className="ui-kicker">Инструктор</p>
-                          <p className="mt-1 text-sm font-black text-ink-900">{entry.instructor?.name ?? 'Не найден'}</p>
-                          <p className="text-sm text-slate-500">{entry.instructor?.car ?? 'Без машины'}</p>
+                          <p className="mt-1 text-sm font-bold text-product-main">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
+                          <p className="text-sm text-product-muted">{entry.instructor?.car ?? 'Без машины'}</p>
                         </div>
                         <div>
                           <p className="ui-kicker">Статус</p>
@@ -374,7 +375,7 @@ export function AdminSlots() {
                         </div>
                         <div>
                           <p className="ui-kicker">Ученик</p>
-                          <p className="mt-1 text-sm font-black text-ink-900">{entry.student?.name ?? 'Нет записи'}</p>
+                          <p className="mt-1 text-sm font-bold text-product-main">{entry.student?.name ?? 'Нет записи'}</p>
                         </div>
                       </div>
 

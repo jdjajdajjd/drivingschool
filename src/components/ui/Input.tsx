@@ -12,22 +12,21 @@ export function Input({ label, error, helperText, className, id, ...props }: Inp
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={inputId} className="text-sm font-semibold text-product-secondary">
           {label}
         </label>
       )}
       <input
         id={inputId}
         className={cn(
-          'ui-field',
-          'h-11',
-          error && 'border-red-300 focus:border-red-300 focus:ring-red-100',
+          'ui-field h-12',
+          error && 'border-product-error focus:border-product-error focus:ring-product-error-soft',
           className,
         )}
         {...props}
       />
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
-      {!error && helperText ? <p className="text-xs text-slate-500">{helperText}</p> : null}
+      {error && <p className="text-xs font-medium text-product-error">{error}</p>}
+      {!error && helperText ? <p className="text-xs text-product-muted">{helperText}</p> : null}
     </div>
   )
 }
@@ -43,22 +42,22 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={inputId} className="text-sm font-semibold text-product-secondary">
           {label}
         </label>
       )}
       <textarea
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-slate-400 transition-colors duration-150',
-          'focus:border-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-100',
-          error && 'border-red-300 focus:border-red-300 focus:ring-red-100',
+          'w-full resize-none rounded-2xl border border-product-border bg-white px-3.5 py-2.5 text-sm text-product-main placeholder:text-product-muted transition-colors duration-150',
+          'focus:border-product-primary focus:outline-none focus:ring-4 focus:ring-product-primary-soft',
+          error && 'border-product-error focus:border-product-error focus:ring-product-error-soft',
           className,
         )}
         {...props}
       />
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
-      {!error && helperText ? <p className="text-xs text-slate-500">{helperText}</p> : null}
+      {error && <p className="text-xs font-medium text-product-error">{error}</p>}
+      {!error && helperText ? <p className="text-xs text-product-muted">{helperText}</p> : null}
     </div>
   )
 }

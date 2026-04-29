@@ -6,6 +6,7 @@ import { StatCard } from '../components/ui/StatCard'
 import { StateView } from '../components/ui/StateView'
 import { DataRow } from '../components/ui/DataList'
 import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
 import { formatPrice } from '../lib/utils'
 import { getBillingSummary } from '../services/modules'
 import { performDemoReset } from '../services/schoolService'
@@ -58,7 +59,7 @@ export function SuperAdminOverview() {
       <PageHeader
         eyebrow="DriveDesk"
         title="Superadmin"
-        description="Обзор по всем автошколам, их стоимости, загрузке и важным сигналам в демо-режиме."
+        description="Обзор по автошколам, выручке, активности записей и сигналам, которые требуют внимания владельца платформы."
         actions={
           <Button
             variant="secondary"
@@ -75,16 +76,16 @@ export function SuperAdminOverview() {
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Всего автошкол" value={schools.length} icon={<Building2 size={18} />} />
-        <StatCard label="Активных автошкол" value={activeSchools.length} icon={<Building2 size={18} />} />
-        <StatCard label="Записей сегодня" value={todayBookingsTotal} icon={<CalendarDays size={18} />} />
-        <StatCard label="Оценка MRR в демо" value={formatPrice(mrr)} icon={<BarChart3 size={18} />} />
-        <StatCard label="Подключённых модулей" value={enabledModulesTotal} icon={<Puzzle size={18} />} />
-        <StatCard label="Школ без свободных слотов на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle size={18} />} />
-        <StatCard label="Школ с предупреждениями" value={schoolsWithWarnings} icon={<AlertTriangle size={18} />} />
+        <StatCard label="Активные школы" value={activeSchools.length} icon={<Building2 size={18} />} />
+        <StatCard label="Записи сегодня" value={todayBookingsTotal} icon={<CalendarDays size={18} />} />
+        <StatCard label="Оценка MRR" value={formatPrice(mrr)} icon={<BarChart3 size={18} />} />
+        <StatCard label="Подключённые модули" value={enabledModulesTotal} icon={<Puzzle size={18} />} />
+        <StatCard label="Школы без слотов на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle size={18} />} />
+        <StatCard label="Школы с предупреждениями" value={schoolsWithWarnings} icon={<AlertTriangle size={18} />} />
       </div>
 
       <div className="mt-6">
-        <Section title="Сигналы по школам" description="Куда смотреть в первую очередь, если демо-данные выглядят проблемно.">
+        <Section title="Операционные сигналы" description="Список помогает быстро понять, где закончились свободные слоты или появились проблемы в конфигурации.">
           {metrics.length === 0 ? (
             <StateView title="Автошкол пока нет" description="Создайте первую автошколу в панели владельца сервиса." />
           ) : (
@@ -93,15 +94,15 @@ export function SuperAdminOverview() {
                 <DataRow key={item.school.id}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <p className="text-sm font-black text-ink-900">{item.school.name}</p>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <p className="text-sm font-bold text-product-main">{item.school.name}</p>
+                      <p className="mt-1 text-sm text-product-secondary">
                         /{item.school.slug} · {formatPrice(item.billing.totalMonthlyPrice)}/мес · модулей: {item.enabledModules}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {item.noSlots ? <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Нет слотов на 7 дней</span> : null}
-                      {item.warnings.length > 0 ? <span className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Есть предупреждения: {item.warnings.length}</span> : null}
-                      {!item.noSlots && item.warnings.length === 0 ? <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Стабильно</span> : null}
+                      {item.noSlots ? <Badge variant="warning">Нет слотов на 7 дней</Badge> : null}
+                      {item.warnings.length > 0 ? <Badge variant="error">Предупреждений: {item.warnings.length}</Badge> : null}
+                      {!item.noSlots && item.warnings.length === 0 ? <Badge variant="success">Стабильно</Badge> : null}
                     </div>
                   </div>
                 </DataRow>

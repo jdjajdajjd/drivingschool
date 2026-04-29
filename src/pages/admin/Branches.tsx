@@ -126,33 +126,33 @@ export function AdminBranches() {
                 <DataRow key={branch.id} className="p-4">
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px_220px] xl:items-center">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-product-primary-soft text-product-primary">
                         <MapPin size={18} />
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-lg font-black text-ink-900">{branch.name}</p>
+                          <p className="text-lg font-bold text-product-main">{branch.name}</p>
                           <Badge variant={branch.isActive ? 'success' : 'default'}>
                             {branch.isActive ? 'Активен' : 'Выключен'}
                           </Badge>
                         </div>
-                        <p className="mt-1 text-sm text-slate-600">{branch.address || 'Адрес не указан'}</p>
-                        {branch.phone ? <p className="mt-1 text-sm font-semibold text-slate-500">{branch.phone}</p> : null}
+                        <p className="mt-1 text-sm text-product-secondary">{branch.address || 'Адрес не указан'}</p>
+                        {branch.phone ? <p className="mt-1 text-sm font-semibold text-product-muted">{branch.phone}</p> : null}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                        <p className="text-xs font-bold text-slate-500">Инструкторы</p>
-                        <p className="mt-1 text-lg font-black text-ink-900">{instructorCount}</p>
+                      <div className="rounded-2xl bg-product-alt px-3 py-3">
+                        <p className="text-xs font-bold text-product-muted">Инструкторы</p>
+                        <p className="mt-1 text-lg font-bold text-product-main">{instructorCount}</p>
                       </div>
-                      <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                        <p className="text-xs font-bold text-slate-500">Записи</p>
-                        <p className="mt-1 text-lg font-black text-ink-900">{futureBookings}</p>
+                      <div className="rounded-2xl bg-product-alt px-3 py-3">
+                        <p className="text-xs font-bold text-product-muted">Записи</p>
+                        <p className="mt-1 text-lg font-bold text-product-main">{futureBookings}</p>
                       </div>
-                      <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                        <p className="text-xs font-bold text-slate-500">Слоты 7д</p>
-                        <p className="mt-1 text-lg font-black text-blue-700">{freeSlots7d}</p>
+                      <div className="rounded-2xl bg-product-alt px-3 py-3">
+                        <p className="text-xs font-bold text-product-muted">Слоты 7д</p>
+                        <p className="mt-1 text-lg font-bold text-product-primary">{freeSlots7d}</p>
                       </div>
                     </div>
 
@@ -179,7 +179,7 @@ export function AdminBranches() {
           <Input label="Название" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
           <Input label="Адрес" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />
           <Input label="Телефон" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-          <label className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
+          <label className="flex items-center gap-3 rounded-2xl border border-product-border bg-product-alt px-4 py-3 text-sm text-product-secondary">
             <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />
             Филиал активен
           </label>

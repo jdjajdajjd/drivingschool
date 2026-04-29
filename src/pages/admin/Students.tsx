@@ -8,6 +8,7 @@ import { FormField } from '../../components/ui/FormField'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { formatPhone } from '../../lib/utils'
+import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { db } from '../../services/storage'
 import { getStudentsBySchool, getStudentStats } from '../../services/studentService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
@@ -32,7 +33,8 @@ export function AdminStudents() {
     return getStudentsBySchool(school.id)
       .map((student) => {
         const stats = getStudentStats(student.id)
-        return { student, stats }
+        const nextSlot = stats.nextBooking ? db.slots.byId(stats.nextBooking.slotId) : null
+        return { student, stats, nextSlot }
       })
       .filter(({ student, stats }) => {
         const matchesSearch =
@@ -74,7 +76,7 @@ export function AdminStudents() {
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_280px]">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-product-muted" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -100,7 +102,7 @@ export function AdminStudents() {
             <StateView kind="no-results" title="Ученики не найдены" description="Измените фильтры или создайте запись на публичной странице." />
           ) : (
             <div className="grid gap-3">
-              {rows.map(({ student, stats }) => (
+              {rows.map(({ student, stats, nextSlot }) => (
                 <Link
                   key={student.id}
                   to={`${ADMIN_BASE_PATH}/students/${student.id}`}
@@ -109,12 +111,12 @@ export function AdminStudents() {
                   <DataRow>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-product-primary-soft text-product-primary">
                           <UserRound size={18} />
                         </div>
                         <div>
-                          <p className="text-base font-black text-ink-900">{student.name}</p>
-                          <p className="text-sm font-medium text-slate-600">{formatPhone(student.normalizedPhone)}</p>
+                          <p className="text-base font-bold text-product-main">{student.name}</p>
+                          <p className="text-sm font-medium text-product-secondary">{formatPhone(student.normalizedPhone)}</p>
                         </div>
                       </div>
                       {stats.limitReached ? <Badge variant="warning">Лимит достигнут</Badge> : <Badge variant={stats.activeFutureBookings > 0 ? 'success' : 'muted'}>{stats.activeFutureBookings > 0 ? 'Есть запись' : 'Без активных'}</Badge>}
@@ -122,23 +124,23 @@ export function AdminStudents() {
 
                     <div className="mt-4 grid gap-2 sm:grid-cols-4">
                       <div>
-                        <p className="text-xs font-bold text-slate-500">Всего записей</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{stats.totalBookings}</p>
+                        <p className="text-xs font-bold text-product-muted">Всего записей</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">{stats.totalBookings}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-500">Будущих активных</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{stats.activeFutureBookings}</p>
+                        <p className="text-xs font-bold text-product-muted">Будущих активных</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">{stats.activeFutureBookings}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-500">Последняя запись</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">
+                        <p className="text-xs font-bold text-product-muted">Последняя запись</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">
                           {stats.lastBooking ? new Date(stats.lastBooking.createdAt).toLocaleDateString('ru-RU') : 'Нет'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-500">Ближайшая запись</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">
-                          {stats.nextBooking ? stats.nextBooking.id : 'Нет'}
+                        <p className="text-xs font-bold text-product-muted">Ближайшая запись</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">
+                          {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : 'Нет'}
                         </p>
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
+import { Badge } from '../../components/ui/Badge'
 import { formatPrice } from '../../lib/utils'
 import { getSchoolOverview, getSchools } from '../../services/schoolService'
 import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH } from '../../services/accessControl'
@@ -20,12 +21,12 @@ export function SuperAdminSchools() {
       <PageHeader
         eyebrow="Superadmin"
         title="Автошколы"
-        description="Все школы, их загрузка, подключённые модули и текущая демо-стоимость в месяц."
+        description="Все tenants платформы: статус, slug, активность, подключённые модули и текущая стоимость в месяц."
         actions={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/new`)}>Создать автошколу</Button>}
       />
 
       <div className="mt-6">
-        <Section title="Список школ" description={`Найдено ${rows.length} автошкол.`}>
+        <Section title="Список школ" description={`Найдено ${rows.length} школ.`}>
           {rows.length === 0 ? (
             <StateView title="Автошкол пока нет" description="Создайте первую школу, чтобы увидеть её в каталоге." action={<Button onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/new`)}>Создать автошколу</Button>} />
           ) : (
@@ -36,24 +37,26 @@ export function SuperAdminSchools() {
                     <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                       <div>
                         <p className="ui-kicker">Школа</p>
-                        <p className="mt-1 text-base font-black text-ink-900">{item.school.name}</p>
-                        <p className="text-sm text-slate-500">/{item.school.slug}</p>
+                        <p className="mt-1 text-base font-bold text-product-main">{item.school.name}</p>
+                        <p className="text-sm text-product-muted">/{item.school.slug}</p>
                       </div>
                       <div>
-                        <p className="ui-kicker">Филиалы / инструкторы</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{item.branchCount} / {item.instructorCount}</p>
+                        <p className="ui-kicker">Статус</p>
+                        <div className="mt-1">
+                          <Badge variant={item.school.isActive === false ? 'muted' : 'success'}>{item.school.isActive === false ? 'Отключена' : 'Активна'}</Badge>
+                        </div>
                       </div>
                       <div>
-                        <p className="ui-kicker">Ученики / активные записи</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{item.studentCount} / {item.activeBookingsCount}</p>
+                        <p className="ui-kicker">Ученики / записи</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">{item.studentCount} / {item.activeBookingsCount}</p>
                       </div>
                       <div>
-                        <p className="ui-kicker">Записи 30 дней / слоты 7 дней</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
+                        <p className="ui-kicker">30 дней / слоты 7 дней</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
                       </div>
                       <div>
-                        <p className="ui-kicker">Модули / сумма</p>
-                        <p className="mt-1 text-sm font-black text-ink-900">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
+                        <p className="ui-kicker">Модули / MRR</p>
+                        <p className="mt-1 text-sm font-bold text-product-main">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
                       </div>
                     </div>
 
@@ -64,11 +67,11 @@ export function SuperAdminSchools() {
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate(ADMIN_BASE_PATH)}>
                         <ExternalLink size={14} />
-                        Демо-админка
+                        Админка
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/${item.school.id}`)}>
                         <Settings2 size={14} />
-                        Настройки
+                        Детали
                       </Button>
                     </div>
                   </div>

@@ -33,7 +33,7 @@ const initialForm = {
 }
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border border-stone-200 bg-white px-3.5 text-[15px] text-stone-900 outline-none transition focus:border-forest-300 focus:ring-4 focus:ring-forest-100'
+  return 'h-11 w-full rounded-2xl border border-product-border bg-white px-3.5 text-[15px] text-product-main outline-none transition focus:border-product-primary focus:ring-4 focus:ring-product-primary-soft'
 }
 
 export function AdminInstructors() {
@@ -182,12 +182,12 @@ export function AdminInstructors() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-lg font-black text-ink-900">{instructor.name}</p>
+                        <p className="text-lg font-bold text-product-main">{instructor.name}</p>
                         <Badge variant={instructor.isActive ? 'success' : 'default'}>
                           {instructor.isActive ? 'Активен' : 'Выключен'}
                         </Badge>
                       </div>
-                      <p className="mt-2 text-sm text-slate-600">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
+                      <p className="mt-2 text-sm text-product-secondary">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {(instructor.categories?.length ? instructor.categories : ['B']).map((code) => (
                           <Badge key={code} variant="default">
@@ -199,31 +199,31 @@ export function AdminInstructors() {
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <div className="rounded-2xl bg-product-alt px-3 py-3">
                       <p className="ui-kicker">Филиал</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
+                      <p className="mt-1 text-sm font-bold text-product-main">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
                     </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <div className="rounded-2xl bg-product-alt px-3 py-3">
                       <p className="ui-kicker">Телефон</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
+                      <p className="mt-1 text-sm font-bold text-product-main">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
                     </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <div className="rounded-2xl bg-product-alt px-3 py-3">
                       <p className="ui-kicker">Машина</p>
-                      <p className="mt-1 text-sm font-black text-ink-900">
+                      <p className="mt-1 text-sm font-bold text-product-main">
                         {instructor.car ?? 'Не указана'}
                         {instructor.transmission ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <div className="rounded-2xl bg-product-alt px-3 py-3">
                       <p className="ui-kicker">Записи / слоты</p>
-                      <p className="mt-1 text-sm font-black text-blue-700">{futureLessons} / {freeSlots7d}</p>
+                      <p className="mt-1 text-sm font-bold text-product-primary">{futureLessons} / {freeSlots7d}</p>
                     </div>
                   </div>
 
                   <div>
-                  <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <div className="rounded-2xl bg-product-alt px-4 py-4">
                     <p className="ui-kicker">Личная ссылка</p>
-                    <p className="mt-2 break-all text-sm font-medium text-slate-700">
+                    <p className="mt-2 break-all text-sm font-medium text-product-secondary">
                       {window.location.origin}/instructor/{instructor.token}
                     </p>
                   </div>
@@ -292,19 +292,19 @@ export function AdminInstructors() {
                     onClick={() => toggleCategory(category.code)}
                     className={`rounded-2xl border px-4 py-3 text-left transition ${
                       active
-                        ? 'border-forest-600 bg-forest-50 text-stone-950'
-                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                        ? 'border-product-primary bg-product-primary-soft text-product-main'
+                        : 'border-product-border bg-white text-product-secondary hover:border-product-primary-border'
                     }`}
                   >
                     <span className="text-sm font-semibold">{category.title}</span>
-                    <span className="mt-1 block text-xs text-stone-500">{category.description}</span>
+                    <span className="mt-1 block text-xs text-product-muted">{category.description}</span>
                   </button>
                 )
               })}
             </div>
           </FormField>
 
-          <label className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
+          <label className="flex items-center gap-3 rounded-2xl border border-product-border bg-product-alt px-4 py-3 text-sm text-product-secondary">
             <input
               type="checkbox"
               checked={form.isActive}

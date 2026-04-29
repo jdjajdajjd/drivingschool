@@ -72,7 +72,7 @@ export function AdminModuleDetail() {
     <div className="max-w-5xl p-6 md:p-8">
       <button
         onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}
-        className="mb-4 inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-product-muted transition hover:text-product-main"
       >
         <ArrowLeft size={15} />
         Назад к каталогу
@@ -91,8 +91,8 @@ export function AdminModuleDetail() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <Section title="Что даёт модуль" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
-          <div className="flex items-start gap-4 rounded-3xl border border-stone-100 bg-stone-50 px-5 py-5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-forest-700 shadow-soft">
+          <div className="flex items-start gap-4 rounded-[24px] border border-product-border bg-product-alt px-5 py-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-product-primary shadow-soft">
               <Icon size={20} />
             </div>
             <div>
@@ -102,14 +102,14 @@ export function AdminModuleDetail() {
                 </Badge>
                 {module.isRecommended ? <Badge variant="outline">Рекомендуем</Badge> : null}
               </div>
-              <p className="mt-3 text-lg font-semibold text-stone-900">{priceLabel}</p>
-              {module.usageNote ? <p className="mt-1 text-sm text-stone-500">{module.usageNote}</p> : null}
+              <p className="mt-3 text-lg font-semibold text-product-main">{priceLabel}</p>
+              {module.usageNote ? <p className="mt-1 text-sm text-product-muted">{module.usageNote}</p> : null}
             </div>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {module.features.map((feature) => (
-              <div key={feature} className="rounded-2xl border border-stone-100 bg-white px-4 py-3 text-sm text-stone-600">
+              <div key={feature} className="rounded-2xl border border-product-border bg-white px-4 py-3 text-sm text-product-secondary">
                 {feature}
               </div>
             ))}
@@ -118,19 +118,19 @@ export function AdminModuleDetail() {
 
         <Section title="Статус" description="Как модуль учитывается в стоимости школы.">
           <div className="space-y-3">
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Категория</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">{MODULE_CATEGORY_LABELS[module.category]}</p>
+            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Категория</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">{MODULE_CATEGORY_LABELS[module.category]}</p>
             </div>
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Тип цены</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">
+            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Тип цены</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">
                 {module.priceType === 'monthly' ? 'Ежемесячно' : module.priceType === 'one_time' ? 'Разовая услуга' : 'По использованию'}
               </p>
             </div>
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Режим</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">
+            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Режим</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">
                 {enabled ? 'Уже включён в школу' : 'Можно подключить в один клик'}
               </p>
             </div>

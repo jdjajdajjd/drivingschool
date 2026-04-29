@@ -26,7 +26,7 @@ export function Button({
           ghost:
             'border border-transparent bg-transparent text-product-secondary hover:bg-product-alt hover:text-product-main active:bg-product-alt',
           danger:
-            'border border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50 active:bg-red-100',
+            'border border-product-error-soft bg-white text-product-error hover:border-product-error/35 hover:bg-product-error-soft active:bg-product-error-soft',
         }[variant],
         {
           sm: 'h-11 px-3.5 text-sm rounded-2xl',

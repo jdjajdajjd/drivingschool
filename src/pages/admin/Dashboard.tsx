@@ -132,16 +132,16 @@ export function AdminDashboard() {
                 >
                   <DataRow className="flex flex-col gap-2.5 md:flex-row md:items-center">
                     <div className="min-w-[150px]">
-                      <p className="text-sm font-black text-ink-900">
+                      <p className="text-sm font-bold text-product-main">
                         {entry.slot
                           ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMMM, HH:mm', { locale: ru })
                           : 'Время не найдено'}
                       </p>
-                      <p className="text-xs font-medium text-slate-600">{entry.branch?.name ?? 'Филиал не найден'}</p>
+                      <p className="text-xs font-medium text-product-secondary">{entry.branch?.name ?? 'Филиал не найден'}</p>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-black text-ink-900">{entry.booking.studentName}</p>
-                      <p className="truncate text-sm text-slate-600">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
+                      <p className="text-sm font-bold text-product-main">{entry.booking.studentName}</p>
+                      <p className="truncate text-sm text-product-secondary">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
                     </div>
                     <StatusBadge status={entry.booking.status} />
                   </DataRow>
@@ -153,16 +153,16 @@ export function AdminDashboard() {
 
         <div className="space-y-4">
           <Section title="Мастер запуска" description="Что нужно проверить перед тем, как давать ссылку ученикам.">
-            <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-3.5">
+            <div className="mb-3 rounded-xl border border-product-border bg-product-alt/80 px-3.5 py-3.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-black text-ink-900">
+                <p className="text-sm font-bold text-product-main">
                   Готово {data.launchItems.filter((item) => item.done).length} из {data.launchItems.length}
                 </p>
-                <p className="text-sm font-medium text-slate-600">Запуск школы</p>
+                <p className="text-sm font-medium text-product-secondary">Запуск школы</p>
               </div>
               <div className="mt-3 h-2 rounded-full bg-white shadow-inner">
                 <div
-                  className="h-full rounded-full bg-blue-700 transition-all"
+                  className="h-full rounded-full bg-product-primary transition-all"
                   style={{ width: `${(data.launchItems.filter((item) => item.done).length / data.launchItems.length) * 100}%` }}
                 />
               </div>
@@ -173,16 +173,16 @@ export function AdminDashboard() {
                   key={item.label}
                   type="button"
                   onClick={() => item.external ? window.open(item.to, '_blank') : navigate(item.to)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3.5 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/60"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-product-border bg-product-alt/80 px-3.5 py-3 text-left transition hover:border-product-primary-border hover:bg-product-primary-soft/60"
                 >
-                   <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${item.done ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-slate-100 bg-white text-slate-300'}`}>
+                   <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${item.done ? 'border-product-primary-border bg-product-primary-soft text-product-primary' : 'border-product-border bg-white text-product-muted'}`}>
                     <CheckCircle2 size={19} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-ink-800">{item.label}</p>
-                    <p className="mt-0.5 text-sm text-slate-600">{item.text}</p>
+                    <p className="text-sm font-bold text-product-main">{item.label}</p>
+                    <p className="mt-0.5 text-sm text-product-secondary">{item.text}</p>
                   </div>
-                  <ArrowRight size={18} className="shrink-0 text-stone-400" />
+                  <ArrowRight size={18} className="shrink-0 text-product-muted" />
                 </button>
               ))}
             </div>
@@ -193,8 +193,8 @@ export function AdminDashboard() {
           </Section>
 
           <Section title="Ссылка для учеников" description="Эту ссылку можно отправить в мессенджер или поставить на сайт школы.">
-            <div className="rounded-xl bg-stone-50 px-3.5 py-3.5">
-              <p className="break-all text-sm font-semibold text-stone-900">{publicUrl}</p>
+            <div className="rounded-xl bg-product-alt px-3.5 py-3.5">
+              <p className="break-all text-sm font-semibold text-product-main">{publicUrl}</p>
             </div>
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
               <Button variant="secondary" onClick={() => void copyPublicLink()}>
@@ -211,11 +211,11 @@ export function AdminDashboard() {
           <Section title="Филиалы" description="Короткая проверка, что ученику понятно куда ехать.">
             <div className="space-y-2.5">
               {data.branches.map((branch) => (
-                <div key={branch.id} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3.5 py-3.5">
-                  <MapPin size={19} className="mt-0.5 shrink-0 text-stone-400" />
+                <div key={branch.id} className="flex gap-3 rounded-2xl border border-product-border bg-product-alt/80 px-3.5 py-3.5">
+                  <MapPin size={19} className="mt-0.5 shrink-0 text-product-muted" />
                   <div>
-                    <p className="text-sm font-semibold text-stone-900">{branch.name}</p>
-                    <p className="mt-1 text-sm text-stone-500">{branch.address}</p>
+                    <p className="text-sm font-semibold text-product-main">{branch.name}</p>
+                    <p className="mt-1 text-sm text-product-muted">{branch.address}</p>
                   </div>
                 </div>
               ))}

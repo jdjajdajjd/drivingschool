@@ -57,9 +57,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
                 'flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl text-sm font-medium pointer-events-auto min-w-[260px] max-w-[400px]',
-                toast.type === 'success' && 'bg-stone-900 text-white shadow-modal',
+                toast.type === 'success' && 'bg-product-main text-white shadow-modal',
                 toast.type === 'error' && 'bg-red-600 text-white shadow-modal',
-                toast.type === 'info' && 'bg-stone-700 text-white shadow-modal',
+                toast.type === 'info' && 'bg-product-secondary text-white shadow-modal',
               )}
             >
               {toast.type === 'success' && (
@@ -69,7 +69,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <XCircle size={15} className="text-red-200 shrink-0" />
               )}
               {toast.type === 'info' && (
-                <Info size={15} className="text-stone-300 shrink-0" />
+                <Info size={15} className="text-white/70 shrink-0" />
               )}
               <span className="flex-1 leading-snug">{toast.message}</span>
               <button

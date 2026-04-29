@@ -181,9 +181,9 @@ export function AdminSettings() {
         <Section title="Публичная страница" description="Ссылка, preview и быстрые действия по странице записи.">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+              <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
                 <p className="ui-kicker">Ссылка</p>
-                <p className="mt-2 break-all text-sm font-bold text-ink-900">{publicUrl}</p>
+                <p className="mt-2 break-all text-sm font-bold text-product-main">{publicUrl}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button variant="secondary" onClick={() => void copyPublicLink()}>
@@ -198,7 +198,7 @@ export function AdminSettings() {
             </div>
 
             <div
-              className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-card"
+              className="rounded-[2rem] border border-product-border bg-white p-5 shadow-card"
               style={{
                 boxShadow: `0 18px 48px ${hexToRgba(form.primaryColor || '#1f5b43', 0.08)}`,
               }}
@@ -213,25 +213,25 @@ export function AdminSettings() {
                   form.name.slice(0, 2).toUpperCase()
                 )}
               </div>
-              <p className="mt-4 text-lg font-black text-ink-900">{form.name || 'Автошкола'}</p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              <p className="mt-4 text-lg font-bold text-product-main">{form.name || 'Автошкола'}</p>
+              <p className="mt-2 text-sm leading-relaxed text-product-secondary">
                 {form.description || 'Описание школы будет показано на публичной странице записи.'}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(selectedCategories.length ? selectedCategories : DRIVING_CATEGORIES.slice(0, 1)).slice(0, 5).map((category) => (
-                  <span key={category.code} className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                  <span key={category.code} className="rounded-lg bg-product-alt px-3 py-1 text-xs font-bold text-product-secondary">
                     {category.code}
                   </span>
                 ))}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                  <p className="text-lg font-black text-ink-900">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
-                  <p className="text-xs text-slate-500">филиала</p>
+                <div className="rounded-2xl bg-product-alt px-3 py-3">
+                  <p className="text-lg font-bold text-product-main">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
+                  <p className="text-xs text-product-muted">филиала</p>
                 </div>
-                <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                  <p className="text-lg font-black text-ink-900">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
-                  <p className="text-xs text-slate-500">инструкторов</p>
+                <div className="rounded-2xl bg-product-alt px-3 py-3">
+                  <p className="text-lg font-bold text-product-main">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
+                  <p className="text-xs text-product-muted">инструкторов</p>
                 </div>
               </div>
               <div className="mt-4 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: form.primaryColor || '#1f5b43' }}>
@@ -252,22 +252,22 @@ export function AdminSettings() {
                   onClick={() => toggleCategory(category.code)}
                   className={`rounded-2xl border px-4 py-4 text-left transition ${
                     enabled
-                      ? 'border-blue-300 bg-blue-50 text-stone-950'
-                      : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                      ? 'border-product-primary-border bg-product-primary-soft text-product-main'
+                      : 'border-product-border bg-white text-product-secondary hover:border-product-primary-border'
                   }`}
                 >
                   <span className="flex items-center justify-between gap-3">
                     <span className="text-lg font-semibold">{category.code}</span>
-                    <span className={`h-3 w-3 rounded-full ${enabled ? 'bg-blue-600' : 'bg-stone-200'}`} />
+                    <span className={`h-3 w-3 rounded-full ${enabled ? 'bg-product-primary' : 'bg-product-border'}`} />
                   </span>
                   <span className="mt-1 block text-sm font-medium">{category.title}</span>
-                  <span className="mt-1 block text-xs leading-relaxed text-stone-500">{category.description}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-product-muted">{category.description}</span>
                 </button>
               )
             })}
           </div>
           {selectedCategories.length === 0 ? (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="mt-4 rounded-2xl border border-product-warning-soft bg-product-warning-soft px-4 py-3 text-sm text-amber-900">
               Выберите хотя бы одну категорию, иначе ученики не увидят варианты записи.
             </div>
           ) : null}
@@ -275,7 +275,7 @@ export function AdminSettings() {
 
         <Section title="Ограничения записи" description="Действуют только на публичную запись. Администратор может управлять записями вручную.">
           <div className="grid gap-4 md:grid-cols-[260px_220px]">
-            <label className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
+            <label className="flex items-center gap-3 rounded-2xl border border-product-border bg-product-alt px-4 py-3 text-sm text-product-secondary">
               <input
                 type="checkbox"
                 checked={form.bookingLimitEnabled}
@@ -300,7 +300,7 @@ export function AdminSettings() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
             <div>
-              <p className="text-sm font-medium text-stone-700">Выбор филиала учеником</p>
+              <p className="text-sm font-medium text-product-secondary">Выбор филиала учеником</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {[
                   { value: 'student_choice' as const, title: 'Ученик выбирает филиал', text: 'Подходит, если школа работает в разных районах.' },
@@ -312,12 +312,12 @@ export function AdminSettings() {
                     onClick={() => setForm((current) => ({ ...current, branchSelectionMode: option.value }))}
                     className={`rounded-2xl border px-4 py-3 text-left transition ${
                       form.branchSelectionMode === option.value
-                        ? 'border-forest-600 bg-forest-50 text-stone-900'
-                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                        ? 'border-product-primary bg-product-primary-soft text-product-main'
+                        : 'border-product-border bg-white text-product-secondary hover:border-product-primary-border'
                     }`}
                   >
                     <span className="block text-sm font-semibold">{option.title}</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-stone-500">{option.text}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-product-muted">{option.text}</span>
                   </button>
                 ))}
               </div>
@@ -355,16 +355,16 @@ export function AdminSettings() {
         </Section>
 
         <Section title="Базовый тариф" description="Без Start/Plus/Pro. Одна честная база и подключаемые модули.">
-          <div className="rounded-3xl border border-stone-100 bg-stone-50 px-5 py-5">
-            <p className="text-sm text-stone-500">База</p>
-            <p className="mt-2 text-3xl font-semibold text-stone-900">
-              {BASE_MONTHLY_PRICE.toLocaleString('ru-RU')} ₽<span className="ml-1 text-sm text-stone-400">/мес</span>
+          <div className="rounded-[24px] border border-product-border bg-product-alt px-5 py-5">
+            <p className="text-sm text-product-muted">База</p>
+            <p className="mt-2 text-3xl font-semibold text-product-main">
+              {BASE_MONTHLY_PRICE.toLocaleString('ru-RU')} ₽<span className="ml-1 text-sm text-product-muted">/мес</span>
             </p>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {BASE_FEATURES.map((feature) => (
-              <div key={feature} className="rounded-2xl border border-stone-100 bg-white px-4 py-3 text-sm text-stone-600">
-                <span className="font-semibold text-slate-700">{feature}</span>
+              <div key={feature} className="rounded-2xl border border-product-border bg-white px-4 py-3 text-sm text-product-secondary">
+                <span className="font-semibold text-product-secondary">{feature}</span>
               </div>
             ))}
           </div>
@@ -376,7 +376,7 @@ export function AdminSettings() {
         </Section>
 
         <Section title="Служебное обновление" description="Используйте только при настройке стенда или восстановлении тестового состояния.">
-          <div className="rounded-3xl border border-amber-100 bg-amber-50 px-5 py-5 text-sm text-amber-900">
+          <div className="rounded-[24px] border border-product-warning-soft bg-product-warning-soft px-5 py-5 text-sm text-amber-900">
             Это действие очищает локальный рабочий снимок и заново загружает стартовые данные школы. Не используйте во время реальной работы с учениками.
           </div>
           <div className="mt-4">

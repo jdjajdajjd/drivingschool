@@ -20,16 +20,16 @@ export function Badge({
     <span
       style={style}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-lg border font-sans font-bold whitespace-nowrap',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border font-sans font-semibold',
         {
-          default: 'border-slate-200 bg-slate-100 text-slate-700',
-          success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-          warning: 'border-amber-200 bg-amber-50 text-amber-700',
-          error: 'border-red-200 bg-red-50 text-red-700',
-          forest: 'border-blue-200 bg-blue-50 text-blue-700',
-          outline: 'border-slate-200 bg-white text-slate-600',
-          info: 'border-indigo-200 bg-indigo-50 text-indigo-700',
-          muted: 'border-slate-200 bg-slate-50 text-slate-500',
+          default: 'border-product-border bg-product-alt text-product-secondary',
+          success: 'border-product-success-border bg-product-success-soft text-product-success',
+          warning: 'border-transparent bg-product-warning-soft text-product-warning',
+          error: 'border-transparent bg-product-error-soft text-product-error',
+          forest: 'border-product-primary-border bg-product-primary-soft text-product-primary',
+          outline: 'border-product-border bg-white text-product-secondary',
+          info: 'border-product-primary-border bg-product-primary-soft text-product-primary',
+          muted: 'border-product-border bg-[#EEF1F7] text-product-secondary',
         }[variant],
         {
           sm: 'px-2.5 py-1 text-xs',
@@ -47,11 +47,11 @@ export function StatusBadge({ status, kind = 'booking' }: { status: string; kind
   const map: Record<string, { label: string; variant: BadgeProps['variant'] }> = {
     active: { label: 'Активна', variant: 'success' },
     cancelled: { label: kind === 'slot' ? 'Отменено' : 'Отменена', variant: 'error' },
-    completed: { label: 'Проведена', variant: 'default' },
+    completed: { label: 'Проведена', variant: 'muted' },
     available: { label: 'Свободно', variant: 'forest' },
     booked: { label: 'Занято', variant: 'warning' },
-    pending: { label: 'Активна', variant: 'warning' },
-    confirmed: { label: 'Активна', variant: 'success' },
+    pending: { label: 'Ожидает', variant: 'warning' },
+    confirmed: { label: 'Подтверждена', variant: 'success' },
   }
 
   const entry = map[status] ?? { label: status, variant: 'default' as const }

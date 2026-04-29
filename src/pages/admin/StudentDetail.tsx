@@ -9,7 +9,8 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
 import { useToast } from '../../components/ui/Toast'
-import { formatPhone } from '../../lib/utils'
+import { formatInstructorName, formatPhone } from '../../lib/utils'
+import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { cancelBooking, completeBooking, getBookingsByStudent } from '../../services/bookingService'
 import { getStudentById, getStudentStats } from '../../services/studentService'
 import { db } from '../../services/storage'
@@ -67,7 +68,7 @@ export function AdminStudentDetail() {
     <div className="max-w-7xl p-4 md:p-6">
       <button
         onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}
-        className="mb-4 inline-flex items-center gap-2 text-sm text-stone-500 transition hover:text-stone-900"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-product-muted transition hover:text-product-main"
       >
         <ArrowLeft size={16} />
         Назад к ученикам
@@ -89,21 +90,21 @@ export function AdminStudentDetail() {
       <div className="mt-8 space-y-6">
         <Section title="Профиль ученика" description="Основные данные и лимиты по бронированию.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Телефон</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">{formatPhone(student.normalizedPhone)}</p>
+            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Телефон</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">{formatPhone(student.normalizedPhone)}</p>
             </div>
-            <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Normalized phone</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">{student.normalizedPhone}</p>
+            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Normalized phone</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">{student.normalizedPhone}</p>
             </div>
-            <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Будущих активных</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">{stats.activeFutureBookings}</p>
+            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Будущих активных</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">{stats.activeFutureBookings}</p>
             </div>
-            <div className="rounded-3xl border border-stone-100 bg-stone-50 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Отменял</p>
-              <p className="mt-1 text-sm font-semibold text-stone-900">{stats.cancellationsCount} раз</p>
+            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Отменял</p>
+              <p className="mt-1 text-sm font-semibold text-product-main">{stats.cancellationsCount} раз</p>
             </div>
           </div>
         </Section>
@@ -114,26 +115,26 @@ export function AdminStudentDetail() {
           ) : (
             <div className="space-y-4">
               {history.map((entry) => (
-                <div key={entry.booking.id} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-soft">
+                <div key={entry.booking.id} className="rounded-[24px] border border-product-border bg-white p-4 shadow-soft">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Дата и время</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">
-                          {entry.slot ? `${entry.slot.date} · ${entry.slot.time}` : 'Не найдено'}
+                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Дата и время</p>
+                        <p className="mt-1 text-sm font-semibold text-product-main">
+                          {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Филиал</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{entry.branch?.name ?? 'Не найдено'}</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Филиал</p>
+                        <p className="mt-1 text-sm font-semibold text-product-main">{entry.branch?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Инструктор</p>
-                        <p className="mt-1 text-sm font-semibold text-stone-900">{entry.instructor?.name ?? 'Не найдено'}</p>
-                        <p className="text-sm text-stone-500">{entry.instructor?.car ?? 'Без машины'}</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Инструктор</p>
+                        <p className="mt-1 text-sm font-semibold text-product-main">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
+                        <p className="text-sm text-product-muted">{entry.instructor?.car ?? 'Без машины'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-400">Статус</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Статус</p>
                         <div className="mt-1">
                           <StatusBadge status={entry.booking.status} />
                         </div>
@@ -167,7 +168,7 @@ export function AdminStudentDetail() {
                     <div className="mt-3">
                       <Link
                         to={`${ADMIN_BASE_PATH}/bookings`}
-                        className="inline-flex items-center gap-2 text-sm text-forest-700 transition hover:text-forest-800"
+                        className="inline-flex items-center gap-2 text-sm text-product-primary transition hover:text-product-primary"
                       >
                         <RotateCcw size={15} />
                         Перейти к переносу в разделе записей

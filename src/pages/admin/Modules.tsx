@@ -101,22 +101,22 @@ export function AdminModules() {
       <div className="mt-8 space-y-6">
         <Section title="Стоимость" description="Короткая сводка по текущей конфигурации школы.">
           <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
-            <div className="rounded-2xl bg-stone-50 px-4 py-4">
-              <p className="text-sm font-medium text-stone-600">База</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{formatPrice(billing.baseMonthlyPrice)}</p>
+            <div className="rounded-2xl bg-product-alt px-4 py-4">
+              <p className="text-sm font-medium text-product-secondary">База</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-product-main">{formatPrice(billing.baseMonthlyPrice)}</p>
             </div>
-            <div className="rounded-2xl bg-stone-50 px-4 py-4">
-              <p className="text-sm font-medium text-stone-600">Модули</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{formatPrice(billing.modulesMonthlyTotal)}</p>
-              {billing.oneTimeTotal > 0 ? <p className="mt-1 text-sm text-stone-500">Разово: {formatPrice(billing.oneTimeTotal)}</p> : null}
+            <div className="rounded-2xl bg-product-alt px-4 py-4">
+              <p className="text-sm font-medium text-product-secondary">Модули</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-product-main">{formatPrice(billing.modulesMonthlyTotal)}</p>
+              {billing.oneTimeTotal > 0 ? <p className="mt-1 text-sm text-product-muted">Разово: {formatPrice(billing.oneTimeTotal)}</p> : null}
             </div>
-            <div className="rounded-2xl border border-stone-200 bg-white px-4 py-4">
-              <p className="text-sm font-medium text-stone-600">Итого</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">
+            <div className="rounded-2xl border border-product-border bg-white px-4 py-4">
+              <p className="text-sm font-medium text-product-secondary">Итого</p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-product-main">
                 {formatPrice(billing.totalMonthlyPrice)}
-                <span className="ml-1 text-base font-medium text-stone-500">/мес</span>
+                <span className="ml-1 text-base font-medium text-product-muted">/мес</span>
               </p>
-              <p className="mt-1 text-sm text-stone-500">Подключено модулей: {billing.enabledModulesCount}</p>
+              <p className="mt-1 text-sm text-product-muted">Подключено модулей: {billing.enabledModulesCount}</p>
             </div>
           </div>
         </Section>
@@ -125,11 +125,11 @@ export function AdminModules() {
           <Section title="Подключено сейчас" description="Текущие расширения этой школы.">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {enabled.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+                <div key={item.id} className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-stone-900">{item.module.name}</p>
-                      <p className="mt-1 text-sm text-stone-600">{getPriceLabel(item.module)}</p>
+                      <p className="text-sm font-semibold text-product-main">{item.module.name}</p>
+                      <p className="mt-1 text-sm text-product-secondary">{getPriceLabel(item.module)}</p>
                     </div>
                     <Badge variant="success">Подключено</Badge>
                   </div>
@@ -151,13 +151,13 @@ export function AdminModules() {
           {showBaseFeatures ? (
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {BASE_FEATURES.map((feature) => (
-                <div key={feature} className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-700">
+                <div key={feature} className="rounded-xl bg-product-alt px-4 py-3 text-sm text-product-secondary">
                   {feature}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-stone-600">
+            <p className="text-sm text-product-secondary">
               Базовый пакет уже закрывает публичную запись, список записей, работу с учениками, инструкторами,
               филиалами, слотами и личной ссылкой инструктора.
             </p>
@@ -172,8 +172,8 @@ export function AdminModules() {
                 onClick={() => setFilter(item)}
                 className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                   filter === item
-                    ? 'border-forest-700 bg-forest-700 text-white'
-                    : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900'
+                    ? 'border-product-primary bg-product-primary text-white'
+                    : 'border-product-border bg-white text-product-secondary hover:border-product-primary-border hover:text-product-main'
                 }`}
               >
                 {item === 'all' ? 'Все' : MODULE_CATEGORY_LABELS[item]}
@@ -190,15 +190,15 @@ export function AdminModules() {
                 const enabledState = isModuleEnabled(school.id, module.id)
 
                 return (
-                  <div key={module.id} className="rounded-2xl border border-stone-200 bg-white p-4">
+                  <div key={module.id} className="rounded-2xl border border-product-border bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="text-stone-400">
+                        <div className="text-product-muted">
                           <Icon size={18} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-stone-500">{MODULE_CATEGORY_LABELS[module.category]}</p>
-                          <h3 className="mt-1 text-base font-semibold text-stone-900">{module.name}</h3>
+                          <p className="text-sm font-medium text-product-muted">{MODULE_CATEGORY_LABELS[module.category]}</p>
+                          <h3 className="mt-1 text-base font-semibold text-product-main">{module.name}</h3>
                         </div>
                       </div>
                       <Badge variant={enabledState ? 'success' : 'default'}>
@@ -206,16 +206,16 @@ export function AdminModules() {
                       </Badge>
                     </div>
 
-                    <p className="mt-3 text-sm leading-relaxed text-stone-600">{module.description}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-product-secondary">{module.description}</p>
 
                     <div className="mt-4">
-                      <p className="text-xl font-semibold tracking-tight text-stone-900">{getPriceLabel(module)}</p>
+                      <p className="text-xl font-semibold tracking-tight text-product-main">{getPriceLabel(module)}</p>
                       {module.priceType === 'usage' && module.usageNote ? (
-                        <p className="mt-1 text-sm text-stone-500">{module.usageNote}</p>
+                        <p className="mt-1 text-sm text-product-muted">{module.usageNote}</p>
                       ) : null}
                     </div>
 
-                    <div className="mt-5 flex gap-2 border-t border-stone-100 pt-4">
+                    <div className="mt-5 flex gap-2 border-t border-product-border pt-4">
                       <Button
                         variant={enabledState ? 'secondary' : 'primary'}
                         size="sm"
