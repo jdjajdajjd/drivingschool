@@ -20,7 +20,7 @@ export function Button({
         'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl font-display font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-product-primary-soft disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-product-border disabled:bg-product-alt disabled:text-product-muted select-none',
         {
           primary:
-            'border border-product-primary bg-product-primary text-white shadow-[0_10px_24px_rgba(75,87,209,0.16)] hover:border-product-primary-dark hover:bg-product-primary-dark active:shadow-none',
+            'border border-product-primary bg-product-primary text-white shadow-[0_10px_24px_rgba(102,88,245,0.18)] hover:border-product-primary-dark hover:bg-product-primary-dark active:shadow-none',
           secondary:
             'border border-product-border bg-white text-product-main hover:border-product-primary/30 hover:bg-product-primary-soft active:bg-product-primary-soft',
           ghost:
@@ -30,8 +30,8 @@ export function Button({
         }[variant],
         {
           sm: 'h-11 px-3.5 text-sm rounded-2xl',
-          md: 'h-[52px] px-4 text-base',
-          lg: 'h-[52px] px-5 text-base',
+          md: 'h-14 px-4 text-base rounded-[18px]',
+          lg: 'h-14 px-5 text-base rounded-[20px]',
         }[size],
         className,
       )}

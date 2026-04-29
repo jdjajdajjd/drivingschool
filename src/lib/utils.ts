@@ -22,6 +22,19 @@ export function formatPhone(phone: string): string {
   return phone
 }
 
+export function formatInstructorName(fullName: string): string {
+  const parts = fullName.trim().replace(/\s+/g, ' ').split(' ').filter(Boolean)
+  if (parts.length === 0) return 'Инструктор'
+  if (parts.length === 1) return parts[0]
+  const [lastName, ...rest] = parts
+  const initials = rest
+    .slice(0, 2)
+    .map((part) => `${part[0]?.toUpperCase()}.`)
+    .filter(Boolean)
+    .join(' ')
+  return initials ? `${lastName} ${initials}` : lastName
+}
+
 export function generateId(prefix = 'id'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }

@@ -18,7 +18,7 @@
 
   body {
     @apply bg-product-bg text-product-main font-sans;
-    background: #F4F6FA;
+    background: #F6F7FB;
   }
 
   h1, h2, h3, h4 {
@@ -33,7 +33,7 @@
   }
 
   ::selection {
-    @apply bg-forest-100 text-ink-900;
+    @apply bg-product-primary-soft text-product-main;
   }
 
   ::-webkit-scrollbar {
@@ -60,7 +60,7 @@
   }
 
   .ui-surface {
-    @apply rounded-[20px] border border-product-border bg-product-card shadow-soft;
+    @apply rounded-[24px] border border-product-border bg-product-card shadow-soft;
   }
 
   .ui-surface-quiet {
@@ -72,7 +72,7 @@
   }
 
   .ui-selected {
-    @apply border-product-primary bg-product-primary-soft shadow-[inset_0_0_0_1px_rgba(75,87,209,0.35)];
+    @apply border-product-primary bg-product-primary-soft shadow-[inset_0_0_0_1px_rgba(102,88,245,0.28)];
   }
 
   .ui-kicker {
@@ -92,7 +92,7 @@
   }
 
   .ui-field {
-    @apply h-[52px] w-full rounded-2xl border border-product-border bg-white px-4 text-base text-product-main outline-none transition placeholder:text-product-muted focus:border-product-primary focus:ring-4 focus:ring-product-primary-soft;
+    @apply h-[52px] w-full rounded-[18px] border border-product-border bg-white px-4 text-base text-product-main outline-none transition placeholder:text-product-muted focus:border-product-primary focus:ring-4 focus:ring-product-primary-soft;
   }
 
   .ui-h1 {

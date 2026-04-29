@@ -1,24 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, SlidersHorizontal } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
 import { FilterChipsBar } from '../components/ui/FilterChipsBar'
 import { StickyActionBar } from '../components/ui/StickyActionBar'
-import { SuccessStateBlock } from '../components/ui/SuccessStateBlock'
-import { DayChipsScroller, InstructorCompactCard, SummaryCard, TimeSlotGrid } from '../components/product/CompactCards'
+import { BookingDetailsCard, DayChipsScroller, InstructorCompactCard, SuccessHeader, SummaryCard, TimeSlotGrid } from '../components/product/CompactCards'
 import { DRIVING_CATEGORIES } from '../services/drivingCategories'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { getFutureAvailableSlots, loadPublicSchoolData } from '../services/publicSchoolData'
 import { db } from '../services/storage'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
-import { acquireSlotLock, getAvailableSlots as getInstructorSlots, getOrCreateStudent, isValidRussianPhone, normalizePhone, releaseSessionLocks } from '../services/bookingService'
+import { acquireSlotLock, generateIcs, getAvailableSlots as getInstructorSlots, getOrCreateStudent, isValidRussianPhone, normalizePhone, releaseSessionLocks } from '../services/bookingService'
 import { saveStudentProfile } from '../services/studentProfile'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
-import { getNext7Days } from '../utils/date'
-import { generateId } from '../lib/utils'
+import { formatTimeRange, getNext7Days } from '../utils/date'
+import { formatInstructorName, generateId } from '../lib/utils'
 
 type Step = 'instructor' | 'time' | 'contacts' | 'confirm' | 'success' | 'account'
 
@@ -195,6 +194,7 @@ export function BookingFlowPage() {
       }
       db.bookings.upsert(booking)
       db.slots.upsert({ ...selectedSlot, status: 'booked', bookingId })
+      saveStudentProfile(school.id, form, { passwordSet: false, assignedBranchId: selectedSlot.branchId })
       releaseSessionLocks(sessionId.current)
       setCreatedBookingId(bookingId)
       setSlotsVersion((current) => current + 1)
@@ -208,8 +208,8 @@ export function BookingFlowPage() {
 
   async function createAccount() {
     if (!school || !validateContacts()) return
-    if (!form.email.trim()) {
-      setErrors((current) => ({ ...current, email: 'Введите e-mail.' }))
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setErrors((current) => ({ ...current, email: 'Введите корректный e-mail.' }))
       return
     }
     if (form.password.trim().length < 6) {
@@ -226,6 +226,25 @@ export function BookingFlowPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function downloadCalendar() {
+    if (!createdBookingId) return
+    const content = generateIcs(createdBookingId)
+    if (!content) {
+      showToast('Не удалось подготовить файл календаря.', 'error')
+      return
+    }
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${createdBookingId}.ics`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    showToast('Файл календаря скачан.', 'success')
   }
 
   if (loading) return <div className="ui-shell" />
@@ -283,9 +302,9 @@ export function BookingFlowPage() {
             <h1 className="ui-h1">День и время</h1>
             {selectedInstructor ? (
               <div className="mt-3 flex items-center gap-3 rounded-[20px] border border-product-border bg-white p-3 shadow-soft">
-                <img src={getInstructorPhoto(selectedInstructor)} alt={selectedInstructor.name} className="h-12 w-12 rounded-2xl object-cover" />
+                <img src={getInstructorPhoto(selectedInstructor)} alt={selectedInstructor.name} className="h-12 w-12 rounded-full border border-[#E8EAF4] object-cover" />
                 <div className="min-w-0">
-                  <p className="truncate text-base font-semibold text-product-main">{selectedInstructor.name}</p>
+                  <p className="truncate text-base font-semibold text-product-main">{formatInstructorName(selectedInstructor.name)}</p>
                   <p className="truncate text-[13px] font-medium text-product-secondary">{selectedInstructor.car ?? 'Учебный автомобиль'} · {selectedBranch?.name ?? 'Филиал'} · {category || selectedInstructor.categories?.[0] || 'B'}</p>
                 </div>
               </div>
@@ -311,7 +330,7 @@ export function BookingFlowPage() {
               <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
               <Input label="E-mail (опционально)" value={form.email} error={errors.email} placeholder="name@email.ru" onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
               <div className="rounded-[20px] bg-product-alt px-4 py-3 text-sm font-semibold text-product-secondary">
-                {selectedSlot ? `${selectedSlot.date} · ${selectedSlot.time}` : 'Время не выбрано'} · {selectedInstructor?.name ?? 'Инструктор'}
+                {selectedSlot ? formatTimeRange(selectedSlot) : 'Время не выбрано'} · {selectedInstructor?.name ?? 'Инструктор'}
               </div>
             </div>
             <StickyActionBar>
@@ -337,11 +356,24 @@ export function BookingFlowPage() {
 
         {step === 'success' ? (
           <section className="space-y-3">
-            <SuccessStateBlock title="Вы записаны" subtitle="Мы сохранили вашу запись. Детали занятия ниже." />
-            <SummaryCard slot={selectedSlot} instructor={selectedInstructor} branch={selectedBranch} student={{ name: form.name, phone: normalizePhone(form.phone), email: form.email }} />
+            <SuccessHeader />
+            <BookingDetailsCard slot={selectedSlot} instructor={selectedInstructor} branch={selectedBranch} student={{ name: form.name, phone: normalizePhone(form.phone), email: form.email }} />
             <div className="grid gap-2">
-              <Button onClick={() => setStep('account')}>Создать кабинет</Button>
-              <Button variant="secondary" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : navigate(`/school/${school.slug}`)}>Продолжить без кабинета</Button>
+              <Button onClick={() => navigate('/student')}>Мои записи</Button>
+              <Button variant="secondary" onClick={downloadCalendar}>
+                <CalendarPlus size={18} />
+                Добавить в календарь
+              </Button>
+            </div>
+            <div className="rounded-[24px] border border-product-border bg-white p-4 shadow-soft">
+              <p className="text-base font-semibold leading-[22px] text-product-main">Хотите быстрее записываться в следующий раз?</p>
+              <p className="mt-1 text-[14px] font-medium leading-5 text-product-secondary">Создайте кабинет — ваши записи будут храниться в одном месте.</p>
+              <div className="mt-3 grid gap-2">
+                <Button variant="secondary" onClick={() => setStep('account')}>Создать кабинет</Button>
+                <Button variant="ghost" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : navigate(`/school/${school.slug}`)}>Вернуться на страницу школы</Button>
+              </div>
+            </div>
+            <div className="grid gap-2">
               <Button variant="ghost" onClick={() => navigate(`/school/${school.slug}/book`)}>Ещё одна запись</Button>
             </div>
           </section>

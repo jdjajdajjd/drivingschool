@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, LogOut, Settings, UserRound } from 'lucide-react'
-import { Avatar } from '../components/ui/Avatar'
+import { CalendarDays, MessageCircle, Pencil, Plus, Settings, UserRound } from 'lucide-react'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { SegmentedTabs } from '../components/ui/SegmentedTabs'
 import { StateView } from '../components/ui/StateView'
-import { StudentBookingCard } from '../components/product/CompactCards'
+import { NearestLessonCard, StudentBookingCard, StudentProfileHeader } from '../components/product/CompactCards'
 import { db } from '../services/storage'
-import { findAnyStudentProfile, initialsFromName, loadStudentProfile, removeStudentProfile, saveStudentProfile, type StudentProfile } from '../services/studentProfile'
+import { findAnyStudentProfile, loadStudentProfile, removeStudentProfile, saveStudentProfile, type StudentProfile } from '../services/studentProfile'
 import { normalizePhone } from '../services/bookingService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 
@@ -95,38 +94,47 @@ export function StudentPage() {
       <main className="mx-auto max-w-2xl px-4 pb-28 pt-4">
         {view === 'dashboard' ? (
           <section className="space-y-3">
-            <div className="flex items-center gap-3 rounded-[20px] border border-product-border bg-white p-3 shadow-soft">
-              <Avatar initials={initialsFromName(profile.name)} src={profile.avatarUrl} alt={profile.name} size="lg" className="h-14 w-14 rounded-2xl" />
-              <div className="min-w-0 flex-1">
-                <p className="ui-kicker">Кабинет ученика</p>
-                <h1 className="truncate text-[22px] font-bold leading-7 text-product-main">{profile.name}</h1>
-                <p className="truncate text-[13px] font-medium text-product-secondary">{school.name}{branch ? ` · ${branch.name}` : ''}</p>
-              </div>
-              <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-product-alt text-product-secondary" onClick={() => setView('profile')}><Settings size={18} /></button>
-              <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-product-alt text-product-secondary" onClick={logout}><LogOut size={18} /></button>
-            </div>
+            <StudentProfileHeader profile={profile} school={school} branch={branch} onSettings={() => setView('profile')} onLogout={logout} />
 
-            <div className="rounded-[20px] border border-product-border bg-product-primary p-4 text-white shadow-soft">
-              <p className="text-[12px] font-semibold uppercase leading-4 tracking-[0.12em] text-white/60">Ближайшее занятие</p>
-              {next?.slot ? (
-                <>
-                  <p className="mt-3 font-display text-[32px] font-bold leading-[38px]">{next.slot.date}, {next.slot.time}</p>
-                  <p className="mt-2 text-base font-semibold text-white/86">{next.instructor?.name ?? 'Инструктор'} · {next.branch?.name ?? 'Филиал'}</p>
-                </>
-              ) : (
-                <p className="mt-3 text-base font-semibold text-white/86">Активных записей пока нет</p>
-              )}
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Button className="bg-white text-product-primary hover:bg-white/90" onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button>
-                <Button variant="secondary" className="border-white/25 bg-white/10 text-white hover:bg-white/20" onClick={() => setView('bookings')}>Все записи</Button>
+            <NearestLessonCard
+              booking={next?.booking ?? null}
+              slot={next?.slot ?? null}
+              instructor={next?.instructor ?? null}
+              branch={next?.branch ?? null}
+              onBook={() => navigate(`/school/${school.slug}/book`)}
+              onAll={() => setView('bookings')}
+            />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="ui-section-title">Мои записи</p>
+                {upcoming.length > 3 ? <button className="text-sm font-semibold text-product-primary" onClick={() => setView('bookings')}>Смотреть все</button> : null}
               </div>
+              {upcoming.length === 0 ? <StateView title="Будущих записей нет" action={<Button onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button>} /> : upcoming.slice(0, 3).map((item) => (
+                <StudentBookingCard key={item.booking.id} {...item} />
+              ))}
             </div>
 
             <div className="space-y-2">
-              <p className="ui-section-title">Мои записи</p>
-              {upcoming.length === 0 ? <StateView title="Будущих записей нет" action={<Button onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button>} /> : upcoming.slice(0, 4).map((item) => (
-                <StudentBookingCard key={item.booking.id} {...item} />
-              ))}
+              <p className="ui-section-title">Быстрые действия</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" onClick={() => navigate(`/school/${school.slug}/book`)}>
+                  <Plus size={18} className="text-product-primary" />
+                  <span className="mt-2 block text-sm font-semibold text-product-main">Записаться ещё</span>
+                </button>
+                <button className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" onClick={() => setView('profile')}>
+                  <Pencil size={18} className="text-product-primary" />
+                  <span className="mt-2 block text-sm font-semibold text-product-main">Изменить профиль</span>
+                </button>
+                <button className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" onClick={() => setView('bookings')}>
+                  <CalendarDays size={18} className="text-product-primary" />
+                  <span className="mt-2 block text-sm font-semibold text-product-main">Все записи</span>
+                </button>
+                <a className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" href={`tel:${school.phone}`}>
+                  <MessageCircle size={18} className="text-product-primary" />
+                  <span className="mt-2 block text-sm font-semibold text-product-main">Связаться</span>
+                </a>
+              </div>
             </div>
           </section>
         ) : null}

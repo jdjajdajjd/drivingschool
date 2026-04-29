@@ -1,25 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import {
-  CalendarDays,
-  CalendarPlus,
-  CheckCircle2,
-  Clock3,
-  MapPin,
-  Phone,
-  UserRound,
-  XCircle,
-} from 'lucide-react'
+import { CalendarPlus } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
-import { formatDuration, formatPhone } from '../lib/utils'
+import { BookingDetailsCard, SuccessHeader } from '../components/product/CompactCards'
 import { generateIcs, getSlotDateTime } from '../services/bookingService'
 import { db } from '../services/storage'
 import { getBookingGroupFromSupabase } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
-import { formatDateFull } from '../utils/date'
 
 interface BookingBundle {
   booking: Booking
@@ -43,7 +32,6 @@ function hasSavedStudentProfile(schoolId: string, phone: string): boolean {
 function loadBookingBundle(bookingId: string): BookingBundle | null {
   const booking = db.bookings.byId(bookingId)
   if (!booking) return null
-
   return {
     booking,
     slot: db.slots.byId(booking.slotId),
@@ -56,12 +44,10 @@ function loadBookingBundle(bookingId: string): BookingBundle | null {
 function loadBookingGroup(bookingId: string): BookingBundle[] {
   const first = loadBookingBundle(bookingId)
   if (!first) return []
-
   const groupId = first.booking.bookingGroupId
   const bookings = groupId
     ? db.bookings.bySchool(first.booking.schoolId).filter((booking) => booking.bookingGroupId === groupId)
     : [first.booking]
-
   return bookings
     .map((booking) => ({
       booking,
@@ -77,78 +63,18 @@ function loadBookingGroup(bookingId: string): BookingBundle[] {
     })
 }
 
-function DetailRow({
-  label,
-  value,
-  icon: Icon,
-  subtitle,
-}: {
-  label: string
-  value: string
-  subtitle?: string
-  icon: typeof CalendarDays
-}) {
-  return (
-    <div className="flex items-start gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0">
-      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
-        <Icon size={18} className="text-blue-700" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-bold text-slate-500">{label}</p>
-        <p className="mt-1 text-lg font-black leading-snug text-ink-900">{value}</p>
-        {subtitle ? <p className="mt-1 text-base leading-snug text-slate-600">{subtitle}</p> : null}
-      </div>
-    </div>
-  )
-}
-
 function escapeIcsValue(value: string): string {
-  return value
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;')
+  return value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;')
 }
 
 function formatUtcDate(date: Date): string {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
 }
 
-function generateIcsFromBundle(bundle: BookingBundle): string | null {
-  if (!bundle.slot || !bundle.instructor || !bundle.branch || !bundle.school) return null
-
-  const start = getSlotDateTime(bundle.slot)
-  const end = new Date(start.getTime() + bundle.slot.duration * 60_000)
-  const description = [
-    `Автошкола: ${bundle.school.name}`,
-    `Инструктор: ${bundle.instructor.name}`,
-    `Ученик: ${bundle.booking.studentName}`,
-    bundle.instructor.car ? `Автомобиль: ${bundle.instructor.car}` : '',
-  ].filter(Boolean).join('\n')
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//DriveDesk//Booking Flow//RU',
-    'CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT',
-    `UID:${bundle.booking.id}@drivedesk`,
-    `DTSTAMP:${formatUtcDate(new Date())}`,
-    `DTSTART:${formatUtcDate(start)}`,
-    `DTEND:${formatUtcDate(end)}`,
-    `SUMMARY:${escapeIcsValue(`Занятие: ${bundle.instructor.name}`)}`,
-    `LOCATION:${escapeIcsValue(bundle.branch.address)}`,
-    `DESCRIPTION:${escapeIcsValue(description)}`,
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\r\n')
-}
-
 function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
   const events = bundles
     .map((bundle) => {
       if (!bundle.slot || !bundle.instructor || !bundle.branch || !bundle.school) return null
-
       const start = getSlotDateTime(bundle.slot)
       const end = new Date(start.getTime() + bundle.slot.duration * 60_000)
       const description = [
@@ -173,15 +99,7 @@ function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
     .filter(Boolean)
 
   if (events.length === 0) return null
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//DriveDesk//Booking Flow//RU',
-    'CALSCALE:GREGORIAN',
-    ...events,
-    'END:VCALENDAR',
-  ].join('\r\n')
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DriveDesk//Booking Flow//RU', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
 }
 
 export function BookingConfirmation() {
@@ -192,36 +110,24 @@ export function BookingConfirmation() {
 
   useEffect(() => {
     if (!bookingId) return
-
     const localGroup = loadBookingGroup(bookingId)
     if (localGroup.length > 0) {
       setBundles(localGroup)
       return
     }
-
     void getBookingGroupFromSupabase(bookingId)
-      .then((resolved) => {
-        if (resolved.length === 0) {
-          setBundles([])
-          return
-        }
-        setBundles(resolved)
-      })
+      .then((resolved) => setBundles(resolved))
       .catch(() => setBundles([]))
   }, [bookingId])
 
   function handleDownloadIcs(): void {
     if (bundles.length === 0) return
-
     const first = bundles[0]
-    const content = bundles.length > 1
-      ? generateIcsFromBundles(bundles)
-      : generateIcs(first.booking.id) ?? generateIcsFromBundle(first)
+    const content = bundles.length > 1 ? generateIcsFromBundles(bundles) : generateIcs(first.booking.id) ?? generateIcsFromBundles(bundles)
     if (!content) {
       showToast('Не удалось подготовить файл календаря.', 'error')
       return
     }
-
     const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -247,90 +153,40 @@ export function BookingConfirmation() {
   const activeBundles = bundles.filter((item) => item.booking.status !== 'cancelled')
   const isCancelled = activeBundles.length === 0
   const hasProfile = hasSavedStudentProfile(booking.schoolId, booking.studentPhone)
-  const lessonCount = bundles.length
+  const title = isCancelled ? (bundles.length > 1 ? 'Записи отменены' : 'Запись отменена') : 'Запись подтверждена'
+  const subtitle = isCancelled ? 'Эта запись больше не активна.' : 'Мы сохранили вашу запись. Детали занятия ниже.'
 
   return (
     <div className="ui-shell">
-      <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-6 md:py-10">
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-card lg:grid-cols-[380px_minmax(0,1fr)]"
-        >
-          <div className="flex flex-col justify-between bg-blue-800 px-6 pb-7 pt-8 text-white md:px-8">
-            <div>
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
-              {isCancelled ? <XCircle size={30} className="text-red-100" /> : <CheckCircle2 size={30} />}
-            </div>
-            <p className="mt-6 text-base font-bold text-white/75">{school?.name ?? 'Автошкола'}</p>
-            <h1 className="mt-2 text-4xl font-black leading-tight tracking-normal">
-              {isCancelled
-                ? lessonCount > 1 ? 'Записи отменены' : 'Запись отменена'
-                : lessonCount > 1 ? 'Вы записаны на занятия' : 'Вы записаны'}
-            </h1>
-            {!isCancelled ? (
-              <p className="mt-4 max-w-sm text-base leading-relaxed text-white/78">
-                {hasProfile
-                  ? 'Профиль создан. Следующая запись будет быстрее.'
-                  : lessonCount > 1
-                    ? `${lessonCount} занятия сохранены одной записью. Если нужно, автошкола свяжется с вами по телефону.`
-                    : 'Данные записи сохранены. Если нужно, автошкола свяжется с вами по телефону.'}
-              </p>
-            ) : null}
-            </div>
-            <div className="mt-8 rounded-2xl border border-white/15 bg-white/10 px-4 py-4">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/55">Следующий шаг</p>
-              <p className="mt-2 text-sm font-semibold leading-relaxed text-white/86">
-                {hasProfile ? 'Откройте профиль ученика: там будут все будущие занятия.' : 'Добавьте занятие в календарь или вернитесь на страницу школы.'}
-              </p>
-            </div>
-          </div>
+      <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-3 px-4 py-4">
+        <SuccessHeader title={title} subtitle={subtitle} />
 
-          <div className="flex flex-col p-5 md:p-7">
-            <div className="grid gap-3">
-              {bundles.map((item, index) => (
-                <div key={item.booking.id} className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-sm">
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4">
-                    <p className="text-sm font-black text-ink-900">
-                      {lessonCount > 1 ? `Занятие ${index + 1}` : 'Занятие'}
-                    </p>
-                    {item.slot ? <p className="text-sm font-black text-blue-700">{item.slot.time}</p> : null}
-                  </div>
-                  <div className="grid md:grid-cols-2">
-                    {item.slot ? (
-                      <>
-                        <DetailRow label="Дата" value={formatDateFull(item.slot.date)} icon={CalendarDays} />
-                        <DetailRow label="Время" value={item.slot.time} subtitle={formatDuration(item.slot.duration)} icon={Clock3} />
-                      </>
-                    ) : null}
-                    {item.instructor ? (
-                      <DetailRow label="Инструктор" value={item.instructor.name} subtitle={item.instructor.car ?? undefined} icon={UserRound} />
-                    ) : null}
-                    {item.branch ? (
-                      <DetailRow label="Филиал" value={item.branch.name} subtitle={item.branch.address} icon={MapPin} />
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-              <div className="rounded-[1.35rem] border border-blue-100 bg-blue-50/40">
-                <DetailRow label="Ученик" value={booking.studentName} subtitle={formatPhone(booking.studentPhone)} icon={Phone} />
-              </div>
+        <div className="space-y-3">
+          {bundles.map((item, index) => (
+            <div key={item.booking.id} className="space-y-2">
+              {bundles.length > 1 ? <p className="ui-kicker px-1">Занятие {index + 1}</p> : null}
+              <BookingDetailsCard
+                slot={item.slot}
+                instructor={item.instructor}
+                branch={item.branch}
+                student={{ name: item.booking.studentName, phone: item.booking.studentPhone, email: item.booking.studentEmail }}
+              />
             </div>
+          ))}
+        </div>
 
-            <div className="mt-auto grid gap-3 pt-6 sm:grid-cols-2">
-              {!isCancelled ? (
-                <Button size="lg" variant="secondary" className="min-h-14 text-base" onClick={handleDownloadIcs}>
-                  <CalendarPlus size={20} />
-                  Добавить в календарь
-                </Button>
-              ) : null}
-              <Button size="lg" className="min-h-14 text-base" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}>
-                {hasProfile ? 'В профиль ученика' : 'К записи на занятие'}
-              </Button>
-            </div>
-          </div>
-        </motion.section>
+        <div className="mt-auto grid gap-2 pb-2 pt-2">
+          <Button onClick={() => navigate(hasProfile ? '/student' : `/school/${school?.slug ?? 'virazh'}/book`)}>
+            {hasProfile ? 'Мои записи' : 'К записи на занятие'}
+          </Button>
+          {!isCancelled ? (
+            <Button variant="secondary" onClick={handleDownloadIcs}>
+              <CalendarPlus size={18} />
+              Добавить в календарь
+            </Button>
+          ) : null}
+          <Button variant="ghost" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}>Вернуться на страницу школы</Button>
+        </div>
       </main>
     </div>
   )
