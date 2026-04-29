@@ -5,6 +5,8 @@ import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOG
 
 const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })))
 const SchoolPage = lazy(() => import('./pages/SchoolPage').then((module) => ({ default: module.SchoolPage })))
+const BookingFlowPage = lazy(() => import('./pages/BookingFlowPage').then((module) => ({ default: module.BookingFlowPage })))
+const StudentPage = lazy(() => import('./pages/StudentPage').then((module) => ({ default: module.StudentPage })))
 const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation').then((module) => ({ default: module.BookingConfirmation })))
 const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage').then((module) => ({ default: module.StaffLoginPage })))
 const InstructorPage = lazy(() => import('./pages/InstructorPage').then((module) => ({ default: module.InstructorPage })))
@@ -58,6 +60,8 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/school/:slug" element={<SchoolPage />} />
+          <Route path="/school/:slug/book" element={<BookingFlowPage />} />
+          <Route path="/student" element={<StudentPage />} />
           <Route path="/booking/:bookingId" element={<BookingConfirmation />} />
           <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" />} />
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />

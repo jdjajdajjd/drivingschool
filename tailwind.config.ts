@@ -6,9 +6,26 @@ export default {
     extend: {
       fontFamily: {
         display: ['"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Manrope"', 'sans-serif'],
-        sans: ['"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Manrope"', 'sans-serif'],
+        text: ['"SF Pro Text"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Manrope"', 'sans-serif'],
+        sans: ['"SF Pro Text"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Manrope"', 'sans-serif'],
       },
       colors: {
+        product: {
+          bg: '#F4F6FA',
+          card: '#FFFFFF',
+          alt: '#EEF2F8',
+          border: '#DCE3EE',
+          main: '#172033',
+          secondary: '#667085',
+          muted: '#98A2B3',
+          primary: '#4B57D1',
+          'primary-dark': '#3946B8',
+          'primary-soft': '#E8EBFF',
+          success: '#219669',
+          'success-soft': '#E7F6EE',
+          warning: '#F4A340',
+          'warning-soft': '#FFF3E7',
+        },
         ink: {
           50: '#F8FAFC',
           100: '#EEF2F7',

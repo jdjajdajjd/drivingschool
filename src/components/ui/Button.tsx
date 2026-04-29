@@ -17,21 +17,21 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-sans font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 select-none',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl font-display font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-product-primary-soft disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-product-border disabled:bg-product-alt disabled:text-product-muted select-none',
         {
           primary:
-            'border border-blue-700 bg-blue-700 text-white shadow-[0_10px_24px_rgba(37,99,235,0.20)] hover:border-blue-600 hover:bg-blue-600 active:border-blue-800 active:bg-blue-800 active:shadow-none',
+            'border border-product-primary bg-product-primary text-white shadow-[0_10px_24px_rgba(75,87,209,0.16)] hover:border-product-primary-dark hover:bg-product-primary-dark active:shadow-none',
           secondary:
-            'border border-slate-200 bg-white text-ink-800 hover:border-blue-200 hover:bg-blue-50/50 active:bg-blue-50',
+            'border border-product-border bg-white text-product-main hover:border-product-primary/30 hover:bg-product-primary-soft active:bg-product-primary-soft',
           ghost:
-            'border border-transparent bg-transparent text-slate-600 hover:bg-slate-100 hover:text-ink-900 active:bg-slate-200',
+            'border border-transparent bg-transparent text-product-secondary hover:bg-product-alt hover:text-product-main active:bg-product-alt',
           danger:
             'border border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50 active:bg-red-100',
         }[variant],
         {
-          sm: 'h-9 px-3.5 text-sm rounded-lg',
-          md: 'h-10 px-4 text-sm',
-          lg: 'h-11 px-5 text-sm',
+          sm: 'h-11 px-3.5 text-sm rounded-2xl',
+          md: 'h-[52px] px-4 text-base',
+          lg: 'h-[52px] px-5 text-base',
         }[size],
         className,
       )}
