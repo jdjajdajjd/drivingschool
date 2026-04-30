@@ -9,21 +9,21 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="ui-shell">
+    <div className="shell">
       <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-product-border bg-white/92 px-4 py-3 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b rgba(0,0,0,0.06) bg-white/92 px-4 py-3 backdrop-blur-xl">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-product-border bg-white text-product-secondary shadow-soft"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border rgba(0,0,0,0.06) bg-white #6F747A shadow-[0_20px_60px_rgba(15,20,25,0.08)]"
             aria-label="Открыть меню"
           >
             <Menu size={18} />
           </button>
           <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-product-primary shadow-soft">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
               <Car size={16} className="text-white" />
             </div>
-            <span className="text-sm font-bold text-product-main">DriveDesk</span>
+            <span className="text-sm font-bold #111418">DriveDesk</span>
           </button>
         </header>
       </div>

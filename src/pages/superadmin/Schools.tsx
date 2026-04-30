@@ -36,27 +36,27 @@ export function SuperAdminSchools() {
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                       <div>
-                        <p className="ui-kicker">Школа</p>
-                        <p className="mt-1 text-base font-bold text-product-main">{item.school.name}</p>
-                        <p className="text-sm text-product-muted">/{item.school.slug}</p>
+                        <p className="caption">Школа</p>
+                        <p className="mt-1 text-base font-bold #111418">{item.school.name}</p>
+                        <p className="text-sm #9EA3A8">/{item.school.slug}</p>
                       </div>
                       <div>
-                        <p className="ui-kicker">Статус</p>
+                        <p className="caption">Статус</p>
                         <div className="mt-1">
                           <Badge variant={item.school.isActive === false ? 'muted' : 'success'}>{item.school.isActive === false ? 'Отключена' : 'Активна'}</Badge>
                         </div>
                       </div>
                       <div>
-                        <p className="ui-kicker">Ученики / записи</p>
-                        <p className="mt-1 text-sm font-bold text-product-main">{item.studentCount} / {item.activeBookingsCount}</p>
+                        <p className="caption">Ученики / записи</p>
+                        <p className="mt-1 text-sm font-bold #111418">{item.studentCount} / {item.activeBookingsCount}</p>
                       </div>
                       <div>
-                        <p className="ui-kicker">30 дней / слоты 7 дней</p>
-                        <p className="mt-1 text-sm font-bold text-product-main">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
+                        <p className="caption">30 дней / слоты 7 дней</p>
+                        <p className="mt-1 text-sm font-bold #111418">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
                       </div>
                       <div>
-                        <p className="ui-kicker">Модули / MRR</p>
-                        <p className="mt-1 text-sm font-bold text-product-main">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
+                        <p className="caption">Модули / MRR</p>
+                        <p className="mt-1 text-sm font-bold #111418">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
                       </div>
                     </div>
 

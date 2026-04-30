@@ -1,6 +1,6 @@
 import { CalendarDays, Check, ChevronRight, LogOut, MapPin, Phone, Settings, UserRound } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'
-import { Button } from '../ui/Button'
 import { cn, formatDuration, formatInstructorName, formatPhone } from '../../lib/utils'
 import { getInstructorPhoto } from '../../services/instructorPhotos'
 import type { Branch, Booking, Instructor, School, Slot } from '../../types'
@@ -35,68 +35,105 @@ export function InstructorCompactCard({
 }) {
   const shortName = formatInstructorName(instructor.name)
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onSelect}
+      whileTap={{ scale: 0.97 }}
       className={cn(
-        'flex min-h-[100px] w-full items-center gap-3 rounded-[22px] border bg-white p-3 text-left shadow-soft transition active:scale-[0.99]',
-        selected ? 'border-product-primary bg-product-primary-soft shadow-[inset_0_0_0_1px_rgba(102,88,245,0.22)]' : 'border-product-border hover:border-product-primary/35',
+        'flex w-full items-center gap-3.5 p-4 text-left transition-all duration-150',
+        'bg-white',
+        selected
+          ? 'border-2 shadow-[0_0_0_3px_rgba(246,184,77,0.2),0_18px_45px_rgba(15,20,25,0.10)]'
+          : 'border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,20,25,0.14)]',
       )}
+      style={{ borderRadius: '24px' }}
     >
       <Avatar
         initials={instructor.avatarInitials || initialsFromText(shortName)}
-        color={instructor.avatarColor || '#F1EEFF'}
+        color={instructor.avatarColor || '#FFF7ED'}
         src={getInstructorPhoto(instructor)}
         alt={instructor.name}
         size="lg"
-        className="h-12 w-12 rounded-full border border-[#E8EAF4] text-product-primary"
+        className="rounded-full text-[#C97F10]"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-base font-semibold leading-[22px] text-product-main">{shortName}</p>
-        <p className="mt-0.5 truncate text-[13px] font-medium leading-[18px] text-product-secondary">
+        <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">{shortName}</p>
+        <p className="mt-1 text-[13px] font-medium" style={{ color: '#6F747A' }}>
           {instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}
         </p>
         <div className="mt-2 flex flex-wrap gap-1">
           {(instructor.categories ?? []).slice(0, 3).map((category) => (
-            <span key={category} className="rounded-lg bg-product-alt px-2 py-0.5 text-[12px] font-semibold text-product-secondary">{category}</span>
+            <span
+              key={category}
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+              style={{ background: '#F4F5F6', color: '#6F747A' }}
+            >
+              {category}
+            </span>
           ))}
-          {branch ? <span className="max-w-[118px] truncate rounded-lg bg-product-alt px-2 py-0.5 text-[12px] font-semibold text-product-muted">{branch.name}</span> : null}
+          {branch ? (
+            <span
+              className="max-w-[110px] truncate rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+              style={{ background: '#F4F5F6', color: '#9EA3A8' }}
+            >
+              {branch.name}
+            </span>
+          ) : null}
         </div>
       </div>
-      <div className="flex w-[88px] shrink-0 flex-col items-end gap-2">
+      <div className="flex w-[80px] shrink-0 flex-col items-end gap-2">
         {nextSlot ? (
           <div className="text-right">
-            <p className="text-[13px] font-bold leading-[18px] text-product-main">{nextSlot.time}</p>
-            <p className="text-[12px] font-medium leading-4 text-product-muted">{formatDate(nextSlot.date)}</p>
+            <p className="text-[13px] font-extrabold text-[#111418]">{nextSlot.time}</p>
+            <p className="text-[12px] font-medium" style={{ color: '#9EA3A8' }}>{formatDate(nextSlot.date)}</p>
           </div>
         ) : (
-          <p className="text-right text-[12px] font-medium leading-4 text-product-muted">Нет окон</p>
+          <p className="text-right text-[12px] font-medium" style={{ color: '#9EA3A8' }}>Нет окон</p>
         )}
-        <span className={cn('inline-flex min-h-8 items-center rounded-xl px-3 text-[13px] font-semibold', selected ? 'bg-product-primary text-white' : 'bg-product-primary-soft text-product-primary')}>
-          {selected ? <Check size={14} /> : cta}
+        <span
+          className="inline-flex min-h-8 items-center rounded-full px-3 text-[12px] font-extrabold transition-all duration-150"
+          style={
+            selected
+              ? { background: '#F6B84D', color: 'white', boxShadow: '0 12px_28px_rgba(246,184,77,0.28)' }
+              : { background: 'rgba(246,184,77,0.12)', color: '#C97F10' }
+          }
+        >
+          {selected ? <Check size={12} /> : cta}
         </span>
       </div>
-    </button>
+    </motion.button>
   )
 }
 
 export function BranchCompactCard({ branch, onSelect }: { branch: Branch; onSelect?: () => void }) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onSelect}
-      className="flex min-h-[92px] w-full items-center gap-3 rounded-[22px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35"
+      whileTap={{ scale: 0.97 }}
+      className="flex w-full items-center gap-3.5 p-4 text-left transition-all duration-150 hover:-translate-y-1"
+      style={{
+        background: 'white',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: '24px',
+        boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+      }}
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-product-primary-soft text-product-primary">
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+        style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+      >
         <MapPin size={18} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-base font-semibold leading-[22px] text-product-main">{branch.name}</span>
-        <span className="mt-0.5 block truncate text-[13px] font-medium leading-[18px] text-product-secondary">{branch.address}</span>
-        {branch.phone ? <span className="mt-0.5 block text-[13px] font-medium leading-[18px] text-product-muted">{formatPhone(branch.phone)}</span> : null}
+        <span className="block truncate text-[15px] font-extrabold tracking-tight text-[#111418]">{branch.name}</span>
+        <span className="mt-1 block truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>{branch.address}</span>
+        {branch.phone ? (
+          <span className="mt-0.5 block text-[13px] font-medium" style={{ color: '#9EA3A8' }}>{formatPhone(branch.phone)}</span>
+        ) : null}
       </span>
-      <ChevronRight size={18} className="text-product-muted" />
-    </button>
+      <ChevronRight size={16} style={{ color: '#9EA3A8' }} />
+    </motion.button>
   )
 }
 
@@ -118,19 +155,36 @@ export function DayChipsScroller({
           const active = date === selectedDate
           const count = getCount(date)
           return (
-            <button
+            <motion.button
               key={date}
               type="button"
               onClick={() => onSelect(date)}
-              className={cn(
-                'min-h-[72px] w-[96px] rounded-[18px] border px-3 py-2 text-left transition',
-                active ? 'border-product-primary bg-product-primary-soft' : 'border-product-border bg-white',
-              )}
+              whileTap={{ scale: 0.97 }}
+              className="relative flex w-[88px] flex-col items-start justify-start p-3 text-left transition-all duration-100"
+              style={{
+                background: active ? 'rgba(246,184,77,0.12)' : 'white',
+                border: `2px solid ${active ? '#F6B84D' : 'rgba(0,0,0,0.06)'}`,
+                borderRadius: '18px',
+                boxShadow: active ? '0 0 0 3px rgba(246,184,77,0.15)' : '0 18px_45px_rgba(15,20,25,0.10)',
+                minHeight: '68px',
+              }}
             >
-              <span className="block text-[13px] font-semibold leading-[18px] text-product-main">{index === 0 ? 'Сегодня' : index === 1 ? 'Завтра' : formatDayOfWeek(date)}</span>
-              <span className="mt-0.5 block text-[12px] font-medium leading-4 text-product-secondary">{formatHumanDate(date, false)}</span>
-              <span className="mt-1 block text-[12px] font-semibold leading-4 text-product-primary">{count} слотов</span>
-            </button>
+              {active && (
+                <Check size={12} className="absolute right-2 top-2" style={{ color: '#F6B84D' }} />
+              )}
+              <span className="text-[12px] font-extrabold text-[#111418]">
+                {index === 0 ? 'Сегодня' : index === 1 ? 'Завтра' : formatDayOfWeek(date)}
+              </span>
+              <span className="mt-0.5 text-[11px] font-medium" style={{ color: '#6F747A' }}>
+                {formatHumanDate(date, false)}
+              </span>
+              <span
+                className="mt-1 text-[11px] font-bold"
+                style={{ color: active ? '#F6B84D' : '#9EA3A8' }}
+              >
+                {count} слотов
+              </span>
+            </motion.button>
           )
         })}
       </div>
@@ -148,26 +202,40 @@ export function TimeSlotGrid({
   onSelect: (slot: Slot) => void
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2.5">
       {slots.map((slot) => {
         const active = slot.id === selectedSlotId
         return (
-          <button
+          <motion.button
             key={slot.id}
             type="button"
             onClick={() => onSelect(slot)}
-            className={cn(
-              'min-h-[82px] rounded-[20px] border bg-white px-3 py-3 text-left transition active:scale-[0.99]',
-              active ? 'border-product-primary bg-product-primary-soft' : 'border-product-border hover:border-product-primary/35',
-            )}
+            whileTap={{ scale: 0.97 }}
+            className="p-4 text-left transition-all duration-100"
+            style={{
+              background: active ? 'rgba(246,184,77,0.12)' : 'white',
+              border: `2px solid ${active ? '#F6B84D' : 'rgba(0,0,0,0.06)'}`,
+              borderRadius: '18px',
+              boxShadow: active ? '0 0 0 3px rgba(246,184,77,0.15)' : '0 18px_45px_rgba(15,20,25,0.10)',
+              minHeight: '80px',
+            }}
           >
             <span className="flex items-center justify-between gap-2">
-              <span className="text-[22px] font-bold leading-7 text-product-main">{slot.time}</span>
-              {active ? <Check size={18} className="text-product-primary" /> : null}
+              <span
+                className="font-extrabold tracking-tight"
+                style={{ fontSize: '18px', color: '#111418' }}
+              >
+                {formatTimeRange(slot)}
+              </span>
+              {active && <Check size={16} style={{ color: '#F6B84D' }} />}
             </span>
-            <span className="mt-1 block text-[13px] font-medium leading-[18px] text-product-secondary">{formatDuration(slot.duration)}</span>
-            <span className="mt-1 block text-[12px] font-semibold leading-4 text-product-success">свободно</span>
-          </button>
+            <span
+              className="mt-0.5 block text-[12px] font-medium"
+              style={{ color: '#6F747A' }}
+            >
+              {formatDuration(slot.duration)}
+            </span>
+          </motion.button>
         )
       })}
     </div>
@@ -186,14 +254,33 @@ function DetailRow({
   subvalue?: string
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-product-border/70 py-3 last:border-b-0">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-product-primary-soft text-product-primary">
-        <Icon size={17} />
+    <div
+      className="flex items-start gap-3.5 py-4 last:pb-0"
+      style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+    >
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+        style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+      >
+        <Icon size={15} />
       </span>
       <span className="min-w-0">
-        <span className="block text-[12px] font-semibold uppercase leading-4 tracking-[0.08em] text-product-muted">{label}</span>
-        <span className="mt-0.5 block text-base font-semibold leading-[22px] text-product-main">{value}</span>
-        {subvalue ? <span className="mt-0.5 block text-[13px] font-medium leading-[18px] text-product-secondary">{subvalue}</span> : null}
+        <span
+          className="block text-[11px] font-bold uppercase tracking-wider"
+          style={{ color: '#9EA3A8' }}
+        >
+          {label}
+        </span>
+        <span
+          className="mt-1 block text-[15px] font-extrabold tracking-tight text-[#111418]"
+        >
+          {value}
+        </span>
+        {subvalue ? (
+          <span className="mt-0.5 block text-[13px] font-medium" style={{ color: '#6F747A' }}>
+            {subvalue}
+          </span>
+        ) : null}
       </span>
     </div>
   )
@@ -213,8 +300,16 @@ export function BookingDetailsCard({
   compactInstructor?: boolean
 }) {
   return (
-    <div className="rounded-[24px] border border-product-border bg-white px-4 py-4 shadow-soft">
-      <p className="ui-section-title">Детали записи</p>
+    <div
+      className="p-5"
+      style={{
+        background: 'white',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: '24px',
+        boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+      }}
+    >
+      <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">Детали записи</p>
       <div className="mt-2">
         <DetailRow
           icon={CalendarDays}
@@ -253,55 +348,86 @@ export function SummaryCard(props: Parameters<typeof BookingDetailsCard>[0]) {
 
 export function SuccessHeader({
   title = 'Запись подтверждена',
-  subtitle = 'Мы сохранили вашу запись. Детали занятия ниже.',
+  subtitle = 'Мы сохранили вашу запись. Если нужно, автошкола свяжется с вами.',
 }: {
   title?: string
   subtitle?: string
 }) {
   return (
-    <div className="rounded-[24px] border border-product-border bg-white p-6 shadow-soft">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border border-product-success-border bg-product-success-soft text-product-success">
-        <Check size={28} strokeWidth={2.5} />
-      </div>
-      <h1 className="mt-5 ui-h1">{title}</h1>
-      <p className="mt-2 text-[17px] font-medium leading-6 text-product-secondary">{subtitle}</p>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="p-5"
+      style={{
+        background: '#F0FDF4',
+        border: '1px solid rgba(21,128,61,0.15)',
+        borderRadius: '24px',
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.65, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="flex h-12 w-12 items-center justify-center rounded-2xl"
+        style={{
+          background: 'white',
+          border: '1px solid rgba(21,128,61,0.15)',
+          color: '#15803D',
+          boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+        }}
+      >
+        <Check size={24} strokeWidth={2.5} />
+      </motion.div>
+      <h1
+        className="mt-4 font-extrabold tracking-tight"
+        style={{ fontSize: '22px', lineHeight: '1.2', color: '#111418' }}
+      >
+        {title}
+      </h1>
+      <p className="body-lg mt-2" style={{ color: '#6F747A' }}>
+        {subtitle}
+      </p>
+    </motion.div>
   )
 }
 
-function bookingCardClasses(state: BookingUrgencyState): string {
+function bookingCardStyles(state: BookingUrgencyState): React.CSSProperties {
   return {
-    'future-muted': 'border-product-border bg-[#F3F4F8] shadow-none',
-    'soon-2-days': 'border-[#DDD6FF] bg-product-purple shadow-none',
-    tomorrow: 'border-[#CFC7FF] bg-white shadow-[0_10px_28px_rgba(86,72,232,0.08)]',
-    today: 'border-[#B8AEFF] bg-white shadow-today',
-    completed: 'border-[#E8EBF3] bg-[#F7F8FB] shadow-none opacity-90',
-    cancelled: 'border-[#E5E7EF] bg-[#F8F8FA] shadow-none opacity-90',
-  }[state]
+    'future-muted': { background: 'rgba(244,245,246,0.8)', border: '1px solid rgba(0,0,0,0.06)' },
+    'soon-2-days': { background: 'rgba(246,184,77,0.08)', border: '1px solid rgba(246,184,77,0.20)' },
+    tomorrow: { background: 'white', border: '1px solid rgba(246,184,77,0.20)' },
+    today: { background: 'rgba(246,184,77,0.08)', border: '1px solid rgba(246,184,77,0.30)' },
+    completed: { background: 'rgba(244,245,246,0.6)', border: '1px solid rgba(0,0,0,0.06)', opacity: 0.9 },
+    cancelled: { background: 'rgba(244,245,246,0.6)', border: '1px solid rgba(0,0,0,0.06)', opacity: 0.8 },
+  }[state] as React.CSSProperties
 }
 
 export function BookingStatusChip({ state, slot }: { state: BookingUrgencyState; slot: Slot | null }) {
-  const label = state === 'completed'
-    ? 'Завершено'
-    : state === 'cancelled'
-      ? 'Отменено'
-      : state === 'soon-2-days'
-        ? 'Через 2 дня'
-        : state === 'future-muted'
-          ? getRelativeLessonLabel(slot)
+  const label =
+    state === 'completed'
+      ? 'Завершено'
+      : state === 'cancelled'
+        ? 'Отменено'
+        : state === 'soon-2-days'
+          ? 'Через 2 дня'
           : getRelativeLessonLabel(slot)
 
-  const classes = {
-    today: 'border-product-primary-border bg-product-primary-soft text-product-primary-dark',
-    tomorrow: 'border-[#CFC7FF] bg-white text-product-primary-dark',
-    'soon-2-days': 'border-transparent bg-product-purple text-product-primary',
-    'future-muted': 'border-transparent bg-[#EEF1F7] text-product-secondary',
-    completed: 'border-transparent bg-product-success-soft text-product-success',
-    cancelled: 'border-transparent bg-product-error-soft text-product-error',
-  }[state]
+  const chipStyles: Record<BookingUrgencyState, React.CSSProperties> = {
+    today: { background: 'rgba(246,184,77,0.12)', color: '#C97F10', border: '1px solid rgba(246,184,77,0.20)' },
+    tomorrow: { background: 'rgba(246,184,77,0.12)', color: '#C97F10', border: '1px solid rgba(246,184,77,0.20)' },
+    'soon-2-days': { background: 'rgba(246,184,77,0.12)', color: '#C97F10', border: '1px solid rgba(246,184,77,0.20)' },
+    'future-muted': { background: '#F4F5F6', color: '#6F747A', border: '1px solid rgba(0,0,0,0.06)' },
+    completed: { background: '#F0FDF4', color: '#15803D', border: '1px solid rgba(21,128,61,0.15)' },
+    cancelled: { background: '#FEF2F2', color: '#E5534B', border: '1px solid rgba(229,83,75,0.15)' },
+  }
+  const s = chipStyles[state]
 
   return (
-    <span className={cn('inline-flex h-8 shrink-0 items-center rounded-full border px-2.5 text-[13px] font-semibold leading-none', classes)}>
+    <span
+      className="inline-flex h-7 shrink-0 items-center rounded-sm px-2.5 text-[12px] font-semibold"
+      style={s}
+    >
       {label === 'Прошло' && state === 'future-muted' ? 'Записан' : label}
     </span>
   )
@@ -321,22 +447,38 @@ export function StudentBookingCard({
   const state = getBookingUrgencyState(booking, slot)
   const shortName = instructor ? formatInstructorName(instructor.name) : 'Инструктор'
   const muted = state === 'completed' || state === 'cancelled'
+  const lessonLabel = slot ? getRelativeLessonLabel(slot) : 'Запись'
+  const lessonTime = slot ? formatTimeRange(slot) : ''
+  const styles = bookingCardStyles(state)
+
   return (
-    <div className={cn('relative flex min-h-[92px] items-center gap-3 rounded-[22px] border p-3 transition', bookingCardClasses(state))}>
-      {state === 'today' ? <span className="absolute left-0 top-5 h-10 w-1 rounded-r-full bg-product-primary" /> : null}
+    <div
+      className="relative flex items-center gap-3.5 p-4 transition-all"
+      style={{ ...styles, borderRadius: '24px', minHeight: '84px' }}
+    >
       <Avatar
         initials={instructor?.avatarInitials ?? initialsFromText(shortName)}
-        color={instructor?.avatarColor || '#F1EEFF'}
+        color={instructor?.avatarColor || '#FFF7ED'}
         src={instructor ? getInstructorPhoto(instructor) : undefined}
         alt={instructor?.name ?? 'Инструктор'}
         size="md"
-        className="h-11 w-11 rounded-full border border-[#E8EAF4] text-product-primary"
+        className="rounded-full text-[#C97F10]"
       />
       <div className="min-w-0 flex-1">
-        <p className={cn('truncate text-base font-semibold leading-[22px]', muted ? 'text-product-secondary' : 'text-product-main')}>{shortName}</p>
-        <p className="truncate text-[13px] font-medium leading-[18px] text-product-secondary">{instructor?.car ?? 'Учебный автомобиль'} · {branch?.name ?? 'Филиал'}</p>
-        <p className="mt-1 truncate text-[13px] font-semibold leading-[18px] text-product-main">
-          {slot ? `${getRelativeLessonLabel(slot)} · ${formatTimeRange(slot)}` : 'Время не найдено'}
+        <p
+          className="truncate text-[15px] font-extrabold tracking-tight"
+          style={{ color: muted ? '#9EA3A8' : '#111418' }}
+        >
+          {shortName}
+        </p>
+        <p className="mt-1 truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
+          {instructor?.car ?? 'Учебный автомобиль'} · {branch?.name ?? 'Филиал'}
+        </p>
+        <p
+          className="mt-1 truncate text-[13px] font-extrabold tracking-tight"
+          style={{ color: muted ? '#9EA3A8' : '#111418' }}
+        >
+          {slot ? `${lessonLabel}, ${lessonTime}` : 'Время не найдено'}
         </p>
       </div>
       <BookingStatusChip state={state} slot={slot} />
@@ -358,18 +500,56 @@ export function StudentProfileHeader({
   onLogout: () => void
 }) {
   return (
-    <div className="flex min-h-[96px] items-center gap-3 rounded-[24px] border border-product-border bg-white p-4 shadow-soft">
-      <Avatar initials={initialsFromText(profile.name)} src={profile.avatarUrl} alt={profile.name} size="lg" className="h-14 w-14 rounded-full border border-[#E8EAF4]" />
+    <div
+      className="flex items-center gap-3.5 p-4"
+      style={{
+        background: 'white',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: '24px',
+        boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+        minHeight: '88px',
+      }}
+    >
+      <Avatar
+        initials={initialsFromText(profile.name)}
+        src={profile.avatarUrl}
+        alt={profile.name}
+        size="lg"
+        className="rounded-full text-[#C97F10]"
+      />
       <div className="min-w-0 flex-1">
-        <p className="ui-kicker">Кабинет ученика</p>
-        <h1 className="truncate text-[22px] font-bold leading-7 text-product-main" title={profile.name}>{profile.name}</h1>
-        <p className="truncate text-[13px] font-medium text-product-secondary" title={`${school.name}${branch ? ` · ${branch.name}` : ''}`}>{school.name}{branch ? ` · ${branch.name}` : ''}</p>
+        <p className="caption">Кабинет ученика</p>
+        <h1
+          className="truncate font-extrabold tracking-tight text-[#111418]"
+          style={{ fontSize: '20px', lineHeight: '1.2' }}
+          title={profile.name}
+        >
+          {profile.name}
+        </h1>
+        <p
+          className="truncate text-[13px] font-medium"
+          style={{ color: '#6F747A' }}
+          title={`${school.name}${branch ? ` · ${branch.name}` : ''}`}
+        >
+          {school.name}
+          {branch ? ` · ${branch.name}` : ''}
+        </p>
       </div>
-      <button aria-label="Настройки" className="flex h-11 w-11 items-center justify-center rounded-2xl bg-product-alt text-product-secondary transition hover:bg-product-primary-soft hover:text-product-primary" onClick={onSettings}>
-        <Settings size={18} />
+      <button
+        aria-label="Настройки"
+        className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:-translate-y-0.5"
+        style={{ background: '#F4F5F6', color: '#6F747A' }}
+        onClick={onSettings}
+      >
+        <Settings size={16} />
       </button>
-      <button aria-label="Выйти" className="flex h-11 w-11 items-center justify-center rounded-2xl bg-product-alt text-product-secondary transition hover:bg-product-error-soft hover:text-product-error" onClick={onLogout}>
-        <LogOut size={18} />
+      <button
+        aria-label="Выйти"
+        className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:-translate-y-0.5"
+        style={{ background: '#FEF2F2', color: '#E5534B' }}
+        onClick={onLogout}
+      >
+        <LogOut size={16} />
       </button>
     </div>
   )
@@ -392,36 +572,79 @@ export function NearestLessonCard({
 }) {
   if (!booking || !slot) {
     return (
-      <div className="rounded-[24px] border border-product-border bg-white p-5 shadow-soft">
-        <p className="ui-kicker">Ближайшее занятие</p>
-        <h2 className="mt-3 ui-h2">Активных записей нет</h2>
-        <p className="mt-2 text-base leading-[22px] text-product-secondary">Выберите удобное время и инструктор появится здесь.</p>
-        <Button className="mt-4 w-full" onClick={onBook}>Записаться ещё</Button>
+      <div
+        className="p-5"
+        style={{
+          background: 'white',
+          border: '1px solid rgba(0,0,0,0.06)',
+          borderRadius: '24px',
+          boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+        }}
+      >
+        <p className="caption">Ближайшее занятие</p>
+        <h2 className="mt-3 display-sm" style={{ fontSize: '22px' }}>Активных записей нет</h2>
+        <p className="body mt-2" style={{ color: '#6F747A' }}>
+          Выберите удобное время и инструктор появится здесь.
+        </p>
+        <button
+          className="btn-primary mt-4 w-full py-3 text-[15px]"
+          onClick={onBook}
+        >
+          Записаться ещё
+        </button>
       </div>
     )
   }
 
   const state = getBookingUrgencyState(booking, slot)
+  const relativeLabel = getRelativeLessonLabel(slot)
+  const isImmediate = relativeLabel === 'Сегодня' || relativeLabel === 'Завтра'
+  const cardStyle = bookingCardStyles(state)
+
   return (
-    <div className={cn('rounded-[24px] border p-5', bookingCardClasses(state))}>
+    <div
+      className="p-5"
+      style={{ ...cardStyle, borderRadius: '24px', ...(cardStyle.border ? {} : { border: '1px solid rgba(0,0,0,0.06)' }) }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="ui-kicker">Ближайшее занятие</p>
-          <h2 className="mt-3 font-display text-[28px] font-bold leading-[34px] text-product-main">{formatHumanDate(slot.date, false)}</h2>
-          <p className="mt-1 font-display text-[22px] font-bold leading-7 text-product-main">{formatTimeRange(slot)}</p>
+          <p className="caption">Ближайшее занятие</p>
+          <h2
+            className="mt-3 font-extrabold tracking-tight text-[#111418]"
+            style={{ fontSize: '24px', lineHeight: '1.2' }}
+          >
+            {isImmediate
+              ? `${relativeLabel}, ${formatTimeRange(slot)}`
+              : `${formatHumanDate(slot.date, false)}, ${formatTimeRange(slot)}`}
+          </h2>
         </div>
         <BookingStatusChip state={state} slot={slot} />
       </div>
-      <div className="mt-4 flex items-center gap-3">
-        <Avatar initials={instructor?.avatarInitials ?? 'И'} color={instructor?.avatarColor || '#F1EEFF'} src={instructor ? getInstructorPhoto(instructor) : undefined} alt={instructor?.name ?? 'Инструктор'} size="lg" className="h-14 w-14 rounded-full border border-[#E8EAF4] text-product-primary" />
+      <div className="mt-4 flex items-center gap-3.5">
+        <Avatar
+          initials={instructor?.avatarInitials ?? 'И'}
+          color={instructor?.avatarColor || '#FFF7ED'}
+          src={instructor ? getInstructorPhoto(instructor) : undefined}
+          alt={instructor?.name ?? 'Инструктор'}
+          size="lg"
+          className="rounded-full text-[#C97F10]"
+        />
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold leading-[22px] text-product-main">{instructor ? formatInstructorName(instructor.name) : 'Инструктор'}</p>
-          <p className="truncate text-[13px] font-medium leading-[18px] text-product-secondary">{instructor?.car ?? 'Учебный автомобиль'} · {branch?.name ?? 'Филиал'}</p>
+          <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">
+            {instructor ? formatInstructorName(instructor.name) : 'Инструктор'}
+          </p>
+          <p className="mt-1 text-[13px] font-medium" style={{ color: '#6F747A' }}>
+            {instructor?.car ?? 'Учебный автомобиль'} · {branch?.name ?? 'Филиал'}
+          </p>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button onClick={onBook}>Записаться ещё</Button>
-        <Button variant="secondary" onClick={onAll}>Все записи</Button>
+      <div className="mt-4 grid grid-cols-2 gap-2.5">
+        <button className="btn-primary py-3 text-[15px]" onClick={onBook}>
+          Записаться ещё
+        </button>
+        <button className="btn-secondary py-3 text-[15px]" onClick={onAll}>
+          Все записи
+        </button>
       </div>
     </div>
   )

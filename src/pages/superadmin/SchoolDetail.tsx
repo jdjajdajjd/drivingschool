@@ -71,23 +71,23 @@ export function SuperAdminSchoolDetail() {
       <div className="mt-6 space-y-5">
         <Section title="Конфигурация" description="Ключевые white-label и операционные параметры школы.">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="ui-kicker">Slug</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{overview.school.slug}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="caption">Slug</p>
+              <p className="mt-1 text-sm font-semibold #111418">{overview.school.slug}</p>
             </div>
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="ui-kicker">Лимит записей</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="caption">Лимит записей</p>
+              <p className="mt-1 text-sm font-semibold #111418">
                 {overview.school.bookingLimitEnabled ? overview.school.maxActiveBookingsPerStudent : 'Выключен'}
               </p>
             </div>
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="ui-kicker">Свободные слоты 7 дней</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{overview.freeSlots7Days}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="caption">Свободные слоты 7 дней</p>
+              <p className="mt-1 text-sm font-semibold #111418">{overview.freeSlots7Days}</p>
             </div>
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="ui-kicker">Предупреждения</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{overview.integrityWarnings}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="caption">Предупреждения</p>
+              <p className="mt-1 text-sm font-semibold #111418">{overview.integrityWarnings}</p>
             </div>
           </div>
         </Section>
@@ -99,8 +99,8 @@ export function SuperAdminSchoolDetail() {
                 <DataRow key={branch.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-bold text-product-main">{branch.name}</p>
-                      <p className="mt-1 text-sm text-product-secondary">{branch.address || 'Адрес не указан'}</p>
+                      <p className="text-sm font-bold #111418">{branch.name}</p>
+                      <p className="mt-1 text-sm #6F747A">{branch.address || 'Адрес не указан'}</p>
                     </div>
                     <Badge variant={branch.isActive ? 'success' : 'muted'}>{branch.isActive ? 'Активен' : 'Скрыт'}</Badge>
                   </div>
@@ -112,8 +112,8 @@ export function SuperAdminSchoolDetail() {
                 <DataRow key={instructor.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-bold text-product-main">{formatInstructorName(instructor.name)}</p>
-                      <p className="mt-1 text-sm text-product-secondary">{instructor.car ?? 'Машина не указана'}</p>
+                      <p className="text-sm font-bold #111418">{formatInstructorName(instructor.name)}</p>
+                      <p className="mt-1 text-sm #6F747A">{instructor.car ?? 'Машина не указана'}</p>
                     </div>
                     <Badge variant={instructor.isActive ? 'success' : 'muted'}>{instructor.isActive ? 'Активен' : 'Скрыт'}</Badge>
                   </div>
@@ -129,8 +129,8 @@ export function SuperAdminSchoolDetail() {
               <DataRow key={item.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-bold text-product-main">{item.module.name}</p>
-                    <p className="mt-1 text-sm text-product-secondary">
+                    <p className="text-sm font-bold #111418">{item.module.name}</p>
+                    <p className="mt-1 text-sm #6F747A">
                       {item.module.priceType === 'monthly'
                         ? `${formatPrice(item.module.monthlyPrice ?? 0)}/мес`
                         : item.module.priceType === 'one_time'
@@ -138,7 +138,7 @@ export function SuperAdminSchoolDetail() {
                           : item.module.usageNote ?? 'По факту использования'}
                     </p>
                   </div>
-                  <Badge variant="forest">Включён</Badge>
+                  <Badge variant="success">Включён</Badge>
                 </div>
               </DataRow>
             ))}

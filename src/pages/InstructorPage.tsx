@@ -39,7 +39,7 @@ function Section({
   emptyLabel: string
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
       <div className="border-b border-stone-100 px-5 py-4">
         <p className="text-sm font-semibold text-stone-900">{title}</p>
         <p className="mt-1 text-sm text-stone-500">{items.length} записей</p>
@@ -138,7 +138,7 @@ export function InstructorPage() {
   if (!instructor) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-50 px-6">
-        <div className="max-w-md rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
+        <div className="max-w-md rounded-lg border border-stone-200 bg-white px-6 py-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50">
             <XCircle size={26} className="text-red-500" />
           </div>
@@ -171,7 +171,7 @@ export function InstructorPage() {
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <div className="rounded-2xl border border-stone-200 bg-white p-6">
+          <div className="rounded-lg border border-stone-200 bg-white p-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
                 <Avatar
@@ -180,7 +180,7 @@ export function InstructorPage() {
                   src={getInstructorPhoto(instructor)}
                   alt={instructor.name}
                   size="xl"
-                  className="rounded-2xl"
+                  className="rounded-lg"
                 />
                 <div>
                   <p className="text-3xl font-semibold tracking-tight text-stone-900">{instructor.name}</p>
@@ -199,21 +199,21 @@ export function InstructorPage() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 lg:w-[320px]">
-                <div className="rounded-2xl bg-stone-50 px-4 py-4">
+                <div className="rounded-lg bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{formatPhone(instructor.phone)}</p>
                   <p className="mt-1 text-sm text-stone-500">Контактный номер</p>
                 </div>
-                <div className="rounded-2xl bg-stone-50 px-4 py-4">
+                <div className="rounded-lg bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{branch?.name ?? 'Филиал не найден'}</p>
                   <p className="mt-1 text-sm text-stone-500">{branch?.address ?? 'Адрес не указан'}</p>
                 </div>
-                <div className="rounded-2xl bg-stone-50 px-4 py-4">
+                <div className="rounded-lg bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{instructor.car ?? 'Автомобиль не указан'}</p>
                   <p className="mt-1 text-sm text-stone-500">
                     {instructor.transmission === 'manual' ? 'Механика' : instructor.transmission === 'auto' ? 'Автомат' : 'Тип КПП не указан'}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-stone-50 px-4 py-4">
+                <div className="rounded-lg bg-stone-50 px-4 py-4">
                   <p className="text-sm font-semibold text-stone-900">{pluralize(grouped.upcoming.length, 'ближайшее занятие', 'ближайших занятия', 'ближайших занятий')}</p>
                   <p className="mt-1 text-sm text-stone-500">Активные будущие записи</p>
                 </div>

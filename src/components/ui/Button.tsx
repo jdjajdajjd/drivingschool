@@ -17,21 +17,28 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl font-display font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-product-primary-soft disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-product-border disabled:bg-product-alt disabled:text-product-muted select-none',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#F6B84D]/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 select-none',
+        'active:scale-[0.97]',
         {
           primary:
-            'border border-product-primary bg-product-primary text-white shadow-[0_10px_24px_rgba(102,88,245,0.18)] hover:border-product-primary-dark hover:bg-product-primary-dark active:shadow-none',
+            'text-white shadow-[0_12px_28px_rgba(0,0,0,0.16)] hover:shadow-[0_18px_36px_rgba(0,0,0,0.22)] hover:-translate-y-0.5',
           secondary:
-            'border border-product-border bg-white text-product-main hover:border-product-primary/30 hover:bg-product-primary-soft active:bg-product-primary-soft',
+            'border text-[#111418] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5',
           ghost:
-            'border border-transparent bg-transparent text-product-secondary hover:bg-product-alt hover:text-product-main active:bg-product-alt',
+            'text-[#6F747A] hover:bg-[rgba(0,0,0,0.04)] hover:text-[#111418]',
           danger:
-            'border border-product-error-soft bg-white text-product-error hover:border-product-error/35 hover:bg-product-error-soft active:bg-product-error-soft',
+            'text-[#E5534B] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5',
         }[variant],
         {
-          sm: 'h-11 px-3.5 text-sm rounded-2xl',
-          md: 'h-14 px-4 text-base rounded-[18px]',
-          lg: 'h-14 px-5 text-base rounded-[20px]',
+          primary: 'bg-[#050607] rounded-full',
+          secondary: 'bg-white border-[rgba(0,0,0,0.06)] rounded-full hover:border-[rgba(0,0,0,0.10)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.12)]',
+          ghost: 'bg-transparent border-none rounded-full',
+          danger: 'bg-white border border-[rgba(229,83,75,0.15)] rounded-full hover:bg-[#FEF2F2]',
+        }[variant],
+        {
+          sm: 'h-9 px-4 text-[13px]',
+          md: 'h-11 px-5 text-[15px]',
+          lg: 'h-13 px-6 text-[15px]',
         }[size],
         className,
       )}

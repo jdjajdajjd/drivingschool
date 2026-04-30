@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CalendarPlus } from 'lucide-react'
+import { CalendarPlus, UserRound } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
 import { BookingDetailsCard, SuccessHeader } from '../components/product/CompactCards'
 import { generateIcs, getSlotDateTime } from '../services/bookingService'
 import { db } from '../services/storage'
+import { saveStudentProfile } from '../services/studentProfile'
 import { getBookingGroupFromSupabase } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 
@@ -16,17 +18,6 @@ interface BookingBundle {
   instructor: Instructor | null
   branch: Branch | null
   school: School | null
-}
-
-function hasSavedStudentProfile(schoolId: string, phone: string): boolean {
-  try {
-    const raw = localStorage.getItem(`dd:student_profile:${schoolId}`)
-    if (!raw) return false
-    const profile = JSON.parse(raw) as { phone?: string; createdByConsent?: boolean }
-    return Boolean(profile.createdByConsent && profile.phone === phone)
-  } catch {
-    return false
-  }
 }
 
 function loadBookingBundle(bookingId: string): BookingBundle | null {
@@ -137,56 +128,79 @@ export function BookingConfirmation() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    showToast('Файл календаря скачан.', 'success')
+    showToast('Файл календаря готов.', 'success')
+  }
+
+  function createCabinetFromBooking() {
+    const first = bundles[0]
+    if (!first?.school) return
+    saveStudentProfile(
+      first.school.id,
+      { name: first.booking.studentName, phone: first.booking.studentPhone, email: first.booking.studentEmail },
+      { passwordSet: false, assignedBranchId: first.branch?.id },
+    )
+    navigate('/student')
   }
 
   if (bundles.length === 0) {
     return (
-      <div className="ui-shell flex min-h-screen items-center justify-center px-4">
+      <div className="shell flex min-h-screen items-center justify-center px-4">
         <StateView kind="error" title="Запись не найдена" description="Проверьте ссылку или откройте страницу автошколы ещё раз." action={<Button onClick={() => navigate('/school/virazh')}>К записи</Button>} />
       </div>
     )
   }
 
   const firstBundle = bundles[0]
-  const { booking, school } = firstBundle
+  const { school } = firstBundle
   const activeBundles = bundles.filter((item) => item.booking.status !== 'cancelled')
   const isCancelled = activeBundles.length === 0
-  const hasProfile = hasSavedStudentProfile(booking.schoolId, booking.studentPhone)
   const title = isCancelled ? (bundles.length > 1 ? 'Записи отменены' : 'Запись отменена') : 'Запись подтверждена'
-  const subtitle = isCancelled ? 'Эта запись больше не активна.' : 'Мы сохранили вашу запись. Детали занятия ниже.'
+  const subtitle = isCancelled ? 'Эта запись больше не активна.' : 'Мы сохранили вашу запись. Если нужно, автошкола свяжется с вами.'
 
   return (
-    <div className="ui-shell">
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-3 px-4 py-4">
+    <div className="shell">
+      <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-3 overflow-x-hidden px-4 py-4">
         <SuccessHeader title={title} subtitle={subtitle} />
 
         <div className="space-y-3">
           {bundles.map((item, index) => (
-            <div key={item.booking.id} className="space-y-2">
-              {bundles.length > 1 ? <p className="ui-kicker px-1">Занятие {index + 1}</p> : null}
+            <motion.div key={item.booking.id} className="space-y-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, delay: index * 0.04 }}>
+              {bundles.length > 1 ? <p className="caption px-1">Занятие {index + 1}</p> : null}
               <BookingDetailsCard
                 slot={item.slot}
                 instructor={item.instructor}
                 branch={item.branch}
                 student={{ name: item.booking.studentName, phone: item.booking.studentPhone, email: item.booking.studentEmail }}
               />
-            </div>
+            </motion.div>
           ))}
         </div>
 
         <div className="mt-auto grid gap-2 pb-2 pt-2">
-          <Button onClick={() => navigate(hasProfile ? '/student' : `/school/${school?.slug ?? 'virazh'}/book`)}>
-            {hasProfile ? 'Мои записи' : 'К записи на занятие'}
-          </Button>
           {!isCancelled ? (
-            <Button variant="secondary" onClick={handleDownloadIcs}>
+            <Button onClick={handleDownloadIcs}>
               <CalendarPlus size={18} />
               Добавить в календарь
             </Button>
           ) : null}
-          <Button variant="ghost" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}>Вернуться на страницу школы</Button>
+          <Button variant="secondary" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}/book`)}>Записаться ещё</Button>
+          <Button variant="ghost" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}>На страницу школы</Button>
         </div>
+
+        {!isCancelled ? (
+          <div className="rounded-2xl border rgba(246,184,77,0.20) rgba(246,184,77,0.12) p-4 ">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl white #C97F10 ">
+                <UserRound size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-[22px] #111418">Создать кабинет?</p>
+                <p className="mt-1 text-[13px] font-medium leading-5 #6F747A">Эта запись появится в вашем кабинете, а следующая запись будет быстрее.</p>
+              </div>
+            </div>
+            <Button className="mt-4 w-full" variant="secondary" onClick={createCabinetFromBooking}>Создать кабинет</Button>
+          </div>
+        ) : null}
       </main>
     </div>
   )

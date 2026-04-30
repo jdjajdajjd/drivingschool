@@ -7,7 +7,7 @@ export function AdminPageShell({ children, className }: { children: ReactNode; c
 
 export function AdminFilterBar({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-[24px] border border-product-border bg-white p-3 shadow-soft', className)}>
+    <div className={cn('rounded-2xl border rgba(0,0,0,0.06) white p-3 ', className)}>
       {children}
     </div>
   )
@@ -29,20 +29,20 @@ export function AdminInfoTile({
   return (
     <div
       className={cn(
-        'rounded-[20px] border px-4 py-3',
+        'rounded-2xl border px-3.5 py-3',
         {
-          default: 'border-product-border bg-product-alt',
-          primary: 'border-product-primary-border bg-product-primary-soft',
-          success: 'border-product-success-border bg-product-success-soft',
-          warning: 'border-transparent bg-product-warning-soft',
-          danger: 'border-transparent bg-product-error-soft',
+          default: 'rgba(0,0,0,0.06) #F4F5F6',
+          primary: 'rgba(246,184,77,0.20) rgba(246,184,77,0.12)',
+          success: 'rgba(21,128,61,0.15) #F0FDF4',
+          warning: 'rgba(180,83,9,0.15) #FFFBEB',
+          danger: 'rgba(229,83,75,0.15) #FEF2F2',
         }[tone],
         className,
       )}
     >
-      <p className="ui-kicker">{label}</p>
-      <div className="mt-1 text-sm font-semibold text-product-main">{value}</div>
-      {meta ? <div className="mt-1 text-sm text-product-secondary">{meta}</div> : null}
+      <p className="caption">{label}</p>
+      <div className="mt-1 text-[14px] font-semibold #111418">{value}</div>
+      {meta ? <div className="mt-1 text-[13px] #6F747A">{meta}</div> : null}
     </div>
   )
 }

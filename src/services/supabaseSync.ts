@@ -1,8 +1,29 @@
 import { db } from './storage'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { getPublicSchoolBundle } from './supabasePublicService'
 
+const SYNC_TIMEOUT_MS = 3500
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Supabase sync timeout')), timeoutMs)
+  })
+
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
 export async function syncSupabaseSchoolToLocalDb(slug: string): Promise<boolean> {
-  const bundle = await getPublicSchoolBundle(slug)
+  if (!isSupabaseConfigured()) return false
+
+  const bundle = await withTimeout(getPublicSchoolBundle(slug), SYNC_TIMEOUT_MS)
   if (!bundle) return false
 
   const schoolId = bundle.school.id

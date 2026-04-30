@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, MessageCircle, Pencil, Plus, Settings, UserRound } from 'lucide-react'
-import { BottomNav } from '../components/ui/BottomNav'
+import { CalendarDays, LogOut, MessageCircle, Pencil, Plus, Settings, UserRound } from 'lucide-react'
 import { Button } from '../components/ui/Button'
+import { BottomNav } from '../components/ui/BottomNav'
 import { Input } from '../components/ui/Input'
 import { SegmentedTabs } from '../components/ui/SegmentedTabs'
 import { StateView } from '../components/ui/StateView'
-import { NearestLessonCard, StudentBookingCard, StudentProfileHeader } from '../components/product/CompactCards'
+import { StudentBookingCard } from '../components/product/CompactCards'
 import { db } from '../services/storage'
 import { findAnyStudentProfile, loadStudentProfile, removeStudentProfile, saveStudentProfile, type StudentProfile } from '../services/studentProfile'
-import { normalizePhone } from '../services/bookingService'
+import { generateIcs, normalizePhone } from '../services/bookingService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
+import { formatInstructorName, formatPhone } from '../lib/utils'
+import { formatHumanDate, formatTimeRange, getRelativeLessonLabel } from '../utils/date'
 
 type View = 'dashboard' | 'bookings' | 'profile'
 type BookingTab = 'upcoming' | 'past'
@@ -39,6 +41,24 @@ function resolveBookings(schoolId: string, profile: StudentProfile): ResolvedStu
     })
 }
 
+function initials(name: string): string {
+  return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'У'
+}
+
+function downloadBookingCalendar(bookingId: string): void {
+  const content = generateIcs(bookingId)
+  if (!content) return
+  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${bookingId}.ics`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 export function StudentPage() {
   const navigate = useNavigate()
   const [school, setSchool] = useState<School | null>(null)
@@ -65,11 +85,11 @@ export function StudentPage() {
 
   if (!school || !profile) {
     return (
-      <div className="ui-shell flex min-h-screen items-center justify-center px-4">
+      <div className="shell flex min-h-screen items-center justify-center px-4">
         <StateView
           kind="locked"
           title="Кабинет ещё не создан"
-          description="После записи можно создать кабинет и видеть все занятия здесь."
+          description="Записаться можно без регистрации. Кабинет появится после кнопки «Создать кабинет» на экране подтверждения."
           action={<Button onClick={() => navigate('/school/virazh')}>Открыть автошколу</Button>}
         />
       </div>
@@ -78,7 +98,7 @@ export function StudentPage() {
 
   function saveProfile() {
     if (!school) return
-    const saved = saveStudentProfile(school.id, { ...form, avatarUrl: profile?.avatarUrl ?? '' }, { passwordSet: profile?.passwordSet })
+    const saved = saveStudentProfile(school.id, { ...form, avatarUrl: profile?.avatarUrl ?? '' }, { passwordSet: profile?.passwordSet, assignedBranchId: profile?.assignedBranchId })
     setProfile(saved)
     setView('dashboard')
   }
@@ -90,63 +110,182 @@ export function StudentPage() {
   }
 
   return (
-    <div className="ui-shell">
-      <main className="mx-auto max-w-2xl px-4 pb-28 pt-4">
+    <div className="shell">
+      <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-4 pb-28 pt-4">
         {view === 'dashboard' ? (
           <section className="space-y-3">
-            <StudentProfileHeader profile={profile} school={school} branch={branch} onSettings={() => setView('profile')} onLogout={logout} />
-
-            <NearestLessonCard
-              booking={next?.booking ?? null}
-              slot={next?.slot ?? null}
-              instructor={next?.instructor ?? null}
-              branch={next?.branch ?? null}
-              onBook={() => navigate(`/school/${school.slug}/book`)}
-              onAll={() => setView('bookings')}
-            />
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="ui-section-title">Мои записи</p>
-                {upcoming.length > 3 ? <button className="text-sm font-semibold text-product-primary" onClick={() => setView('bookings')}>Смотреть все</button> : null}
+            {/* Profile header */}
+            <div
+              className="flex items-center gap-3.5 p-4"
+              style={{
+                background: 'white',
+                border: '1px solid rgba(0,0,0,0.06)',
+                borderRadius: '24px',
+                boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+                minHeight: '80px',
+              }}
+            >
+              <div
+                className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full font-extrabold text-[18px]"
+                style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+              >
+                {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" /> : initials(profile.name)}
               </div>
-              {upcoming.length === 0 ? <StateView title="Будущих записей нет" action={<Button onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button>} /> : upcoming.slice(0, 3).map((item) => (
+              <div className="min-w-0 flex-1">
+                <p className="caption">Кабинет ученика</p>
+                <h1
+                  className="truncate font-extrabold tracking-tight text-[#111418]"
+                  style={{ fontSize: '20px', lineHeight: '1.2' }}
+                >
+                  {profile.name}
+                </h1>
+                <p className="mt-1 truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
+                  {formatPhone(profile.phone)}
+                  {branch ? ` · ${branch.name}` : ''}
+                </p>
+              </div>
+              <button
+                aria-label="Настройки"
+                className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:-translate-y-0.5"
+                style={{ background: '#F4F5F6', color: '#6F747A' }}
+                onClick={() => setView('profile')}
+              >
+                <Settings size={16} />
+              </button>
+            </div>
+
+            {/* Next lesson */}
+            <section
+              className="card p-5"
+              style={{ borderRadius: '24px' }}
+            >
+              <p className="caption">Ближайшее занятие</p>
+              {next?.slot ? (
+                <>
+                  <div className="mt-3 flex items-start justify-between gap-3">
+                    <div>
+                      <h2
+                        className="font-extrabold tracking-tight text-[#111418]"
+                        style={{ fontSize: '24px', lineHeight: '1.2' }}
+                      >
+                        {getRelativeLessonLabel(next.slot)}
+                      </h2>
+                      <p className="mt-1 font-extrabold tracking-tight text-[#111418]" style={{ fontSize: '16px' }}>
+                        {formatTimeRange(next.slot)}
+                      </p>
+                      <p className="mt-1 text-[13px] font-semibold" style={{ color: '#6F747A' }}>
+                        {formatHumanDate(next.slot.date, false)}
+                      </p>
+                    </div>
+                    <span
+                      className="inline-flex items-center rounded-sm px-2.5 py-1 text-[12px] font-semibold"
+                      style={{ background: '#F0FDF4', color: '#15803D', border: '1px solid rgba(21,128,61,0.15)' }}
+                    >
+                      активна
+                    </span>
+                  </div>
+                  <div
+                    className="mt-4 p-3.5"
+                    style={{ background: '#F4F5F6', borderRadius: '16px' }}
+                  >
+                    <p className="text-[14px] font-semibold text-[#111418]">
+                      {next.instructor ? formatInstructorName(next.instructor.name) : 'Инструктор'}
+                    </p>
+                    <p className="mt-0.5 text-[13px] font-medium" style={{ color: '#6F747A' }}>
+                      {next.instructor?.car ?? 'Учебный автомобиль'} · {next.branch?.name ?? 'Филиал'}
+                    </p>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2.5">
+                    <button className="btn-secondary py-3 text-[14px]" onClick={() => downloadBookingCalendar(next.booking.id)}>
+                      В календарь
+                    </button>
+                    <button className="btn-ghost py-3 text-[14px]" onClick={() => setView('bookings')}>
+                      Все записи
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <StateView
+                  title="У вас пока нет записей"
+                  description="Выберите инструктора и удобное время."
+                  action={<Button onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button>}
+                  className="mt-3"
+                />
+              )}
+            </section>
+
+            {/* Upcoming bookings */}
+            <section className="space-y-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">Мои записи</p>
+                {upcoming.length > 1 ? (
+                  <button
+                    className="text-[13px] font-bold transition-colors hover:opacity-80"
+                    style={{ color: '#F6B84D' }}
+                    onClick={() => setView('bookings')}
+                  >
+                    Все
+                  </button>
+                ) : null}
+              </div>
+              {upcoming.length === 0 ? null : upcoming.slice(0, 3).map((item) => (
                 <StudentBookingCard key={item.booking.id} {...item} />
               ))}
-            </div>
+            </section>
 
-            <div className="space-y-2">
-              <p className="ui-section-title">Быстрые действия</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" onClick={() => navigate(`/school/${school.slug}/book`)}>
-                  <Plus size={18} className="text-product-primary" />
-                  <span className="mt-2 block text-sm font-semibold text-product-main">Записаться ещё</span>
-                </button>
-                <button className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" onClick={() => setView('profile')}>
-                  <Pencil size={18} className="text-product-primary" />
-                  <span className="mt-2 block text-sm font-semibold text-product-main">Изменить профиль</span>
-                </button>
-                <button className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" onClick={() => setView('bookings')}>
-                  <CalendarDays size={18} className="text-product-primary" />
-                  <span className="mt-2 block text-sm font-semibold text-product-main">Все записи</span>
-                </button>
-                <a className="rounded-[20px] border border-product-border bg-white p-3 text-left shadow-soft transition hover:border-product-primary/35" href={`tel:${school.phone}`}>
-                  <MessageCircle size={18} className="text-product-primary" />
-                  <span className="mt-2 block text-sm font-semibold text-product-main">Связаться</span>
-                </a>
+            {/* Quick actions */}
+            <section className="space-y-2.5">
+              <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">Быстрые действия</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { icon: Plus, label: 'Записаться ещё', onClick: () => navigate(`/school/${school.slug}/book`) },
+                  { icon: CalendarDays, label: 'Страница школы', onClick: () => navigate(`/school/${school.slug}`) },
+                  { icon: Pencil, label: 'Настройки', onClick: () => setView('profile') },
+                  { icon: MessageCircle, label: 'Позвонить', href: `tel:${school.phone}` },
+                ].map((action) => (
+                  action.href ? (
+                    <a
+                      key={action.label}
+                      href={action.href}
+                      className="card flex flex-col items-start gap-2 p-4"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <action.icon size={16} style={{ color: '#F6B84D' }} />
+                      <span className="text-[13px] font-semibold text-[#111418]">{action.label}</span>
+                    </a>
+                  ) : (
+                    <button
+                      key={action.label}
+                      className="card flex flex-col items-start gap-2 p-4 text-left"
+                      onClick={action.onClick}
+                    >
+                      <action.icon size={16} style={{ color: '#F6B84D' }} />
+                      <span className="text-[13px] font-semibold text-[#111418]">{action.label}</span>
+                    </button>
+                  )
+                ))}
               </div>
-            </div>
+            </section>
           </section>
         ) : null}
 
         {view === 'bookings' ? (
           <section>
-            <h1 className="ui-h1">Записи</h1>
-            <div className="mt-3">
-              <SegmentedTabs value={bookingTab} onChange={setBookingTab} tabs={[{ value: 'upcoming', label: 'Будущие' }, { value: 'past', label: 'Прошлые' }]} />
+            <h1 className="display-md" style={{ fontSize: '22px' }}>Мои записи</h1>
+            <p className="body mt-1.5" style={{ color: '#6F747A', fontSize: '14px' }}>
+              Только занятия, записанные на ваш номер.
+            </p>
+            <div className="mt-4">
+              <SegmentedTabs
+                value={bookingTab}
+                onChange={setBookingTab}
+                tabs={[{ value: 'upcoming', label: 'Будущие' }, { value: 'past', label: 'История' }]}
+              />
             </div>
-            <div className="mt-3 space-y-2">
-              {(bookingTab === 'upcoming' ? upcoming : past).length === 0 ? <StateView title="Записей нет" /> : (bookingTab === 'upcoming' ? upcoming : past).map((item) => (
+            <div className="mt-4 space-y-2.5">
+              {(bookingTab === 'upcoming' ? upcoming : past).length === 0 ? (
+                <StateView title="Записей нет" action={bookingTab === 'upcoming' ? <Button onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button> : undefined} />
+              ) : (bookingTab === 'upcoming' ? upcoming : past).map((item) => (
                 <StudentBookingCard key={item.booking.id} {...item} />
               ))}
             </div>
@@ -155,13 +294,29 @@ export function StudentPage() {
 
         {view === 'profile' ? (
           <section>
-            <h1 className="ui-h1">Профиль</h1>
-            <p className="mt-1 text-base text-product-secondary">Данные используются для записи и входа в кабинет.</p>
-            <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h1 className="display-md" style={{ fontSize: '22px' }}>Настройки</h1>
+                <p className="body mt-1.5" style={{ color: '#6F747A', fontSize: '14px' }}>
+                  Контакты для записи и входа.
+                </p>
+              </div>
+              <button
+                aria-label="Выйти"
+                className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:-translate-y-0.5"
+                style={{ background: '#FEF2F2', color: '#E5534B' }}
+                onClick={logout}
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+            <div className="mt-5 space-y-4">
               <Input label="Имя" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
               <Input label="Телефон" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
               <Input label="E-mail" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-              <Button className="w-full" onClick={saveProfile}>Сохранить</Button>
+              <button className="btn-primary w-full py-3.5 text-[15px]" onClick={saveProfile}>
+                Сохранить
+              </button>
             </div>
           </section>
         ) : null}

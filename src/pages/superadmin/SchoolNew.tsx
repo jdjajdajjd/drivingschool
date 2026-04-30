@@ -67,18 +67,18 @@ export function SuperAdminSchoolNew() {
             <Button variant="secondary" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools`)}>Назад</Button>
           </div>
         </Section>
-        <div className="rounded-[24px] border border-product-border bg-white p-5 shadow-card">
-          <p className="ui-kicker">White-label preview</p>
+        <div className="rounded-2xl border rgba(0,0,0,0.06) bg-white p-5 ">
+          <p className="caption">White-label preview</p>
           <div className="mt-5 flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-white" style={{ backgroundColor: form.primaryColor || '#6658F5' }}>
               {form.logoUrl ? <img src={form.logoUrl} alt={form.name} className="h-full w-full rounded-2xl object-cover" /> : (form.name.slice(0, 2).toUpperCase() || 'DS')}
             </div>
             <div>
-              <p className="text-lg font-bold text-product-main">{form.name || 'Новая автошкола'}</p>
-              <p className="text-sm text-product-muted">/{form.slug || 'school-slug'}</p>
+              <p className="text-lg font-bold #111418">{form.name || 'Новая автошкола'}</p>
+              <p className="text-sm #9EA3A8">/{form.slug || 'school-slug'}</p>
             </div>
           </div>
-          <p className="mt-5 text-sm leading-relaxed text-product-secondary">{form.description || 'Описание будет видно на публичной странице школы и в потоке записи.'}</p>
+          <p className="mt-5 text-sm leading-relaxed #6F747A">{form.description || 'Описание будет видно на публичной странице школы и в потоке записи.'}</p>
           <div className="mt-5 rounded-2xl px-4 py-3 text-center text-sm font-bold text-white" style={{ backgroundColor: form.primaryColor || '#6658F5' }}>
             Записаться на занятие
           </div>

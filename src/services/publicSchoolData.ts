@@ -1,4 +1,5 @@
 import type { Branch, Instructor, School, Slot } from '../types'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { db } from './storage'
 import { getPublicSchoolBundle } from './supabasePublicService'
 
@@ -9,6 +10,24 @@ export interface PublicSchoolData {
   slots: Slot[]
 }
 
+const PUBLIC_DATA_TIMEOUT_MS = 3500
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Supabase public data timeout')), timeoutMs)
+  })
+
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
 export async function loadPublicSchoolData(slug: string): Promise<PublicSchoolData | null> {
   const applyLocal = (school: School): PublicSchoolData => ({
     school,
@@ -17,24 +36,26 @@ export async function loadPublicSchoolData(slug: string): Promise<PublicSchoolDa
     slots: db.slots.bySchool(school.id),
   })
 
-  try {
-    const bundle = await getPublicSchoolBundle(slug)
-    if (bundle) {
-      db.schools.upsert(bundle.school)
-      bundle.branches.forEach((branch) => db.branches.upsert(branch))
-      bundle.instructors.forEach((instructor) => db.instructors.upsert(instructor))
-      bundle.slots.forEach((slot) => db.slots.upsert(slot))
-      bundle.students.forEach((student) => db.students.upsert(student))
-      bundle.bookings.forEach((booking) => db.bookings.upsert(booking))
-      return {
-        school: bundle.school,
-        branches: bundle.branches.filter((branch) => branch.isActive),
-        instructors: bundle.instructors.filter((instructor) => instructor.isActive),
-        slots: bundle.slots,
+  if (isSupabaseConfigured()) {
+    try {
+      const bundle = await withTimeout(getPublicSchoolBundle(slug), PUBLIC_DATA_TIMEOUT_MS)
+      if (bundle) {
+        db.schools.upsert(bundle.school)
+        bundle.branches.forEach((branch) => db.branches.upsert(branch))
+        bundle.instructors.forEach((instructor) => db.instructors.upsert(instructor))
+        bundle.slots.forEach((slot) => db.slots.upsert(slot))
+        bundle.students.forEach((student) => db.students.upsert(student))
+        bundle.bookings.forEach((booking) => db.bookings.upsert(booking))
+        return {
+          school: bundle.school,
+          branches: bundle.branches.filter((branch) => branch.isActive),
+          instructors: bundle.instructors.filter((instructor) => instructor.isActive),
+          slots: bundle.slots,
+        }
       }
+    } catch {
+      // Local demo data remains the fallback when Supabase is unavailable or slow.
     }
-  } catch {
-    // Local demo data remains the fallback when the network is unavailable.
   }
 
   const localSchool = db.schools.bySlug(slug)

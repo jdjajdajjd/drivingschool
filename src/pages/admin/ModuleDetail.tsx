@@ -72,7 +72,7 @@ export function AdminModuleDetail() {
     <div className="max-w-5xl p-6 md:p-8">
       <button
         onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}
-        className="mb-4 inline-flex items-center gap-2 text-sm text-product-muted transition hover:text-product-main"
+        className="mb-4 inline-flex items-center gap-2 text-sm #9EA3A8 transition hover:#111418"
       >
         <ArrowLeft size={15} />
         Назад к каталогу
@@ -91,8 +91,8 @@ export function AdminModuleDetail() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <Section title="Что даёт модуль" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
-          <div className="flex items-start gap-4 rounded-[24px] border border-product-border bg-product-alt px-5 py-5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-product-primary shadow-soft">
+          <div className="flex items-start gap-4 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-5 py-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white #C97F10 shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
               <Icon size={20} />
             </div>
             <div>
@@ -102,14 +102,14 @@ export function AdminModuleDetail() {
                 </Badge>
                 {module.isRecommended ? <Badge variant="outline">Рекомендуем</Badge> : null}
               </div>
-              <p className="mt-3 text-lg font-semibold text-product-main">{priceLabel}</p>
-              {module.usageNote ? <p className="mt-1 text-sm text-product-muted">{module.usageNote}</p> : null}
+              <p className="mt-3 text-lg font-semibold #111418">{priceLabel}</p>
+              {module.usageNote ? <p className="mt-1 text-sm #9EA3A8">{module.usageNote}</p> : null}
             </div>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {module.features.map((feature) => (
-              <div key={feature} className="rounded-2xl border border-product-border bg-white px-4 py-3 text-sm text-product-secondary">
+              <div key={feature} className="rounded-2xl border rgba(0,0,0,0.06) bg-white px-4 py-3 text-sm #6F747A">
                 {feature}
               </div>
             ))}
@@ -118,19 +118,19 @@ export function AdminModuleDetail() {
 
         <Section title="Статус" description="Как модуль учитывается в стоимости школы.">
           <div className="space-y-3">
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Категория</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{MODULE_CATEGORY_LABELS[module.category]}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Категория</p>
+              <p className="mt-1 text-sm font-semibold #111418">{MODULE_CATEGORY_LABELS[module.category]}</p>
             </div>
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Тип цены</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Тип цены</p>
+              <p className="mt-1 text-sm font-semibold #111418">
                 {module.priceType === 'monthly' ? 'Ежемесячно' : module.priceType === 'one_time' ? 'Разовая услуга' : 'По использованию'}
               </p>
             </div>
-            <div className="rounded-2xl border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Режим</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Режим</p>
+              <p className="mt-1 text-sm font-semibold #111418">
                 {enabled ? 'Уже включён в школу' : 'Можно подключить в один клик'}
               </p>
             </div>

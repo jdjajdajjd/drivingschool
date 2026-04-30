@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
 export interface BottomNavItem {
@@ -9,26 +9,25 @@ export interface BottomNavItem {
   onClick: () => void
 }
 
-export function BottomNav({ items, action }: { items: BottomNavItem[]; action?: ReactNode }) {
+export function BottomNav({ items }: { items: BottomNavItem[] }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-product-border bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 shadow-[0_-10px_32px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-2">
-        {items.map((item) => (
-          <button
-            key={item.key}
-            onClick={item.onClick}
-            className={cn(
-              'flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[11px] font-black transition',
-              item.active ? 'bg-product-primary-soft text-product-primary' : 'text-product-muted hover:bg-product-alt hover:text-product-main',
-            )}
-          >
-            <span className={cn('transition', item.active ? 'text-product-primary' : 'text-product-muted')}>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
+    <nav className="bottom-nav">
+      {items.map((item) => (
+        <button
+          key={item.key}
+          onClick={item.onClick}
+          className={cn(
+            'bottom-nav-item',
+            item.active ? 'active' : '',
+          )}
+        >
+          <span className="relative">
+            {item.icon}
+            {item.active && <span className="bottom-nav-dot" />}
+          </span>
+          <span>{item.label}</span>
+        </button>
+      ))}
     </nav>
   )
 }
-

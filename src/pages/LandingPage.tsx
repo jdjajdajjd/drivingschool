@@ -9,33 +9,29 @@ import {
   UserCog,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '../components/ui/Button'
 import { ADMIN_LOGIN_PATH, SUPERADMIN_LOGIN_PATH } from '../services/accessControl'
 
 const primaryEntrances = [
   {
-    title: 'Войти как ученик',
-    text: 'Профиль ученика, ближайшая запись и запись на занятие.',
+    title: 'Ученик',
+    text: 'Запись на занятие, кабинет ученика, история записей.',
     path: '/school/virazh',
     icon: GraduationCap,
-    tone: 'bg-blue-600 text-white',
-    button: 'Открыть ученика',
+    accent: true,
   },
   {
-    title: 'Войти как администратор',
-    text: 'Записи, ученики, расписание и настройки автошколы.',
+    title: 'Администратор',
+    text: 'Управление записями, расписанием и настройками автошколы.',
     path: ADMIN_LOGIN_PATH,
     icon: UserCog,
-    tone: 'bg-stone-900 text-white',
-    button: 'Открыть админку',
+    accent: false,
   },
   {
-    title: 'Войти как супер-админ',
-    text: 'Управление школами, модулями и общей витриной сервиса.',
+    title: 'Супер-админ',
+    text: 'Управление школами, модулями и витриной сервиса DriveDesk.',
     path: SUPERADMIN_LOGIN_PATH,
     icon: ShieldCheck,
-    tone: 'bg-indigo-600 text-white',
-    button: 'Открыть superadmin',
+    accent: false,
   },
 ]
 
@@ -49,118 +45,162 @@ export function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_30%),linear-gradient(180deg,#f6f7fb_0%,#f2f4f8_100%)] text-stone-900">
-      <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-4 sm:px-6 lg:py-6">
+    <div className="shell">
+      <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-6 sm:px-6">
+        {/* Header */}
         <motion.header
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="flex flex-col gap-3 border-b border-stone-200 pb-4 sm:flex-row sm:items-center sm:justify-between"
+          transition={{ duration: 0.22 }}
+          className="mb-6 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-center sm:justify-between"
+          style={{ borderColor: 'rgba(0,0,0,0.06)' }}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 shadow-soft">
+          <div className="flex items-center gap-3.5">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: '#050607', boxShadow: '0 12px 28px rgba(0,0,0,0.16)' }}
+            >
               <Car size={20} className="text-white" />
             </div>
             <div>
-              <p className="text-lg font-semibold leading-tight">DriveDesk</p>
-              <p className="text-sm text-stone-500">Панель демонстрации продукта</p>
+              <p className="text-[17px] font-extrabold tracking-tight" style={{ color: '#111418' }}>DriveDesk</p>
+              <p className="text-[13px] font-medium" style={{ color: '#9EA3A8' }}>Панель демонстрации продукта</p>
             </div>
           </div>
 
-          <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-sm font-medium text-emerald-800">
+          <div
+            className="inline-flex items-center rounded-full px-4 py-2 text-[13px] font-semibold"
+            style={{ border: '1px solid rgba(0,0,0,0.06)', background: '#F7F8F9', color: '#6F747A' }}
+          >
             Прод: drivingschool-6wy.pages.dev
           </div>
         </motion.header>
 
-        <section className="grid flex-1 gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Hero */}
+        <section className="mb-8">
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, delay: 0.03 }}
-            className="space-y-4"
+            transition={{ duration: 0.3, delay: 0.02 }}
           >
+            <p className="caption mb-3">DriveDesk v2</p>
+            <h1 className="display-lg" style={{ color: '#111418' }}>
+              Быстрый вход
+              <br />
+              в продукт
+            </h1>
+            <p className="body-lg mt-3 max-w-xl" style={{ color: '#6F747A' }}>
+              Рабочие экраны для демонстрации и ежедневной работы автошколы.
+            </p>
+          </motion.div>
+        </section>
+
+        {/* Primary entry cards */}
+        <section className="mb-6 grid gap-4 lg:grid-cols-3">
+          {primaryEntrances.map((item, i) => {
+            const Icon = item.icon
+            return (
+              <motion.button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="card group cursor-pointer p-6 text-left"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.04 + i * 0.06 }}
+                whileHover={{ y: -4 }}
+              >
+                <div
+                  className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl"
+                  style={{ background: item.accent ? '#F6B84D' : '#050607', boxShadow: '0 12px 28px rgba(0,0,0,0.14)' }}
+                >
+                  <Icon size={19} className="text-white" />
+                </div>
+                <h2 className="text-[18px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{item.title}</h2>
+                <p className="body mt-3" style={{ color: '#6F747A' }}>{item.text}</p>
+                <div
+                  className="mt-5 inline-flex items-center gap-2 text-[13px] font-extrabold"
+                  style={{ color: item.accent ? '#F6B84D' : '#111418' }}
+                >
+                  Открыть
+                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </motion.button>
+            )
+          })}
+        </section>
+
+        {/* Quick start banner */}
+        <motion.div
+          className="card mb-6 p-5"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.15 }}
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Быстрый вход в продукт
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">
-                Здесь только рабочие экраны, которые можно открывать на демонстрации и в ежедневной работе.
+              <h2 className="text-[16px] font-extrabold tracking-tight" style={{ color: '#111418' }}>Что показывать первым</h2>
+              <p className="body mt-1.5" style={{ color: '#6F747A' }}>
+                Ученик создаёт запись → запись в админке → админ переносит занятие.
               </p>
             </div>
+            <button
+              onClick={() => navigate('/school/virazh')}
+              className="btn-primary shrink-0 inline-flex items-center gap-2 px-6 py-3 text-[15px]"
+            >
+              Начать с ученика
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </motion.div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
-              {primaryEntrances.map((item) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className="group flex min-h-[188px] flex-col rounded-xl border border-stone-200 bg-white p-4 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-card active:translate-y-0"
+        {/* Quick links */}
+        <motion.aside
+          className="card p-5"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.18 }}
+        >
+          <h2 className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>Быстрые разделы</h2>
+          <p className="body mt-1.5" style={{ color: '#6F747A' }}>
+            Прямые входы без поиска по меню.
+          </p>
+
+          <div className="mt-4 space-y-2.5">
+            {quickLinks.map((item) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className="flex w-full items-center gap-3 p-3.5 transition-all duration-150"
+                  style={{
+                    background: '#F7F8F9',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,20,25,0.08)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = ''
+                    e.currentTarget.style.boxShadow = ''
+                  }}
+                >
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: 'rgba(246,184,77,0.12)', color: '#F6B84D' }}
                   >
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.tone}`}>
-                      <Icon size={20} />
-                    </div>
-                    <h2 className="mt-4 text-lg font-semibold leading-tight">{item.title}</h2>
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-stone-500">{item.text}</p>
-                    <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">
-                      {item.button}
-                      <ArrowRight size={16} className="transition group-hover:translate-x-1" />
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">Что показывать первым</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-stone-500">
-                    Лучший порядок: ученик создаёт запись, запись появляется в админке, админ переносит или завершает занятие.
-                  </p>
-                </div>
-                <Button size="lg" onClick={() => navigate('/school/virazh')}>
-                  Начать с ученика
-                  <ArrowRight size={16} />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.aside
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, delay: 0.08 }}
-            className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft"
-          >
-            <h2 className="text-lg font-semibold">Быстрые разделы</h2>
-            <p className="mt-1 text-sm text-stone-500">
-              Прямые входы в ключевые экраны без поиска по меню.
-            </p>
-
-            <div className="mt-4 space-y-2">
-              {quickLinks.map((item) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3 text-left transition hover:border-stone-200 hover:bg-white"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-blue-700">
-                      <Icon size={18} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-stone-900">{item.label}</p>
-                      <p className="truncate text-xs text-stone-500">{item.path}</p>
-                    </div>
-                    <ArrowRight size={16} className="shrink-0 text-stone-400" />
-                  </button>
-                )
-              })}
-            </div>
-          </motion.aside>
-        </section>
+                    <Icon size={16} />
+                  </div>
+                  <p className="min-w-0 flex-1 text-[14px] font-semibold" style={{ color: '#111418' }}>{item.label}</p>
+                  <ArrowRight size={14} style={{ color: '#9EA3A8' }} />
+                </button>
+              )
+            })}
+          </div>
+        </motion.aside>
       </main>
     </div>
   )

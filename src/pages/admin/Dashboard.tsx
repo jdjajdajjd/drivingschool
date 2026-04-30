@@ -132,16 +132,16 @@ export function AdminDashboard() {
                 >
                   <DataRow className="flex flex-col gap-2.5 md:flex-row md:items-center">
                     <div className="min-w-[150px]">
-                      <p className="text-sm font-bold text-product-main">
+                      <p className="text-sm font-bold #111418">
                         {entry.slot
                           ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMMM, HH:mm', { locale: ru })
                           : 'Время не найдено'}
                       </p>
-                      <p className="text-xs font-medium text-product-secondary">{entry.branch?.name ?? 'Филиал не найден'}</p>
+                      <p className="text-xs font-medium #6F747A">{entry.branch?.name ?? 'Филиал не найден'}</p>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-product-main">{entry.booking.studentName}</p>
-                      <p className="truncate text-sm text-product-secondary">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
+                      <p className="text-sm font-bold #111418">{entry.booking.studentName}</p>
+                      <p className="truncate text-sm #6F747A">{entry.instructor?.name ?? 'Инструктор не найден'}</p>
                     </div>
                     <StatusBadge status={entry.booking.status} />
                   </DataRow>
@@ -153,16 +153,16 @@ export function AdminDashboard() {
 
         <div className="space-y-4">
           <Section title="Мастер запуска" description="Что нужно проверить перед тем, как давать ссылку ученикам.">
-            <div className="mb-3 rounded-xl border border-product-border bg-product-alt/80 px-3.5 py-3.5">
+            <div className="mb-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6/80 px-3.5 py-3.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-bold text-product-main">
+                <p className="text-sm font-bold #111418">
                   Готово {data.launchItems.filter((item) => item.done).length} из {data.launchItems.length}
                 </p>
-                <p className="text-sm font-medium text-product-secondary">Запуск школы</p>
+                <p className="text-sm font-medium #6F747A">Запуск школы</p>
               </div>
               <div className="mt-3 h-2 rounded-full bg-white shadow-inner">
                 <div
-                  className="h-full rounded-full bg-product-primary transition-all"
+                  className="h-full rounded-full bg-accent transition-all"
                   style={{ width: `${(data.launchItems.filter((item) => item.done).length / data.launchItems.length) * 100}%` }}
                 />
               </div>
@@ -173,16 +173,16 @@ export function AdminDashboard() {
                   key={item.label}
                   type="button"
                   onClick={() => item.external ? window.open(item.to, '_blank') : navigate(item.to)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-product-border bg-product-alt/80 px-3.5 py-3 text-left transition hover:border-product-primary-border hover:bg-product-primary-soft/60"
+                  className="flex w-full items-center gap-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6/80 px-3.5 py-3 text-left transition hover:rgba(246,184,77,0.20) hover:rgba(246,184,77,0.12)/60"
                 >
-                   <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${item.done ? 'border-product-primary-border bg-product-primary-soft text-product-primary' : 'border-product-border bg-white text-product-muted'}`}>
+                   <div className={`flex h-9 w-9 items-center justify-center rounded-2xl border ${item.done ? 'rgba(246,184,77,0.20) rgba(246,184,77,0.12) #C97F10' : 'rgba(0,0,0,0.06) bg-white #9EA3A8'}`}>
                     <CheckCircle2 size={19} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-product-main">{item.label}</p>
-                    <p className="mt-0.5 text-sm text-product-secondary">{item.text}</p>
+                    <p className="text-sm font-bold #111418">{item.label}</p>
+                    <p className="mt-0.5 text-sm #6F747A">{item.text}</p>
                   </div>
-                  <ArrowRight size={18} className="shrink-0 text-product-muted" />
+                  <ArrowRight size={18} className="shrink- #9EA3A8" />
                 </button>
               ))}
             </div>
@@ -193,8 +193,8 @@ export function AdminDashboard() {
           </Section>
 
           <Section title="Ссылка для учеников" description="Эту ссылку можно отправить в мессенджер или поставить на сайт школы.">
-            <div className="rounded-xl bg-product-alt px-3.5 py-3.5">
-              <p className="break-all text-sm font-semibold text-product-main">{publicUrl}</p>
+            <div className="rounded-2xl #F4F5F6 px-3.5 py-3.5">
+              <p className="break-all text-sm font-semibold #111418">{publicUrl}</p>
             </div>
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
               <Button variant="secondary" onClick={() => void copyPublicLink()}>
@@ -211,11 +211,11 @@ export function AdminDashboard() {
           <Section title="Филиалы" description="Короткая проверка, что ученику понятно куда ехать.">
             <div className="space-y-2.5">
               {data.branches.map((branch) => (
-                <div key={branch.id} className="flex gap-3 rounded-2xl border border-product-border bg-product-alt/80 px-3.5 py-3.5">
-                  <MapPin size={19} className="mt-0.5 shrink-0 text-product-muted" />
+                <div key={branch.id} className="flex gap-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6/80 px-3.5 py-3.5">
+                  <MapPin size={19} className="mt-0.5 shrink- #9EA3A8" />
                   <div>
-                    <p className="text-sm font-semibold text-product-main">{branch.name}</p>
-                    <p className="mt-1 text-sm text-product-muted">{branch.address}</p>
+                    <p className="text-sm font-semibold #111418">{branch.name}</p>
+                    <p className="mt-1 text-sm #9EA3A8">{branch.address}</p>
                   </div>
                 </div>
               ))}

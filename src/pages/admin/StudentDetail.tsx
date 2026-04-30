@@ -68,7 +68,7 @@ export function AdminStudentDetail() {
     <div className="max-w-7xl p-4 md:p-6">
       <button
         onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}
-        className="mb-4 inline-flex items-center gap-2 text-sm text-product-muted transition hover:text-product-main"
+        className="mb-4 inline-flex items-center gap-2 text-sm #9EA3A8 transition hover:#111418"
       >
         <ArrowLeft size={16} />
         Назад к ученикам
@@ -90,21 +90,21 @@ export function AdminStudentDetail() {
       <div className="mt-8 space-y-6">
         <Section title="Профиль ученика" description="Основные данные и лимиты по бронированию.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Телефон</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{formatPhone(student.normalizedPhone)}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Телефон</p>
+              <p className="mt-1 text-sm font-semibold #111418">{formatPhone(student.normalizedPhone)}</p>
             </div>
-            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Normalized phone</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{student.normalizedPhone}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Normalized phone</p>
+              <p className="mt-1 text-sm font-semibold #111418">{student.normalizedPhone}</p>
             </div>
-            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Будущих активных</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{stats.activeFutureBookings}</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Будущих активных</p>
+              <p className="mt-1 text-sm font-semibold #111418">{stats.activeFutureBookings}</p>
             </div>
-            <div className="rounded-[24px] border border-product-border bg-product-alt px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Отменял</p>
-              <p className="mt-1 text-sm font-semibold text-product-main">{stats.cancellationsCount} раз</p>
+            <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Отменял</p>
+              <p className="mt-1 text-sm font-semibold #111418">{stats.cancellationsCount} раз</p>
             </div>
           </div>
         </Section>
@@ -115,26 +115,26 @@ export function AdminStudentDetail() {
           ) : (
             <div className="space-y-4">
               {history.map((entry) => (
-                <div key={entry.booking.id} className="rounded-[24px] border border-product-border bg-white p-4 shadow-soft">
+                <div key={entry.booking.id} className="rounded-2xl border rgba(0,0,0,0.06) bg-white p-4 shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Дата и время</p>
-                        <p className="mt-1 text-sm font-semibold text-product-main">
+                        <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Дата и время</p>
+                        <p className="mt-1 text-sm font-semibold #111418">
                           {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Филиал</p>
-                        <p className="mt-1 text-sm font-semibold text-product-main">{entry.branch?.name ?? 'Не найдено'}</p>
+                        <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Филиал</p>
+                        <p className="mt-1 text-sm font-semibold #111418">{entry.branch?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Инструктор</p>
-                        <p className="mt-1 text-sm font-semibold text-product-main">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
-                        <p className="text-sm text-product-muted">{entry.instructor?.car ?? 'Без машины'}</p>
+                        <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Инструктор</p>
+                        <p className="mt-1 text-sm font-semibold #111418">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
+                        <p className="text-sm #9EA3A8">{entry.instructor?.car ?? 'Без машины'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-product-muted">Статус</p>
+                        <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Статус</p>
                         <div className="mt-1">
                           <StatusBadge status={entry.booking.status} />
                         </div>
@@ -168,7 +168,7 @@ export function AdminStudentDetail() {
                     <div className="mt-3">
                       <Link
                         to={`${ADMIN_BASE_PATH}/bookings`}
-                        className="inline-flex items-center gap-2 text-sm text-product-primary transition hover:text-product-primary"
+                        className="inline-flex items-center gap-2 text-sm #C97F10 transition hover:#C97F10"
                       >
                         <RotateCcw size={15} />
                         Перейти к переносу в разделе записей

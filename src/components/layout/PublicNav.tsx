@@ -12,15 +12,15 @@ export function PublicNav({ transparent = false }: PublicNavProps) {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-40 transition-colors ${
-        transparent ? 'bg-transparent' : 'border-b border-product-border bg-white/95 backdrop-blur-xl'
+        transparent ? 'bg-transparent' : 'border-b rgba(0,0,0,0.06) bg-white/95 backdrop-blur-xl'
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-product-primary shadow-soft">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
             <Car size={18} className="text-white" />
           </div>
-          <span className="text-base font-semibold text-product-main">DriveDesk</span>
+          <span className="text-base font-semibold #111418">DriveDesk</span>
         </Link>
 
         <Button

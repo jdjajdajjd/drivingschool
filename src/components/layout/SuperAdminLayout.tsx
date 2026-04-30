@@ -16,28 +16,28 @@ export function SuperAdminLayout() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="ui-shell">
+    <div className="shell">
       <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-product-border bg-white/92 px-4 py-3 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b rgba(0,0,0,0.06) bg-white/92 px-4 py-3 backdrop-blur-xl">
           <button
             onClick={() => setOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-product-border bg-white text-product-secondary shadow-soft"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border rgba(0,0,0,0.06) bg-white #6F747A shadow-[0_20px_60px_rgba(15,20,25,0.08)]"
             aria-label="Открыть меню"
           >
             <Menu size={18} />
           </button>
           <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-product-primary shadow-soft">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
               <Car size={16} className="text-white" />
             </div>
-            <span className="text-sm font-bold text-product-main">DriveDesk</span>
+            <span className="text-sm font-bold #111418">DriveDesk</span>
           </button>
         </header>
       </div>
 
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-product-main/20 backdrop-blur-sm transition-opacity md:hidden',
+          'fixed inset-0 z-30 bg-warm-main/20 backdrop-blur-sm transition-opacity md:hidden',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={() => setOpen(false)}
@@ -45,18 +45,18 @@ export function SuperAdminLayout() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-product-border bg-white/95 shadow-card backdrop-blur-xl transition-transform duration-200 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r rgba(0,0,0,0.06) bg-white/95  backdrop-blur-xl transition-transform duration-200 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="border-b border-product-border px-5 py-5">
+        <div className="border-b rgba(0,0,0,0.06) px-5 py-5">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-product-primary shadow-soft">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
               <Car size={18} className="text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold text-product-main">DriveDesk</p>
-              <p className="text-xs font-medium text-product-muted">Superadmin</p>
+              <p className="text-sm font-bold #111418">DriveDesk</p>
+              <p className="text-xs font-medium #9EA3A8">Superadmin</p>
             </div>
           </button>
         </div>
@@ -70,25 +70,25 @@ export function SuperAdminLayout() {
               className={({ isActive }) =>
                 cn(
                   'flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-colors',
-                  isActive ? 'bg-product-primary-soft text-product-primary shadow-soft' : 'text-product-secondary hover:bg-product-alt hover:text-product-main',
+                  isActive ? 'rgba(246,184,77,0.12) #C97F10 shadow-[0_20px_60px_rgba(15,20,25,0.08)]' : '#6F747A hover:#F4F5F6 hover:#111418',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? 'text-product-primary' : 'text-product-muted'} />
+                  <Icon size={16} className={isActive ? '#C97F10' : '#9EA3A8'} />
                   <span>{label}</span>
                 </>
               )}
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-product-border px-3 py-4">
+        <div className="border-t rgba(0,0,0,0.06) px-3 py-4">
           <button
             onClick={() => navigate(ADMIN_BASE_PATH)}
-            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold text-product-secondary transition hover:bg-product-alt hover:text-product-main"
+            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold #6F747A transition hover:#F4F5F6 hover:#111418"
           >
-            <Building2 size={15} className="text-product-muted" />
+            <Building2 size={15} className="#9EA3A8" />
             Открыть админку школы
           </button>
           <button
@@ -96,7 +96,7 @@ export function SuperAdminLayout() {
               clearAccess('superadmin')
               navigate('/')
             }}
-            className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-product-error transition hover:bg-product-error-soft"
+            className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm #E5534B transition hover:#FEF2F2"
           >
             <LogOut size={15} />
             Выйти из суперадминки

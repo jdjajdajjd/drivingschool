@@ -25,14 +25,14 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
-      <div className="space-y-6 px-6 pb-6 pt-2">
-        <div className={`flex items-start gap-4 rounded-[22px] border px-4 py-4 ${danger ? 'border-product-error-soft bg-product-error-soft/60' : 'border-transparent bg-product-warning-soft'}`}>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-soft">
-            <AlertTriangle size={18} className={danger ? 'text-product-error' : 'text-product-warning'} />
+      <div className="space-y-5 px-5 pb-5 pt-2">
+        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${danger ? 'rgba(229,83,75,0.15) #FEF2F2' : 'rgba(180,83,9,0.15) #FFFBEB'}`}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl white ">
+            <AlertTriangle size={16} className={danger ? '#E5534B' : '#B45309'} />
           </div>
-          <p className="text-sm leading-relaxed text-product-secondary">{description}</p>
+          <p className="text-[14px] leading-relaxed #6F747A">{description}</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Button variant={danger ? 'danger' : 'primary'} className="flex-1" onClick={onConfirm}>
             {confirmLabel}
           </Button>

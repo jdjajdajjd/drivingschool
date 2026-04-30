@@ -15,7 +15,14 @@ export function SegmentedTabs<T extends string>({
   onChange: (value: T) => void
 }) {
   return (
-    <div className="grid rounded-2xl border border-product-border bg-product-alt p-1" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+    <div
+      className="grid gap-1 p-1"
+      style={{
+        background: '#F4F5F6',
+        borderRadius: '999px',
+        gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+      }}
+    >
       {tabs.map((tab) => {
         const active = tab.value === value
         return (
@@ -24,8 +31,10 @@ export function SegmentedTabs<T extends string>({
             type="button"
             onClick={() => onChange(tab.value)}
             className={cn(
-              'min-h-11 rounded-xl px-3 text-sm font-semibold transition',
-              active ? 'bg-white text-product-main shadow-soft' : 'text-product-secondary hover:text-product-main',
+              'min-h-9 rounded-full px-4 text-[13px] font-bold transition-all duration-150 active:scale-[0.97]',
+              active
+                ? 'bg-white text-[#111418] shadow-[0_8px_20px_rgba(0,0,0,0.08)]'
+                : 'text-[#6F747A] hover:text-[#111418]',
             )}
           >
             {tab.label}

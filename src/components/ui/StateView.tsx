@@ -21,28 +21,49 @@ const iconByKind: Record<StateKind, ReactNode> = {
   locked: <ShieldAlert size={22} />,
 }
 
-const toneByKind: Record<StateKind, string> = {
-  empty: 'text-product-muted bg-white',
-  'no-results': 'text-product-muted bg-white',
-  loading: 'text-product-primary bg-product-primary-soft',
-  error: 'text-red-700 bg-red-50',
-  success: 'text-emerald-700 bg-emerald-50',
-  locked: 'text-amber-700 bg-amber-50',
+const toneByKind: Record<StateKind, { bg: string; color: string }> = {
+  empty: { bg: '#F4F5F6', color: '#9EA3A8' },
+  'no-results': { bg: '#F4F5F6', color: '#9EA3A8' },
+  loading: { bg: 'rgba(246,184,77,0.12)', color: '#C97F10' },
+  error: { bg: '#FEF2F2', color: '#E5534B' },
+  success: { bg: '#F0FDF4', color: '#15803D' },
+  locked: { bg: '#FFFBEB', color: '#B45309' },
 }
 
 export function StateView({ kind = 'empty', title, description, action, className }: StateViewProps) {
+  const tone = toneByKind[kind]
   return (
-    <div className={cn('rounded-2xl border border-dashed border-product-border bg-product-alt px-5 py-9 text-center', className)}>
-      <div className={cn('mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm', toneByKind[kind])}>
+    <div
+      className={cn('text-center', className)}
+      style={{
+        borderRadius: '24px',
+        border: '1px dashed rgba(0,0,0,0.08)',
+        background: '#F7F8F9',
+        padding: '2.5rem 1.5rem',
+      }}
+    >
+      <div
+        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+        style={{ background: tone.bg, color: tone.color, boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
+      >
         {iconByKind[kind]}
       </div>
-      <p className="text-lg font-black text-ink-900">{title}</p>
-      {description ? <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-product-secondary">{description}</p> : null}
-      {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
+      <p className="text-[17px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</p>
+      {description ? (
+        <p className="body mx-auto mt-2 max-w-md" style={{ color: '#6F747A' }}>
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   )
 }
 
 export function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-2xl bg-product-border', className)} />
+  return (
+    <div
+      className={cn('animate-pulse', className)}
+      style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '16px' }}
+    />
+  )
 }

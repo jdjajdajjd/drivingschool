@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CalendarDays, LogIn, ShieldCheck } from 'lucide-react'
+import { Bus, CalendarDays, Car, Clock3, LogIn, ShieldCheck, Truck } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { BottomNav } from '../components/ui/BottomNav'
-import { SegmentedTabs } from '../components/ui/SegmentedTabs'
 import { StateView } from '../components/ui/StateView'
 import { BranchCompactCard, InstructorCompactCard } from '../components/product/CompactCards'
 import { getTenantTheme } from '../services/tenantTheme'
@@ -11,13 +10,17 @@ import { getFutureAvailableSlots, loadPublicSchoolData } from '../services/publi
 import { DRIVING_CATEGORIES } from '../services/drivingCategories'
 import { loadStudentProfile } from '../services/studentProfile'
 import type { Branch, Instructor, School, Slot } from '../types'
-import { formatDate, formatDayOfWeek } from '../utils/date'
+import { formatInstructorName } from '../lib/utils'
+import { formatHumanDate, formatTimeRange, getRelativeLessonLabel } from '../utils/date'
 
-type Tab = 'instructors' | 'branches' | 'categories'
+type Section = 'instructors' | 'branches' | 'categories' | 'schedule'
 
 function Logo({ school, color }: { school: School; color: string }) {
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[16px] text-base font-bold text-white shadow-soft" style={{ backgroundColor: color }}>
+    <div
+      className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-sm font-extrabold text-white"
+      style={{ background: color, boxShadow: '0 12px 28px rgba(0,0,0,0.16)' }}
+    >
       {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : school.name.slice(0, 2).toUpperCase()}
     </div>
   )
@@ -29,6 +32,18 @@ function getVisibleCategories(school: School, instructors: Instructor[]) {
   return DRIVING_CATEGORIES.filter((category) => configured.has(category.code) && supported.has(category.code))
 }
 
+function CategoryIcon({ code }: { code: string }) {
+  const Icon = code === 'C' ? Truck : code === 'D' ? Bus : Car
+  return <Icon size={20} />
+}
+
+const SECTIONS: { key: Section; label: string }[] = [
+  { key: 'instructors', label: 'Инструкторы' },
+  { key: 'branches', label: 'Филиалы' },
+  { key: 'categories', label: 'Категории' },
+  { key: 'schedule', label: 'Расписание' },
+]
+
 export function SchoolPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
@@ -36,7 +51,7 @@ export function SchoolPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [instructors, setInstructors] = useState<Instructor[]>([])
   const [slots, setSlots] = useState<Slot[]>([])
-  const [tab, setTab] = useState<Tab>('instructors')
+  const [section, setSection] = useState<Section>('instructors')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -60,119 +75,281 @@ export function SchoolPage() {
   const profile = school ? loadStudentProfile(school.id) : null
   const categories = school ? getVisibleCategories(school, instructors) : []
 
-  if (loading) {
-    return <div className="ui-shell" />
-  }
-
+  if (loading) return <div className="shell" />
   if (!school || !theme) {
     return (
-      <div className="ui-shell flex min-h-screen items-center justify-center px-4">
+      <div className="shell flex min-h-screen items-center justify-center px-4">
         <StateView kind="error" title="Автошкола не найдена" description="Проверьте ссылку или откройте демо-страницу." action={<Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>} />
       </div>
     )
   }
 
   const brandColor = theme.brandColors.primary
-  const instructorCards = instructors.slice(0, 12).map((instructor) => ({
+  const instructorCards = instructors.slice(0, 8).map((instructor) => ({
     instructor,
     branch: branches.find((branch) => branch.id === instructor.branchId) ?? null,
     nextSlot: futureSlots.find((slot) => slot.instructorId === instructor.id) ?? null,
   }))
 
   return (
-    <div className="ui-shell">
-      <main className="mx-auto max-w-3xl px-4 pb-28 pt-4">
-        <section className="rounded-[20px] border border-product-border bg-white p-4 shadow-soft">
-          <div className="flex items-start gap-3">
-            <Logo school={school} color={brandColor} />
+    <div className="shell">
+      <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-4 pb-28 pt-4">
+
+        {/* Header */}
+        <header className="flex items-center gap-3.5">
+          <Logo school={school} color={brandColor} />
+          <div className="min-w-0 flex-1">
+            <p className="caption">Онлайн-запись на вождение</p>
+            <h1
+              className="truncate font-extrabold tracking-tight text-[#111418]"
+              style={{ fontSize: '18px', lineHeight: '1.3' }}
+            >
+              {school.name}
+            </h1>
+          </div>
+        </header>
+
+        {/* Hero CTA Card */}
+        <section
+          className="card mt-4 p-5"
+          style={{ borderRadius: '24px' }}
+        >
+          <div className="flex items-start gap-3.5">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+            >
+              <Car size={24} />
+            </div>
             <div className="min-w-0 flex-1">
-              <p className="ui-kicker">Автошкола</p>
-              <h1 className="ui-h1 mt-1">{school.name}</h1>
-              <p className="mt-2 text-base leading-[22px] text-product-secondary">{school.description || 'Запись на практические занятия без звонков и лишних шагов.'}</p>
+              <h2 className="font-extrabold tracking-tight text-[#111418]" style={{ fontSize: '22px', lineHeight: '1.2' }}>
+                Запись без звонков
+              </h2>
+              <p className="body mt-2" style={{ color: '#6F747A' }}>
+                {school.description || 'Выберите инструктора и удобное время за пару минут.'}
+              </p>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 text-[13px] font-semibold text-product-secondary">
-            <span className="rounded-xl bg-product-alt px-3 py-2">с 2008 года</span>
-            <span className="rounded-xl bg-product-alt px-3 py-2">{branches.length} филиала</span>
-            <span className="rounded-xl bg-product-alt px-3 py-2">{instructors.length} инструкторов</span>
-          </div>
-
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <Button onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться</Button>
-            <Button variant="secondary" onClick={() => setTab('instructors')}>
-              <CalendarDays size={18} />
-              Расписание
-            </Button>
-          </div>
-        </section>
-
-        <section className="mt-3 rounded-[20px] border border-product-border bg-white p-4 shadow-soft">
-          <p className="ui-section-title">Ближайшее свободное окно</p>
-          {nearestSlot ? (
-            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div>
-                <p className="font-display text-[28px] font-bold leading-[34px] text-product-main">{nearestSlot.time}</p>
-                <p className="mt-1 text-sm font-semibold text-product-secondary">{formatDayOfWeek(nearestSlot.date)}, {formatDate(nearestSlot.date)}</p>
-                <p className="mt-2 text-sm text-product-secondary">{nearestInstructor?.name ?? 'Инструктор'} · {nearestBranch?.name ?? 'Филиал'}</p>
+          <div className="mt-5 grid grid-cols-3 gap-2.5">
+            {[
+              { label: 'работаем', value: 'с 2008' },
+              { label: 'филиалы', value: String(branches.length) },
+              { label: 'инстр.', value: String(instructors.length) },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl px-3.5 py-3"
+                style={{ background: '#F4F5F6' }}
+              >
+                <p className="caption" style={{ fontSize: '10px' }}>{stat.label}</p>
+                <p className="font-extrabold tracking-tight text-[#111418]" style={{ fontSize: '16px', marginTop: '2px' }}>
+                  {stat.value}
+                </p>
               </div>
-              <Button onClick={() => navigate(`/school/${school.slug}/book?slot=${nearestSlot.id}`)}>Выбрать</Button>
-            </div>
-          ) : (
-            <p className="mt-2 text-base text-product-secondary">Свободных окон пока нет. Проверьте расписание позже.</p>
-          )}
+            ))}
+          </div>
+
+          <div className="mt-5 space-y-2.5">
+            <button
+              className="btn-primary w-full py-3.5 text-[15px]"
+              style={{ height: 'auto', display: 'flex' }}
+              onClick={() => navigate(`/school/${school.slug}/book`)}
+            >
+              Записаться
+            </button>
+            <button
+              className="btn-secondary w-full inline-flex items-center justify-center gap-2 py-3.5 text-[15px]"
+              style={{ height: 'auto' }}
+              onClick={() => setSection('schedule')}
+            >
+              <CalendarDays size={16} />
+              Ближайшие окна
+            </button>
+          </div>
         </section>
 
-        <div className="mt-3">
-          <SegmentedTabs
-            value={tab}
-            onChange={setTab}
-            tabs={[
-              { value: 'instructors', label: 'Инструкторы' },
-              { value: 'branches', label: 'Филиалы' },
-              { value: 'categories', label: 'Категории' },
-            ]}
-          />
-        </div>
+        {/* Next slot quick card */}
+        <section
+          className="card mt-3 p-5"
+          style={{ borderRadius: '24px' }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="caption">Ближайшее окно</p>
+              {nearestSlot ? (
+                <>
+                  <p
+                    className="mt-2 font-extrabold tracking-tight text-[#111418]"
+                    style={{ fontSize: '24px', lineHeight: '1.2' }}
+                  >
+                    {formatTimeRange(nearestSlot)}
+                  </p>
+                  <p className="body mt-1" style={{ color: '#6F747A', fontSize: '13px' }}>
+                    {getRelativeLessonLabel(nearestSlot)} · {formatHumanDate(nearestSlot.date, false)}
+                  </p>
+                </>
+              ) : (
+                <p className="body mt-2" style={{ color: '#6F747A', fontSize: '14px' }}>
+                  Свободных окон пока нет
+                </p>
+              )}
+            </div>
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: '#F0FDF4', color: '#15803D' }}
+            >
+              <Clock3 size={18} />
+            </div>
+          </div>
+          {nearestSlot ? (
+            <div
+              className="mt-3.5 rounded-2xl p-3.5"
+              style={{ background: '#F4F5F6' }}
+            >
+              <p className="text-[13px] font-semibold text-[#111418]">
+                {nearestInstructor ? formatInstructorName(nearestInstructor.name) : 'Инструктор'} · {nearestBranch?.name ?? 'Филиал'}
+              </p>
+            </div>
+          ) : null}
+          <button
+            className="btn-primary mt-3 w-full py-3 text-[15px]"
+            style={{ height: 'auto' }}
+            onClick={() => nearestSlot ? navigate(`/school/${school.slug}/book?slot=${nearestSlot.id}`) : navigate(`/school/${school.slug}/book`)}
+          >
+            Выбрать
+          </button>
+        </section>
 
-        <section className="mt-3 space-y-2">
-          {tab === 'instructors' && instructorCards.map(({ instructor, branch, nextSlot }) => (
-            <InstructorCompactCard
-              key={instructor.id}
-              instructor={instructor}
-              branch={branch}
-              nextSlot={nextSlot}
-              onSelect={() => navigate(`/school/${school.slug}/book?instructor=${instructor.id}`)}
-            />
-          ))}
+        {/* Tab navigation */}
+        <nav
+          className="mt-4 flex items-center gap-1 overflow-x-auto"
+          style={{ borderBottom: '2px solid rgba(0,0,0,0.06)' }}
+        >
+          {SECTIONS.map(({ key, label }) => {
+            const active = section === key
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSection(key)}
+                className="shrink-0 px-4 pb-3 text-[14px] font-bold transition-all duration-150"
+                style={{
+                  color: active ? '#F6B84D' : '#6F747A',
+                  borderBottom: active ? '2px solid #F6B84D' : '2px solid transparent',
+                  marginBottom: '-2px',
+                }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </nav>
 
-          {tab === 'branches' && branches.map((branch) => (
-            <BranchCompactCard key={branch.id} branch={branch} onSelect={() => navigate(`/school/${school.slug}/book?branch=${branch.id}`)} />
-          ))}
+        {/* Tab content */}
+        <section className="mt-4 space-y-3">
+          {section === 'instructors' ? (
+            instructorCards.map(({ instructor, branch, nextSlot }) => (
+              <InstructorCompactCard
+                key={instructor.id}
+                instructor={instructor}
+                branch={branch}
+                nextSlot={nextSlot}
+                onSelect={() => navigate(`/school/${school.slug}/book?instructor=${instructor.id}`)}
+              />
+            ))
+          ) : null}
 
-          {tab === 'categories' && (
-            <div className="grid grid-cols-2 gap-2">
+          {section === 'branches' ? (
+            branches.map((branch) => (
+              <BranchCompactCard key={branch.id} branch={branch} onSelect={() => navigate(`/school/${school.slug}/book?branch=${branch.id}`)} />
+            ))
+          ) : null}
+
+          {section === 'categories' ? (
+            <div className="grid grid-cols-1 gap-2.5">
               {categories.map((category) => (
                 <button
                   key={category.code}
                   onClick={() => navigate(`/school/${school.slug}/book?category=${category.code}`)}
-                  className="min-h-[92px] rounded-[20px] border border-product-border bg-white p-4 text-left shadow-soft transition hover:border-product-primary/35"
+                  className="flex items-center gap-3.5 p-4 text-left transition-all hover:-translate-y-1"
+                  style={{
+                    background: 'white',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    borderRadius: '24px',
+                    boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+                  }}
                 >
-                  <span className="block font-display text-[32px] font-bold leading-[38px] text-product-main">{category.code}</span>
-                  <span className="mt-1 block text-sm font-medium leading-[18px] text-product-secondary">{category.title}</span>
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                    style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+                  >
+                    <CategoryIcon code={category.code} />
+                  </div>
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className="block font-extrabold tracking-tight text-[#111418]"
+                      style={{ fontSize: '16px', lineHeight: '1.3' }}
+                    >
+                      Категория {category.code}
+                    </span>
+                    <span className="mt-0.5 block text-[13px] font-medium" style={{ color: '#6F747A' }}>
+                      {category.title}
+                    </span>
+                  </span>
                 </button>
               ))}
               {categories.length === 0 ? <StateView title="Категории пока не настроены" /> : null}
             </div>
-          )}
+          ) : null}
+
+          {section === 'schedule' ? (
+            <div className="space-y-2.5">
+              {futureSlots.slice(0, 8).map((slot) => {
+                const instructor = instructors.find((item) => item.id === slot.instructorId) ?? null
+                const branch = branches.find((item) => item.id === slot.branchId) ?? null
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => navigate(`/school/${school.slug}/book?slot=${slot.id}`)}
+                    className="flex w-full items-center gap-3.5 p-4 text-left transition-all hover:-translate-y-1"
+                    style={{
+                      background: 'white',
+                      border: '1px solid rgba(0,0,0,0.06)',
+                      borderRadius: '24px',
+                      boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+                    }}
+                  >
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                      style={{ background: '#F0FDF4', color: '#15803D' }}
+                    >
+                      <CalendarDays size={18} />
+                    </div>
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className="block font-extrabold tracking-tight text-[#111418]"
+                        style={{ fontSize: '15px', lineHeight: '1.3' }}
+                      >
+                        {getRelativeLessonLabel(slot)}, {formatTimeRange(slot)}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
+                        {instructor ? formatInstructorName(instructor.name) : 'Инструктор'} · {branch?.name ?? 'Филиал'}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
         </section>
       </main>
 
       <BottomNav
         items={[
           { key: 'home', label: 'Главная', icon: <ShieldCheck size={20} />, active: true, onClick: () => undefined },
-          { key: 'schedule', label: 'Расписание', icon: <CalendarDays size={20} />, onClick: () => setTab('instructors') },
-          { key: 'profile', label: profile ? 'Профиль' : 'Войти', icon: <LogIn size={20} />, onClick: () => navigate('/student') },
+          { key: 'schedule', label: 'Окна', icon: <CalendarDays size={20} />, onClick: () => setSection('schedule') },
+          { key: 'profile', label: profile ? 'Кабинет' : 'Войти', icon: <LogIn size={20} />, onClick: () => navigate('/student') },
         ]}
       />
     </div>

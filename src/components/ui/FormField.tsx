@@ -10,10 +10,10 @@ interface FormFieldProps {
 export function FormField({ label, helperText, error, children }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-product-secondary">{label}</label>
+      <label className="text-[13px] font-semibold #6F747A">{label}</label>
       {children}
-      {error ? <p className="text-xs font-medium text-product-error">{error}</p> : null}
-      {!error && helperText ? <p className="text-xs text-product-muted">{helperText}</p> : null}
+      {error ? <p className="text-[12px] font-medium #E5534B">{error}</p> : null}
+      {!error && helperText ? <p className="text-[12px] #9EA3A8">{helperText}</p> : null}
     </div>
   )
 }

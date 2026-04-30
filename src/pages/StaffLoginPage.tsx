@@ -48,7 +48,7 @@ export function StaffLoginPage({ role }: StaffLoginPageProps) {
       <main className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center">
         <form onSubmit={submit} className="w-full rounded-[1.75rem] border border-stone-200 bg-white p-6 shadow-card">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-950 text-white shadow-soft">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-stone-950 text-white shadow-soft">
               {role === 'admin' ? <LockKeyhole size={24} /> : <ShieldCheck size={24} />}
             </div>
             <div>

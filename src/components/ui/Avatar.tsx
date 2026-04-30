@@ -9,22 +9,26 @@ interface AvatarProps {
   className?: string
 }
 
-export function Avatar({ initials, color = '#2A6E4C', src, alt = initials, size = 'md', className }: AvatarProps) {
+export function Avatar({ initials, color = '#FFF7ED', src, alt = initials, size = 'md', className }: AvatarProps) {
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-sans font-medium text-white shrink-0 overflow-hidden',
+        'rounded-full flex items-center justify-center font-sans font-semibold shrink-0 overflow-hidden border rgba(0,0,0,0.06)',
         {
-          sm: 'w-8 h-8 text-xs',
+          sm: 'w-8 h-8 text-[11px]',
           md: 'w-10 h-10 text-sm',
           lg: 'w-12 h-12 text-base',
           xl: 'w-16 h-16 text-xl',
         }[size],
         className,
       )}
-      style={{ backgroundColor: color }}
+      style={src ? {} : { backgroundColor: color }}
     >
-      {src ? <img src={src} alt={alt} className="h-full w-full object-cover" /> : initials}
+      {src ? <img src={src} alt={alt} className="h-full w-full object-cover" /> : (
+        <span className={src ? '' : '#C97F10 font-bold'}>
+          {initials}
+        </span>
+      )}
     </div>
   )
 }

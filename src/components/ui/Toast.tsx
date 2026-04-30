@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div
-        className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 items-end pointer-events-none"
+        className="pointer-events-none fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-2"
         aria-live="polite"
         aria-label="Уведомления"
       >
@@ -51,30 +51,30 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <motion.div
               key={toast.id}
               layout
-              initial={{ opacity: 0, y: 16, scale: 0.96, filter: 'blur(4px)' }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              initial={{ opacity: 0, y: 12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.94, y: 8 }}
-              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                'flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl text-sm font-medium pointer-events-auto min-w-[260px] max-w-[400px]',
-                toast.type === 'success' && 'bg-product-main text-white shadow-modal',
-                toast.type === 'error' && 'bg-red-600 text-white shadow-modal',
-                toast.type === 'info' && 'bg-product-secondary text-white shadow-modal',
+                'pointer-events-auto flex min-w-[260px] max-w-[380px] items-center gap-3 rounded-2xl border px-4 py-3 text-[14px] font-medium shadow-[0_8px_24px_rgba(15,20,25,0.12)]',
+                toast.type === 'success' && 'rgba(0,0,0,0.06) bg-warm-main text-white',
+                toast.type === 'error' && 'rgba(229,83,75,0.15) bg-error text-white',
+                toast.type === 'info' && 'border-info-border bg-info text-white',
               )}
             >
               {toast.type === 'success' && (
-                <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                <CheckCircle2 size={15} className="shrink-0 text-green-400" />
               )}
               {toast.type === 'error' && (
-                <XCircle size={15} className="text-red-200 shrink-0" />
+                <XCircle size={15} className="shrink-0 text-red-200" />
               )}
               {toast.type === 'info' && (
-                <Info size={15} className="text-white/70 shrink-0" />
+                <Info size={15} className="shrink-0 text-blue-200" />
               )}
               <span className="flex-1 leading-snug">{toast.message}</span>
               <button
                 onClick={() => dismiss(toast.id)}
-                className="ml-1 p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                className="ml-1 shrink-0 rounded-xl p-1 text-white/40 transition-colors hover:text-white hover:bg-white/10"
                 aria-label="Закрыть"
               >
                 <X size={12} />

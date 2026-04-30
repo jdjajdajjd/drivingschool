@@ -22,7 +22,7 @@ type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'
 type CreateMode = 'single' | 'bulk'
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border border-product-border bg-white px-3.5 text-[15px] text-product-main outline-none transition focus:border-product-primary-border focus:ring-4 focus:ring-product-primary-soft'
+  return 'h-11 w-full rounded-2xl border rgba(0,0,0,0.06) bg-white px-3.5 text-[15px] #111418 outline-none transition focus:rgba(246,184,77,0.20) focus:ring-4 focus:ring-accent-soft'
 }
 
 export function AdminSlots() {
@@ -253,7 +253,7 @@ export function AdminSlots() {
                           }))
                         }
                         className={`rounded-full border px-4 py-2 text-base transition ${
-                          active ? 'border-product-primary bg-product-primary-soft text-product-primary' : 'border-product-border bg-white text-product-secondary'
+                          active ? 'border-accent rgba(246,184,77,0.12) #C97F10' : 'rgba(0,0,0,0.06) bg-white #6F747A'
                         }`}
                       >
                         {day.label}
@@ -263,7 +263,7 @@ export function AdminSlots() {
                 </div>
               </FormField>
 
-              <div className="rounded-2xl border border-product-primary-border bg-product-primary-soft px-4 py-4 text-base text-product-main">
+              <div className="rounded-2xl border rgba(246,184,77,0.20) rgba(246,184,77,0.12) px-4 py-4 text-base #111418">
                 Проверка перед созданием: система пропустит дубли и занятия в прошлом. Занятые времена не будут перезаписаны.
               </div>
 
@@ -304,12 +304,12 @@ export function AdminSlots() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-product-muted" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 #9EA3A8" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Инструктор, филиал, ученик"
-                  className="h-11 w-full rounded-2xl border border-product-border bg-white pl-10 pr-3.5 text-[15px] text-product-main outline-none transition focus:border-product-primary-border focus:ring-4 focus:ring-product-primary-soft"
+                  className="h-11 w-full rounded-2xl border rgba(0,0,0,0.06) bg-white pl-10 pr-3.5 text-[15px] #111418 outline-none transition focus:rgba(246,184,77,0.20) focus:ring-4 focus:ring-accent-soft"
                 />
               </div>
             </FormField>
@@ -356,26 +356,26 @@ export function AdminSlots() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <div>
-                          <p className="ui-kicker">Дата и время</p>
-                          <p className="mt-1 text-base font-bold text-product-main">{formatHumanDate(entry.slot.date, false)}</p>
-                          <p className="text-sm font-semibold text-product-primary">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
+                          <p className="caption">Дата и время</p>
+                          <p className="mt-1 text-base font-bold #111418">{formatHumanDate(entry.slot.date, false)}</p>
+                          <p className="text-sm font-semibold #C97F10">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
                         </div>
                         <div>
-                          <p className="ui-kicker">Филиал</p>
-                          <p className="mt-1 text-sm font-bold text-product-main">{entry.branch?.name ?? 'Не найден'}</p>
+                          <p className="caption">Филиал</p>
+                          <p className="mt-1 text-sm font-bold #111418">{entry.branch?.name ?? 'Не найден'}</p>
                         </div>
                         <div>
-                          <p className="ui-kicker">Инструктор</p>
-                          <p className="mt-1 text-sm font-bold text-product-main">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
-                          <p className="text-sm text-product-muted">{entry.instructor?.car ?? 'Без машины'}</p>
+                          <p className="caption">Инструктор</p>
+                          <p className="mt-1 text-sm font-bold #111418">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
+                          <p className="text-sm #9EA3A8">{entry.instructor?.car ?? 'Без машины'}</p>
                         </div>
                         <div>
-                          <p className="ui-kicker">Статус</p>
+                          <p className="caption">Статус</p>
                           <div className="mt-1"><StatusBadge status={entry.slot.status} kind="slot" /></div>
                         </div>
                         <div>
-                          <p className="ui-kicker">Ученик</p>
-                          <p className="mt-1 text-sm font-bold text-product-main">{entry.student?.name ?? 'Нет записи'}</p>
+                          <p className="caption">Ученик</p>
+                          <p className="mt-1 text-sm font-bold #111418">{entry.student?.name ?? 'Нет записи'}</p>
                         </div>
                       </div>
 

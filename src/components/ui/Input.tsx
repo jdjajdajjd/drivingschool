@@ -12,21 +12,21 @@ export function Input({ label, error, helperText, className, id, ...props }: Inp
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-semibold text-product-secondary">
+        <label htmlFor={inputId} className="label">
           {label}
         </label>
       )}
       <input
         id={inputId}
         className={cn(
-          'ui-field h-12',
-          error && 'border-product-error focus:border-product-error focus:ring-product-error-soft',
+          'field',
+          error && '!border-[#E5534B] !shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
           className,
         )}
         {...props}
       />
-      {error && <p className="text-xs font-medium text-product-error">{error}</p>}
-      {!error && helperText ? <p className="text-xs text-product-muted">{helperText}</p> : null}
+      {error && <p className="text-[12px] font-medium" style={{ color: '#E5534B' }}>{error}</p>}
+      {!error && helperText ? <p className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
     </div>
   )
 }
@@ -42,22 +42,22 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-semibold text-product-secondary">
+        <label htmlFor={inputId} className="label">
           {label}
         </label>
       )}
       <textarea
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-2xl border border-product-border bg-white px-3.5 py-2.5 text-sm text-product-main placeholder:text-product-muted transition-colors duration-150',
-          'focus:border-product-primary focus:outline-none focus:ring-4 focus:ring-product-primary-soft',
-          error && 'border-product-error focus:border-product-error focus:ring-product-error-soft',
+          'w-full resize-none rounded-xl border border-[rgba(0,0,0,0.06)] bg-white px-4 py-3 text-[15px] font-medium text-[#111418] placeholder:text-[#9EA3A8] transition-all duration-200 outline-none',
+          'focus:border-[#F6B84D] focus:shadow-[0_0_0_3px_rgba(246,184,77,0.15)]',
+          error && '!border-[#E5534B] focus:shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
           className,
         )}
         {...props}
       />
-      {error && <p className="text-xs font-medium text-product-error">{error}</p>}
-      {!error && helperText ? <p className="text-xs text-product-muted">{helperText}</p> : null}
+      {error && <p className="text-[12px] font-medium" style={{ color: '#E5534B' }}>{error}</p>}
+      {!error && helperText ? <p className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
     </div>
   )
 }
