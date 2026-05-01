@@ -200,3 +200,28 @@ export interface SchoolOverview {
   billing: BillingSummary
   integrityWarnings: number
 }
+
+// Прогресс ученика — теория, вождение, экзамены
+export interface StudentProgress {
+  id: string
+  studentId: string
+  schoolId: string
+  theoryTopicsTotal: number
+  theoryTopicsCompleted: number
+  drivingHoursTotal: number
+  drivingHoursCompleted: number
+  internalExamPassed: boolean
+  internalExamDate: string | null
+  gaidExamDate: string | null
+  notes: string
+  updatedAt: string
+}
+
+// Описание конкретного урока (кеш для UI)
+export interface LessonDescription {
+  slotId: string
+  theme: string
+  goals: string[]
+  whatToBring: string[]
+  notes: string
+}

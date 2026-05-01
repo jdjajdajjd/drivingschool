@@ -38,20 +38,22 @@ function App() {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    void Promise.all([
-      import('./services/seed'),
-      import('./services/supabaseSync'),
-    ])
-      .then(([seedModule, syncModule]) => {
-        seedModule.seedIfNeeded()
-        return syncModule.syncSupabaseSchoolToLocalDb('virazh')
-      })
+    // Seed first — local data must be ready immediately
+    import('./services/seed').then((m) => m.seedIfNeeded())
+
+    // Sync in background — don't block the UI
+    import('./services/supabaseSync')
+      .then((m) => { m.syncSupabaseSchoolToLocalDb('virazh').catch(() => undefined) })
       .catch(() => undefined)
       .finally(() => setIsReady(true))
+
+    // Set ready after 500ms even if sync hangs (prevents blank screen)
+    const fallback = setTimeout(() => setIsReady(true), 500)
+    return () => clearTimeout(fallback)
   }, [])
 
   if (!isReady) {
-    return <div className="min-h-screen bg-stone-50" />
+    return <div className="min-h-screen" style={{ background: '#F2F3F4' }} />
   }
 
   return (

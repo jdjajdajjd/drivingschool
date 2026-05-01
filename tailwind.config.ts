@@ -100,7 +100,7 @@ export default {
         'display-sm': ['24px', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '800' }],
         'body-lg': ['18px', { lineHeight: '1.55', fontWeight: '500' }],
         'body': ['15px', { lineHeight: '1.6', fontWeight: '500' }],
-        'caption': ['12px', { lineHeight: '1.3', letterSpacing: '0.08em', fontWeight: '700' }],
+        'caption': ['12px', { lineHeight: '1.3', letterSpacing: '0', fontWeight: '700' }],
       },
       keyframes: {
         fadeUp: {

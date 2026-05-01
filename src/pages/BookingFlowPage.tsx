@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, CalendarPlus, Car, CheckCircle2, SlidersHorizontal, UserRound } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, Car, CheckCircle2, UserRound } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
-import { FilterChipsBar } from '../components/ui/FilterChipsBar'
 import { StickyActionBar } from '../components/ui/StickyActionBar'
-import { BookingDetailsCard, DayChipsScroller, InstructorCompactCard, SuccessHeader, SummaryCard, TimeSlotGrid } from '../components/product/CompactCards'
-import { DRIVING_CATEGORIES } from '../services/drivingCategories'
+import { CalendarPicker } from '../components/ui/CalendarPicker'
+import { Avatar } from '../components/ui/Avatar'
+import {
+  BookingDetailsCard,
+  InstructorCompactCard,
+  SuccessHeader,
+  SummaryCard,
+  TimeSlotGrid,
+} from '../components/product/CompactCards'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { getFutureAvailableSlots, loadPublicSchoolData } from '../services/publicSchoolData'
 import { db } from '../services/storage'
@@ -27,10 +34,12 @@ import {
 } from '../services/bookingService'
 import { saveStudentProfile } from '../services/studentProfile'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
-import { formatHumanDate, formatTimeRange, getNext7Days } from '../utils/date'
+import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
+import { format, isSameDay, parseISO } from 'date-fns'
+import { ru } from 'date-fns/locale'
 
-type Step = 'instructor' | 'time' | 'contacts' | 'confirm' | 'success' | 'account'
+type Step = 'date' | 'instructor' | 'time' | 'contacts' | 'confirm' | 'success' | 'account'
 
 interface ContactForm {
   name: string
@@ -42,16 +51,16 @@ interface ContactForm {
 const emptyContact: ContactForm = { name: '', phone: '', email: '', password: '' }
 
 const stepMotion = {
-  initial: { opacity: 0, x: 8 },
+  initial: { opacity: 0, x: 12 },
   animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -8 },
+  exit: { opacity: 0, x: -12 },
   transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] },
 } as const
 
 function Progress({ step }: { step: Step }) {
-  const order: Step[] = ['instructor', 'time', 'contacts', 'confirm']
+  const order: Step[] = ['date', 'instructor', 'time', 'contacts', 'confirm']
   const current = Math.max(1, order.indexOf(step) + 1)
-  const pct = step === 'success' || step === 'account' ? 100 : Math.min(100, Math.round((current / 4) * 100))
+  const pct = step === 'success' || step === 'account' ? 100 : Math.min(100, Math.round((current / 5) * 100))
 
   return (
     <div
@@ -64,11 +73,16 @@ function Progress({ step }: { step: Step }) {
       }}
     >
       <div className="flex items-center justify-between">
-        <p className="caption">{step === 'success' || step === 'account' ? 'Готово' : `Шаг ${current} из 4`}</p>
-        <p className="caption" style={{ color: '#9EA3A8' }}>{pct}%</p>
+        <p className="t-micro">
+          {step === 'success' || step === 'account' ? 'Готово' : `Шаг ${current} из 5`}
+        </p>
+        <p className="t-micro" style={{ color: '#9EA3A8' }}>{pct}%</p>
       </div>
-      <div className="mt-2.5 progress-bar-track">
-        <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full" style={{ background: '#F4F5F6' }}>
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${pct}%`, background: '#F6B84D' }}
+        />
       </div>
     </div>
   )
@@ -119,21 +133,34 @@ function BookingMiniSummary({
 function AccountOfferCard({ onCreate }: { onCreate: () => void }) {
   return (
     <motion.div
-      className="rounded-2xl border rgba(0,0,0,0.06) rgba(246,184,77,0.12) p-4 "
+      className="rounded-2xl p-4"
+      style={{
+        border: '1px solid rgba(246,184,77,0.20)',
+        background: 'rgba(246,184,77,0.04)',
+      }}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: 0.1 }}
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl white #C97F10 ">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+          style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+        >
           <UserRound size={18} />
-        </span>
+        </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold leading-[22px] #111418">Хотите видеть все записи в одном месте?</p>
-          <p className="mt-1 text-[13px] font-medium leading-5 #6F747A">Создайте кабинет — следующая запись будет быстрее.</p>
+          <p className="text-[15px] font-semibold leading-[22px]" style={{ color: '#111418' }}>
+            Хотите видеть все записи в одном месте?
+          </p>
+          <p className="mt-1 text-[13px] font-medium leading-5" style={{ color: '#6F747A' }}>
+            Создайте кабинет — следующая запись будет быстрее.
+          </p>
         </div>
       </div>
-      <Button className="mt-4 w-full" variant="secondary" onClick={onCreate}>Создать кабинет</Button>
+      <Button className="mt-4 w-full" variant="secondary" onClick={onCreate}>
+        Создать кабинет
+      </Button>
     </motion.div>
   )
 }
@@ -149,13 +176,9 @@ export function BookingFlowPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [instructors, setInstructors] = useState<Instructor[]>([])
   const [slotsVersion, setSlotsVersion] = useState(0)
-  const [step, setStep] = useState<Step>('instructor')
-  const [category, setCategory] = useState(params.get('category') ?? '')
-  const [branchId, setBranchId] = useState(params.get('branch') ?? '')
-  const [transmission, setTransmission] = useState('')
-  const [autoPick, setAutoPick] = useState(false)
-  const [selectedInstructorId, setSelectedInstructorId] = useState(params.get('instructor') ?? '')
-  const [selectedDate, setSelectedDate] = useState('')
+  const [step, setStep] = useState<Step>('date')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedInstructorId, setSelectedInstructorId] = useState('')
   const [selectedSlotId, setSelectedSlotId] = useState(params.get('slot') ?? '')
   const [form, setForm] = useState<ContactForm>(emptyContact)
   const [errors, setErrors] = useState<Partial<ContactForm>>({})
@@ -171,14 +194,15 @@ export function BookingFlowPage() {
         setSchool(data.school)
         setBranches(data.branches)
         setInstructors(data.instructors)
+
+        // Check if a slot was pre-selected from URL
         const querySlot = params.get('slot')
         if (querySlot) {
           const slot = db.slots.byId(querySlot)
           if (slot) {
             setSelectedSlotId(slot.id)
             setSelectedInstructorId(slot.instructorId)
-            setBranchId(slot.branchId)
-            setSelectedDate(slot.date)
+            setSelectedDate(parseISO(slot.date))
             setStep('time')
           }
         }
@@ -188,70 +212,54 @@ export function BookingFlowPage() {
     return () => releaseSessionLocks(sessionId.current)
   }, [slug, params])
 
-  const days = useMemo(() => getNext7Days(), [])
-  const futureSlots = useMemo(() => school ? getFutureAvailableSlots(school.id) : [], [school, slotsVersion])
-  const categoryOptions = useMemo(() => {
-    const supported = new Set(instructors.flatMap((instructor) => instructor.categories ?? []))
-    return DRIVING_CATEGORIES.filter((item) => supported.has(item.code)).map((item) => ({ value: item.code, label: item.code }))
-  }, [instructors])
+  const futureSlots = useMemo(
+    () => (school ? getFutureAvailableSlots(school.id) : []),
+    [school, slotsVersion],
+  )
 
-  const filteredInstructors = useMemo(() => {
-    return instructors
-      .filter((instructor) => branchId ? instructor.branchId === branchId : true)
-      .filter((instructor) => category ? instructor.categories?.includes(category) : true)
-      .filter((instructor) => transmission ? instructor.transmission === transmission : true)
-  }, [branchId, category, instructors, transmission])
-
-  const selectedInstructor = instructors.find((item) => item.id === selectedInstructorId) ?? null
+  const selectedInstructor = instructors.find((i) => i.id === selectedInstructorId) ?? null
   const selectedSlot = selectedSlotId ? db.slots.byId(selectedSlotId) : null
-  const selectedBranch = selectedSlot ? db.branches.byId(selectedSlot.branchId) : selectedInstructor ? db.branches.byId(selectedInstructor.branchId) : null
+  const selectedBranch = selectedSlot
+    ? db.branches.byId(selectedSlot.branchId)
+    : selectedInstructor
+      ? db.branches.byId(selectedInstructor.branchId)
+      : null
 
-  useEffect(() => {
-    if (!selectedDate) setSelectedDate(days[0] ?? '')
-  }, [days, selectedDate])
+  // Build calendar days from slots
+  const calendarDays = useMemo(() => {
+    return futureSlots.map((slot) => ({
+      date: parseISO(slot.date),
+      slotCount: 1,
+      isBooked: slot.status === 'booked',
+    }))
+  }, [futureSlots])
+
+  // Instructors filtered by selected date
+  const instructorsOnDate = useMemo(() => {
+    if (!selectedDate) return instructors
+    return instructors.filter((instructor) =>
+      futureSlots.some(
+        (slot) =>
+          slot.instructorId === instructor.id &&
+          isSameDay(parseISO(slot.date), selectedDate),
+      ),
+    )
+  }, [selectedDate, instructors, futureSlots])
+
+  // Slots for selected date + instructor
+  const slotsForSelection = useMemo(() => {
+    if (!selectedDate || !selectedInstructorId) return []
+    return getInstructorSlots(selectedInstructorId, isoDate(selectedDate), sessionId.current)
+  }, [selectedDate, selectedInstructorId])
 
   function goBack() {
-    if (step === 'instructor') navigate(`/school/${school?.slug ?? slug}`)
+    if (step === 'date') navigate(`/school/${school?.slug ?? slug}`)
+    else if (step === 'instructor') setStep('date')
     else if (step === 'time') setStep('instructor')
     else if (step === 'contacts') setStep('time')
     else if (step === 'confirm') setStep('contacts')
     else if (step === 'account') setStep('success')
     else navigate(`/school/${school?.slug ?? slug}`)
-  }
-
-  function nextSlotFor(instructor: Instructor): Slot | null {
-    return futureSlots.find((slot) => slot.instructorId === instructor.id) ?? null
-  }
-
-  function slotsForDate(date: string): Slot[] {
-    if (!selectedInstructor) return []
-    return getInstructorSlots(selectedInstructor.id, date, sessionId.current)
-  }
-
-  function countForDate(date: string): number {
-    if (!selectedInstructor) return 0
-    return getInstructorSlots(selectedInstructor.id, date, sessionId.current).length
-  }
-
-  function continueFromInstructor() {
-    let nextInstructorId = selectedInstructorId
-    if (autoPick && !selectedInstructor) {
-      const candidate = filteredInstructors.find((instructor) => nextSlotFor(instructor))
-      if (candidate) {
-        const slot = nextSlotFor(candidate)
-        nextInstructorId = candidate.id
-        setSelectedInstructorId(candidate.id)
-        if (slot) {
-          setSelectedDate(slot.date)
-          setSelectedSlotId(slot.id)
-        }
-      }
-    }
-    if (!nextInstructorId) {
-      showToast('Выберите инструктора или включите автоподбор.', 'error')
-      return
-    }
-    setStep('time')
   }
 
   function selectSlot(slot: Slot) {
@@ -270,7 +278,9 @@ export function BookingFlowPage() {
     const next: Partial<ContactForm> = {}
     if (!form.name.trim()) next.name = 'Введите имя.'
     if (!isValidRussianPhone(form.phone)) next.phone = 'Введите корректный телефон.'
-    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) next.email = 'Введите корректный e-mail.'
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      next.email = 'Введите корректный e-mail.'
+    }
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -283,7 +293,12 @@ export function BookingFlowPage() {
       let bookingGroupId = ''
 
       try {
-        const result = await createSupabaseBooking({ schoolId: school.id, studentName: form.name, studentPhone: form.phone, slotIds: [selectedSlot.id] })
+        const result = await createSupabaseBooking({
+          schoolId: school.id,
+          studentName: form.name,
+          studentPhone: form.phone,
+          slotIds: [selectedSlot.id],
+        })
         bookingId = result.bookingIds[0] ?? ''
         bookingGroupId = result.bookingGroupId
       } catch {
@@ -342,7 +357,14 @@ export function BookingFlowPage() {
     setSubmitting(true)
     try {
       saveStudentProfile(school.id, form, { passwordSet: true, assignedBranchId: selectedBranch?.id })
-      void updateStudentProfileInSupabase({ schoolId: school.id, name: form.name, phone: form.phone, email: form.email, password: form.password, avatarUrl: '' }).catch(() => undefined)
+      void updateStudentProfileInSupabase({
+        schoolId: school.id,
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        password: form.password,
+        avatarUrl: '',
+      }).catch(() => undefined)
       navigate('/student')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось создать кабинет.', 'error')
@@ -374,19 +396,26 @@ export function BookingFlowPage() {
   if (!school) {
     return (
       <div className="shell flex items-center justify-center px-4">
-        <StateView kind="error" title="Автошкола не найдена" action={<Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>} />
+        <StateView
+          kind="error"
+          title="Автошкола не найдена"
+          action={
+            <Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>
+          }
+        />
       </div>
     )
   }
 
-  const canContinueInstructor = autoPick || Boolean(selectedInstructorId)
-  const canContinueTime = Boolean(selectedSlotId)
-
   return (
     <div className="shell">
-      <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-4 pb-4 pt-4">
-        <header className="mb-3">
-          <button onClick={goBack} className="mb-3 flex min-h-10 items-center gap-2 rounded-md px-1 text-[13px] font-semibold #6F747A transition active:scale-[0.97]">
+      <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-5 pb-4 pt-4">
+        <header className="mb-4">
+          <button
+            onClick={goBack}
+            className="mb-3 flex min-h-10 items-center gap-2 rounded-md px-1 text-[13px] font-semibold transition active:scale-[0.97]"
+            style={{ color: '#6F747A' }}
+          >
             <ArrowLeft size={16} />
             Назад
           </button>
@@ -395,151 +424,415 @@ export function BookingFlowPage() {
 
         <AnimatePresence mode="wait">
           <motion.div key={step} {...stepMotion}>
-            {step === 'instructor' ? (
+
+            {/* ── Step 1: Date ── */}
+            {step === 'date' && (
               <section>
-                <h1 className="display-sm">Выберите инструктора</h1>
-                <p className="mt-1 text-[14px] #6F747A">Можно выбрать вручную или доверить подбор системе.</p>
+                <h2
+                  className="font-extrabold tracking-tight"
+                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                >
+                  Выберите дату
+                </h2>
+                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                  Покажем доступных инструкторов и время.
+                </p>
 
-                <div className="mt-4 space-y-3">
-                  <FilterChipsBar items={categoryOptions} value={category} onChange={setCategory} allLabel="Категория" />
-                  <FilterChipsBar items={[{ value: 'manual', label: 'Механика' }, { value: 'auto', label: 'Автомат' }]} value={transmission} onChange={setTransmission} allLabel="Коробка" />
-                  <FilterChipsBar items={branches.map((branch) => ({ value: branch.id, label: branch.name }))} value={branchId} onChange={setBranchId} allLabel="Филиал" />
-                  <label className="flex min-h-11 items-center justify-between rounded-2xl border rgba(0,0,0,0.06) bg-white px-4  transition-all duration-150 active:scale-[0.97] active:#F4F5F6">
-                    <span className="flex items-center gap-2 text-[14px] font-semibold #111418"><SlidersHorizontal size={15} /> Подобрать автоматически</span>
-                    <input type="checkbox" checked={autoPick} onChange={(event) => setAutoPick(event.target.checked)} className="h-4 w-4 rounded accent-accent" />
-                  </label>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {filteredInstructors.length === 0 ? (
-                    <StateView kind="no-results" title="Инструкторы не найдены" description="Измените фильтры или включите автоподбор." />
-                  ) : filteredInstructors.map((instructor) => (
-                    <InstructorCompactCard
-                      key={instructor.id}
-                      instructor={instructor}
-                      branch={db.branches.byId(instructor.branchId)}
-                      nextSlot={nextSlotFor(instructor)}
-                      selected={selectedInstructorId === instructor.id}
-                      onSelect={() => {
-                        setAutoPick(false)
-                        setSelectedInstructorId(instructor.id)
-                        const slot = nextSlotFor(instructor)
-                        if (slot) setSelectedDate(slot.date)
-                      }}
-                    />
-                  ))}
+                <div className="mt-5">
+                  <CalendarPicker
+                    days={calendarDays}
+                    selectedDate={selectedDate}
+                    onSelect={(date) => {
+                      setSelectedDate(date)
+                      setSelectedInstructorId('')
+                      setSelectedSlotId('')
+                    }}
+                  />
                 </div>
 
                 <StickyActionBar>
-                  <Button className="w-full" disabled={!canContinueInstructor} onClick={continueFromInstructor}>Продолжить</Button>
+                  <Button
+                    className="w-full"
+                    disabled={!selectedDate}
+                    onClick={() => setStep('instructor')}
+                  >
+                    Продолжить
+                    <ArrowLeft size={16} className="rotate-180" />
+                  </Button>
                 </StickyActionBar>
               </section>
-            ) : null}
+            )}
 
-            {step === 'time' ? (
+            {/* ── Step 2: Instructor ── */}
+            {step === 'instructor' && (
               <section>
-                <h1 className="display-sm">День и время</h1>
-                {selectedInstructor ? (
-                  <div className="mt-3 flex items-center gap-3 rounded-2xl border rgba(0,0,0,0.06) bg-white p-3 ">
-                    <img src={getInstructorPhoto(selectedInstructor)} alt={selectedInstructor.name} className="h-11 w-11 rounded-full border rgba(0,0,0,0.06) object-cover" />
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-semibold #111418">{formatInstructorName(selectedInstructor.name)}</p>
-                      <p className="truncate text-[12px] font-medium #6F747A">{selectedInstructor.car ?? 'Учебный автомобиль'} · {selectedBranch?.name ?? 'Филиал'} · {category || selectedInstructor.categories?.[0] || 'B'}</p>
-                    </div>
+                <h2
+                  className="font-extrabold tracking-tight"
+                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                >
+                  Инструкторы
+                </h2>
+                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                  {selectedDate
+                    ? `На ${format(selectedDate, 'd MMMM', { locale: ru })} доступны:`
+                    : 'Выберите инструктора'}
+                </p>
+
+                {/* Date badge */}
+                {selectedDate && (
+                  <div
+                    className="mt-3 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5"
+                    style={{ background: 'rgba(246,184,77,0.10)', color: '#C97F10' }}
+                  >
+                    <CalendarPlus size={13} />
+                    <span className="text-[12px] font-semibold">
+                      {format(selectedDate, 'd MMMM', { locale: ru })}
+                    </span>
                   </div>
-                ) : null}
-                <div className="mt-4">
-                  <DayChipsScroller days={days} selectedDate={selectedDate} onSelect={setSelectedDate} getCount={countForDate} />
-                </div>
-                <div className="mt-4">
-                  {slotsForDate(selectedDate).length === 0 ? (
-                    <StateView kind="no-results" title="На этот день нет времени" description="Выберите другой день." />
+                )}
+
+                <div className="mt-4 space-y-2.5">
+                  {instructorsOnDate.length === 0 ? (
+                    <div
+                      className="rounded-2xl p-6 text-center"
+                      style={{ background: 'white', borderRadius: '24px', boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
+                    >
+                      <p className="t-body" style={{ color: '#6F747A' }}>Нет инструкторов на этот день</p>
+                      <button
+                        onClick={() => setStep('date')}
+                        className="btn btn-secondary btn-sm mt-3"
+                      >
+                        Выбрать другую дату
+                      </button>
+                    </div>
                   ) : (
-                    <TimeSlotGrid slots={slotsForDate(selectedDate)} selectedSlotId={selectedSlotId} onSelect={selectSlot} />
+                    instructorsOnDate.map((instructor) => {
+                      const branch = branches.find((b) => b.id === instructor.branchId) ?? null
+                      const slotForThisInstructor = futureSlots.find(
+                        (s) =>
+                          s.instructorId === instructor.id &&
+                          selectedDate &&
+                          isSameDay(parseISO(s.date), selectedDate),
+                      )
+                      return (
+                        <InstructorCompactCard
+                          key={instructor.id}
+                          instructor={instructor}
+                          branch={branch}
+                          nextSlot={slotForThisInstructor ?? null}
+                          selected={selectedInstructorId === instructor.id}
+                          onSelect={() => {
+                            setSelectedInstructorId(instructor.id)
+                            setSelectedSlotId('')
+                          }}
+                        />
+                      )
+                    })
                   )}
                 </div>
+
                 <StickyActionBar>
-                  <Button className="w-full" disabled={!canContinueTime} onClick={() => setStep('contacts')}>Продолжить</Button>
+                  <Button
+                    className="w-full"
+                    disabled={!selectedInstructorId}
+                    onClick={() => setStep('time')}
+                  >
+                    Продолжить
+                  </Button>
                 </StickyActionBar>
               </section>
-            ) : null}
+            )}
 
-            {step === 'contacts' ? (
+            {/* ── Step 3: Time ── */}
+            {step === 'time' && (
               <section>
-                <h1 className="display-sm">Ваши контакты</h1>
-                <p className="mt-1 text-[14px] #6F747A">Имя и телефон нужны для записи.</p>
-                <div className="mt-4 space-y-3">
-                  <BookingMiniSummary slot={selectedSlot} instructor={selectedInstructor} branch={selectedBranch} />
-                  <Input label="Имя" value={form.name} error={errors.name} placeholder="Анна Иванова" onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-                  <Input label="Телефон" value={form.phone} error={errors.phone} placeholder="+7 (999) 123-45-67" onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-                  <Input label="E-mail (опционально)" value={form.email} error={errors.email} placeholder="name@email.ru" onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-                </div>
-                <StickyActionBar>
-                  <Button className="w-full" disabled={!form.name.trim() || !form.phone.trim()} onClick={() => validateContacts() && setStep('confirm')}>Проверить запись</Button>
-                </StickyActionBar>
-              </section>
-            ) : null}
+                <h2
+                  className="font-extrabold tracking-tight"
+                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                >
+                  Время занятия
+                </h2>
 
-            {step === 'confirm' ? (
-              <section>
-                <h1 className="display-sm">Проверьте запись</h1>
-                <p className="mt-1 text-[14px] #6F747A">Если всё верно, подтвердите занятие.</p>
+                {selectedInstructor && (
+                  <div className="mt-4 flex items-center gap-3.5">
+                    <Avatar
+                      initials={selectedInstructor.avatarInitials || formatInstructorName(selectedInstructor.name)[0]}
+                      color={selectedInstructor.avatarColor || '#FFF7ED'}
+                      src={getInstructorPhoto(selectedInstructor)}
+                      alt={selectedInstructor.name}
+                      size="md"
+                      className="rounded-full text-[#C97F10]"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>
+                        {formatInstructorName(selectedInstructor.name)}
+                      </p>
+                      <p className="t-small mt-0.5">
+                        {selectedInstructor.car ?? 'Учебный автомобиль'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedDate && (
+                  <p className="t-micro mt-3" style={{ color: '#6F747A' }}>
+                    {format(selectedDate, 'EEEE, d MMMM', { locale: ru })}
+                  </p>
+                )}
+
                 <div className="mt-4">
-                  <SummaryCard slot={selectedSlot} instructor={selectedInstructor} branch={selectedBranch} student={{ name: form.name, phone: normalizePhone(form.phone), email: form.email }} />
+                  {slotsForSelection.length === 0 ? (
+                    <div
+                      className="rounded-2xl p-6 text-center"
+                      style={{ background: 'white', borderRadius: '24px', boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
+                    >
+                      <p className="t-body" style={{ color: '#6F747A' }}>Нет свободных окон</p>
+                      <button onClick={() => setStep('instructor')} className="btn btn-secondary btn-sm mt-3">
+                        Выбрать другого инструктора
+                      </button>
+                    </div>
+                  ) : (
+                    <TimeSlotGrid
+                      slots={slotsForSelection}
+                      selectedSlotId={selectedSlotId}
+                      onSelect={selectSlot}
+                    />
+                  )}
                 </div>
+
                 <StickyActionBar>
-                  <Button className="w-full" disabled={submitting} onClick={() => void submitBooking()}>
+                  <Button
+                    className="w-full"
+                    disabled={!selectedSlotId}
+                    onClick={() => setStep('contacts')}
+                  >
+                    Продолжить
+                  </Button>
+                </StickyActionBar>
+              </section>
+            )}
+
+            {/* ── Step 4: Contacts ── */}
+            {step === 'contacts' && (
+              <section>
+                <h2
+                  className="font-extrabold tracking-tight"
+                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                >
+                  Ваши контакты
+                </h2>
+                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                  Имя и телефон нужны для записи.
+                </p>
+
+                <div className="mt-5 space-y-4">
+                  <BookingMiniSummary
+                    slot={selectedSlot}
+                    instructor={selectedInstructor}
+                    branch={selectedBranch}
+                  />
+
+                  <Input
+                    label="Имя"
+                    value={form.name}
+                    error={errors.name}
+                    placeholder="Анна Иванова"
+                    onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))}
+                  />
+
+                  <PhoneInput
+                    label="Телефон"
+                    value={form.phone}
+                    error={errors.phone}
+                    placeholder="+7"
+                    onChange={(val) => setForm((c) => ({ ...c, phone: val }))}
+                  />
+
+                  <Input
+                    label="E-mail (опционально)"
+                    value={form.email}
+                    error={errors.email}
+                    placeholder="name@email.ru"
+                    onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+                  />
+                </div>
+
+                <StickyActionBar>
+                  <Button
+                    className="w-full"
+                    disabled={!form.name.trim() || !form.phone.trim()}
+                    onClick={() => {
+                      if (validateContacts()) setStep('confirm')
+                    }}
+                  >
+                    Проверить запись
+                  </Button>
+                </StickyActionBar>
+              </section>
+            )}
+
+            {/* ── Step 5: Confirm ── */}
+            {step === 'confirm' && (
+              <section>
+                <h2
+                  className="font-extrabold tracking-tight"
+                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                >
+                  Проверьте запись
+                </h2>
+                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                  Если всё верно — подтвердите.
+                </p>
+
+                <div className="mt-5">
+                  <SummaryCard
+                    slot={selectedSlot}
+                    instructor={selectedInstructor}
+                    branch={selectedBranch}
+                    student={{
+                      name: form.name,
+                      phone: normalizePhone(form.phone),
+                      email: form.email,
+                    }}
+                  />
+                </div>
+
+                <StickyActionBar>
+                  <Button
+                    className="w-full"
+                    disabled={submitting}
+                    onClick={() => void submitBooking()}
+                  >
                     {submitting ? 'Записываем...' : 'Подтвердить запись'}
                   </Button>
                 </StickyActionBar>
               </section>
-            ) : null}
+            )}
 
-            {step === 'success' ? (
+            {/* ── Step 6: Success ── */}
+            {step === 'success' && (
               <section className="space-y-3">
-                <SuccessHeader subtitle="Мы сохранили вашу запись. Если нужно, автошкола свяжется с вами." />
-                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.05 }}>
-                  <BookingDetailsCard slot={selectedSlot} instructor={selectedInstructor} branch={selectedBranch} student={{ name: form.name, phone: normalizePhone(form.phone), email: form.email }} />
+                <SuccessHeader subtitle="Мы сохранили запись. Если нужно, автошкола свяжется с вами." />
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.05 }}
+                >
+                  <BookingDetailsCard
+                    slot={selectedSlot}
+                    instructor={selectedInstructor}
+                    branch={selectedBranch}
+                    student={{ name: form.name, phone: normalizePhone(form.phone), email: form.email }}
+                  />
                 </motion.div>
-                <motion.div className="grid gap-2" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.08 }}>
+                <motion.div
+                  className="grid gap-2"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.08 }}
+                >
                   <Button onClick={downloadCalendar}>
                     <CalendarPlus size={16} />
                     Добавить в календарь
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться ещё</Button>
-                  <Button variant="ghost" onClick={() => navigate(`/school/${school.slug}`)}>На страницу школы</Button>
+                  <Button variant="secondary" onClick={() => navigate(`/school/${school.slug}/book`)}>
+                    Записаться ещё
+                  </Button>
+                  <Button variant="ghost" onClick={() => navigate(`/school/${school.slug}`)}>
+                    На страницу школы
+                  </Button>
                 </motion.div>
                 <AccountOfferCard onCreate={() => setStep('account')} />
               </section>
-            ) : null}
+            )}
 
-            {step === 'account' ? (
+            {/* ── Step 7: Account ── */}
+            {step === 'account' && (
               <section>
-                <h1 className="display-sm">Создать кабинет</h1>
-                <p className="mt-1 text-[14px] #6F747A">Проверьте данные и задайте пароль. Эта запись появится в кабинете.</p>
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-2xl border rgba(21,128,61,0.15) #F0FDF4 p-3.5">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 size={18} className="#15803D" />
-                      <div>
-                        <p className="text-[14px] font-semibold #111418">Запись уже сохранена</p>
-                        <p className="text-[12px] #6F747A">{selectedSlot ? `${formatHumanDate(selectedSlot.date, false)}, ${formatTimeRange(selectedSlot)}` : 'Выбранное занятие'}</p>
-                      </div>
+                <h2
+                  className="font-extrabold tracking-tight"
+                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                >
+                  Создать кабинет
+                </h2>
+                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                  Проверьте данные и задайте пароль.
+                </p>
+
+                <div className="mt-5 space-y-3">
+                  <div
+                    className="flex items-center gap-3 rounded-2xl p-3.5"
+                    style={{
+                      background: 'rgba(21,128,61,0.07)',
+                      border: '1px solid rgba(21,128,61,0.15)',
+                      borderRadius: '18px',
+                    }}
+                  >
+                    <CheckCircle2 size={18} style={{ color: '#15803D', flexShrink: 0 }} />
+                    <div>
+                      <p className="text-[14px] font-semibold" style={{ color: '#111418' }}>
+                        Запись уже сохранена
+                      </p>
+                      <p className="t-micro mt-0.5" style={{ color: '#6F747A' }}>
+                        {selectedSlot
+                          ? `${formatHumanDate(selectedSlot.date, false)}, ${formatTimeRange(selectedSlot)}`
+                          : 'Выбранное занятие'}
+                      </p>
                     </div>
                   </div>
-                  <Input label="Имя" value={form.name} error={errors.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-                  <Input label="Телефон" value={form.phone} error={errors.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-                  <Input label="E-mail" value={form.email} error={errors.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-                  <Input label="Пароль" type="password" value={form.password} error={errors.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
+                  <Input
+                    label="Имя"
+                    value={form.name}
+                    error={errors.name}
+                    onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))}
+                  />
+                  <PhoneInput
+                    label="Телефон"
+                    value={form.phone}
+                    error={errors.phone}
+                    onChange={(val) => setForm((c) => ({ ...c, phone: val }))}
+                  />
+                  <Input
+                    label="E-mail"
+                    value={form.email}
+                    error={errors.email}
+                    onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+                  />
+                  <Input
+                    label="Пароль"
+                    type="password"
+                    value={form.password}
+                    error={errors.password}
+                    placeholder="Минимум 6 символов"
+                    onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))}
+                  />
                 </div>
+
                 <StickyActionBar>
                   <div className="grid gap-2">
-                    <Button disabled={submitting || !form.name.trim() || !form.phone.trim() || !form.password.trim()} onClick={() => void createAccount()}>{submitting ? 'Создаём...' : 'Создать кабинет'}</Button>
-                    <Button variant="secondary" onClick={() => createdBookingId ? navigate(`/booking/${createdBookingId}`) : navigate(`/school/${school.slug}`)}>Позже</Button>
+                    <Button
+                      disabled={
+                        submitting || !form.name.trim() || !form.phone.trim() || !form.password.trim()
+                      }
+                      onClick={() => void createAccount()}
+                    >
+                      {submitting ? 'Создаём...' : 'Создать кабинет'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        createdBookingId
+                          ? navigate(`/booking/${createdBookingId}`)
+                          : navigate(`/school/${school.slug}`)
+                      }
+                    >
+                      Позже
+                    </Button>
                   </div>
                 </StickyActionBar>
               </section>
-            ) : null}
+            )}
+
           </motion.div>
         </AnimatePresence>
       </main>

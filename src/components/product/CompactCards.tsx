@@ -1,8 +1,10 @@
-import { CalendarDays, Check, ChevronRight, LogOut, MapPin, Phone, Settings, UserRound } from 'lucide-react'
+import { CalendarDays, Check, ChevronRight, ExternalLink, LogOut, MapPin, Phone, Settings, UserRound } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'
 import { cn, formatDuration, formatInstructorName, formatPhone } from '../../lib/utils'
 import { getInstructorPhoto } from '../../services/instructorPhotos'
+import { loadLessonDescription } from '../../services/studentProfile'
+import { useToast } from '../ui/Toast'
 import type { Branch, Booking, Instructor, School, Slot } from '../../types'
 import {
   formatDate,
@@ -265,10 +267,7 @@ function DetailRow({
         <Icon size={15} />
       </span>
       <span className="min-w-0">
-        <span
-          className="block text-[11px] font-bold uppercase tracking-wider"
-          style={{ color: '#9EA3A8' }}
-        >
+        <span className="block text-[11px] font-semibold" style={{ color: '#9EA3A8' }}>
           {label}
         </span>
         <span
@@ -438,12 +437,15 @@ export function StudentBookingCard({
   slot,
   instructor,
   branch,
+  compact = false,
 }: {
   booking: Booking
   slot: Slot | null
   instructor: Instructor | null
   branch: Branch | null
+  compact?: boolean
 }) {
+  const { showToast } = useToast()
   const state = getBookingUrgencyState(booking, slot)
   const shortName = instructor ? formatInstructorName(instructor.name) : 'Инструктор'
   const muted = state === 'completed' || state === 'cancelled'
@@ -451,38 +453,192 @@ export function StudentBookingCard({
   const lessonTime = slot ? formatTimeRange(slot) : ''
   const styles = bookingCardStyles(state)
 
-  return (
-    <div
-      className="relative flex items-center gap-3.5 p-4 transition-all"
-      style={{ ...styles, borderRadius: '24px', minHeight: '84px' }}
-    >
-      <Avatar
-        initials={instructor?.avatarInitials ?? initialsFromText(shortName)}
-        color={instructor?.avatarColor || '#FFF7ED'}
-        src={instructor ? getInstructorPhoto(instructor) : undefined}
-        alt={instructor?.name ?? 'Инструктор'}
-        size="md"
-        className="rounded-full text-[#C97F10]"
-      />
-      <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-[15px] font-extrabold tracking-tight"
-          style={{ color: muted ? '#9EA3A8' : '#111418' }}
-        >
-          {shortName}
-        </p>
-        <p className="mt-1 truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
-          {instructor?.car ?? 'Учебный автомобиль'} · {branch?.name ?? 'Филиал'}
-        </p>
-        <p
-          className="mt-1 truncate text-[13px] font-extrabold tracking-tight"
-          style={{ color: muted ? '#9EA3A8' : '#111418' }}
-        >
-          {slot ? `${lessonLabel}, ${lessonTime}` : 'Время не найдено'}
-        </p>
+  const lessonDesc = slot ? loadLessonDescription(slot.id) : null
+
+  const mapUrl = branch?.address
+    ? `https://yandex.ru/maps/?text=${encodeURIComponent(branch.address)}`
+    : null
+
+  function handleCancel() {
+    if (booking.status !== 'active') return
+    showToast('Для отмены позвоните в автошколу или используйте кабинет.', 'info')
+  }
+
+  function handleReschedule() {
+    if (booking.status !== 'active') return
+    showToast('Для переноса позвоните в автошколу.', 'info')
+  }
+
+  function downloadCalendar() {
+    import('../../services/bookingService').then(({ generateIcs }) => {
+      const content = generateIcs(booking.id)
+      if (!content) return
+      const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${booking.id}.ics`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      showToast('Файл календаря готов.', 'success')
+    })
+  }
+
+  if (compact) {
+    return (
+      <div
+        className="relative flex items-center gap-3 p-3.5 transition-all"
+        style={{ ...styles, borderRadius: '18px' }}
+      >
+        <Avatar
+          initials={instructor?.avatarInitials ?? initialsFromText(shortName)}
+          color={instructor?.avatarColor || '#FFF7ED'}
+          src={instructor ? getInstructorPhoto(instructor) : undefined}
+          alt={instructor?.name ?? 'Инструктор'}
+          size="sm"
+          className="rounded-full text-[#C97F10] shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-extrabold tracking-tight" style={{ color: muted ? '#9EA3A8' : '#111418' }}>
+            {shortName}
+          </p>
+          <p className="truncate text-[12px] font-medium" style={{ color: '#6F747A' }}>
+            {slot ? `${lessonLabel}, ${lessonTime}` : ''}
+          </p>
+        </div>
+        <BookingStatusChip state={state} slot={slot} />
       </div>
-      <BookingStatusChip state={state} slot={slot} />
-    </div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22 }}
+      className="overflow-hidden transition-all"
+      style={{ ...styles, borderRadius: '24px' }}
+    >
+      {/* Header */}
+      <div className="flex items-start gap-3 p-4">
+        <Avatar
+          initials={instructor?.avatarInitials ?? initialsFromText(shortName)}
+          color={instructor?.avatarColor || '#FFF7ED'}
+          src={instructor ? getInstructorPhoto(instructor) : undefined}
+          alt={instructor?.name ?? 'Инструктор'}
+          size="lg"
+          className="rounded-full text-[#C97F10] shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[15px] font-extrabold tracking-tight" style={{ color: muted ? '#9EA3A8' : '#111418' }}>
+                {shortName}
+              </p>
+              <p className="mt-0.5 text-[13px] font-medium" style={{ color: '#6F747A' }}>
+                {instructor?.car ?? 'Учебный автомобиль'} · {instructor?.transmission === 'auto' ? 'Автомат' : 'Механика'}
+              </p>
+            </div>
+            <BookingStatusChip state={state} slot={slot} />
+          </div>
+        </div>
+      </div>
+
+      {/* Date/Time */}
+      {slot && (
+        <div className="px-4 pb-2">
+          <div
+            className="flex items-center gap-2 rounded-2xl px-3.5 py-2.5"
+            style={{ background: 'rgba(246,184,77,0.06)' }}
+          >
+            <CalendarDays size={15} style={{ color: '#C97F10' }} />
+            <p className="text-[14px] font-semibold" style={{ color: '#111418' }}>
+              {lessonLabel}, {lessonTime}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Branch address */}
+      {branch && (
+        <div className="px-4 pb-2">
+          <div className="flex items-center gap-2">
+            <MapPin size={14} style={{ color: '#9EA3A8' }} />
+            <p className="flex-1 truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
+              {branch.name}, {branch.address}
+            </p>
+            {mapUrl && (
+              <a
+                href={mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 flex items-center gap-1 text-[12px] font-bold transition-colors"
+                style={{ color: '#F6B84D' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Карта <ExternalLink size={11} />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Instructor phone */}
+      {instructor?.phone && (
+        <div className="px-4 pb-2">
+          <div className="flex items-center gap-2">
+            <Phone size={14} style={{ color: '#9EA3A8' }} />
+            <a href={`tel:${instructor.phone}`} className="text-[13px] font-medium" style={{ color: '#6F747A' }}>
+              {formatPhone(instructor.phone)}
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Lesson description */}
+      {lessonDesc && lessonDesc.theme && (
+        <div className="px-4 pb-2">
+          <div className="rounded-2xl px-3.5 py-2.5" style={{ background: '#F7F8F9' }}>
+            <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: '#9EA3A8' }}>Тема урока</p>
+            <p className="mt-1 text-[14px] font-semibold" style={{ color: '#111418' }}>{lessonDesc.theme}</p>
+            {lessonDesc.whatToBring?.length > 0 && (
+              <p className="mt-1 text-[12px] font-medium" style={{ color: '#6F747A' }}>
+                Взять: {lessonDesc.whatToBring.join(', ')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      {booking.status === 'active' && (
+        <div className="flex items-center gap-2 border-t px-4 py-3" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+          <button
+            className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
+            style={{ background: '#F4F5F6', color: '#6F747A' }}
+            onClick={downloadCalendar}
+          >
+            Календарь
+          </button>
+          <button
+            className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
+            style={{ background: 'rgba(229,83,75,0.08)', color: '#E5534B' }}
+            onClick={handleCancel}
+          >
+            Отменить
+          </button>
+          <button
+            className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
+            style={{ background: 'rgba(246,184,77,0.08)', color: '#C97F10' }}
+            onClick={handleReschedule}
+          >
+            Перенести
+          </button>
+        </div>
+      )}
+    </motion.div>
   )
 }
 
@@ -518,7 +674,7 @@ export function StudentProfileHeader({
         className="rounded-full text-[#C97F10]"
       />
       <div className="min-w-0 flex-1">
-        <p className="caption">Кабинет ученика</p>
+        <p className="t-micro" style={{ fontWeight: 700 }}>Кабинет ученика</p>
         <h1
           className="truncate font-extrabold tracking-tight text-[#111418]"
           style={{ fontSize: '20px', lineHeight: '1.2' }}
@@ -581,7 +737,7 @@ export function NearestLessonCard({
           boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
         }}
       >
-        <p className="caption">Ближайшее занятие</p>
+        <p className="t-micro" style={{ fontWeight: 700 }}>Ближайшее занятие</p>
         <h2 className="mt-3 display-sm" style={{ fontSize: '22px' }}>Активных записей нет</h2>
         <p className="body mt-2" style={{ color: '#6F747A' }}>
           Выберите удобное время и инструктор появится здесь.
@@ -608,7 +764,7 @@ export function NearestLessonCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="caption">Ближайшее занятие</p>
+          <p className="t-micro" style={{ fontWeight: 700 }}>Ближайшее занятие</p>
           <h2
             className="mt-3 font-extrabold tracking-tight text-[#111418]"
             style={{ fontSize: '24px', lineHeight: '1.2' }}

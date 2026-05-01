@@ -1,6 +1,7 @@
 import { addDays, format } from 'date-fns'
 import { db } from './storage'
-import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule } from '../types'
+import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule, StudentProgress, LessonDescription } from '../types'
+import { saveStudentProgress, saveLessonDescription } from './studentProfile'
 
 const SCHOOL_ID = 'school-virazh'
 
@@ -254,6 +255,68 @@ export function seedIfNeeded(): void {
   ACTIVE_MODULES.forEach((sm) => db.subModules.upsert(sm))
 
   db.markSeeded()
+  seedDemoProgress()
+}
+
+const THEORY_TOPICS = [
+  'Основы ПДД и дорожная безопасность',
+  'Дорожные знаки и разметка',
+  'Движение в городе',
+  'Перекрёстки и проезд перекрёстков',
+  'Обгон, опережение, встречный разъезд',
+  'Остановка, стоянка, парковка',
+  'Движение по прилегающим территориям',
+  'Особенности движения в тёмное время суток',
+  'Перевозка пассажиров и грузов',
+  'Первая помощь при ДТП',
+]
+
+const DRIVING_LESSON_THEMES = [
+  { theme: 'Знакомство с автомобилем', goals: ['Настройка сиденья и зеркал', 'Запуск двигателя', 'Понять расположение педалей'], whatToBring: ['Паспорт'] },
+  { theme: 'Начало движения и остановка', goals: ['Трогание с места', 'Остановка у обочины', 'Контроль сцепления'], whatToBring: ['Паспорт', 'Удобная обувь'] },
+  { theme: 'Движение по прямой', goals: ['Набор скорости', 'Соблюдение дистанции', 'Контроль полосы'], whatToBring: ['Паспорт'] },
+  { theme: 'Повороты и развороты', goals: ['Поворот направо', 'Поворот налево', 'Разворот на узкой дороге'], whatToBring: ['Паспорт', 'Тетрадь'] },
+  { theme: 'Парковка и постановка на стоянку', goals: ['Параллельная парковка', 'Парковка перпендикулярная', 'Экстренная остановка'], whatToBring: ['Паспорт'] },
+  { theme: 'Движение в городе', goals: ['Проезд перекрёстков', 'Перестроение', 'Объезд препятствий'], whatToBring: ['Паспорт'] },
+  { theme: 'Обгон и опережение', goals: ['Безопасный обгон', 'Возврат в полосу', 'Опережение'], whatToBring: ['Паспорт'] },
+  { theme: 'Движение по загородной дороге', goals: ['Набирать скорость', 'Торможение', 'Проезд поворотов'], whatToBring: ['Паспорт', 'Вода'] },
+]
+
+function seedDemoProgress(): void {
+  STUDENTS.forEach((student, idx) => {
+    const theoryCompleted = 2 + (idx % 5)
+    const hoursCompleted = 4 + (idx * 3) % 20
+
+    const progress: StudentProgress = {
+      id: `progress-${student.id}`,
+      studentId: student.id,
+      schoolId: SCHOOL_ID,
+      theoryTopicsTotal: THEORY_TOPICS.length,
+      theoryTopicsCompleted: theoryCompleted,
+      drivingHoursTotal: 56,
+      drivingHoursCompleted: hoursCompleted,
+      internalExamPassed: idx % 3 !== 0,
+      internalExamDate: idx % 3 !== 0 ? format(addDays(new Date(), -7 + idx), 'yyyy-MM-dd') : null,
+      gaidExamDate: format(addDays(new Date(), 30 + idx * 7), 'yyyy-MM-dd'),
+      notes: '',
+      updatedAt: new Date().toISOString(),
+    }
+    saveStudentProgress(progress)
+  })
+
+  const bookedSlots = db.slots.all().filter((s) => s.status === 'booked')
+  bookedSlots.forEach((slot, idx) => {
+    const lessonIdx = idx % DRIVING_LESSON_THEMES.length
+    const lesson = DRIVING_LESSON_THEMES[lessonIdx]
+    const desc: LessonDescription = {
+      slotId: slot.id,
+      theme: lesson.theme,
+      goals: lesson.goals,
+      whatToBring: lesson.whatToBring,
+      notes: '',
+    }
+    saveLessonDescription(desc)
+  })
 }
 
 export function resetDemoData(): void {

@@ -132,7 +132,7 @@ export function StudentPage() {
                 {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" /> : initials(profile.name)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="caption">Кабинет ученика</p>
+                <p className="t-micro">Кабинет ученика</p>
                 <h1
                   className="truncate font-extrabold tracking-tight text-[#111418]"
                   style={{ fontSize: '20px', lineHeight: '1.2' }}
@@ -159,7 +159,7 @@ export function StudentPage() {
               className="card p-5"
               style={{ borderRadius: '24px' }}
             >
-              <p className="caption">Ближайшее занятие</p>
+              <p className="t-micro">Ближайшее занятие</p>
               {next?.slot ? (
                 <>
                   <div className="mt-3 flex items-start justify-between gap-3">
@@ -271,10 +271,13 @@ export function StudentPage() {
 
         {view === 'bookings' ? (
           <section>
-            <h1 className="display-md" style={{ fontSize: '22px' }}>Мои записи</h1>
-            <p className="body mt-1.5" style={{ color: '#6F747A', fontSize: '14px' }}>
-              Только занятия, записанные на ваш номер.
-            </p>
+            <h2
+              className="font-extrabold tracking-tight"
+              style={{ fontSize: 'clamp(20px, 5vw, 26px)', lineHeight: 1.15, color: '#111418' }}
+            >
+              Мои записи
+            </h2>
+            <p className="t-body mt-2">Только занятия, записанные на ваш номер.</p>
             <div className="mt-4">
               <SegmentedTabs
                 value={bookingTab}
@@ -296,10 +299,15 @@ export function StudentPage() {
           <section>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h1 className="display-md" style={{ fontSize: '22px' }}>Настройки</h1>
-                <p className="body mt-1.5" style={{ color: '#6F747A', fontSize: '14px' }}>
-                  Контакты для записи и входа.
-                </p>
+                <h2
+              className="font-extrabold tracking-tight"
+              style={{ fontSize: 'clamp(20px, 5vw, 26px)', lineHeight: 1.15, color: '#111418' }}
+            >
+              Настройки
+            </h2>
+            <p className="t-body mt-2">
+              Контакты для записи и входа.
+            </p>
               </div>
               <button
                 aria-label="Выйти"
