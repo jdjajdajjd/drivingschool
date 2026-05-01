@@ -30,7 +30,7 @@ export function FilterChipsBar({
               className={cn(
                 'min-h-9 whitespace-nowrap rounded-full border px-4 text-[13px] font-bold transition-all duration-150 active:scale-[0.97]',
                 active
-                  ? 'border-[#F6B84D] bg-[rgba(246,184,77,0.12)] text-[#C97F10]'
+                  ? 'border-[#C4935A] bg-[rgba(246,184,77,0.12)] text-[#C97F10]'
                   : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A] hover:border-[rgba(0,0,0,0.10)]',
               )}
             >

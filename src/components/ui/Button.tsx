@@ -17,7 +17,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#F6B84D]/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 select-none',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#C4935A]/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 select-none',
         'active:scale-[0.97]',
         {
           primary:

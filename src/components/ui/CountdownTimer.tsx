@@ -51,7 +51,7 @@ export function CountdownTimer({
   const urgent = variant === 'urgent' || remaining.totalMs < 5 * 60 * 1000
   const calm = variant === 'calm' || remaining.totalMs > 60 * 60 * 1000
 
-  const accentColor = urgent ? '#E5534B' : calm ? '#15803D' : '#F6B84D'
+  const accentColor = urgent ? '#E5534B' : calm ? '#15803D' : '#C4935A'
   const bgColor = urgent ? 'rgba(229,83,75,0.08)' : calm ? 'rgba(21,128,61,0.06)' : 'rgba(246,184,77,0.08)'
   const borderColor = urgent ? 'rgba(229,83,75,0.20)' : calm ? 'rgba(21,128,61,0.15)' : 'rgba(246,184,77,0.20)'
 
@@ -144,7 +144,7 @@ export function ExamCountdown({ targetDate }: { targetDate: Date }) {
   }
 
   const totalDays = Math.ceil(remaining.totalMs / (86400 * 1000))
-  const color = totalDays <= 7 ? '#E5534B' : totalDays <= 14 ? '#F6B84D' : '#15803D'
+  const color = totalDays <= 7 ? '#E5534B' : totalDays <= 14 ? '#C4935A' : '#15803D'
 
   return (
     <span className="text-[13px] font-bold" style={{ color }}>

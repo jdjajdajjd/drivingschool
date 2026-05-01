@@ -188,9 +188,9 @@ export function BookingConfirmation() {
         </div>
 
         {!isCancelled ? (
-          <div className="rounded-2xl border rgba(246,184,77,0.20) rgba(246,184,77,0.12) p-4 ">
+          <div className="rounded-2xl border rgba(246,184,77,0.20) rgba(196,147,90,0.12) p-4 ">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl white #C97F10 ">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl white #9B7034 ">
                 <UserRound size={18} />
               </span>
               <div className="min-w-0 flex-1">

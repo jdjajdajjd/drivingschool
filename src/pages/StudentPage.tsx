@@ -127,7 +127,7 @@ export function StudentPage() {
             >
               <div
                 className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full font-extrabold text-[18px]"
-                style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+                style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
               >
                 {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" /> : initials(profile.name)}
               </div>
@@ -221,7 +221,7 @@ export function StudentPage() {
                 {upcoming.length > 1 ? (
                   <button
                     className="text-[13px] font-bold transition-colors hover:opacity-80"
-                    style={{ color: '#F6B84D' }}
+                    style={{ color: '#C4935A' }}
                     onClick={() => setView('bookings')}
                   >
                     Все
@@ -250,7 +250,7 @@ export function StudentPage() {
                       className="card flex flex-col items-start gap-2 p-4"
                       style={{ cursor: 'pointer' }}
                     >
-                      <action.icon size={16} style={{ color: '#F6B84D' }} />
+                      <action.icon size={16} style={{ color: '#C4935A' }} />
                       <span className="text-[13px] font-semibold text-[#111418]">{action.label}</span>
                     </a>
                   ) : (
@@ -259,7 +259,7 @@ export function StudentPage() {
                       className="card flex flex-col items-start gap-2 p-4 text-left"
                       onClick={action.onClick}
                     >
-                      <action.icon size={16} style={{ color: '#F6B84D' }} />
+                      <action.icon size={16} style={{ color: '#C4935A' }} />
                       <span className="text-[13px] font-semibold text-[#111418]">{action.label}</span>
                     </button>
                   )

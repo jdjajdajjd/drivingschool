@@ -19,7 +19,7 @@ export function Card({
   ...props
 }: CardProps) {
   const baseStyles = 'transition-all duration-150'
-  const selectedStyles = selected ? 'border-[#F6B84D] shadow-[0_0_0_3px_rgba(246,184,77,0.15)]' : ''
+  const selectedStyles = selected ? 'border-[#C4935A] shadow-[0_0_0_3px_rgba(246,184,77,0.15)]' : ''
   const hoverStyles = hover ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(15,20,25,0.12)]' : ''
 
   const variantStyles = {

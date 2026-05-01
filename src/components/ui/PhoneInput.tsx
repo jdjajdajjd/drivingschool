@@ -1,24 +1,17 @@
 import { useCallback } from 'react'
 
 /**
- * Formats raw phone digits into readable display:
- * +7 902 753 86 85
+ * Converts raw 10-digit input (without country code) to display format:
+ * 9027538685 → "+7 902 753 86 85"
  */
 export function formatPhoneDisplay(value: string): string {
   const digits = value.replace(/\D/g, '')
   if (digits.length === 0) return ''
-  if (digits.length === 1) return `+${digits}`
-  if (digits.length === 2) return `+${digits.slice(0, 1)} ${digits.slice(1)}`
-  if (digits.length === 3) return `+${digits.slice(0, 1)} ${digits.slice(1)}`
-  if (digits.length === 4) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)}`
-  if (digits.length === 5) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4)}`
-  if (digits.length === 6) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4)}`
-  if (digits.length === 7) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4, 7)}`
-  if (digits.length === 8) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`
-  if (digits.length === 9) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`
-  if (digits.length === 10) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)}`
-  if (digits.length === 11) return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9)}`
-  return `+${digits.slice(0, 1)} ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9, 11)}`
+  if (digits.length <= 3) return `+7 ${digits}`
+  if (digits.length <= 6) return `+7 ${digits.slice(0, 3)} ${digits.slice(3)}`
+  if (digits.length <= 8) return `+7 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+  if (digits.length <= 10) return `+7 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 8)} ${digits.slice(8)}`
+  return `+7 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 8)} ${digits.slice(8, 10)} ${digits.slice(10)}`
 }
 
 export function rawPhoneDigits(value: string): string {
@@ -41,13 +34,13 @@ export function PhoneInput({
   onBlur,
   error,
   label,
-  placeholder = '+7',
+  placeholder = '+7 ',
   autoFocus,
 }: PhoneInputProps) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = rawPhoneDigits(e.target.value)
-      const limited = raw.slice(0, 11)
+      const limited = raw.slice(0, 10)
       onChange(limited)
     },
     [onChange],
@@ -61,8 +54,7 @@ export function PhoneInput({
   }, [])
 
   const displayValue = value ? formatPhoneDisplay(value) : ''
-  const digits = rawPhoneDigits(value)
-  const isComplete = digits.length === 11
+  const isComplete = value.length === 10
 
   return (
     <div className="input-wrap">
@@ -78,7 +70,7 @@ export function PhoneInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         className={['input', error ? 'input-error' : ''].join(' ')}
-        style={{ fontSize: '16px', letterSpacing: digits.length > 0 ? '0.04em' : 'normal' }}
+        style={{ fontSize: '16px', letterSpacing: value.length > 0 ? '0.04em' : 'normal' }}
       />
       {error && <p className="input-error-msg">{error}</p>}
       {!error && isComplete && (

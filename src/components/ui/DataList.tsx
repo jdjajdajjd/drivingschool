@@ -18,7 +18,7 @@ export function DataRow({ children, className, selected = false }: { children: R
       className={cn('flex items-center gap-3.5 px-4 py-3.5 transition-all duration-150 hover:-translate-y-px', className)}
       style={{
         background: 'white',
-        border: selected ? '2px solid #F6B84D' : '1px solid rgba(0,0,0,0.06)',
+        border: selected ? '2px solid #C4935A' : '1px solid rgba(0,0,0,0.06)',
         borderRadius: '18px',
         boxShadow: selected ? '0 0 0 3px rgba(246,184,77,0.15)' : '0 18px 45px rgba(15,20,25,0.10)',
       }}

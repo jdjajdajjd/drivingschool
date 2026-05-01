@@ -60,8 +60,8 @@
     --border-strong: rgba(0, 0, 0, 0.10);
     --border-hover: rgba(0, 0, 0, 0.14);
 
-    --accent: #F6B84D;
-    --accent-soft: rgba(246, 184, 77, 0.12);
+    --accent: #C4935A;
+    --accent-soft: rgba(196, 147, 90, 0.12);
     --accent-deep: #C97F10;
 
     --green: #15803D;
@@ -254,7 +254,7 @@
   .btn-accent {
     background: var(--accent);
     color: white;
-    box-shadow: 0 12px 28px rgba(246, 184, 77, 0.28);
+    box-shadow: 0 12px 28px rgba(196, 147, 90, 0.28);
   }
   .btn-accent:hover {
     background: #D4900A;
@@ -321,7 +321,7 @@
 
   .input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(246, 184, 77, 0.15);
+    box-shadow: 0 0 0 3px rgba(196, 147, 90, 0.15);
   }
 
   .input-error {
@@ -566,7 +566,7 @@
   .slot-btn.selected {
     background: var(--accent-soft);
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(246, 184, 77, 0.15);
+    box-shadow: 0 0 0 3px rgba(196, 147, 90, 0.15);
   }
 
   .slot-btn.locked {

@@ -81,7 +81,7 @@ function Progress({ step }: { step: Step }) {
       <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full" style={{ background: '#F4F5F6' }}>
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, background: '#F6B84D' }}
+          style={{ width: `${pct}%`, background: '#C4935A' }}
         />
       </div>
     </div>
@@ -111,7 +111,7 @@ function BookingMiniSummary({
     >
       <div
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+        style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
       >
         <Car size={18} />
       </div>
@@ -135,8 +135,8 @@ function AccountOfferCard({ onCreate }: { onCreate: () => void }) {
     <motion.div
       className="rounded-2xl p-4"
       style={{
-        border: '1px solid rgba(246,184,77,0.20)',
-        background: 'rgba(246,184,77,0.04)',
+        border: '1px solid rgba(196,147,90,0.20)',
+        background: 'rgba(196,147,90,0.04)',
       }}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -145,7 +145,7 @@ function AccountOfferCard({ onCreate }: { onCreate: () => void }) {
       <div className="flex items-start gap-3">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
-          style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+          style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
         >
           <UserRound size={18} />
         </div>
@@ -482,7 +482,7 @@ export function BookingFlowPage() {
                 {selectedDate && (
                   <div
                     className="mt-3 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5"
-                    style={{ background: 'rgba(246,184,77,0.10)', color: '#C97F10' }}
+                    style={{ background: 'rgba(246,184,77,0.10)', color: '#9B7034' }}
                   >
                     <CalendarPlus size={13} />
                     <span className="text-[12px] font-semibold">
@@ -561,7 +561,7 @@ export function BookingFlowPage() {
                       src={getInstructorPhoto(selectedInstructor)}
                       alt={selectedInstructor.name}
                       size="md"
-                      className="rounded-full text-[#C97F10]"
+                      className="rounded-full text-[#9B7034]"
                     />
                     <div className="min-w-0">
                       <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>

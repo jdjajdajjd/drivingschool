@@ -56,7 +56,7 @@ export function InstructorCompactCard({
         src={getInstructorPhoto(instructor)}
         alt={instructor.name}
         size="lg"
-        className="rounded-full text-[#C97F10]"
+        className="rounded-full text-[#9B7034]"
       />
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">{shortName}</p>
@@ -96,8 +96,8 @@ export function InstructorCompactCard({
           className="inline-flex min-h-8 items-center rounded-full px-3 text-[12px] font-extrabold transition-all duration-150"
           style={
             selected
-              ? { background: '#F6B84D', color: 'white', boxShadow: '0 12px_28px_rgba(246,184,77,0.28)' }
-              : { background: 'rgba(246,184,77,0.12)', color: '#C97F10' }
+              ? { background: '#C4935A', color: 'white', boxShadow: '0 12px_28px_rgba(246,184,77,0.28)' }
+              : { background: 'rgba(196,147,90,0.12)', color: '#9B7034' }
           }
         >
           {selected ? <Check size={12} /> : cta}
@@ -123,7 +123,7 @@ export function BranchCompactCard({ branch, onSelect }: { branch: Branch; onSele
     >
       <span
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+        style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
       >
         <MapPin size={18} />
       </span>
@@ -164,15 +164,15 @@ export function DayChipsScroller({
               whileTap={{ scale: 0.97 }}
               className="relative flex w-[88px] flex-col items-start justify-start p-3 text-left transition-all duration-100"
               style={{
-                background: active ? 'rgba(246,184,77,0.12)' : 'white',
-                border: `2px solid ${active ? '#F6B84D' : 'rgba(0,0,0,0.06)'}`,
+                background: active ? 'rgba(196,147,90,0.12)' : 'white',
+                border: `2px solid ${active ? '#C4935A' : 'rgba(0,0,0,0.06)'}`,
                 borderRadius: '18px',
                 boxShadow: active ? '0 0 0 3px rgba(246,184,77,0.15)' : '0 18px_45px_rgba(15,20,25,0.10)',
                 minHeight: '68px',
               }}
             >
               {active && (
-                <Check size={12} className="absolute right-2 top-2" style={{ color: '#F6B84D' }} />
+                <Check size={12} className="absolute right-2 top-2" style={{ color: '#C4935A' }} />
               )}
               <span className="text-[12px] font-extrabold text-[#111418]">
                 {index === 0 ? 'Сегодня' : index === 1 ? 'Завтра' : formatDayOfWeek(date)}
@@ -182,7 +182,7 @@ export function DayChipsScroller({
               </span>
               <span
                 className="mt-1 text-[11px] font-bold"
-                style={{ color: active ? '#F6B84D' : '#9EA3A8' }}
+                style={{ color: active ? '#C4935A' : '#9EA3A8' }}
               >
                 {count} слотов
               </span>
@@ -215,8 +215,8 @@ export function TimeSlotGrid({
             whileTap={{ scale: 0.97 }}
             className="p-4 text-left transition-all duration-100"
             style={{
-              background: active ? 'rgba(246,184,77,0.12)' : 'white',
-              border: `2px solid ${active ? '#F6B84D' : 'rgba(0,0,0,0.06)'}`,
+              background: active ? 'rgba(196,147,90,0.12)' : 'white',
+              border: `2px solid ${active ? '#C4935A' : 'rgba(0,0,0,0.06)'}`,
               borderRadius: '18px',
               boxShadow: active ? '0 0 0 3px rgba(246,184,77,0.15)' : '0 18px_45px_rgba(15,20,25,0.10)',
               minHeight: '80px',
@@ -229,7 +229,7 @@ export function TimeSlotGrid({
               >
                 {formatTimeRange(slot)}
               </span>
-              {active && <Check size={16} style={{ color: '#F6B84D' }} />}
+              {active && <Check size={16} style={{ color: '#C4935A' }} />}
             </span>
             <span
               className="mt-0.5 block text-[12px] font-medium"
@@ -262,7 +262,7 @@ function DetailRow({
     >
       <span
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(246,184,77,0.12)', color: '#C97F10' }}
+        style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
       >
         <Icon size={15} />
       </span>
@@ -413,9 +413,9 @@ export function BookingStatusChip({ state, slot }: { state: BookingUrgencyState;
           : getRelativeLessonLabel(slot)
 
   const chipStyles: Record<BookingUrgencyState, React.CSSProperties> = {
-    today: { background: 'rgba(246,184,77,0.12)', color: '#C97F10', border: '1px solid rgba(246,184,77,0.20)' },
-    tomorrow: { background: 'rgba(246,184,77,0.12)', color: '#C97F10', border: '1px solid rgba(246,184,77,0.20)' },
-    'soon-2-days': { background: 'rgba(246,184,77,0.12)', color: '#C97F10', border: '1px solid rgba(246,184,77,0.20)' },
+    today: { background: 'rgba(196,147,90,0.12)', color: '#9B7034', border: '1px solid rgba(246,184,77,0.20)' },
+    tomorrow: { background: 'rgba(196,147,90,0.12)', color: '#9B7034', border: '1px solid rgba(246,184,77,0.20)' },
+    'soon-2-days': { background: 'rgba(196,147,90,0.12)', color: '#9B7034', border: '1px solid rgba(246,184,77,0.20)' },
     'future-muted': { background: '#F4F5F6', color: '#6F747A', border: '1px solid rgba(0,0,0,0.06)' },
     completed: { background: '#F0FDF4', color: '#15803D', border: '1px solid rgba(21,128,61,0.15)' },
     cancelled: { background: '#FEF2F2', color: '#E5534B', border: '1px solid rgba(229,83,75,0.15)' },
@@ -498,7 +498,7 @@ export function StudentBookingCard({
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="sm"
-          className="rounded-full text-[#C97F10] shrink-0"
+          className="rounded-full text-[#9B7034] shrink-0"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-extrabold tracking-tight" style={{ color: muted ? '#9EA3A8' : '#111418' }}>
@@ -529,7 +529,7 @@ export function StudentBookingCard({
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="lg"
-          className="rounded-full text-[#C97F10] shrink-0"
+          className="rounded-full text-[#9B7034] shrink-0"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
@@ -553,7 +553,7 @@ export function StudentBookingCard({
             className="flex items-center gap-2 rounded-2xl px-3.5 py-2.5"
             style={{ background: 'rgba(246,184,77,0.06)' }}
           >
-            <CalendarDays size={15} style={{ color: '#C97F10' }} />
+            <CalendarDays size={15} style={{ color: '#9B7034' }} />
             <p className="text-[14px] font-semibold" style={{ color: '#111418' }}>
               {lessonLabel}, {lessonTime}
             </p>
@@ -575,7 +575,7 @@ export function StudentBookingCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 flex items-center gap-1 text-[12px] font-bold transition-colors"
-                style={{ color: '#F6B84D' }}
+                style={{ color: '#C4935A' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 Карта <ExternalLink size={11} />
@@ -631,7 +631,7 @@ export function StudentBookingCard({
           </button>
           <button
             className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
-            style={{ background: 'rgba(246,184,77,0.08)', color: '#C97F10' }}
+            style={{ background: 'rgba(246,184,77,0.08)', color: '#9B7034' }}
             onClick={handleReschedule}
           >
             Перенести
@@ -671,7 +671,7 @@ export function StudentProfileHeader({
         src={profile.avatarUrl}
         alt={profile.name}
         size="lg"
-        className="rounded-full text-[#C97F10]"
+        className="rounded-full text-[#9B7034]"
       />
       <div className="min-w-0 flex-1">
         <p className="t-micro" style={{ fontWeight: 700 }}>Кабинет ученика</p>
@@ -783,7 +783,7 @@ export function NearestLessonCard({
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="lg"
-          className="rounded-full text-[#C97F10]"
+          className="rounded-full text-[#9B7034]"
         />
         <div className="min-w-0">
           <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">

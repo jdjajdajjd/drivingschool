@@ -108,7 +108,7 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
                     width: '4px',
                     height: '4px',
                     borderRadius: '50%',
-                    background: '#F6B84D',
+                    background: '#C4935A',
                   }}
                 />
               )}
@@ -120,7 +120,7 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-1.5">
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F6B84D', display: 'inline-block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C4935A', display: 'inline-block' }} />
           <span className="t-micro">Есть окна</span>
         </div>
         <div className="flex items-center gap-1.5">
