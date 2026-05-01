@@ -74,7 +74,8 @@ export function StudentPage() {
     const nextProfile = found?.profile ?? (nextSchool ? loadStudentProfile(nextSchool.id) : null)
     setProfile(nextProfile)
     if (nextProfile) setForm({ name: nextProfile.name, phone: nextProfile.phone, email: nextProfile.email })
-  }, [])
+    if (!nextProfile) navigate('/student/register', { replace: true })
+  }, [navigate])
 
   const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile])
   const now = Date.now()
@@ -89,8 +90,8 @@ export function StudentPage() {
         <StateView
           kind="locked"
           title="Кабинет ещё не создан"
-          description="Записаться можно без регистрации. Кабинет появится после кнопки «Создать кабинет» на экране подтверждения."
-          action={<Button onClick={() => navigate('/school/virazh')}>Открыть автошколу</Button>}
+          description="Сначала зарегистрируйтесь по ФИО и телефону. После этого откроется личный кабинет ученика."
+          action={<Button onClick={() => navigate('/student/register')}>Создать кабинет</Button>}
         />
       </div>
     )

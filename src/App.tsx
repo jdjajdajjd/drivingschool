@@ -7,6 +7,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({
 const SchoolPage = lazy(() => import('./pages/SchoolPage').then((module) => ({ default: module.SchoolPage })))
 const BookingFlowPage = lazy(() => import('./pages/BookingFlowPage').then((module) => ({ default: module.BookingFlowPage })))
 const StudentPage = lazy(() => import('./pages/StudentPage').then((module) => ({ default: module.StudentPage })))
+const StudentRegisterPage = lazy(() => import('./pages/StudentRegisterPage'))
 const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation').then((module) => ({ default: module.BookingConfirmation })))
 const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage').then((module) => ({ default: module.StaffLoginPage })))
 const InstructorPage = lazy(() => import('./pages/InstructorPage').then((module) => ({ default: module.InstructorPage })))
@@ -63,6 +64,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/school/:slug" element={<SchoolPage />} />
           <Route path="/school/:slug/book" element={<BookingFlowPage />} />
+          <Route path="/student/register" element={<StudentRegisterPage />} />
           <Route path="/student" element={<StudentPage />} />
           <Route path="/booking/:bookingId" element={<BookingConfirmation />} />
           <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" />} />
