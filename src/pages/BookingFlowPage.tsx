@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, CalendarPlus, Car, CheckCircle2, UserRound } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, Car, CheckCircle2 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
 import { StickyActionBar } from '../components/ui/StickyActionBar'
-import { CalendarPicker } from '../components/ui/CalendarPicker'
 import { Avatar } from '../components/ui/Avatar'
 import {
   BookingDetailsCard,
+  DayChipsScroller,
   InstructorCompactCard,
   SuccessHeader,
   SummaryCard,
@@ -32,7 +32,7 @@ import {
   releaseSessionLocks,
   releaseSlotLock,
 } from '../services/bookingService'
-import { saveStudentProfile } from '../services/studentProfile'
+import { findAnyStudentProfile, saveStudentProfile } from '../services/studentProfile'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
@@ -130,41 +130,6 @@ function BookingMiniSummary({
   )
 }
 
-function AccountOfferCard({ onCreate }: { onCreate: () => void }) {
-  return (
-    <motion.div
-      className="rounded-2xl p-4"
-      style={{
-        border: '1px solid rgba(196,147,90,0.20)',
-        background: 'rgba(196,147,90,0.04)',
-      }}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: 0.1 }}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
-          style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
-        >
-          <UserRound size={18} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold leading-[22px]" style={{ color: '#111418' }}>
-            Хотите видеть все записи в одном месте?
-          </p>
-          <p className="mt-1 text-[13px] font-medium leading-5" style={{ color: '#6F747A' }}>
-            Создайте кабинет — следующая запись будет быстрее.
-          </p>
-        </div>
-      </div>
-      <Button className="mt-4 w-full" variant="secondary" onClick={onCreate}>
-        Создать кабинет
-      </Button>
-    </motion.div>
-  )
-}
-
 export function BookingFlowPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
   const [params] = useSearchParams()
@@ -194,6 +159,20 @@ export function BookingFlowPage() {
         setSchool(data.school)
         setBranches(data.branches)
         setInstructors(data.instructors)
+
+        const firstSlot = getFutureAvailableSlots(data.school.id)[0]
+        if (firstSlot) {
+          setSelectedDate((current) => current ?? parseISO(firstSlot.date))
+        }
+
+        const foundProfile = findAnyStudentProfile()
+        if (foundProfile?.profile) {
+          setForm((current) => ({
+            ...current,
+            name: foundProfile.profile.name,
+            phone: foundProfile.profile.phone.replace(/^7/, '').slice(0, 10),
+          }))
+        }
 
         // Check if a slot was pre-selected from URL
         const querySlot = params.get('slot')
@@ -225,14 +204,11 @@ export function BookingFlowPage() {
       ? db.branches.byId(selectedInstructor.branchId)
       : null
 
-  // Build calendar days from slots
-  const calendarDays = useMemo(() => {
-    return futureSlots.map((slot) => ({
-      date: parseISO(slot.date),
-      slotCount: 1,
-      isBooked: slot.status === 'booked',
-    }))
+  const availableDays = useMemo(() => {
+    return Array.from(new Set(futureSlots.map((slot) => slot.date))).slice(0, 7)
   }, [futureSlots])
+
+  const selectedDateKey = selectedDate ? isoDate(selectedDate) : ''
 
   // Instructors filtered by selected date
   const instructorsOnDate = useMemo(() => {
@@ -432,22 +408,66 @@ export function BookingFlowPage() {
                   className="font-extrabold tracking-tight"
                   style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
                 >
-                  Выберите дату
+                  Ближайшие окна
                 </h2>
                 <p className="t-body mt-2" style={{ color: '#6F747A' }}>
-                  Покажем доступных инструкторов и время.
+                  Автошколы обычно открывают слоты на неделю. Выберите удобный день, дальше покажем инструкторов и время.
                 </p>
 
-                <div className="mt-5">
-                  <CalendarPicker
-                    days={calendarDays}
-                    selectedDate={selectedDate}
+                <div className="mt-5 space-y-4">
+                  <DayChipsScroller
+                    days={availableDays}
+                    selectedDate={selectedDateKey}
+                    getCount={(date) => futureSlots.filter((slot) => slot.date === date).length}
                     onSelect={(date) => {
-                      setSelectedDate(date)
+                      setSelectedDate(parseISO(date))
                       setSelectedInstructorId('')
                       setSelectedSlotId('')
                     }}
                   />
+
+                  <div className="rounded-[24px] bg-white p-4 shadow-[0_18px_45px_rgba(15,20,25,0.08)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">
+                          {selectedDate ? format(selectedDate, 'd MMMM', { locale: ru }) : 'Выберите день'}
+                        </p>
+                        <p className="mt-1 text-[13px] font-medium text-[#6F747A]">
+                          {selectedDateKey
+                            ? `${futureSlots.filter((slot) => slot.date === selectedDateKey).length} свободных слотов`
+                            : 'Покажем только актуальные окна'}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[#EAF8F0] px-3 py-1.5 text-[12px] font-extrabold text-[#14995B]">
+                        7 дней
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      {futureSlots
+                        .filter((slot) => slot.date === selectedDateKey)
+                        .slice(0, 4)
+                        .map((slot) => {
+                          const instructor = instructors.find((item) => item.id === slot.instructorId)
+                          return (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              className="rounded-[18px] bg-[#F7F8FA] p-3 text-left active:scale-[0.97]"
+                              onClick={() => {
+                                setSelectedInstructorId(slot.instructorId)
+                                selectSlot(slot)
+                                setStep('contacts')
+                              }}
+                            >
+                              <p className="text-[15px] font-black text-[#111418]">{formatTimeRange(slot)}</p>
+                              <p className="mt-1 truncate text-[12px] font-bold text-[#6F747A]">
+                                {instructor ? formatInstructorName(instructor.name) : 'Инструктор'}
+                              </p>
+                            </button>
+                          )
+                        })}
+                    </div>
+                  </div>
                 </div>
 
                 <StickyActionBar>
@@ -648,13 +668,11 @@ export function BookingFlowPage() {
                     onChange={(val) => setForm((c) => ({ ...c, phone: val }))}
                   />
 
-                  <Input
-                    label="E-mail (опционально)"
-                    value={form.email}
-                    error={errors.email}
-                    placeholder="name@email.ru"
-                    onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
-                  />
+                  <div className="rounded-2xl bg-[#F7F8FA] p-4">
+                    <p className="text-[13px] font-semibold leading-5 text-[#6F747A]">
+                      Email не нужен для записи. Дополнительные данные можно добавить позже в кабинете.
+                    </p>
+                  </div>
                 </div>
 
                 <StickyActionBar>
@@ -742,7 +760,9 @@ export function BookingFlowPage() {
                     На страницу школы
                   </Button>
                 </motion.div>
-                <AccountOfferCard onCreate={() => setStep('account')} />
+                <Button className="w-full bg-[#2436D9]" onClick={() => navigate('/student')}>
+                  Перейти в кабинет
+                </Button>
               </section>
             )}
 
