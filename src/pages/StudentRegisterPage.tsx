@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, CarFront, CheckCircle2, Clock3, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -8,6 +8,8 @@ import { PhoneInput } from '../components/ui/PhoneInput'
 import { isValidRussianPhone } from '../services/bookingService'
 import { db } from '../services/storage'
 import { findAnyStudentProfile, saveStudentProfile, type StudentProfile } from '../services/studentProfile'
+
+void React
 
 type RegisterErrors = {
   name?: string

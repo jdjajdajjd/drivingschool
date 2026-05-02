@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, CalendarPlus, Car, CheckCircle2 } from 'lucide-react'
@@ -38,6 +38,8 @@ import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
 import { format, isSameDay, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
+
+void React
 
 type Step = 'date' | 'instructor' | 'time' | 'contacts' | 'confirm' | 'success' | 'account'
 
@@ -81,7 +83,7 @@ function Progress({ step }: { step: Step }) {
       <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full" style={{ background: '#F4F5F6' }}>
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, background: '#C4935A' }}
+          style={{ width: `${pct}%`, background: '#2436D9' }}
         />
       </div>
     </div>
@@ -111,7 +113,7 @@ function BookingMiniSummary({
     >
       <div
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(196,147,90,0.12)', color: '#9B7034' }}
+        style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
       >
         <Car size={18} />
       </div>
@@ -502,7 +504,7 @@ export function BookingFlowPage() {
                 {selectedDate && (
                   <div
                     className="mt-3 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5"
-                    style={{ background: 'rgba(246,184,77,0.10)', color: '#9B7034' }}
+                    style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
                   >
                     <CalendarPlus size={13} />
                     <span className="text-[12px] font-semibold">
@@ -577,11 +579,11 @@ export function BookingFlowPage() {
                   <div className="mt-4 flex items-center gap-3.5">
                     <Avatar
                       initials={selectedInstructor.avatarInitials || formatInstructorName(selectedInstructor.name)[0]}
-                      color={selectedInstructor.avatarColor || '#FFF7ED'}
+                      color={selectedInstructor.avatarColor || '#EFF2FF'}
                       src={getInstructorPhoto(selectedInstructor)}
                       alt={selectedInstructor.name}
                       size="md"
-                      className="rounded-full text-[#9B7034]"
+                      className="rounded-full text-[#2436D9]"
                     />
                     <div className="min-w-0">
                       <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>

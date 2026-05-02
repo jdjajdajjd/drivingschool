@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
+import React from 'react'
 import { AlertCircle, CheckCircle2, Loader2, Search, ShieldAlert } from 'lucide-react'
 import { cn } from '../../lib/utils'
+
+void React
 
 type StateKind = 'empty' | 'no-results' | 'loading' | 'error' | 'success' | 'locked'
 
@@ -24,7 +27,7 @@ const iconByKind: Record<StateKind, ReactNode> = {
 const toneByKind: Record<StateKind, { bg: string; color: string }> = {
   empty: { bg: '#F4F5F6', color: '#9EA3A8' },
   'no-results': { bg: '#F4F5F6', color: '#9EA3A8' },
-  loading: { bg: 'rgba(246,184,77,0.12)', color: '#C97F10' },
+  loading: { bg: 'rgba(36,54,217,0.10)', color: '#2436D9' },
   error: { bg: '#FEF2F2', color: '#E5534B' },
   success: { bg: '#F0FDF4', color: '#15803D' },
   locked: { bg: '#FFFBEB', color: '#B45309' },

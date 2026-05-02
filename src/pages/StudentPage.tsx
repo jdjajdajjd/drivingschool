@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  AlertCircle,
   BookOpen,
   CalendarDays,
   CarFront,
@@ -37,6 +36,8 @@ import {
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import type { Booking, Branch, Instructor, School, Slot, StudentProgress } from '../types'
 import { cn, formatInstructorName, formatPhone } from '../lib/utils'
+
+void React
 
 type View = 'home' | 'schedule' | 'progress' | 'profile'
 
@@ -166,6 +167,34 @@ function MetricTile({
   )
 }
 
+function EmptyInfoCard({
+  title,
+  text,
+  icon: Icon,
+  tone = 'blue',
+}: {
+  title: string
+  text: string
+  icon: typeof Wallet
+  tone?: 'green' | 'orange' | 'blue'
+}) {
+  const colors = {
+    green: 'bg-[#EAF8F0] text-[#14995B]',
+    orange: 'bg-[#FFF2E6] text-[#F06B19]',
+    blue: 'bg-[#EFF2FF] text-[#2436D9]',
+  }
+
+  return (
+    <section className="rounded-[24px] bg-white p-4 shadow-[0_12px_34px_rgba(18,24,38,0.07)]">
+      <div className={cn('mb-3 grid h-9 w-9 place-items-center rounded-full', colors[tone])}>
+        <Icon size={18} />
+      </div>
+      <p className="text-[15px] font-black leading-5 text-[#101216]">{title}</p>
+      <p className="mt-1 text-[12px] font-bold leading-4 text-[#8B929C]">{text}</p>
+    </section>
+  )
+}
+
 function LessonCard({
   item,
   onBook,
@@ -246,10 +275,24 @@ function BookingRow({ item }: { item: ResolvedStudentBooking }) {
 }
 
 function ProgressCard({ progress }: { progress: StudentProgress | null }) {
-  const theoryTotal = progress?.theoryTopicsTotal || 30
-  const theoryDone = progress?.theoryTopicsCompleted || 4
-  const drivingTotal = progress?.drivingHoursTotal || 56
-  const drivingDone = progress?.drivingHoursCompleted || 12
+  if (!progress) {
+    return (
+      <section className="rounded-[28px] bg-white p-5 shadow-[0_18px_50px_rgba(18,24,38,0.09)]">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101216]">Прогресс обучения</h2>
+          <StatusPill tone="neutral">пока пусто</StatusPill>
+        </div>
+        <p className="text-[14px] font-semibold leading-5 text-[#727985]">
+          Часы, темы и экзамены появятся здесь, когда автошкола начнёт вести прогресс ученика.
+        </p>
+      </section>
+    )
+  }
+
+  const theoryTotal = progress.theoryTopicsTotal
+  const theoryDone = progress.theoryTopicsCompleted
+  const drivingTotal = progress.drivingHoursTotal
+  const drivingDone = progress.drivingHoursCompleted
   const theoryPct = Math.round((theoryDone / theoryTotal) * 100)
   const drivingPct = Math.round((drivingDone / drivingTotal) * 100)
 
@@ -308,10 +351,7 @@ export function StudentPage() {
   const history = bookings.filter((item) => !upcoming.some((next) => next.booking.id === item.booking.id))
   const next = upcoming[0] ?? null
 
-  const paid = 40000
-  const total = 48000
-  const debt = total - paid
-  const paymentPct = Math.round((paid / total) * 100)
+  const hasPaymentData = false
 
   if (!school || !profile) {
     return <div className="min-h-dvh bg-[#F2F3F7]" />
@@ -348,50 +388,46 @@ export function StudentPage() {
               </button>
             </header>
 
-            {debt > 0 ? (
-              <section className="rounded-[28px] bg-[#FFF5E8] p-5 shadow-[0_14px_38px_rgba(240,107,25,0.10)]">
-                <div className="flex gap-3">
-                  <AlertCircle className="mt-0.5 shrink-0 text-[#F06B19]" size={22} />
-                  <div>
-                    <p className="text-[14px] font-black text-[#101216]">Напоминание о платеже</p>
-                    <p className="mt-1 text-[13px] font-semibold leading-5 text-[#6F5A42]">Осталось выплатить {money.format(debt)} ₽. Следующий платёж лучше внести до занятия.</p>
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
             <div className="grid grid-cols-3 gap-2.5">
-              <MetricTile label="баланс" value={`${money.format(debt)} ₽`} icon={Wallet} tone="orange" />
-              <MetricTile label="часов" value={`${progress?.drivingHoursCompleted ?? 12}/${progress?.drivingHoursTotal ?? 56}`} icon={CarFront} tone="blue" />
-              <MetricTile label="тем" value={`${progress?.theoryTopicsCompleted ?? 4}/${progress?.theoryTopicsTotal ?? 30}`} icon={BookOpen} tone="green" />
+              <MetricTile label="активных" value={`${upcoming.length}`} icon={CalendarDays} tone="blue" />
+              {progress ? (
+                <MetricTile label="часов" value={`${progress.drivingHoursCompleted}/${progress.drivingHoursTotal}`} icon={CarFront} tone="blue" />
+              ) : (
+                <MetricTile label="прогресс" value="—" icon={CarFront} tone="green" />
+              )}
+              <MetricTile label="оплата" value={hasPaymentData ? money.format(0) : '—'} icon={Wallet} tone="orange" />
             </div>
 
             <LessonCard item={next} onBook={() => navigate('/student/book')} />
 
             <ProgressCard progress={progress} />
 
-            <section className="rounded-[28px] bg-white p-5 shadow-[0_18px_50px_rgba(18,24,38,0.09)]">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101216]">Экзамены</h2>
-                <GraduationCap className="text-[#2436D9]" size={22} />
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-[18px] bg-[#F6F7FA] p-3">
-                  <div>
-                    <p className="text-[14px] font-extrabold text-[#101216]">Внутренний экзамен</p>
-                    <p className="mt-1 text-[12px] font-bold text-[#8B929C]">{shortDate(progress?.internalExamDate)}</p>
-                  </div>
-                  <StatusPill tone={progress?.internalExamPassed ? 'green' : 'orange'}>{progress?.internalExamPassed ? 'сдан' : 'готовиться'}</StatusPill>
+            {progress ? (
+              <section className="rounded-[28px] bg-white p-5 shadow-[0_18px_50px_rgba(18,24,38,0.09)]">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101216]">Экзамены</h2>
+                  <GraduationCap className="text-[#2436D9]" size={22} />
                 </div>
-                <div className="flex items-center justify-between rounded-[18px] bg-[#F6F7FA] p-3">
-                  <div>
-                    <p className="text-[14px] font-extrabold text-[#101216]">ГИБДД</p>
-                    <p className="mt-1 text-[12px] font-bold text-[#8B929C]">{shortDate(progress?.gaidExamDate)}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-[18px] bg-[#F6F7FA] p-3">
+                    <div>
+                      <p className="text-[14px] font-extrabold text-[#101216]">Внутренний экзамен</p>
+                      <p className="mt-1 text-[12px] font-bold text-[#8B929C]">{shortDate(progress.internalExamDate)}</p>
+                    </div>
+                    <StatusPill tone={progress.internalExamPassed ? 'green' : 'orange'}>{progress.internalExamPassed ? 'сдан' : 'готовиться'}</StatusPill>
                   </div>
-                  <StatusPill tone="blue">назначен</StatusPill>
+                  <div className="flex items-center justify-between rounded-[18px] bg-[#F6F7FA] p-3">
+                    <div>
+                      <p className="text-[14px] font-extrabold text-[#101216]">ГИБДД</p>
+                      <p className="mt-1 text-[12px] font-bold text-[#8B929C]">{shortDate(progress.gaidExamDate)}</p>
+                    </div>
+                    <StatusPill tone={progress.gaidExamDate ? 'blue' : 'neutral'}>{progress.gaidExamDate ? 'назначен' : 'нет даты'}</StatusPill>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            ) : (
+              <EmptyInfoCard title="Экзамены" text="Даты появятся после назначения в автошколе." icon={GraduationCap} tone="blue" />
+            )}
           </section>
         ) : null}
 
@@ -420,13 +456,10 @@ export function StudentPage() {
             <ProgressCard progress={progress} />
             <section className="rounded-[28px] bg-white p-5 shadow-[0_18px_50px_rgba(18,24,38,0.09)]">
               <h2 className="text-[20px] font-black text-[#101216]">Оплата</h2>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#EDF0F5]">
-                <div className="h-full rounded-full bg-[#2436D9]" style={{ width: `${paymentPct}%` }} />
-              </div>
-              <p className="mt-3 text-[13px] font-bold text-[#727985]">Выплачено {money.format(paid)} из {money.format(total)} ₽</p>
-              <Button className="mt-5 h-12 w-full rounded-[16px] bg-[#2436D9]">
+              <p className="mt-3 text-[13px] font-bold leading-5 text-[#727985]">Оплаты пока не подключены. Когда автошкола добавит договор и платежи, здесь появится сумма и история.</p>
+              <Button className="mt-5 h-12 w-full rounded-[16px] bg-[#2436D9]" disabled>
                 <CreditCard size={17} />
-                Внести оплату
+                Оплата скоро
               </Button>
             </section>
           </section>

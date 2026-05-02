@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react'
+import React from 'react'
+
+void React
 
 export function StickyActionBar({ children }: { children: ReactNode }) {
   return (

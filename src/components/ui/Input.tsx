@@ -1,5 +1,8 @@
 import { cn } from '../../lib/utils'
+import React from 'react'
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react'
+
+void React
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
@@ -50,7 +53,7 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
         id={inputId}
         className={cn(
           'w-full resize-none rounded-xl border border-[rgba(0,0,0,0.06)] bg-white px-4 py-3 text-[15px] font-medium text-[#111418] placeholder:text-[#9EA3A8] transition-all duration-200 outline-none',
-          'focus:border-[#C4935A] focus:shadow-[0_0_0_3px_rgba(246,184,77,0.15)]',
+          'focus:border-[#2436D9] focus:shadow-[0_0_0_3px_rgba(36,54,217,0.14)]',
           error && '!border-[#E5534B] focus:shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
           className,
         )}

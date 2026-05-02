@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import React, { useCallback } from 'react'
 
 /**
  * Converts raw 10-digit input (without country code) to display format:
@@ -15,7 +15,10 @@ export function formatPhoneDisplay(value: string): string {
 }
 
 export function rawPhoneDigits(value: string): string {
-  return value.replace(/\D/g, '')
+  const digits = value.replace(/\D/g, '')
+  if (digits.length <= 10) return digits
+  if (digits[0] === '7' || digits[0] === '8') return digits.slice(1, 11)
+  return digits.slice(0, 10)
 }
 
 interface PhoneInputProps {
@@ -39,9 +42,7 @@ export function PhoneInput({
 }: PhoneInputProps) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = rawPhoneDigits(e.target.value)
-      const limited = raw.slice(0, 10)
-      onChange(limited)
+      onChange(rawPhoneDigits(e.target.value))
     },
     [onChange],
   )

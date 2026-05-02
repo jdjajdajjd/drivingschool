@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
+import React from 'react'
 import { cn } from '../../lib/utils'
+
+void React
 
 export interface BottomNavItem {
   key: string
