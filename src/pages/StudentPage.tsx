@@ -45,6 +45,7 @@ import { cn, formatInstructorName } from '../lib/utils'
 void React
 
 type View = 'home' | 'schedule' | 'theory' | 'chat' | 'profile'
+type LessonFilter = 'all' | 'main' | 'extra'
 
 interface ResolvedStudentBooking {
   booking: Booking
@@ -65,6 +66,24 @@ function compactStudentName(name: string) {
   const [lastName = '', firstName = '', middleName = ''] = name.trim().split(/\s+/)
   const initialsText = [firstName, middleName].filter(Boolean).map((part) => `${part[0]?.toUpperCase()}.`).join('')
   return [lastName, initialsText].filter(Boolean).join(' ') || name
+}
+
+function weekdayShort(date: Date) {
+  if (date.getDay() === 6) return 'СБ'
+  return format(date, 'EE', { locale: ru }).slice(0, 2).toUpperCase()
+}
+
+function lessonType(slot: Slot): LessonFilter {
+  const hour = Number(slot.time.split(':')[0] ?? 0)
+  return slot.duration > 90 || hour >= 15 ? 'extra' : 'main'
+}
+
+function filterSlots(slots: Slot[], instructorId: string, filter: LessonFilter) {
+  return slots.filter((slot) => {
+    if (instructorId && slot.instructorId !== instructorId) return false
+    if (filter !== 'all' && lessonType(slot) !== filter) return false
+    return true
+  })
 }
 
 function slotTimeRange(slot: Slot | null) {
@@ -184,23 +203,23 @@ function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | nu
   )
 }
 
-function AvailableSlotCard({ slot, instructor, onBook }: { slot: Slot; instructor: Instructor | null; onBook: () => void }) {
+function AvailableSlotCard({ slot, instructor, onBook, compact = false }: { slot: Slot; instructor: Instructor | null; onBook: () => void; compact?: boolean }) {
   return (
-    <article className={cn(card, 'p-4')}>
+    <article className={cn(card, compact ? 'min-w-[260px] p-3' : 'p-3.5')}>
       <div className="flex gap-3">
         <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[24px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{slotTimeRange(slot)}</p>
-              <p className="mt-1 truncate text-[17px] font-semibold text-[#050609]">Основное вождение</p>
+              <p className="text-[19px] font-bold leading-6 tracking-[-0.02em] text-[#050609]">{slotTimeRange(slot)}</p>
+              <p className="mt-0.5 truncate text-[14px] font-semibold text-[#050609]">{lessonType(slot) === 'extra' ? 'Дополнительное' : 'Основное'} вождение</p>
             </div>
             <StatusPill>Свободно</StatusPill>
           </div>
-          <div className="mt-3 flex items-center gap-3">
-            <StudentAvatar name={instructor?.name ?? 'Инструктор'} src={instructor ? getInstructorPhoto(instructor) : undefined} size={40} />
+          <div className="mt-3 flex items-center gap-2">
+            <StudentAvatar name={instructor?.name ?? 'Инструктор'} src={instructor ? getInstructorPhoto(instructor) : undefined} size={34} />
             <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{instructor ? formatInstructorName(instructor.name) : 'Инструктор'}</p>
-            <Button size="sm" className="rounded-full px-4 text-[14px]" onClick={onBook}>Записаться</Button>
+            <Button size="sm" className="rounded-full px-3 text-[13px]" onClick={onBook}>Записаться</Button>
           </div>
         </div>
       </div>
@@ -208,23 +227,57 @@ function AvailableSlotCard({ slot, instructor, onBook }: { slot: Slot; instructo
   )
 }
 
-function MiniCalendar({ selectedDate, onSelect, slots, onOpen }: { selectedDate: Date; onSelect: (date: Date) => void; slots: Slot[]; onOpen?: () => void }) {
+function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (value: LessonFilter) => void }) {
+  const items: Array<{ value: LessonFilter; label: string }> = [
+    { value: 'all', label: 'Все' },
+    { value: 'main', label: 'Основное' },
+    { value: 'extra', label: 'Дополнительное' },
+  ]
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1">
+      {items.map((item, index) => (
+        <button key={item.value} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609] active:scale-[0.98]" style={{ borderColor: value === item.value ? '#050609' : '#E1E3EB' }} onClick={() => onChange(item.value)}>
+          {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function InstructorChips({ instructors, selectedId, onChange }: { instructors: Instructor[]; selectedId: string; onChange: (id: string) => void }) {
+  return (
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      {instructors.map((instructor) => {
+        const active = instructor.id === selectedId
+        return (
+          <button key={instructor.id} className={cn('inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold active:scale-[0.98]', active ? 'border-[#1F2BD8] bg-[#EEF0FA] text-[#1F2BD8]' : 'border-[#E1E3EB] bg-white text-[#050609]')} onClick={() => onChange(instructor.id)}>
+            <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={24} />
+            {formatInstructorName(instructor.name)}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, instructors, lessonFilter, onLessonFilterChange, onInstructorChange, onOpen, onBook }: { selectedDate: Date; onSelect: (date: Date) => void; slots: Slot[]; selectedInstructor: Instructor | null; instructors: Instructor[]; lessonFilter: LessonFilter; onLessonFilterChange: (filter: LessonFilter) => void; onInstructorChange: (id: string) => void; onOpen?: () => void; onBook: (slot: Slot) => void }) {
   const days = Array.from({ length: 7 }, (_, index) => addDays(new Date(), index))
-  const [filter, setFilter] = useState('Все')
+  const daySlots = filterSlots(slots.filter((slot) => slot.status === 'available' && isSameDay(parseISO(slot.date), selectedDate)), selectedInstructor?.id ?? '', lessonFilter).slice(0, 12)
   return (
     <div className={cn(card, 'p-4')}>
       <div className="mb-3 flex items-center justify-between px-1">
         <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">Расписание автошколы</h3>
         <button className="grid h-9 w-9 place-items-center rounded-full text-[#B8BABF] active:scale-[0.97]" onClick={onOpen} aria-label="Открыть расписание"><ChevronRight size={22} /></button>
       </div>
-      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-        {['Все', 'Основное', 'Дополнительное'].map((chip, index) => (
-          <button key={chip} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609] active:scale-[0.98]" style={{ borderColor: filter === chip ? '#050609' : '#E1E3EB' }} onClick={() => setFilter(chip)}>
-            {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
-            {chip}
-          </button>
-        ))}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <button className="inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full bg-[#EEF0FA] px-3 text-[13px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={onOpen}>
+          <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={24} />
+          <span className="truncate">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выбрать инструктора'}</span>
+        </button>
+        <button className="shrink-0 text-[13px] font-semibold text-[#8B8D94]" onClick={onOpen}>Сменить</button>
       </div>
+      <div className="mb-3"><FilterChips value={lessonFilter} onChange={onLessonFilterChange} /></div>
       <div className="mb-3 flex items-center justify-between px-1">
         <button onClick={() => onSelect(addDays(selectedDate, -7))} aria-label="Предыдущая неделя"><ChevronLeft size={22} /></button>
         <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
@@ -236,12 +289,16 @@ function MiniCalendar({ selectedDate, onSelect, slots, onOpen }: { selectedDate:
           const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
           return (
             <button key={date.toISOString()} className={cn('grid place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ minHeight: 68, minWidth: 42 }} onClick={() => { onSelect(date); onOpen?.() }}>
-              <span className="text-[12px] font-semibold uppercase">{format(date, 'EE', { locale: ru }).slice(0, 2)}</span>
+              <span className="text-[12px] font-semibold uppercase">{weekdayShort(date)}</span>
               <span className="text-[20px] font-bold leading-6">{format(date, 'd')}</span>
               <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#35C45A]' : 'bg-transparent')} />
             </button>
           )
         })}
+      </div>
+      <InstructorChips instructors={instructors} selectedId={selectedInstructor?.id ?? ''} onChange={onInstructorChange} />
+      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+        {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[240px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по выбранному фильтру</div>}
       </div>
     </div>
   )
@@ -256,25 +313,25 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
   const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-[26px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(monthStart, 'LLLL yyyy', { locale: ru })}</h2>
-        <div className="flex gap-6">
-          <button className="active:scale-[0.97]" onClick={() => onSelect(addDays(monthStart, -1))} aria-label="Предыдущий месяц"><ChevronLeft size={28} /></button>
-          <button className="active:scale-[0.97]" onClick={() => onSelect(addDays(endOfMonth(monthStart), 1))} aria-label="Следующий месяц"><ChevronRight size={28} /></button>
+        <h2 className="text-[22px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(monthStart, 'LLLL yyyy', { locale: ru })}</h2>
+        <div className="flex gap-5">
+          <button className="active:scale-[0.97]" onClick={() => onSelect(addDays(monthStart, -1))} aria-label="Предыдущий месяц"><ChevronLeft size={24} /></button>
+          <button className="active:scale-[0.97]" onClick={() => onSelect(addDays(endOfMonth(monthStart), 1))} aria-label="Следующий месяц"><ChevronRight size={24} /></button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-y-6 rounded-[24px] bg-white px-3 py-5">
-        {weekdays.map((day, index) => <div key={day} className={cn('text-center text-[15px] font-bold', index > 4 ? 'text-[#1F2BD8]' : 'text-[#8F9197]')}>{day}</div>)}
+      <div className="grid grid-cols-7 gap-y-2 rounded-[22px] bg-white px-3 py-4">
+        {weekdays.map((day, index) => <div key={day} className={cn('text-center text-[13px] font-bold', index > 4 ? 'text-[#1F2BD8]' : 'text-[#8F9197]')}>{day}</div>)}
         {days.map((date) => {
           const active = isSameDay(date, selectedDate)
           const currentMonth = isSameMonth(date, selectedDate)
           const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date) && slot.status === 'available')
           const weekend = [0, 6].includes(date.getDay())
           return (
-            <button key={date.toISOString()} className="grid min-h-[48px] place-items-center text-center active:scale-[0.96]" onClick={() => onSelect(date)}>
-              <span className={cn('grid h-11 w-11 place-items-center rounded-full text-[22px] font-bold', active ? 'bg-[#050609] text-white' : currentMonth ? weekend ? 'text-[#1F2BD8]' : 'text-[#050609]' : 'text-[#D6D8DD]')}>{format(date, 'd')}</span>
-              <span className={cn('mt-1 h-1.5 w-1.5 rounded-full', hasSlots ? 'bg-[#35C45A]' : 'bg-transparent')} />
+            <button key={date.toISOString()} className="grid min-h-[38px] place-items-center text-center active:scale-[0.96]" onClick={() => onSelect(date)}>
+              <span className={cn('grid h-8 w-8 place-items-center rounded-full text-[17px] font-bold', active ? 'bg-[#050609] text-white' : currentMonth ? weekend ? 'text-[#1F2BD8]' : 'text-[#050609]' : 'text-[#D6D8DD]')}>{format(date, 'd')}</span>
+              <span className={cn('mt-0.5 h-1.5 w-1.5 rounded-full', hasSlots ? 'bg-[#35C45A]' : 'bg-transparent')} />
             </button>
           )
         })}
@@ -302,6 +359,8 @@ export function StudentPage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null)
   const [view, setView] = useState<View>('home')
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedInstructorId, setSelectedInstructorId] = useState('')
+  const [lessonFilter, setLessonFilter] = useState<LessonFilter>('all')
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
 
   useEffect(() => {
@@ -323,8 +382,22 @@ export function StudentPage() {
   const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile])
   const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
   const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school])
+  const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
+  const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? instructors[0] ?? null
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
-  const availableSlotsForDate = slotsForDate.filter((slot) => slot.status === 'available')
+  const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
+
+  useEffect(() => {
+    const firstAvailable = futureSlots.find((slot) => slot.status === 'available')
+    if (firstAvailable && slotsForDate.filter((slot) => slot.status === 'available').length === 0) setSelectedDate(parseISO(firstAvailable.date))
+  }, [futureSlots, slotsForDate])
+
+  useEffect(() => {
+    if (selectedInstructorId) return
+    const instructorWithSlot = slotsForDate.find((slot) => slot.status === 'available')?.instructorId ?? futureSlots.find((slot) => slot.status === 'available')?.instructorId
+    if (instructorWithSlot) setSelectedInstructorId(instructorWithSlot)
+    else if (instructors[0]) setSelectedInstructorId(instructors[0].id)
+  }, [futureSlots, instructors, selectedInstructorId, slotsForDate])
 
   if (!school || !profile) return <div className="min-h-dvh bg-[#F5F6F8]" />
 
@@ -394,7 +467,7 @@ export function StudentPage() {
               </div>
             </section>
 
-            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} onOpen={() => setView('schedule')} />
+            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} instructors={instructors} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorChange={setSelectedInstructorId} onOpen={() => setView('schedule')} onBook={(slot) => navigate(`/student/book?slot=${slot.id}`)} />
           </section>
         ) : null}
 
@@ -404,9 +477,13 @@ export function StudentPage() {
               <h1 className={pageTitle}>Расписание</h1>
               <button className="grid h-11 w-11 place-items-center rounded-full bg-white"><Filter size={22} /></button>
             </div>
-            <MonthCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} />
+            <div className="space-y-3">
+              <InstructorChips instructors={instructors} selectedId={selectedInstructor?.id ?? ''} onChange={setSelectedInstructorId} />
+              <FilterChips value={lessonFilter} onChange={setLessonFilter} />
+            </div>
+            <MonthCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={filterSlots(futureSlots, selectedInstructor?.id ?? '', lessonFilter)} />
             <div>
-              <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#050609]">{selectedDayTitle(selectedDate)}</h2>
+              <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">{selectedDayTitle(selectedDate)}</h2>
               <div className="mt-4 space-y-3">
                 {availableSlotsForDate.slice(0, 8).map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={db.instructors.byId(slot.instructorId)} onBook={() => navigate(`/student/book?slot=${slot.id}`)} />)}
                 {availableSlotsForDate.length === 0 ? <BookingLessonCard item={null} onBook={() => navigate('/student/book')} /> : null}
