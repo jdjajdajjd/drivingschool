@@ -543,8 +543,8 @@ export function BookingFlowPage() {
   }
 
   return (
-    <div className="shell">
-      <main className="mx-auto w-full max-w-2xl overflow-x-hidden px-5 pb-4 pt-4">
+    <div className="min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
+      <main className="mx-auto w-full max-w-[430px] overflow-x-hidden px-4 pb-8 pt-5">
         <header className="mb-4">
           <button
             onClick={goBack}
@@ -554,7 +554,7 @@ export function BookingFlowPage() {
             <ArrowLeft size={16} />
             Назад
           </button>
-          <Progress step={step} />
+          {step !== 'date' ? <Progress step={step} /> : null}
         </header>
 
         <AnimatePresence mode="wait">
@@ -563,15 +563,8 @@ export function BookingFlowPage() {
             {/* ── Step 1: Date ── */}
             {step === 'date' && (
               <section>
-                <h2
-                  className="font-extrabold tracking-tight"
-                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
-                >
-                  Ближайшие окна
-                </h2>
-                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
-                  Выберите день и нажмите свободный слот. Если профиль уже заполнен, запись займёт один тап.
-                </p>
+                <h2 className="text-[44px] font-black leading-[1.05] tracking-[-0.05em] text-[#050609]">Расписание</h2>
+                <p className="mt-3 text-[21px] font-extrabold leading-6 text-[#8B8D94]">Нажмите свободный слот, чтобы записаться</p>
 
                 <div className="mt-5 space-y-4">
                   <DayChipsScroller
@@ -585,13 +578,13 @@ export function BookingFlowPage() {
                     }}
                   />
 
-                  <div className="rounded-[24px] bg-white p-4 shadow-[0_18px_45px_rgba(15,20,25,0.08)]">
+                  <div className="rounded-[24px] border border-[#EBECF0] bg-white p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">
+                        <p className="text-[31px] font-black tracking-[-0.04em] text-[#050609]">
                           {selectedDate ? format(selectedDate, 'd MMMM', { locale: ru }) : 'Выберите день'}
                         </p>
-                        <p className="mt-1 text-[13px] font-medium text-[#6F747A]">
+                        <p className="mt-1 text-[18px] font-extrabold text-[#8B8D94]">
                           {selectedDateKey
                             ? `${slotsForSelectedDate.filter((item) => item.slot.status === 'available').length} свободных из ${slotsForSelectedDate.length}`
                             : 'Покажем только актуальные окна'}
@@ -614,9 +607,9 @@ export function BookingFlowPage() {
                         Обновить
                       </button>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 rounded-[16px] bg-[#F7F8FA] px-3 py-2 text-[12px] font-bold text-[#727985]">
-                      <ShieldCheck size={14} className="text-[#2436D9]" />
-                      Перед записью ещё раз проверяем, что слот не заняли.
+                    <div className="mt-3 flex items-center gap-2 rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-extrabold text-[#1F2BD8]">
+                      <ShieldCheck size={15} className="text-[#1F2BD8]" />
+                      Обновляем свободные места автоматически
                     </div>
                     <div className="mt-4 space-y-3">
                       {slotsForSelectedDate.length === 0 ? (
@@ -642,16 +635,9 @@ export function BookingFlowPage() {
                   </div>
                 </div>
 
-                <StickyActionBar>
-                  <Button
-                    className="w-full"
-                    disabled={!selectedDate}
-                    onClick={() => setStep('instructor')}
-                  >
-                    Выбрать по инструктору
-                    <ArrowLeft size={16} className="rotate-180" />
-                  </Button>
-                </StickyActionBar>
+                <button className="mt-4 w-full rounded-[18px] border border-[#DADDF0] bg-white px-5 py-4 text-[20px] font-black text-[#1F2BD8] active:scale-[0.98]" onClick={() => setStep('instructor')}>
+                  Выбрать по инструктору
+                </button>
               </section>
             )}
 
