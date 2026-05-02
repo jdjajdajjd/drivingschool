@@ -855,6 +855,7 @@ create index slots_school_date_idx on public.slots(school_id, date);
 create index slots_instructor_date_idx on public.slots(instructor_id, date);
 create index bookings_school_id_idx on public.bookings(school_id);
 create index bookings_student_id_idx on public.bookings(student_id);
+create unique index bookings_one_active_per_slot_idx on public.bookings(slot_id) where status = 'active';
 
 insert into public.schools (
   id, name, slug, description, phone, email, address, primary_color,
@@ -1056,7 +1057,13 @@ begin
       set status = 'booked',
           booking_id = v_booking_id,
           updated_at = now()
-      where id = v_slot.id;
+      where id = v_slot.id
+        and status = 'available'
+        and booking_id is null;
+
+    if not found then
+      raise exception 'Этот слот только что заняли.';
+    end if;
 
     booking_group_id := v_group_id;
     booking_id := v_booking_id;
