@@ -472,6 +472,11 @@
     background: none;
     border: none;
     flex: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bottom-nav-item:active {
+    transform: translateY(1px) scale(0.96);
   }
 
   .bottom-nav-item.active {
@@ -487,6 +492,23 @@
     left: 50%;
     top: -4px;
     transform: translateX(-50%);
+    animation: nav-pop 220ms var(--ease);
+  }
+
+  @keyframes nav-pop {
+    from { opacity: 0; transform: translateX(-50%) translateY(3px) scaleX(0.4); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0) scaleX(1); }
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    button:active, a:active {
+      transition-duration: 90ms;
+    }
   }
 
   /* ─── Sticky action bar ────────────────────────────── */

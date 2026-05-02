@@ -16,8 +16,10 @@ import {
   Home,
   LogOut,
   MessageCircle,
+  Pencil,
   Settings,
   UserRound,
+  Zap,
 } from 'lucide-react'
 import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, isTomorrow, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -42,8 +44,11 @@ import { cn, formatInstructorName } from '../lib/utils'
 
 void React
 
-type View = 'home' | 'schedule' | 'theory' | 'chat' | 'profile'
+type View = 'home' | 'schedule' | 'theory' | 'chat' | 'profile' | 'driving'
 type LessonFilter = 'all' | 'main' | 'extra'
+type ProfileField = 'name' | 'phone' | 'email'
+
+const selectedInstructorStorageKey = (schoolId: string) => `dd:student_selected_instructor:${schoolId}`
 
 interface ResolvedStudentBooking {
   booking: Booking
@@ -104,6 +109,16 @@ function selectedDayTitle(date: Date) {
   if (isToday(date)) return `Сегодня, ${format(date, 'd MMMM', { locale: ru })}`
   if (isTomorrow(date)) return `Завтра, ${format(date, 'd MMMM', { locale: ru })}`
   return format(date, 'd MMMM', { locale: ru })
+}
+
+function safePercent(completed = 0, total = 0) {
+  if (!total) return 0
+  return Math.min(100, Math.max(0, Math.round((completed / total) * 100)))
+}
+
+function formatDateValue(value: string | null | undefined) {
+  if (!value) return 'Пока не назначено'
+  return format(parseISO(value), 'dd.MM.yyyy', { locale: ru })
 }
 
 function resolveBookings(schoolId: string, profile: StudentProfile): ResolvedStudentBooking[] {
@@ -260,6 +275,20 @@ function InstructorChips({ instructors, selectedId, onChange }: { instructors: I
   )
 }
 
+function ScheduleEmptyState({ onShowAll, onChangeInstructor }: { onShowAll: () => void; onChangeInstructor: () => void }) {
+  return (
+    <section className={cn(card, 'p-4')}>
+      <div className="mb-3 h-1 w-12 rounded-full bg-[#1F2BD8]" />
+      <h3 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">На этот день окон нет</h3>
+      <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Можно показать все типы занятий или быстро сменить инструктора.</p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button className="min-h-11 rounded-[16px] bg-[#EEF0FA] text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={onShowAll}>Показать все</button>
+        <button className="min-h-11 rounded-[16px] bg-[#F5F6FA] text-[14px] font-bold text-[#050609] active:scale-[0.98]" onClick={onChangeInstructor}>Инструктор</button>
+      </div>
+    </section>
+  )
+}
+
 function InstructorSheet({ open, instructors, selectedId, onSelect, onClose }: { open: boolean; instructors: Instructor[]; selectedId: string; onSelect: (id: string) => void; onClose: () => void }) {
   if (!open) return null
   const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId))
@@ -327,7 +356,7 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
         })}
       </div>
       <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-        {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[240px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по выбранному фильтру</div>}
+        {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[260px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по фильтру. Попробуйте другой тип занятия или инструктора.</div>}
       </div>
     </div>
   )
@@ -385,6 +414,63 @@ function TheoryCard({ title, text, tone, icon: Icon }: { title: string; text: st
   )
 }
 
+function EditableTextField({ label, value, type = 'text', locked, onEdit, onChange }: { label: string; value: string; type?: string; locked: boolean; onEdit: () => void; onChange: (value: string) => void }) {
+  return (
+    <div className="relative">
+      <Input label={label} type={type} value={value} disabled={locked} onChange={(event) => onChange(event.target.value)} className={cn(locked && 'pr-12 text-[#6F747A]')} />
+      {locked ? (
+        <button type="button" className="absolute right-2 top-[30px] grid h-9 w-9 place-items-center rounded-full text-[#8B8D94]/70 active:scale-[0.94]" onClick={onEdit} aria-label={`Изменить ${label}`}>
+          <Pencil size={16} />
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function EditablePhoneField({ label, value, locked, onEdit, onChange }: { label: string; value: string; locked: boolean; onEdit: () => void; onChange: (value: string) => void }) {
+  return (
+    <div className="relative">
+      <PhoneInput label={label} value={value} disabled={locked} onChange={onChange} />
+      {locked ? (
+        <button type="button" className="absolute right-2 top-[30px] grid h-9 w-9 place-items-center rounded-full text-[#8B8D94]/70 active:scale-[0.94]" onClick={onEdit} aria-label={`Изменить ${label}`}>
+          <Pencil size={16} />
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function ProgressBar({ value, tone = '#1F2BD8' }: { value: number; tone?: string }) {
+  return <div className="h-2 overflow-hidden rounded-full bg-[#EEF0F2]"><div className="h-full rounded-full transition-[width] duration-500 ease-out" style={{ width: `${value}%`, background: tone }} /></div>
+}
+
+function StatCard({ title, value, subtitle, tone = 'blue' }: { title: string; value: string; subtitle: string; tone?: 'blue' | 'green' }) {
+  return (
+    <article className={cn(card, 'min-h-[128px] p-4')}>
+      <p className="text-[15px] font-bold leading-5 text-[#050609]">{title}</p>
+      <div className="mt-4 flex items-end justify-between gap-3">
+        <span className={cn('grid h-12 w-12 place-items-center rounded-full text-[18px] font-bold text-white', tone === 'green' ? 'bg-[#14934A]' : 'bg-[#1F2BD8]')}>{value}</span>
+        <p className="text-right text-[13px] font-semibold leading-4 text-[#8B8D94]">{subtitle}</p>
+      </div>
+    </article>
+  )
+}
+
+function RoadmapStep({ title, text, done, active }: { title: string; text: string; done?: boolean; active?: boolean }) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center">
+        <span className={cn('grid h-8 w-8 place-items-center rounded-full border text-[13px] font-bold', done ? 'border-[#14934A] bg-[#14934A] text-white' : active ? 'border-[#1F2BD8] bg-[#EEF0FA] text-[#1F2BD8]' : 'border-[#E2E4EA] bg-white text-[#B8BABF]')}>{done ? '✓' : active ? '•' : ''}</span>
+        <span className="mt-1 h-8 w-px bg-[#E2E4EA] last:hidden" />
+      </div>
+      <div className="min-w-0 pb-4">
+        <p className="text-[16px] font-bold leading-5 text-[#050609]">{title}</p>
+        <p className="mt-1 text-[13px] font-semibold leading-4 text-[#8B8D94]">{text}</p>
+      </div>
+    </div>
+  )
+}
+
 export function StudentPage() {
   const navigate = useNavigate()
   const photoInputRef = useRef<HTMLInputElement | null>(null)
@@ -396,6 +482,8 @@ export function StudentPage() {
   const [lessonFilter, setLessonFilter] = useState<LessonFilter>('all')
   const [instructorSheetOpen, setInstructorSheetOpen] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [pendingAvatarUrl, setPendingAvatarUrl] = useState('')
+  const [editingFields, setEditingFields] = useState<Record<ProfileField, boolean>>({ name: false, phone: false, email: false })
 
   useEffect(() => {
     const found = findAnyStudentProfile()
@@ -405,6 +493,8 @@ export function StudentPage() {
     setProfile(nextProfile)
     if (nextProfile) {
       setForm({ name: nextProfile.name, phone: normalizePhone(nextProfile.phone).replace(/^7/, '').slice(0, 10), email: nextProfile.email ?? '' })
+      setPendingAvatarUrl('')
+      setEditingFields({ name: false, phone: false, email: false })
     } else {
       navigate('/student/register', { replace: true })
     }
@@ -420,20 +510,41 @@ export function StudentPage() {
   const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? instructors[0] ?? null
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
   const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
+  const profileDirty = Boolean(profile && (form.name.trim() !== profile.name || normalizePhone(form.phone) !== normalizePhone(profile.phone) || form.email.trim() !== (profile.email ?? '') || pendingAvatarUrl))
+  const drivingTotal = progress?.drivingHoursTotal ?? 56
+  const drivingCompleted = progress?.drivingHoursCompleted ?? 0
+  const drivingRemaining = Math.max(0, drivingTotal - drivingCompleted)
+  const drivingPercent = safePercent(drivingCompleted, drivingTotal)
+  const theoryPercent = safePercent(progress?.theoryTopicsCompleted, progress?.theoryTopicsTotal)
+  const nextLesson = upcoming[0] ?? null
 
   useEffect(() => {
+    if (!school || selectedInstructorId) return
+    const storedInstructorId = localStorage.getItem(selectedInstructorStorageKey(school.id)) ?? ''
+    if (storedInstructorId && instructors.some((instructor) => instructor.id === storedInstructorId)) {
+      setSelectedInstructorId(storedInstructorId)
+      return
+    }
     if (selectedInstructorId) return
     const instructorWithSlot = slotsForDate.find((slot) => slot.status === 'available')?.instructorId ?? futureSlots.find((slot) => slot.status === 'available')?.instructorId
     if (instructorWithSlot) setSelectedInstructorId(instructorWithSlot)
     else if (instructors[0]) setSelectedInstructorId(instructors[0].id)
-  }, [futureSlots, instructors, selectedInstructorId, slotsForDate])
+  }, [futureSlots, instructors, school, selectedInstructorId, slotsForDate])
+
+  useEffect(() => {
+    if (!school || !selectedInstructorId) return
+    localStorage.setItem(selectedInstructorStorageKey(school.id), selectedInstructorId)
+  }, [school, selectedInstructorId])
 
   if (!school || !profile) return <div className="min-h-dvh bg-[#F5F6F8]" />
 
-  async function saveProfileData(nextAvatarUrl = profile?.avatarUrl ?? '') {
+  async function saveProfileData() {
     if (!school || !profile) return
+    const nextAvatarUrl = pendingAvatarUrl || profile.avatarUrl || ''
     const saved = saveStudentProfile(school.id, { name: form.name, phone: form.phone, email: form.email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email: form.email })
     setProfile(saved)
+    setPendingAvatarUrl('')
+    setEditingFields({ name: false, phone: false, email: false })
     db.students.upsert({
       id: student?.id ?? `stu-${normalizePhone(form.phone)}`,
       schoolId: school.id,
@@ -450,7 +561,7 @@ export function StudentPage() {
   async function uploadPhoto(file: File | undefined) {
     if (!file) return
     const avatarUrl = await imageFileToDataUrl(file)
-    await saveProfileData(avatarUrl)
+    setPendingAvatarUrl(avatarUrl)
   }
 
   function logout() {
@@ -467,7 +578,7 @@ export function StudentPage() {
           <section className="space-y-6">
             <header className="flex items-center justify-between gap-3 pt-1">
               <button className="flex min-w-0 flex-1 items-center gap-3 rounded-[22px] text-left active:scale-[0.98]" onClick={() => setView('profile')}>
-                <StudentAvatar name={profile.name} src={profile.avatarUrl} size={48} />
+                <StudentAvatar name={profile.name} src={pendingAvatarUrl || profile.avatarUrl} size={48} />
                 <div className="min-w-0">
                   <p className="truncate text-[18px] font-bold leading-5 text-[#050609]">{compactStudentName(profile.name)}</p>
                   <p className="mt-1 text-[14px] font-medium leading-5 text-[#8B8D94]">Категория B</p>
@@ -496,8 +607,18 @@ export function StudentPage() {
           <section className="space-y-6">
             <div className="flex items-center justify-between pt-2">
               <h1 className={pageTitle}>Расписание</h1>
-              <button className="grid h-11 w-11 place-items-center rounded-full bg-white"><Filter size={22} /></button>
+              <button className="grid h-11 w-11 place-items-center rounded-full bg-white active:scale-[0.96]" onClick={() => setInstructorSheetOpen(true)}><Filter size={22} /></button>
             </div>
+            <section className={cn(card, 'p-4')}>
+              <div className="flex items-center gap-3">
+                <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={44} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[17px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
+                  <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{selectedInstructor?.car ?? 'Выбранный инструктор сохранится'}</p>
+                </div>
+                <button className="rounded-full bg-[#EEF0FA] px-3 py-2 text-[13px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
+              </div>
+            </section>
             <div className="space-y-3">
               <InstructorChips instructors={instructors} selectedId={selectedInstructor?.id ?? ''} onChange={setSelectedInstructorId} />
               <FilterChips value={lessonFilter} onChange={setLessonFilter} />
@@ -507,9 +628,90 @@ export function StudentPage() {
               <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">{selectedDayTitle(selectedDate)}</h2>
               <div className="mt-4 space-y-3">
                 {availableSlotsForDate.slice(0, 8).map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={db.instructors.byId(slot.instructorId)} onBook={() => navigate(`/student/book?slot=${slot.id}`)} />)}
-                {availableSlotsForDate.length === 0 ? <BookingLessonCard item={null} onBook={() => navigate('/student/book')} /> : null}
+                {availableSlotsForDate.length === 0 ? <ScheduleEmptyState onShowAll={() => setLessonFilter('all')} onChangeInstructor={() => setInstructorSheetOpen(true)} /> : null}
               </div>
             </div>
+          </section>
+        ) : null}
+
+        {view === 'driving' ? (
+          <section className="space-y-5 pt-2">
+            <div className="flex items-center gap-3">
+              <button className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#050609] active:scale-[0.96]" onClick={() => setView('profile')} aria-label="Назад"><ChevronLeft size={23} /></button>
+              <h1 className={pageTitle}>Вождение</h1>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <StatCard title={'Остаток учебных\nчасов'} value={String(drivingRemaining)} subtitle={`${drivingCompleted} из ${drivingTotal} часов пройдено`} tone="green" />
+              <StatCard title={'Списания\nи начисления'} value="0" subtitle="История появится после занятий" />
+            </div>
+
+            <section className={cn(card, 'p-4')}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[16px] bg-[#EEF0FA] text-[#1F2BD8]"><Zap size={21} /></span>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-[18px] font-bold tracking-[-0.02em] text-[#050609]">Прогресс навыков</h2>
+                    <p className="mt-0.5 text-[13px] font-semibold text-[#8B8D94]">{drivingCompleted} из {drivingTotal} часов освоено</p>
+                  </div>
+                </div>
+                <span className="text-[18px] font-bold text-[#050609]">{drivingPercent}%</span>
+              </div>
+              <div className="mt-4"><ProgressBar value={drivingPercent} tone="#14934A" /></div>
+            </section>
+
+            <section className={cn(card, 'overflow-hidden p-4')}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">Маршрут обучения</h2>
+                  <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Что уже пройдено и что дальше</p>
+                </div>
+                <span className="rounded-full bg-[#EEF0FA] px-3 py-1.5 text-[13px] font-bold text-[#1F2BD8]">{Math.round((theoryPercent + drivingPercent) / 2)}%</span>
+              </div>
+              <div className="mt-4">
+                <RoadmapStep title="Теория" text={`${progress?.theoryTopicsCompleted ?? 0} из ${progress?.theoryTopicsTotal ?? 0} тем закрыто`} done={theoryPercent >= 100} active={theoryPercent < 100} />
+                <RoadmapStep title="Вождение" text={`${drivingRemaining} часов осталось до завершения`} done={drivingPercent >= 100} active={theoryPercent >= 100 || drivingPercent > 0} />
+                <RoadmapStep title="Внутренний экзамен" text={progress?.internalExamPassed ? 'Сдан' : formatDateValue(progress?.internalExamDate)} done={progress?.internalExamPassed} active={!progress?.internalExamPassed && drivingPercent >= 70} />
+                <RoadmapStep title="Экзамен ГИБДД" text={formatDateValue(progress?.gaidExamDate)} active={Boolean(progress?.internalExamPassed)} />
+              </div>
+            </section>
+
+            <button className={cn(card, 'flex w-full items-center gap-3 p-4 text-left active:scale-[0.99]')} onClick={() => setView('schedule')}>
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#F5F6FA] text-[#1F2BD8]"><CalendarDays size={23} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[18px] font-bold text-[#050609]">Мои записи</span>
+                <span className="mt-1 block truncate text-[14px] font-semibold text-[#8B8D94]">{nextLesson?.slot ? `Ближайшая: ${lessonTime(nextLesson.slot)}` : 'Выберите удобное окно в расписании'}</span>
+              </span>
+              <ChevronRight className="text-[#B8BABF]" size={22} />
+            </button>
+
+            <section>
+              <h2 className={sectionTitle}>Учебное авто</h2>
+              <article className={cn(card, 'mt-3 flex items-center gap-3 p-4')}>
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EEF0FA] text-[#1F2BD8]"><CarFront size={24} /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[18px] font-bold text-[#050609]">{selectedInstructor?.car ?? 'Автомобиль назначит автошкола'}</p>
+                  <p className="mt-1 truncate text-[14px] font-semibold text-[#8B8D94]">Категория B</p>
+                </div>
+              </article>
+            </section>
+
+            <section>
+              <h2 className={sectionTitle}>Ваш инструктор</h2>
+              <article className={cn(card, 'mt-3 p-4')}>
+                <div className="flex items-center gap-3">
+                  <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={52} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[18px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
+                    <p className="mt-1 truncate text-[14px] font-semibold text-[#8B8D94]">Закреплён для расписания</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button className="min-h-11 rounded-[16px] bg-[#EEF0FA] text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
+                  <button className="min-h-11 rounded-[16px] bg-[#F5F6FA] text-[14px] font-bold text-[#050609] active:scale-[0.98]" onClick={() => setView('chat')}>Написать</button>
+                </div>
+              </article>
+            </section>
           </section>
         ) : null}
 
@@ -559,24 +761,26 @@ export function StudentPage() {
             <div className="flex justify-end"><button className="grid h-11 w-11 place-items-center rounded-full bg-white"><UserRound size={22} /></button></div>
             <div className="text-center">
               <button className="relative mx-auto block" onClick={() => photoInputRef.current?.click()}>
-                <StudentAvatar name={profile.name} src={profile.avatarUrl} size={88} />
+                <StudentAvatar name={profile.name} src={pendingAvatarUrl || profile.avatarUrl} size={88} />
                 <span className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-[#1F2BD8] text-white"><Camera size={15} /></span>
               </button>
+              {pendingAvatarUrl ? <p className="mt-2 text-[13px] font-semibold text-[#1F2BD8]">Новое фото применится после сохранения</p> : null}
               <h1 className="mt-4 text-[28px] font-bold tracking-[-0.02em] text-[#050609]">{compactStudentName(profile.name)}</h1>
               <p className="mt-1 text-[15px] font-medium text-[#8B8D94]">Логин: {normalizePhone(profile.phone).slice(-9)}</p>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { label: 'Вождение', icon: CarFront, onClick: () => setView('schedule') },
+                { label: 'Вождение', icon: CarFront, onClick: () => setView('driving') },
                 { label: 'Теория', icon: BookOpen, onClick: () => setView('theory') },
                 { label: 'Инфо', icon: Building2, onClick: () => navigate(`/school/${school.slug}`) },
               ].map((item) => <button key={item.label} className={cn(card, 'grid place-items-center p-3 text-[16px] font-semibold text-[#050609]')} style={{ minHeight: 88 }} onClick={item.onClick}><span className="grid h-10 w-10 place-items-center rounded-full bg-[#F0F1FB] text-[#1F2BD8]"><item.icon size={21} /></span>{item.label}</button>)}
             </div>
             <section className={cn(card, 'space-y-4 p-5')}>
-              <Input label="ФИО" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-              <PhoneInput label="Телефон" value={form.phone} onChange={(value) => setForm((current) => ({ ...current, phone: value }))} />
-              <Input label="Email, если понадобится" type="email" value={form.email} placeholder="mail@example.com" onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-              <Button size="lg" className="w-full rounded-[18px] text-[16px]" onClick={() => void saveProfileData()}>Сохранить</Button>
+              <EditableTextField label="ФИО" value={form.name} locked={Boolean(profile.name) && !editingFields.name} onEdit={() => setEditingFields((current) => ({ ...current, name: true }))} onChange={(value) => setForm((current) => ({ ...current, name: value }))} />
+              <EditablePhoneField label="Телефон" value={form.phone} locked={Boolean(profile.phone) && !editingFields.phone} onEdit={() => setEditingFields((current) => ({ ...current, phone: true }))} onChange={(value) => setForm((current) => ({ ...current, phone: value }))} />
+              <EditableTextField label="Email, если понадобится" type="email" value={form.email} locked={Boolean(profile.email) && !editingFields.email} onEdit={() => setEditingFields((current) => ({ ...current, email: true }))} onChange={(value) => setForm((current) => ({ ...current, email: value }))} />
+              {profileDirty ? <p className="rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-semibold text-[#1F2BD8]">Есть несохранённые изменения</p> : null}
+              <Button size="lg" className="w-full rounded-[18px] text-[16px]" disabled={!profileDirty} onClick={() => void saveProfileData()}>Сохранить</Button>
             </section>
             <section className="space-y-2.5">
               {[

@@ -26,6 +26,7 @@ interface PhoneInputProps {
   value: string
   onChange: (value: string) => void
   onBlur?: () => void
+  disabled?: boolean
   error?: string
   label?: string
   placeholder?: string
@@ -36,6 +37,7 @@ export function PhoneInput({
   value,
   onChange,
   onBlur,
+  disabled,
   error,
   label,
   placeholder = '+7 ',
@@ -84,6 +86,7 @@ export function PhoneInput({
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         onBlur={onBlur}
+        disabled={disabled}
         placeholder={placeholder}
         autoFocus={autoFocus}
         className={['input', error ? 'input-error' : ''].join(' ')}
