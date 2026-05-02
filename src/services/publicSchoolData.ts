@@ -71,6 +71,10 @@ export function getFutureAvailableSlots(schoolId: string): Slot[] {
 }
 
 export async function refreshPublicSlots(schoolId: string): Promise<Slot[]> {
+  if (!isSupabaseConfigured()) {
+    return db.slots.bySchool(schoolId)
+  }
+
   try {
     const slots = await getPublicSlots(schoolId)
     slots.forEach((slot) => db.slots.upsert(slot))
