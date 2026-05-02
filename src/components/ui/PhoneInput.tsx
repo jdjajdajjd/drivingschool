@@ -16,8 +16,9 @@ export function formatPhoneDisplay(value: string): string {
 
 export function rawPhoneDigits(value: string): string {
   const digits = value.replace(/\D/g, '')
-  if (digits.length <= 10) return digits
-  if (digits[0] === '7' || digits[0] === '8') return digits.slice(1, 11)
+  if (value.trim().startsWith('+7') || value.trim().startsWith('7') || value.trim().startsWith('8')) {
+    return digits.slice(1, 11)
+  }
   return digits.slice(0, 10)
 }
 

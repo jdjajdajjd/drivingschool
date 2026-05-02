@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, CarFront, CheckCircle2, Clock3, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CarFront, Clock3 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -70,7 +70,7 @@ export default function StudentRegisterPage() {
               <CarFront size={22} />
             </div>
             <div>
-              <p className="text-[13px] font-extrabold leading-4 text-[#101216]">Vroom</p>
+              <p className="text-[13px] font-extrabold leading-4 text-[#101216]">vroom</p>
               <p className="text-[12px] font-semibold leading-4 text-[#8B929C]">кабинет ученика</p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function StudentRegisterPage() {
                 {existingProfile ? `С возвращением, ${firstName(existingProfile.name)}` : 'Создайте кабинет ученика'}
               </h1>
               <p className="mt-3 text-[15px] font-semibold leading-6 text-[#727985]">
-                Укажите ФИО и телефон. После этого откроется личный кабинет с записями, оплатами, прогрессом и экзаменами.
+                Укажите ФИО и телефон. После этого откроется кабинет ученика.
               </p>
             </div>
 
@@ -131,22 +131,6 @@ export default function StudentRegisterPage() {
             </div>
           </motion.div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-[22px] bg-white/78 p-4 shadow-[0_10px_28px_rgba(18,24,38,0.06)]">
-              <CheckCircle2 className="mb-3 text-[#14995B]" size={22} />
-              <p className="text-[13px] font-extrabold leading-4 text-[#101216]">Записи и слоты</p>
-              <p className="mt-1 text-[12px] font-semibold leading-4 text-[#8B929C]">только ближайшая неделя</p>
-            </div>
-            <div className="rounded-[22px] bg-white/78 p-4 shadow-[0_10px_28px_rgba(18,24,38,0.06)]">
-              <ShieldCheck className="mb-3 text-[#FF7A1A]" size={22} />
-              <p className="text-[13px] font-extrabold leading-4 text-[#101216]">Статусы</p>
-              <p className="mt-1 text-[12px] font-semibold leading-4 text-[#8B929C]">оплата, прогресс, экзамены</p>
-            </div>
-          </div>
-
-          <p className="mx-auto mt-6 max-w-[300px] text-center text-[12px] font-semibold leading-5 text-[#8B929C]">
-            Email и пароль не нужны на старте. Дополнительные данные можно добавить позже в профиле.
-          </p>
         </section>
       </main>
     </div>
