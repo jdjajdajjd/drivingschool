@@ -21,7 +21,7 @@ import {
   UserRound,
   Wallet,
 } from 'lucide-react'
-import { addDays, format, isSameDay, isToday, isTomorrow, parseISO, startOfMonth } from 'date-fns'
+import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, isTomorrow, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
@@ -67,14 +67,26 @@ function compactStudentName(name: string) {
   return [lastName, initialsText].filter(Boolean).join(' ') || name
 }
 
-function lessonTime(slot: Slot | null) {
+function slotTimeRange(slot: Slot | null) {
   if (!slot) return 'Время не выбрано'
   const date = parseISO(slot.date)
   const [hours = 0, minutes = 0] = slot.time.split(':').map(Number)
   const end = new Date(date)
   end.setHours(hours, minutes + slot.duration, 0, 0)
+  return `${slot.time} – ${format(end, 'HH:mm')}`
+}
+
+function lessonTime(slot: Slot | null) {
+  if (!slot) return 'Время не выбрано'
+  const date = parseISO(slot.date)
   const day = isToday(date) ? 'Сегодня' : isTomorrow(date) ? 'Завтра' : format(date, 'EEE d', { locale: ru })
-  return `${day}, ${slot.time} – ${format(end, 'HH:mm')}`
+  return `${day}, ${slotTimeRange(slot)}`
+}
+
+function selectedDayTitle(date: Date) {
+  if (isToday(date)) return `Сегодня, ${format(date, 'd MMMM', { locale: ru })}`
+  if (isTomorrow(date)) return `Завтра, ${format(date, 'd MMMM', { locale: ru })}`
+  return format(date, 'd MMMM', { locale: ru })
 }
 
 function resolveBookings(schoolId: string, profile: StudentProfile): ResolvedStudentBooking[] {
@@ -120,7 +132,7 @@ function imageFileToDataUrl(file: File): Promise<string> {
 function StudentAvatar({ name, src, size = 48 }: { name: string; src?: string; size?: number }) {
   return (
     <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-white text-[15px] font-bold text-[#1F2BD8]" style={{ width: size, height: size, border: '1px solid #E4E6EC' }}>
-      {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : initials(name)}
+      {src ? <img src={src} alt={name} className="h-full w-full object-cover" style={{ width: '100%', height: '100%', maxWidth: '100%', objectFit: 'cover' }} /> : initials(name)}
     </div>
   )
 }
@@ -128,7 +140,7 @@ function StudentAvatar({ name, src, size = 48 }: { name: string; src?: string; s
 function SchoolLogo({ school }: { school: School }) {
   return (
     <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-white text-[#1F2BD8]" style={{ border: '1px solid #E4E6EC' }}>
-      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building2 size={20} />}
+      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" style={{ width: '100%', height: '100%', maxWidth: '100%', objectFit: 'cover' }} /> : <Building2 size={20} />}
     </div>
   )
 }
@@ -172,24 +184,23 @@ function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | nu
   )
 }
 
-function CompactBookingRow({ item, onBook }: { item: ResolvedStudentBooking; onBook: () => void }) {
-  const active = item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now()
+function AvailableSlotCard({ slot, instructor, onBook }: { slot: Slot; instructor: Instructor | null; onBook: () => void }) {
   return (
     <article className={cn(card, 'p-4')}>
       <div className="flex gap-3">
-        <div className={cn('w-1 self-stretch rounded-full', active ? 'bg-[#35C45A]' : 'bg-[#D6D8DD]')} />
+        <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{lessonTime(item.slot)}</p>
+              <p className="text-[24px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{slotTimeRange(slot)}</p>
               <p className="mt-1 truncate text-[17px] font-semibold text-[#050609]">Основное вождение</p>
             </div>
-            <StatusPill tone={active ? 'green' : 'gray'}>{active ? 'Активно' : 'История'}</StatusPill>
+            <StatusPill>Свободно</StatusPill>
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} />
-            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-            {active ? <Button size="sm" variant="secondary" className="rounded-full px-4 text-[14px]" onClick={onBook}>Ещё</Button> : null}
+            <StudentAvatar name={instructor?.name ?? 'Инструктор'} src={instructor ? getInstructorPhoto(instructor) : undefined} size={40} />
+            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{instructor ? formatInstructorName(instructor.name) : 'Инструктор'}</p>
+            <Button size="sm" className="rounded-full px-4 text-[14px]" onClick={onBook}>Записаться</Button>
           </div>
         </div>
       </div>
@@ -197,28 +208,34 @@ function CompactBookingRow({ item, onBook }: { item: ResolvedStudentBooking; onB
   )
 }
 
-function MiniCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; onSelect: (date: Date) => void; slots: Slot[] }) {
+function MiniCalendar({ selectedDate, onSelect, slots, onOpen }: { selectedDate: Date; onSelect: (date: Date) => void; slots: Slot[]; onOpen?: () => void }) {
   const days = Array.from({ length: 7 }, (_, index) => addDays(new Date(), index))
+  const [filter, setFilter] = useState('Все')
   return (
     <div className={cn(card, 'p-4')}>
       <div className="mb-3 flex items-center justify-between px-1">
         <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">Расписание автошколы</h3>
-        <ChevronRight size={22} className="text-[#B8BABF]" />
+        <button className="grid h-9 w-9 place-items-center rounded-full text-[#B8BABF] active:scale-[0.97]" onClick={onOpen} aria-label="Открыть расписание"><ChevronRight size={22} /></button>
       </div>
       <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
         {['Все', 'Основное', 'Дополнительное'].map((chip, index) => (
-          <span key={chip} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609]" style={{ borderColor: index === 0 ? '#050609' : '#E1E3EB' }}>
+          <button key={chip} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609] active:scale-[0.98]" style={{ borderColor: filter === chip ? '#050609' : '#E1E3EB' }} onClick={() => setFilter(chip)}>
             {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
             {chip}
-          </span>
+          </button>
         ))}
+      </div>
+      <div className="mb-3 flex items-center justify-between px-1">
+        <button onClick={() => onSelect(addDays(selectedDate, -7))} aria-label="Предыдущая неделя"><ChevronLeft size={22} /></button>
+        <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
+        <button onClick={() => onSelect(addDays(selectedDate, 7))} aria-label="Следующая неделя"><ChevronRight size={22} /></button>
       </div>
       <div className="grid grid-cols-7 gap-1">
         {days.map((date) => {
           const active = isSameDay(date, selectedDate)
           const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
           return (
-            <button key={date.toISOString()} className={cn('grid place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ minHeight: 62, minWidth: 42 }} onClick={() => onSelect(date)}>
+            <button key={date.toISOString()} className={cn('grid place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ minHeight: 68, minWidth: 42 }} onClick={() => { onSelect(date); onOpen?.() }}>
               <span className="text-[12px] font-semibold uppercase">{format(date, 'EE', { locale: ru }).slice(0, 2)}</span>
               <span className="text-[20px] font-bold leading-6">{format(date, 'd')}</span>
               <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#35C45A]' : 'bg-transparent')} />
@@ -227,6 +244,42 @@ function MiniCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; o
         })}
       </div>
     </div>
+  )
+}
+
+function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; onSelect: (date: Date) => void; slots: Slot[] }) {
+  const monthStart = startOfMonth(selectedDate)
+  const days = eachDayOfInterval({
+    start: startOfWeek(monthStart, { weekStartsOn: 1 }),
+    end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 1 }),
+  })
+  const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+  return (
+    <section className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[26px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(monthStart, 'LLLL yyyy', { locale: ru })}</h2>
+        <div className="flex gap-6">
+          <button className="active:scale-[0.97]" onClick={() => onSelect(addDays(monthStart, -1))} aria-label="Предыдущий месяц"><ChevronLeft size={28} /></button>
+          <button className="active:scale-[0.97]" onClick={() => onSelect(addDays(endOfMonth(monthStart), 1))} aria-label="Следующий месяц"><ChevronRight size={28} /></button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-y-6 rounded-[24px] bg-white px-3 py-5">
+        {weekdays.map((day, index) => <div key={day} className={cn('text-center text-[15px] font-bold', index > 4 ? 'text-[#1F2BD8]' : 'text-[#8F9197]')}>{day}</div>)}
+        {days.map((date) => {
+          const active = isSameDay(date, selectedDate)
+          const currentMonth = isSameMonth(date, selectedDate)
+          const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date) && slot.status === 'available')
+          const weekend = [0, 6].includes(date.getDay())
+          return (
+            <button key={date.toISOString()} className="grid min-h-[48px] place-items-center text-center active:scale-[0.96]" onClick={() => onSelect(date)}>
+              <span className={cn('grid h-11 w-11 place-items-center rounded-full text-[22px] font-bold', active ? 'bg-[#050609] text-white' : currentMonth ? weekend ? 'text-[#1F2BD8]' : 'text-[#050609]' : 'text-[#D6D8DD]')}>{format(date, 'd')}</span>
+              <span className={cn('mt-1 h-1.5 w-1.5 rounded-full', hasSlots ? 'bg-[#35C45A]' : 'bg-transparent')} />
+            </button>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -271,6 +324,7 @@ export function StudentPage() {
   const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
   const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school])
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
+  const availableSlotsForDate = slotsForDate.filter((slot) => slot.status === 'available')
 
   if (!school || !profile) return <div className="min-h-dvh bg-[#F5F6F8]" />
 
@@ -340,7 +394,7 @@ export function StudentPage() {
               </div>
             </section>
 
-            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} />
+            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} onOpen={() => setView('schedule')} />
           </section>
         ) : null}
 
@@ -350,27 +404,12 @@ export function StudentPage() {
               <h1 className={pageTitle}>Расписание</h1>
               <button className="grid h-11 w-11 place-items-center rounded-full bg-white"><Filter size={22} /></button>
             </div>
-            <div className="flex items-center justify-between">
-              <h2 className="text-[24px] font-bold tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</h2>
-              <div className="flex gap-5">
-                <button onClick={() => setSelectedDate(addDays(selectedDate, -7))}><ChevronLeft size={25} /></button>
-                <button onClick={() => setSelectedDate(addDays(selectedDate, 7))}><ChevronRight size={25} /></button>
-              </div>
-            </div>
-            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} />
+            <MonthCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} />
             <div>
-              <h2 className={sectionTitle}>{isToday(selectedDate) ? 'Сегодня' : format(selectedDate, 'd MMMM', { locale: ru })}</h2>
+              <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#050609]">{selectedDayTitle(selectedDate)}</h2>
               <div className="mt-4 space-y-3">
-                {slotsForDate.slice(0, 8).map((slot) => {
-                  const item: ResolvedStudentBooking = {
-                    booking: db.bookings.byId(slot.bookingId ?? '') ?? { id: '', schoolId: school.id, slotId: slot.id, instructorId: slot.instructorId, branchId: slot.branchId, studentName: '', studentPhone: '', studentEmail: '', status: slot.status === 'available' ? 'cancelled' : 'active', createdAt: '' },
-                    slot,
-                    instructor: db.instructors.byId(slot.instructorId),
-                    branch: db.branches.byId(slot.branchId),
-                  }
-                  return <CompactBookingRow key={slot.id} item={item} onBook={() => navigate('/student/book')} />
-                })}
-                {slotsForDate.length === 0 ? <BookingLessonCard item={null} onBook={() => navigate('/student/book')} /> : null}
+                {availableSlotsForDate.slice(0, 8).map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={db.instructors.byId(slot.instructorId)} onBook={() => navigate(`/student/book?slot=${slot.id}`)} />)}
+                {availableSlotsForDate.length === 0 ? <BookingLessonCard item={null} onBook={() => navigate('/student/book')} /> : null}
               </div>
             </div>
           </section>
