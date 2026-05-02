@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils'
-import React from 'react'
+import React, { forwardRef } from 'react'
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react'
 
 void React
@@ -10,7 +10,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   helperText?: string
 }
 
-export function Input({ label, error, helperText, className, id, ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, helperText, className, id, ...props }, ref) {
   const inputId = id ?? label?.toLowerCase().replace(/\s/g, '-')
   return (
     <div className="flex flex-col gap-1.5">
@@ -21,6 +21,7 @@ export function Input({ label, error, helperText, className, id, ...props }: Inp
       )}
       <input
         id={inputId}
+        ref={ref}
         className={cn(
           'field',
           error && '!border-[#E5534B] !shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
@@ -32,7 +33,7 @@ export function Input({ label, error, helperText, className, id, ...props }: Inp
       {!error && helperText ? <p className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
     </div>
   )
-}
+})
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string

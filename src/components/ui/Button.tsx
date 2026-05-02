@@ -14,9 +14,12 @@ export function Button({
   variant = 'primary',
   size = 'md',
   className,
+  style,
   children,
   ...props
 }: ButtonProps) {
+  const minHeight = { sm: 40, md: 48, lg: 56 }[size]
+
   return (
     <button
       className={cn(
@@ -39,12 +42,13 @@ export function Button({
           danger: 'bg-white border border-[rgba(229,83,75,0.15)] rounded-full hover:bg-[#FEF2F2]',
         }[variant],
         {
-          sm: 'h-9 px-4 text-[13px]',
-          md: 'h-11 px-5 text-[15px]',
-          lg: 'h-13 px-6 text-[15px]',
+          sm: 'min-h-[40px] px-4 text-[13px]',
+          md: 'min-h-[48px] px-5 text-[15px]',
+          lg: 'min-h-[56px] px-6 text-[16px]',
         }[size],
         className,
       )}
+      style={{ minHeight, ...style }}
       {...props}
     >
       {children}

@@ -1,9 +1,6 @@
 import React, { useCallback } from 'react'
 
-/**
- * Converts raw 10-digit input (without country code) to display format:
- * 9027538685 → "+7 902 753 86 85"
- */
+/** Converts raw 10-digit input (without country code) to Russian display format. */
 export function formatPhoneDisplay(value: string): string {
   const digits = value.replace(/\D/g, '')
   if (digits.length === 0) return ''
