@@ -3,7 +3,6 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { ProtectedAccess } from './components/layout/ProtectedAccess'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
 
-const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })))
 const SchoolPage = lazy(() => import('./pages/SchoolPage').then((module) => ({ default: module.SchoolPage })))
 const BookingFlowPage = lazy(() => import('./pages/BookingFlowPage').then((module) => ({ default: module.BookingFlowPage })))
 const StudentPage = lazy(() => import('./pages/StudentPage').then((module) => ({ default: module.StudentPage })))
@@ -61,10 +60,11 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<StudentPage />} />
           <Route path="/school/:slug" element={<SchoolPage />} />
           <Route path="/school/:slug/book" element={<BookingFlowPage />} />
           <Route path="/student/register" element={<StudentRegisterPage />} />
+          <Route path="/student/book" element={<BookingFlowPage />} />
           <Route path="/student" element={<StudentPage />} />
           <Route path="/booking/:bookingId" element={<BookingConfirmation />} />
           <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" />} />

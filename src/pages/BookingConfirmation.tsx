@@ -145,13 +145,11 @@ export function BookingConfirmation() {
   if (bundles.length === 0) {
     return (
       <div className="shell flex min-h-screen items-center justify-center px-4">
-        <StateView kind="error" title="Запись не найдена" description="Проверьте ссылку или откройте страницу автошколы ещё раз." action={<Button onClick={() => navigate('/school/virazh')}>К записи</Button>} />
+        <StateView kind="error" title="Запись не найдена" description="Проверьте ссылку или вернитесь в кабинет ученика." action={<Button onClick={() => navigate('/student')}>В кабинет</Button>} />
       </div>
     )
   }
 
-  const firstBundle = bundles[0]
-  const { school } = firstBundle
   const activeBundles = bundles.filter((item) => item.booking.status !== 'cancelled')
   const isCancelled = activeBundles.length === 0
   const title = isCancelled ? (bundles.length > 1 ? 'Записи отменены' : 'Запись отменена') : 'Запись подтверждена'
@@ -183,8 +181,8 @@ export function BookingConfirmation() {
               Добавить в календарь
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}/book`)}>Записаться ещё</Button>
-          <Button variant="ghost" onClick={() => navigate(`/school/${school?.slug ?? 'virazh'}`)}>На страницу школы</Button>
+          <Button variant="secondary" onClick={() => navigate('/student/book')}>Записаться ещё</Button>
+          <Button variant="ghost" onClick={() => navigate('/student')}>В кабинет</Button>
         </div>
 
         {!isCancelled ? (

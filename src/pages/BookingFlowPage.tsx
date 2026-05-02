@@ -229,13 +229,13 @@ export function BookingFlowPage() {
   }, [selectedDate, selectedInstructorId])
 
   function goBack() {
-    if (step === 'date') navigate(`/school/${school?.slug ?? slug}`)
+    if (step === 'date') navigate('/student')
     else if (step === 'instructor') setStep('date')
     else if (step === 'time') setStep('instructor')
     else if (step === 'contacts') setStep('time')
     else if (step === 'confirm') setStep('contacts')
     else if (step === 'account') setStep('success')
-    else navigate(`/school/${school?.slug ?? slug}`)
+    else navigate('/student')
   }
 
   function selectSlot(slot: Slot) {
@@ -376,7 +376,7 @@ export function BookingFlowPage() {
           kind="error"
           title="Автошкола не найдена"
           action={
-            <Button onClick={() => navigate('/school/virazh')}>Открыть Вираж</Button>
+            <Button onClick={() => navigate('/student/register')}>Вернуться в кабинет</Button>
           }
         />
       </div>
@@ -753,11 +753,11 @@ export function BookingFlowPage() {
                     <CalendarPlus size={16} />
                     Добавить в календарь
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate(`/school/${school.slug}/book`)}>
+                  <Button variant="secondary" onClick={() => navigate('/student/book')}>
                     Записаться ещё
                   </Button>
-                  <Button variant="ghost" onClick={() => navigate(`/school/${school.slug}`)}>
-                    На страницу школы
+                  <Button variant="ghost" onClick={() => navigate('/student')}>
+                    В кабинет
                   </Button>
                 </motion.div>
                 <Button className="w-full bg-[#2436D9]" onClick={() => navigate('/student')}>
@@ -843,7 +843,7 @@ export function BookingFlowPage() {
                       onClick={() =>
                         createdBookingId
                           ? navigate(`/booking/${createdBookingId}`)
-                          : navigate(`/school/${school.slug}`)
+                          : navigate('/student')
                       }
                     >
                       Позже

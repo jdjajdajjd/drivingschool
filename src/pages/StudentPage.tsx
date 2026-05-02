@@ -366,7 +366,7 @@ export function StudentPage() {
               <MetricTile label="тем" value={`${progress?.theoryTopicsCompleted ?? 4}/${progress?.theoryTopicsTotal ?? 30}`} icon={BookOpen} tone="green" />
             </div>
 
-            <LessonCard item={next} onBook={() => navigate(`/school/${school.slug}/book`)} />
+            <LessonCard item={next} onBook={() => navigate('/student/book')} />
 
             <ProgressCard progress={progress} />
 
@@ -402,14 +402,14 @@ export function StudentPage() {
                 <h1 className="text-[28px] font-black tracking-[-0.03em] text-[#101216]">Мои записи</h1>
                 <p className="mt-1 text-[14px] font-semibold text-[#727985]">Ближайшие занятия и история.</p>
               </div>
-              <Button className="h-11 rounded-[15px] bg-[#2436D9] px-4" onClick={() => navigate(`/school/${school.slug}/book`)}>
+              <Button className="h-11 rounded-[15px] bg-[#2436D9] px-4" onClick={() => navigate('/student/book')}>
                 <Plus size={17} />
               </Button>
             </div>
             <div className="space-y-3">
               {upcoming.map((item) => <BookingRow key={item.booking.id} item={item} />)}
               {history.slice(0, 5).map((item) => <BookingRow key={item.booking.id} item={item} />)}
-              {bookings.length === 0 ? <LessonCard item={null} onBook={() => navigate(`/school/${school.slug}/book`)} /> : null}
+              {bookings.length === 0 ? <LessonCard item={null} onBook={() => navigate('/student/book')} /> : null}
             </div>
           </section>
         ) : null}
@@ -470,9 +470,9 @@ export function StudentPage() {
                 <MessageCircle className="mb-1 text-[#14995B]" size={19} />
                 Чат
               </button>
-              <button className="grid min-h-20 place-items-center rounded-[22px] bg-white text-center text-[12px] font-black text-[#101216] shadow-[0_10px_28px_rgba(18,24,38,0.06)]" onClick={() => navigate(`/school/${school.slug}`)}>
+              <button className="grid min-h-20 place-items-center rounded-[22px] bg-white text-center text-[12px] font-black text-[#101216] shadow-[0_10px_28px_rgba(18,24,38,0.06)]" onClick={() => setView('schedule')}>
                 <ChevronRight className="mb-1 text-[#F06B19]" size={19} />
-                Школа
+                Записи
               </button>
             </div>
           </section>
