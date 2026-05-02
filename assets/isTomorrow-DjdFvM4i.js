@@ -1,0 +1,1 @@
+import{c as t,i as r}from"./format-BwVf9RzL.js";import{a}from"./addDays-YJU0CQlh.js";function n(o){return t(o,Date.now())}function c(o){return r(o,n(o))}function u(o){return r(o,a(n(o),1))}export{u as a,c as i};
