@@ -140,7 +140,7 @@ function BookingMiniSummary({
 }
 
 function SlotStatusBadge({ mine, busy }: { mine: boolean; busy: boolean }) {
-  const baseStyle = { borderRadius: 999, padding: '4px 10px', fontSize: 11, lineHeight: '14px', fontWeight: 900 } as const
+  const baseStyle = { borderRadius: 999, padding: '4px 10px', fontSize: 11, lineHeight: '14px', fontWeight: 700 } as const
   if (mine) return <span style={{ ...baseStyle, background: '#EFF2FF', color: '#2436D9' }}>Вы записаны</span>
   if (busy) return <span style={{ ...baseStyle, background: '#F1F2F5', color: '#8B929C' }}>Занято</span>
   return <span style={{ ...baseStyle, background: '#EAF8F0', color: '#14995B' }}>Свободно</span>
@@ -170,40 +170,40 @@ function FastSlotCard({
       disabled={disabled}
       onClick={() => onSelect(item.slot)}
       whileTap={disabled ? undefined : { scale: 0.98 }}
-      className="w-full overflow-hidden rounded-[24px] bg-white p-4 text-left shadow-[0_14px_38px_rgba(18,24,38,0.08)] transition disabled:opacity-70"
+      className="w-full overflow-hidden rounded-[22px] bg-white p-4 text-left shadow-[0_10px_28px_rgba(18,24,38,0.06)] transition disabled:opacity-70"
       style={{
         width: '100%',
         maxWidth: '100%',
-        minHeight: 144,
+        minHeight: 124,
         boxSizing: 'border-box',
         padding: 16,
-        borderRadius: 24,
+        borderRadius: 22,
         background: 'white',
         border: `2px solid ${selected || item.mine ? '#2436D9' : 'rgba(0,0,0,0.06)'}`,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 22, lineHeight: '28px', fontWeight: 900, letterSpacing: '-0.03em', color: '#101216' }}>{formatTimeRange(item.slot)}</p>
-          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#8B929C' }}>{item.slot.duration} минут</p>
+          <p style={{ margin: 0, fontSize: 20, lineHeight: '26px', fontWeight: 700, letterSpacing: '-0.02em', color: '#101216' }}>{formatTimeRange(item.slot)}</p>
+          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#8B929C' }}>{item.slot.duration} минут</p>
         </div>
         <SlotStatusBadge mine={item.mine} busy={busy} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-        <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#EFF2FF] text-[12px] font-black text-[#2436D9]" style={{ width: 36, height: 36 }}>
+        <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#EFF2FF] text-[12px] font-bold text-[#2436D9]" style={{ width: 34, height: 34 }}>
           {item.instructor ? <img src={getInstructorPhoto(item.instructor)} alt={item.instructor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : slotInitials()}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <p className="truncate" style={{ margin: 0, fontSize: 14, lineHeight: '18px', fontWeight: 900, color: '#101216' }}>{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-          <p className="truncate" style={{ margin: 0, marginTop: 2, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#727985' }}>{item.instructor?.car ?? 'Учебный автомобиль'}</p>
+          <p className="truncate" style={{ margin: 0, fontSize: 14, lineHeight: '18px', fontWeight: 700, color: '#101216' }}>{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+          <p className="truncate" style={{ margin: 0, marginTop: 2, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: '#727985' }}>{item.instructor?.car ?? 'Учебный автомобиль'}</p>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#8B929C' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: '#8B929C' }}>
         <MapPin size={14} className="shrink-0 text-[#2436D9]" />
         <span className="truncate">{item.branch?.name ?? 'Филиал'}</span>
       </div>
       {!busy ? (
-        <div className="grid place-items-center rounded-[15px] bg-[#2436D9] text-white" style={{ marginTop: 12, minHeight: 44, fontSize: 13, lineHeight: '16px', fontWeight: 900 }}>
+        <div className="grid place-items-center rounded-[15px] bg-[#2436D9] text-white" style={{ marginTop: 12, minHeight: 42, fontSize: 13, lineHeight: '16px', fontWeight: 700 }}>
           {submitting && selected ? 'Записываем...' : selected ? 'Подтвердить запись' : 'Записаться'}
         </div>
       ) : null}
@@ -563,8 +563,8 @@ export function BookingFlowPage() {
             {/* ── Step 1: Date ── */}
             {step === 'date' && (
               <section>
-                <h2 className="text-[44px] font-black leading-[1.05] tracking-[-0.05em] text-[#050609]">Расписание</h2>
-                <p className="mt-3 text-[21px] font-extrabold leading-6 text-[#8B8D94]">Нажмите свободный слот, чтобы записаться</p>
+                <h2 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">Расписание</h2>
+                <p className="mt-2 text-[15px] font-medium leading-5 text-[#8B8D94]">Нажмите свободный слот, чтобы записаться</p>
 
                 <div className="mt-5 space-y-4">
                   <DayChipsScroller
@@ -581,17 +581,17 @@ export function BookingFlowPage() {
                   <div className="rounded-[24px] border border-[#EBECF0] bg-white p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[31px] font-black tracking-[-0.04em] text-[#050609]">
+                        <p className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">
                           {selectedDate ? format(selectedDate, 'd MMMM', { locale: ru }) : 'Выберите день'}
                         </p>
-                        <p className="mt-1 text-[18px] font-extrabold text-[#8B8D94]">
+                        <p className="mt-1 text-[14px] font-medium text-[#8B8D94]">
                           {selectedDateKey
                             ? `${slotsForSelectedDate.filter((item) => item.slot.status === 'available').length} свободных из ${slotsForSelectedDate.length}`
                             : 'Покажем только актуальные окна'}
                         </p>
                       </div>
                       <button
-                        className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#EFF2FF] px-3 text-[12px] font-black text-[#2436D9] active:scale-[0.97]"
+                        className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#EFF2FF] px-3 text-[12px] font-semibold text-[#2436D9] active:scale-[0.97]"
                         style={{ minHeight: 40 }}
                         onClick={() => {
                           if (!school) return
@@ -607,14 +607,14 @@ export function BookingFlowPage() {
                         Обновить
                       </button>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-extrabold text-[#1F2BD8]">
+                    <div className="mt-3 flex items-center gap-2 rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-medium text-[#1F2BD8]">
                       <ShieldCheck size={15} className="text-[#1F2BD8]" />
                       Обновляем свободные места автоматически
                     </div>
                     <div className="mt-4 space-y-3">
                       {slotsForSelectedDate.length === 0 ? (
                         <div className="rounded-[20px] bg-[#F7F8FA] p-5 text-center">
-                          <p className="text-[15px] font-black text-[#101216]">На этот день окон нет</p>
+                          <p className="text-[15px] font-semibold text-[#101216]">На этот день окон нет</p>
                           <p className="mt-1 text-[13px] font-semibold text-[#727985]">Выберите другой день выше.</p>
                         </div>
                       ) : slotsForSelectedDate.map((item) => (
@@ -635,7 +635,7 @@ export function BookingFlowPage() {
                   </div>
                 </div>
 
-                <button className="mt-4 w-full rounded-[18px] border border-[#DADDF0] bg-white px-5 py-4 text-[20px] font-black text-[#1F2BD8] active:scale-[0.98]" onClick={() => setStep('instructor')}>
+                <button className="mt-4 w-full rounded-[18px] border border-[#DADDF0] bg-white px-5 py-3.5 text-[16px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setStep('instructor')}>
                   Выбрать по инструктору
                 </button>
               </section>
@@ -645,8 +645,8 @@ export function BookingFlowPage() {
             {step === 'instructor' && (
               <section>
                 <h2
-                  className="font-extrabold tracking-tight"
-                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                  className="font-bold tracking-tight"
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
                 >
                   Инструкторы
                 </h2>
@@ -725,8 +725,8 @@ export function BookingFlowPage() {
             {step === 'time' && (
               <section>
                 <h2
-                  className="font-extrabold tracking-tight"
-                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                  className="font-bold tracking-tight"
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
                 >
                   Время занятия
                 </h2>
@@ -742,7 +742,7 @@ export function BookingFlowPage() {
                       className="rounded-full text-[#2436D9]"
                     />
                     <div className="min-w-0">
-                      <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>
+                      <p className="text-[15px] font-semibold tracking-tight" style={{ color: '#111418' }}>
                         {formatInstructorName(selectedInstructor.name)}
                       </p>
                       <p className="t-small mt-0.5">
@@ -794,8 +794,8 @@ export function BookingFlowPage() {
             {step === 'contacts' && (
               <section>
                 <h2
-                  className="font-extrabold tracking-tight"
-                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                  className="font-bold tracking-tight"
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
                 >
                   Ваши контакты
                 </h2>
@@ -849,8 +849,8 @@ export function BookingFlowPage() {
             {step === 'confirm' && (
               <section>
                 <h2
-                  className="font-extrabold tracking-tight"
-                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                  className="font-bold tracking-tight"
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
                 >
                   Проверьте запись
                 </h2>
@@ -923,8 +923,8 @@ export function BookingFlowPage() {
             {step === 'account' && (
               <section>
                 <h2
-                  className="font-extrabold tracking-tight"
-                  style={{ fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1, color: '#111418' }}
+                  className="font-bold tracking-tight"
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
                 >
                   Создать кабинет
                 </h2>

@@ -54,15 +54,17 @@ interface ResolvedStudentBooking {
 }
 
 const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
-const pageTitle = 'text-[44px] font-black leading-[1.05] tracking-[-0.05em] text-[#050609]'
-const sectionTitle = 'text-[34px] font-black leading-[1.05] tracking-[-0.04em] text-[#050609]'
+const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
+const sectionTitle = 'text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
 
 function initials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'У'
 }
 
-function shortName(name: string) {
-  return name.trim().split(/\s+/)[0] || name
+function compactStudentName(name: string) {
+  const [lastName = '', firstName = '', middleName = ''] = name.trim().split(/\s+/)
+  const initialsText = [firstName, middleName].filter(Boolean).map((part) => `${part[0]?.toUpperCase()}.`).join('')
+  return [lastName, initialsText].filter(Boolean).join(' ') || name
 }
 
 function lessonTime(slot: Slot | null) {
@@ -115,9 +117,9 @@ function imageFileToDataUrl(file: File): Promise<string> {
   })
 }
 
-function StudentAvatar({ name, src, size = 56 }: { name: string; src?: string; size?: number }) {
+function StudentAvatar({ name, src, size = 48 }: { name: string; src?: string; size?: number }) {
   return (
-    <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-white text-[18px] font-black text-[#1F2BD8]" style={{ width: size, height: size, border: '1px solid #E4E6EC' }}>
+    <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-white text-[15px] font-bold text-[#1F2BD8]" style={{ width: size, height: size, border: '1px solid #E4E6EC' }}>
       {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : initials(name)}
     </div>
   )
@@ -125,8 +127,8 @@ function StudentAvatar({ name, src, size = 56 }: { name: string; src?: string; s
 
 function SchoolLogo({ school }: { school: School }) {
   return (
-    <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-white text-[#1F2BD8]" style={{ border: '1px solid #E4E6EC' }}>
-      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building2 size={22} />}
+    <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-white text-[#1F2BD8]" style={{ border: '1px solid #E4E6EC' }}>
+      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building2 size={20} />}
     </div>
   )
 }
@@ -138,31 +140,31 @@ function StatusPill({ children, tone = 'green' }: { children: string; tone?: 'gr
     gray: 'bg-[#F1F2F5] text-[#8B8D94]',
     red: 'bg-[#FFEDEF] text-[#FF3155]',
   }
-  return <span className={cn('inline-flex min-h-9 items-center rounded-[14px] px-4 text-[17px] font-black', styles[tone])}>{children}</span>
+  return <span className={cn('inline-flex min-h-7 items-center rounded-[14px] px-3 text-[12px] font-semibold', styles[tone])}>{children}</span>
 }
 
 function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | null; onBook: () => void }) {
   if (!item?.slot) {
     return (
-      <section className={cn(card, 'p-5')}>
-        <div className="mb-4 h-1 w-16 rounded-full bg-[#35C45A]" />
-        <h3 className="text-[28px] font-black leading-[1.1] tracking-[-0.04em] text-[#050609]">Запишитесь на первое занятие</h3>
-        <p className="mt-2 text-[20px] font-extrabold leading-6 text-[#8B8D94]">Свободные окна уже в расписании</p>
-        <Button size="lg" className="mt-5 w-full rounded-[20px] text-[22px]" onClick={onBook}>Записаться</Button>
+      <section className={cn(card, 'p-4')}>
+        <div className="mb-3 h-1 w-12 rounded-full bg-[#35C45A]" />
+        <h3 className="text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">Запишитесь на первое занятие</h3>
+        <p className="mt-2 text-[15px] font-medium leading-5 text-[#8B8D94]">Свободные окна уже в расписании</p>
+        <Button size="lg" className="mt-4 w-full rounded-[18px] text-[16px]" onClick={onBook}>Записаться</Button>
       </section>
     )
   }
 
   return (
-    <article className={cn(card, 'min-w-[340px] p-5')}>
-      <div className="flex gap-4">
-        <div className="w-1.5 self-stretch rounded-full bg-[#35C45A]" />
+    <article className={cn(card, 'min-w-[300px] p-4')}>
+      <div className="flex gap-3">
+        <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
         <div className="min-w-0 flex-1">
-          <p className="text-[26px] font-black leading-8 tracking-[-0.04em] text-[#050609]">{lessonTime(item.slot)}</p>
-          <p className="mt-1 text-[22px] font-black leading-7 text-[#050609]">Основное вождение</p>
-          <div className="mt-4 flex items-center gap-3">
-            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={44} />
-            <p className="min-w-0 flex-1 truncate text-[20px] font-black text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+          <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{lessonTime(item.slot)}</p>
+          <p className="mt-1 text-[17px] font-semibold leading-6 text-[#050609]">Основное вождение</p>
+          <div className="mt-3 flex items-center gap-3">
+            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} />
+            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
           </div>
         </div>
       </div>
@@ -173,21 +175,21 @@ function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | nu
 function CompactBookingRow({ item, onBook }: { item: ResolvedStudentBooking; onBook: () => void }) {
   const active = item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now()
   return (
-    <article className={cn(card, 'p-5')}>
-      <div className="flex gap-4">
-        <div className={cn('w-1.5 self-stretch rounded-full', active ? 'bg-[#35C45A]' : 'bg-[#D6D8DD]')} />
+    <article className={cn(card, 'p-4')}>
+      <div className="flex gap-3">
+        <div className={cn('w-1 self-stretch rounded-full', active ? 'bg-[#35C45A]' : 'bg-[#D6D8DD]')} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[27px] font-black leading-8 tracking-[-0.04em] text-[#050609]">{lessonTime(item.slot)}</p>
-              <p className="mt-1 truncate text-[22px] font-black text-[#050609]">Основное вождение</p>
+              <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{lessonTime(item.slot)}</p>
+              <p className="mt-1 truncate text-[17px] font-semibold text-[#050609]">Основное вождение</p>
             </div>
             <StatusPill tone={active ? 'green' : 'gray'}>{active ? 'Активно' : 'История'}</StatusPill>
           </div>
-          <div className="mt-4 flex items-center gap-3">
-            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={46} />
-            <p className="min-w-0 flex-1 truncate text-[20px] font-black text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-            {active ? <Button size="sm" variant="secondary" className="rounded-full px-5 text-[16px]" onClick={onBook}>Ещё</Button> : null}
+          <div className="mt-3 flex items-center gap-3">
+            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} />
+            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+            {active ? <Button size="sm" variant="secondary" className="rounded-full px-4 text-[14px]" onClick={onBook}>Ещё</Button> : null}
           </div>
         </div>
       </div>
@@ -199,14 +201,14 @@ function MiniCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; o
   const days = Array.from({ length: 7 }, (_, index) => addDays(new Date(), index))
   return (
     <div className={cn(card, 'p-4')}>
-      <div className="mb-4 flex items-center justify-between px-1">
-        <h3 className="text-[31px] font-black tracking-[-0.04em] text-[#050609]">Расписание автошколы</h3>
-        <ChevronRight size={26} className="text-[#B8BABF]" />
+      <div className="mb-3 flex items-center justify-between px-1">
+        <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">Расписание автошколы</h3>
+        <ChevronRight size={22} className="text-[#B8BABF]" />
       </div>
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
         {['Все', 'Основное', 'Дополнительное'].map((chip, index) => (
-          <span key={chip} className="inline-flex min-h-11 shrink-0 items-center rounded-full border px-5 text-[17px] font-black text-[#050609]" style={{ borderColor: index === 0 ? '#050609' : '#E1E3EB' }}>
-            {index > 0 ? <span className={cn('mr-2 h-2.5 w-2.5 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
+          <span key={chip} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609]" style={{ borderColor: index === 0 ? '#050609' : '#E1E3EB' }}>
+            {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
             {chip}
           </span>
         ))}
@@ -216,9 +218,9 @@ function MiniCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; o
           const active = isSameDay(date, selectedDate)
           const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
           return (
-            <button key={date.toISOString()} className={cn('grid place-items-center rounded-[20px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ minHeight: 74, minWidth: 48 }} onClick={() => onSelect(date)}>
-              <span className="text-[14px] font-black uppercase">{format(date, 'EE', { locale: ru }).slice(0, 2)}</span>
-              <span className="text-[26px] font-black leading-7">{format(date, 'd')}</span>
+            <button key={date.toISOString()} className={cn('grid place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ minHeight: 62, minWidth: 42 }} onClick={() => onSelect(date)}>
+              <span className="text-[12px] font-semibold uppercase">{format(date, 'EE', { locale: ru }).slice(0, 2)}</span>
+              <span className="text-[20px] font-bold leading-6">{format(date, 'd')}</span>
               <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#35C45A]' : 'bg-transparent')} />
             </button>
           )
@@ -230,11 +232,11 @@ function MiniCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; o
 
 function TheoryCard({ title, text, tone, icon: Icon }: { title: string; text: string; tone: string; icon: typeof BookOpen }) {
   return (
-    <article className="relative min-h-[188px] overflow-hidden rounded-[24px] p-5" style={{ background: tone }}>
-      <h3 className="text-[27px] font-black leading-[1.05] tracking-[-0.04em] text-[#050609]">{title}</h3>
-      <p className="mt-3 whitespace-pre-line text-[19px] font-extrabold leading-6 text-[#8B8D94]">{text}</p>
-      <div className="absolute bottom-4 right-4 grid h-16 w-16 place-items-center rounded-[22px] bg-white/70 text-[#1F2BD8]">
-        <Icon size={32} />
+    <article className="relative min-h-[154px] overflow-hidden rounded-[22px] p-4" style={{ background: tone }}>
+      <h3 className="text-[21px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">{title}</h3>
+      <p className="mt-2 whitespace-pre-line text-[15px] font-medium leading-5 text-[#8B8D94]">{text}</p>
+      <div className="absolute bottom-3 right-3 grid h-12 w-12 place-items-center rounded-[18px] bg-white/70 text-[#1F2BD8]">
+        <Icon size={25} />
       </div>
     </article>
   )
@@ -309,10 +311,10 @@ export function StudentPage() {
           <section className="space-y-6">
             <header className="flex items-center justify-between gap-3 pt-1">
               <button className="flex min-w-0 flex-1 items-center gap-3 rounded-[22px] text-left active:scale-[0.98]" onClick={() => setView('profile')}>
-                <StudentAvatar name={profile.name} src={profile.avatarUrl} size={52} />
+                <StudentAvatar name={profile.name} src={profile.avatarUrl} size={48} />
                 <div className="min-w-0">
-                  <p className="truncate text-[22px] font-black leading-6 text-[#050609]">{shortName(profile.name)}</p>
-                  <p className="mt-1 text-[19px] font-extrabold leading-5 text-[#8B8D94]">B</p>
+                  <p className="truncate text-[18px] font-bold leading-5 text-[#050609]">{compactStudentName(profile.name)}</p>
+                  <p className="mt-1 text-[14px] font-medium leading-5 text-[#8B8D94]">Категория B</p>
                 </div>
               </button>
               <button className="grid place-items-center active:scale-[0.97]" style={{ minHeight: 48, minWidth: 48 }} onClick={() => navigate(`/school/${school.slug}`)} aria-label="Автошкола">
@@ -320,18 +322,18 @@ export function StudentPage() {
               </button>
             </header>
 
-            <section className="rounded-[24px] p-6" style={{ background: 'linear-gradient(110deg, #F7C8E5, #FFE4DD)' }}>
+            <section className="rounded-[24px] p-5" style={{ background: 'linear-gradient(110deg, #F7C8E5, #FFE4DD)' }}>
               <div className="flex items-start justify-between gap-4">
-                <h2 className="text-[28px] font-black leading-[1.12] tracking-[-0.04em] text-[#050609]">Расчёты пока не подключены</h2>
-                <Wallet size={58} className="shrink-0 text-[#F3AFC0]" />
+                <h2 className="text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">Расчёты пока не подключены</h2>
+                <Wallet size={44} className="shrink-0 text-[#F3AFC0]" />
               </div>
-              <p className="mt-4 text-[20px] font-extrabold leading-6 text-[#050609]/70">Когда автошкола добавит платежи, здесь появится баланс</p>
+              <p className="mt-3 text-[15px] font-medium leading-5 text-[#050609]/70">Когда автошкола добавит платежи, здесь появится баланс</p>
             </section>
 
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className={sectionTitle}>Мои записи</h2>
-                <button className="grid h-11 w-11 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={28} /></button>
+                <button className="grid h-10 w-10 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
               </div>
               <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
                 {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
@@ -346,13 +348,13 @@ export function StudentPage() {
           <section className="space-y-6">
             <div className="flex items-center justify-between pt-2">
               <h1 className={pageTitle}>Расписание</h1>
-              <button className="grid h-12 w-12 place-items-center rounded-full bg-white"><Filter size={26} /></button>
+              <button className="grid h-11 w-11 place-items-center rounded-full bg-white"><Filter size={22} /></button>
             </div>
             <div className="flex items-center justify-between">
-              <h2 className="text-[32px] font-black tracking-[-0.04em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</h2>
-              <div className="flex gap-6">
-                <button onClick={() => setSelectedDate(addDays(selectedDate, -7))}><ChevronLeft size={30} /></button>
-                <button onClick={() => setSelectedDate(addDays(selectedDate, 7))}><ChevronRight size={30} /></button>
+              <h2 className="text-[24px] font-bold tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</h2>
+              <div className="flex gap-5">
+                <button onClick={() => setSelectedDate(addDays(selectedDate, -7))}><ChevronLeft size={25} /></button>
+                <button onClick={() => setSelectedDate(addDays(selectedDate, 7))}><ChevronRight size={25} /></button>
               </div>
             </div>
             <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} />
@@ -379,10 +381,10 @@ export function StudentPage() {
             <h1 className={pageTitle}>Теория</h1>
             <section className="relative overflow-hidden rounded-[24px] bg-[#CFE7FA] p-5">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-[28px] font-black tracking-[-0.04em] text-[#050609]">Теоретический курс</h2>
-                <span className="rounded-full bg-white px-4 py-2 text-[17px] font-black text-[#1F2BD8]">Прогресс {progress ? Math.round((progress.theoryTopicsCompleted / progress.theoryTopicsTotal) * 100) : 0}%</span>
+                <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">Теоретический курс</h2>
+                <span className="rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-[#1F2BD8]">Прогресс {progress ? Math.round((progress.theoryTopicsCompleted / progress.theoryTopicsTotal) * 100) : 0}%</span>
               </div>
-              <p className="mt-10 text-[23px] font-black text-[#050609]">{progress ? `${progress.theoryTopicsCompleted} из ${progress.theoryTopicsTotal} тем изучено` : '0 из 0 тем изучено'}</p>
+              <p className="mt-8 text-[18px] font-bold text-[#050609]">{progress ? `${progress.theoryTopicsCompleted} из ${progress.theoryTopicsTotal} тем изучено` : '0 из 0 тем изучено'}</p>
               <div className="mt-3 h-2 rounded-full bg-white/80"><div className="h-full rounded-full bg-[#1F2BD8]" style={{ width: progress ? `${Math.round((progress.theoryTopicsCompleted / progress.theoryTopicsTotal) * 100)}%` : '0%' }} /></div>
             </section>
             <div className="grid grid-cols-2 gap-2.5">
@@ -402,13 +404,13 @@ export function StudentPage() {
               { title: upcoming[0]?.instructor ? formatInstructorName(upcoming[0].instructor.name) : 'Инструктор', text: upcoming[0]?.instructor ? 'Связь по занятию' : 'Появится после назначения', icon: CarFront, pinned: true },
               { title: 'Автошкола-Контроль', text: 'Уведомления и статусы', icon: Bell, badge: 0 },
             ].map((chat) => (
-              <button key={chat.title} className="flex min-h-[96px] w-full items-center gap-4 border-b border-[#DDE0E5] text-left">
-                <span className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-full bg-white text-[#1F2BD8]"><chat.icon size={30} /></span>
+              <button key={chat.title} className="flex min-h-[78px] w-full items-center gap-3 border-b border-[#DDE0E5] text-left">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-[#1F2BD8]"><chat.icon size={24} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[27px] font-black text-[#050609]">{chat.title}</span>
-                  <span className="mt-1 block truncate text-[21px] font-extrabold text-[#8B8D94]">{chat.text}</span>
+                  <span className="block truncate text-[20px] font-bold text-[#050609]">{chat.title}</span>
+                  <span className="mt-1 block truncate text-[15px] font-medium text-[#8B8D94]">{chat.text}</span>
                 </span>
-                {chat.badge ? <span className="grid h-8 w-8 place-items-center rounded-full bg-[#1F2BD8] text-[13px] font-black text-white">{chat.badge}</span> : null}
+                {chat.badge ? <span className="grid h-7 w-7 place-items-center rounded-full bg-[#1F2BD8] text-[12px] font-bold text-white">{chat.badge}</span> : null}
               </button>
             ))}
           </section>
@@ -420,24 +422,24 @@ export function StudentPage() {
             <div className="flex justify-end"><button className="grid h-11 w-11 place-items-center rounded-full bg-white"><UserRound size={22} /></button></div>
             <div className="text-center">
               <button className="relative mx-auto block" onClick={() => photoInputRef.current?.click()}>
-                <StudentAvatar name={profile.name} src={profile.avatarUrl} size={104} />
-                <span className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full bg-[#1F2BD8] text-white"><Camera size={17} /></span>
+                <StudentAvatar name={profile.name} src={profile.avatarUrl} size={88} />
+                <span className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-[#1F2BD8] text-white"><Camera size={15} /></span>
               </button>
-              <h1 className="mt-4 text-[38px] font-black tracking-[-0.05em] text-[#050609]">{shortName(profile.name)}</h1>
-              <p className="mt-1 text-[21px] font-extrabold text-[#8B8D94]">Логин: {normalizePhone(profile.phone).slice(-9)}</p>
+              <h1 className="mt-4 text-[28px] font-bold tracking-[-0.02em] text-[#050609]">{compactStudentName(profile.name)}</h1>
+              <p className="mt-1 text-[15px] font-medium text-[#8B8D94]">Логин: {normalizePhone(profile.phone).slice(-9)}</p>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {[
                 { label: 'Расчеты', icon: CreditCard, onClick: () => setView('theory') },
                 { label: 'Вождение', icon: CarFront, onClick: () => setView('schedule') },
                 { label: 'Инфо', icon: Building2, onClick: () => navigate(`/school/${school.slug}`) },
-              ].map((item) => <button key={item.label} className={cn(card, 'grid place-items-center p-3 text-[22px] font-black text-[#050609]')} style={{ minHeight: 104 }} onClick={item.onClick}><span className="grid h-12 w-12 place-items-center rounded-full bg-[#F0F1FB] text-[#1F2BD8]"><item.icon size={24} /></span>{item.label}</button>)}
+              ].map((item) => <button key={item.label} className={cn(card, 'grid place-items-center p-3 text-[16px] font-semibold text-[#050609]')} style={{ minHeight: 88 }} onClick={item.onClick}><span className="grid h-10 w-10 place-items-center rounded-full bg-[#F0F1FB] text-[#1F2BD8]"><item.icon size={21} /></span>{item.label}</button>)}
             </div>
             <section className={cn(card, 'space-y-4 p-5')}>
               <Input label="ФИО" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
               <PhoneInput label="Телефон" value={form.phone} onChange={(value) => setForm((current) => ({ ...current, phone: value }))} />
               <Input label="Email, если понадобится" type="email" value={form.email} placeholder="mail@example.com" onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-              <Button size="lg" className="w-full rounded-[20px] text-[22px]" onClick={() => void saveProfileData()}>Сохранить</Button>
+              <Button size="lg" className="w-full rounded-[18px] text-[16px]" onClick={() => void saveProfileData()}>Сохранить</Button>
             </section>
             <section className="space-y-2.5">
               {[
@@ -445,9 +447,9 @@ export function StudentPage() {
                 { label: 'Данные для Госуслуг', icon: FileText, onClick: () => undefined },
                 { label: 'Акции и предложения', icon: Gift, onClick: () => undefined },
                 { label: 'Настройки', icon: Settings, onClick: () => undefined },
-              ].map((item) => <button key={item.label} className={cn(card, 'flex w-full items-center gap-4 px-5 text-left')} style={{ minHeight: 80 }} onClick={item.onClick}><item.icon className="text-[#1F2BD8]" size={26} /><span className="min-w-0 flex-1 text-[25px] font-black text-[#050609]">{item.label}</span><ChevronRight className="text-[#B8BABF]" size={24} /></button>)}
+              ].map((item) => <button key={item.label} className={cn(card, 'flex w-full items-center gap-3 px-4 text-left')} style={{ minHeight: 64 }} onClick={item.onClick}><item.icon className="text-[#1F2BD8]" size={22} /><span className="min-w-0 flex-1 text-[18px] font-semibold text-[#050609]">{item.label}</span><ChevronRight className="text-[#B8BABF]" size={21} /></button>)}
             </section>
-            <button className="flex items-center gap-3 px-2 text-[22px] font-extrabold text-[#8B8D94]" style={{ minHeight: 56 }} onClick={logout}><LogOut size={23} />Выйти из профиля</button>
+            <button className="flex items-center gap-3 px-2 text-[16px] font-semibold text-[#8B8D94]" style={{ minHeight: 48 }} onClick={logout}><LogOut size={20} />Выйти из профиля</button>
           </section>
         ) : null}
       </main>
