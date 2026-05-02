@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, CalendarPlus, Car, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, Car, CheckCircle2, Clock3, MapPin, RefreshCw, ShieldCheck } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
@@ -18,7 +18,7 @@ import {
   TimeSlotGrid,
 } from '../components/product/CompactCards'
 import { getInstructorPhoto } from '../services/instructorPhotos'
-import { getFutureAvailableSlots, loadPublicSchoolData } from '../services/publicSchoolData'
+import { getFutureAvailableSlots, loadPublicSchoolData, refreshPublicSlots } from '../services/publicSchoolData'
 import { db } from '../services/storage'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
@@ -51,6 +51,13 @@ interface ContactForm {
 }
 
 const emptyContact: ContactForm = { name: '', phone: '', email: '', password: '' }
+
+interface SlotCardItem {
+  slot: Slot
+  instructor: Instructor | null
+  branch: Branch | null
+  mine: boolean
+}
 
 const stepMotion = {
   initial: { opacity: 0, x: 12 },
@@ -132,6 +139,69 @@ function BookingMiniSummary({
   )
 }
 
+function SlotStatusBadge({ mine, busy }: { mine: boolean; busy: boolean }) {
+  if (mine) return <span className="rounded-full bg-[#EFF2FF] px-2.5 py-1 text-[11px] font-black text-[#2436D9]">Вы записаны</span>
+  if (busy) return <span className="rounded-full bg-[#F1F2F5] px-2.5 py-1 text-[11px] font-black text-[#8B929C]">Занято</span>
+  return <span className="rounded-full bg-[#EAF8F0] px-2.5 py-1 text-[11px] font-black text-[#14995B]">Свободно</span>
+}
+
+function FastSlotCard({
+  item,
+  selected,
+  submitting,
+  onSelect,
+}: {
+  item: SlotCardItem
+  selected: boolean
+  submitting: boolean
+  onSelect: (slot: Slot) => void
+}) {
+  const busy = item.slot.status !== 'available' && !item.mine
+  const disabled = busy || submitting
+
+  return (
+    <motion.button
+      type="button"
+      disabled={disabled}
+      onClick={() => onSelect(item.slot)}
+      whileTap={disabled ? undefined : { scale: 0.98 }}
+      className="w-full overflow-hidden rounded-[24px] bg-white p-4 text-left shadow-[0_14px_38px_rgba(18,24,38,0.08)] transition disabled:opacity-70"
+      style={{ border: `2px solid ${selected || item.mine ? '#2436D9' : 'rgba(0,0,0,0.06)'}` }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[22px] font-black leading-7 tracking-[-0.03em] text-[#101216]">{formatTimeRange(item.slot)}</p>
+          <p className="mt-1 text-[12px] font-extrabold uppercase tracking-[0.04em] text-[#8B929C]">{item.slot.duration} минут</p>
+        </div>
+        <SlotStatusBadge mine={item.mine} busy={busy} />
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <Avatar
+          initials={item.instructor?.avatarInitials || 'И'}
+          color={item.instructor?.avatarColor || '#EFF2FF'}
+          src={item.instructor ? getInstructorPhoto(item.instructor) : undefined}
+          alt={item.instructor?.name ?? 'Инструктор'}
+          size="sm"
+          className="rounded-full text-[#2436D9]"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-black text-[#101216]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+          <p className="mt-0.5 truncate text-[12px] font-bold text-[#727985]">{item.instructor?.car ?? 'Учебный автомобиль'}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-2 text-[12px] font-bold text-[#8B929C]">
+        <MapPin size={14} className="shrink-0 text-[#2436D9]" />
+        <span className="truncate">{item.branch?.name ?? 'Филиал'}</span>
+      </div>
+      {!busy ? (
+        <div className="mt-4 grid min-h-11 place-items-center rounded-[15px] bg-[#2436D9] text-[13px] font-black text-white">
+          {submitting && selected ? 'Записываем...' : selected ? 'Подтвердить запись' : 'Записаться'}
+        </div>
+      ) : null}
+    </motion.button>
+  )
+}
+
 export function BookingFlowPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
   const [params] = useSearchParams()
@@ -152,6 +222,8 @@ export function BookingFlowPage() {
   const [createdBookingId, setCreatedBookingId] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [refreshingSlots, setRefreshingSlots] = useState(false)
+  const [lastSlotsRefreshAt, setLastSlotsRefreshAt] = useState<Date | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -193,6 +265,34 @@ export function BookingFlowPage() {
     return () => releaseSessionLocks(sessionId.current)
   }, [slug, params])
 
+  useEffect(() => {
+    if (!school) return undefined
+
+    let disposed = false
+    async function refresh() {
+      if (!school || disposed) return
+      setRefreshingSlots(true)
+      await refreshPublicSlots(school.id)
+      if (!disposed) {
+        setSlotsVersion((current) => current + 1)
+        setLastSlotsRefreshAt(new Date())
+        setRefreshingSlots(false)
+      }
+    }
+
+    void refresh()
+    const intervalId = window.setInterval(refresh, 12000)
+    const onFocus = () => void refresh()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      disposed = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
+  }, [school])
+
   const futureSlots = useMemo(
     () => (school ? getFutureAvailableSlots(school.id) : []),
     [school, slotsVersion],
@@ -211,6 +311,7 @@ export function BookingFlowPage() {
   }, [futureSlots])
 
   const selectedDateKey = selectedDate ? isoDate(selectedDate) : ''
+  const normalizedStudentPhone = normalizePhone(form.phone)
 
   // Instructors filtered by selected date
   const instructorsOnDate = useMemo(() => {
@@ -230,6 +331,24 @@ export function BookingFlowPage() {
     return getInstructorSlots(selectedInstructorId, isoDate(selectedDate), sessionId.current)
   }, [selectedDate, selectedInstructorId])
 
+  const slotsForSelectedDate = useMemo<SlotCardItem[]>(() => {
+    if (!school || !selectedDateKey) return []
+    const allBookings = db.bookings.bySchool(school.id)
+    return db.slots.bySchool(school.id)
+      .filter((slot) => slot.date === selectedDateKey)
+      .filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now())
+      .map((slot) => {
+        const booking = slot.bookingId ? allBookings.find((item) => item.id === slot.bookingId) ?? null : null
+        return {
+          slot,
+          instructor: db.instructors.byId(slot.instructorId),
+          branch: db.branches.byId(slot.branchId),
+          mine: Boolean(booking && normalizedStudentPhone && booking.studentPhone === normalizedStudentPhone),
+        }
+      })
+      .sort((left, right) => left.slot.time.localeCompare(right.slot.time))
+  }, [school, selectedDateKey, normalizedStudentPhone, slotsVersion])
+
   function goBack() {
     if (step === 'date') navigate('/student')
     else if (step === 'instructor') setStep('date')
@@ -240,16 +359,18 @@ export function BookingFlowPage() {
     else navigate('/student')
   }
 
-  function selectSlot(slot: Slot) {
+  function selectSlot(slot: Slot): boolean {
     if (selectedSlotId && selectedSlotId !== slot.id) {
       releaseSlotLock(selectedSlotId, sessionId.current)
     }
     const result = acquireSlotLock(slot.id, sessionId.current)
     if (!result.ok) {
       showToast(result.error ?? 'Это время уже недоступно.', 'error')
-      return
+      setSlotsVersion((current) => current + 1)
+      return false
     }
     setSelectedSlotId(slot.id)
+    return true
   }
 
   function validateContacts(): boolean {
@@ -263,10 +384,37 @@ export function BookingFlowPage() {
     return Object.keys(next).length === 0
   }
 
-  async function submitBooking() {
-    if (!school || !selectedSlot || !selectedInstructor || !validateContacts()) return
+  async function quickBook(slot: Slot) {
+    if (submitting) return
+    const locked = selectSlot(slot)
+    if (!locked) return
+    setSelectedInstructorId(slot.instructorId)
+    setSelectedDate(parseISO(slot.date))
+
+    if (!form.name.trim() || !isValidRussianPhone(form.phone)) {
+      setStep('contacts')
+      return
+    }
+
+    await submitBooking(slot)
+  }
+
+  async function submitBooking(slotOverride?: Slot) {
+    const bookingSlot = slotOverride ?? selectedSlot
+    const bookingInstructor = bookingSlot ? db.instructors.byId(bookingSlot.instructorId) : selectedInstructor
+    if (!school || !bookingSlot || !bookingInstructor || !validateContacts()) return
+    setSelectedSlotId(bookingSlot.id)
+    setSelectedInstructorId(bookingSlot.instructorId)
+    setSelectedDate(parseISO(bookingSlot.date))
     setSubmitting(true)
     try {
+      await refreshPublicSlots(school.id)
+      const freshSlot = db.slots.byId(bookingSlot.id)
+      if (!freshSlot || freshSlot.status !== 'available') {
+        setSlotsVersion((current) => current + 1)
+        throw new Error('Этот слот только что заняли. Выберите другое время.')
+      }
+
       let bookingId = ''
       let bookingGroupId = ''
 
@@ -275,16 +423,16 @@ export function BookingFlowPage() {
           schoolId: school.id,
           studentName: form.name,
           studentPhone: form.phone,
-          slotIds: [selectedSlot.id],
+          slotIds: [bookingSlot.id],
         })
         bookingId = result.bookingIds[0] ?? ''
         bookingGroupId = result.bookingGroupId
       } catch {
         const local = createBooking({
           schoolId: school.id,
-          branchId: selectedSlot.branchId,
-          instructorId: selectedSlot.instructorId,
-          slotId: selectedSlot.id,
+          branchId: bookingSlot.branchId,
+          instructorId: bookingSlot.instructorId,
+          slotId: bookingSlot.id,
           studentName: form.name,
           studentPhone: form.phone,
           sessionId: sessionId.current,
@@ -301,9 +449,9 @@ export function BookingFlowPage() {
         id: bookingId || generateId('booking'),
         bookingGroupId: bookingGroupId || undefined,
         schoolId: school.id,
-        slotId: selectedSlot.id,
-        branchId: selectedSlot.branchId,
-        instructorId: selectedSlot.instructorId,
+        slotId: bookingSlot.id,
+        branchId: bookingSlot.branchId,
+        instructorId: bookingSlot.instructorId,
         studentId: student.id,
         studentName: form.name.trim(),
         studentPhone: normalizedPhone,
@@ -314,7 +462,7 @@ export function BookingFlowPage() {
       }
       db.students.upsert({ ...student, name: form.name.trim(), phone: normalizedPhone, normalizedPhone, email: form.email.trim() })
       db.bookings.upsert(booking)
-      db.slots.upsert({ ...selectedSlot, status: 'booked', bookingId: booking.id })
+      db.slots.upsert({ ...bookingSlot, status: 'booked', bookingId: booking.id })
       releaseSessionLocks(sessionId.current)
       setCreatedBookingId(booking.id)
       setSlotsVersion((current) => current + 1)
@@ -413,7 +561,7 @@ export function BookingFlowPage() {
                   Ближайшие окна
                 </h2>
                 <p className="t-body mt-2" style={{ color: '#6F747A' }}>
-                  Автошколы обычно открывают слоты на неделю. Выберите удобный день, дальше покажем инструкторов и время.
+                  Выберите день и нажмите свободный слот. Если профиль уже заполнен, запись займёт один тап.
                 </p>
 
                 <div className="mt-5 space-y-4">
@@ -436,39 +584,51 @@ export function BookingFlowPage() {
                         </p>
                         <p className="mt-1 text-[13px] font-medium text-[#6F747A]">
                           {selectedDateKey
-                            ? `${futureSlots.filter((slot) => slot.date === selectedDateKey).length} свободных слотов`
+                            ? `${slotsForSelectedDate.filter((item) => item.slot.status === 'available').length} свободных из ${slotsForSelectedDate.length}`
                             : 'Покажем только актуальные окна'}
                         </p>
                       </div>
-                      <span className="rounded-full bg-[#EAF8F0] px-3 py-1.5 text-[12px] font-extrabold text-[#14995B]">
-                        7 дней
-                      </span>
+                      <button
+                        className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#EFF2FF] px-3 text-[12px] font-black text-[#2436D9] active:scale-[0.97]"
+                        onClick={() => {
+                          if (!school) return
+                          setRefreshingSlots(true)
+                          void refreshPublicSlots(school.id).then(() => {
+                            setSlotsVersion((current) => current + 1)
+                            setLastSlotsRefreshAt(new Date())
+                            setRefreshingSlots(false)
+                          })
+                        }}
+                      >
+                        <RefreshCw size={13} className={refreshingSlots ? 'animate-spin' : ''} />
+                        Обновить
+                      </button>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      {futureSlots
-                        .filter((slot) => slot.date === selectedDateKey)
-                        .slice(0, 4)
-                        .map((slot) => {
-                          const instructor = instructors.find((item) => item.id === slot.instructorId)
-                          return (
-                            <button
-                              key={slot.id}
-                              type="button"
-                              className="rounded-[18px] bg-[#F7F8FA] p-3 text-left active:scale-[0.97]"
-                              onClick={() => {
-                                setSelectedInstructorId(slot.instructorId)
-                                selectSlot(slot)
-                                setStep('contacts')
-                              }}
-                            >
-                              <p className="text-[15px] font-black text-[#111418]">{formatTimeRange(slot)}</p>
-                              <p className="mt-1 truncate text-[12px] font-bold text-[#6F747A]">
-                                {instructor ? formatInstructorName(instructor.name) : 'Инструктор'}
-                              </p>
-                            </button>
-                          )
-                        })}
+                    <div className="mt-3 flex items-center gap-2 rounded-[16px] bg-[#F7F8FA] px-3 py-2 text-[12px] font-bold text-[#727985]">
+                      <ShieldCheck size={14} className="text-[#2436D9]" />
+                      Перед записью ещё раз проверяем, что слот не заняли.
                     </div>
+                    <div className="mt-4 space-y-3">
+                      {slotsForSelectedDate.length === 0 ? (
+                        <div className="rounded-[20px] bg-[#F7F8FA] p-5 text-center">
+                          <p className="text-[15px] font-black text-[#101216]">На этот день окон нет</p>
+                          <p className="mt-1 text-[13px] font-semibold text-[#727985]">Выберите другой день выше.</p>
+                        </div>
+                      ) : slotsForSelectedDate.map((item) => (
+                        <FastSlotCard
+                          key={item.slot.id}
+                          item={item}
+                          selected={selectedSlotId === item.slot.id}
+                          submitting={submitting}
+                          onSelect={(slot) => void quickBook(slot)}
+                        />
+                      ))}
+                    </div>
+                    {lastSlotsRefreshAt ? (
+                      <p className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-[#9EA3A8]">
+                        <Clock3 size={12} /> Обновлено {format(lastSlotsRefreshAt, 'HH:mm:ss')}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -478,7 +638,7 @@ export function BookingFlowPage() {
                     disabled={!selectedDate}
                     onClick={() => setStep('instructor')}
                   >
-                    Продолжить
+                    Выбрать по инструктору
                     <ArrowLeft size={16} className="rotate-180" />
                   </Button>
                 </StickyActionBar>
@@ -670,9 +830,9 @@ export function BookingFlowPage() {
                     onChange={(val) => setForm((c) => ({ ...c, phone: val }))}
                   />
 
-                  <div className="rounded-2xl bg-[#F7F8FA] p-4">
-                    <p className="text-[13px] font-semibold leading-5 text-[#6F747A]">
-                      Email не нужен для записи. Дополнительные данные можно добавить позже в кабинете.
+                  <div className="rounded-2xl bg-[#EFF2FF] p-4">
+                    <p className="text-[13px] font-semibold leading-5 text-[#2436D9]">
+                      После нажатия сразу проверим доступность слота и запишем вас без лишнего экрана подтверждения.
                     </p>
                   </div>
                 </div>
@@ -681,11 +841,9 @@ export function BookingFlowPage() {
                   <Button
                     className="w-full"
                     disabled={!form.name.trim() || !form.phone.trim()}
-                    onClick={() => {
-                      if (validateContacts()) setStep('confirm')
-                    }}
+                    onClick={() => void submitBooking()}
                   >
-                    Проверить запись
+                    {submitting ? 'Записываем...' : 'Записаться'}
                   </Button>
                 </StickyActionBar>
               </section>
@@ -751,20 +909,17 @@ export function BookingFlowPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: 0.08 }}
                 >
-                  <Button onClick={downloadCalendar}>
+                  <Button onClick={() => navigate('/student')}>
+                    В кабинет
+                  </Button>
+                  <Button variant="secondary" onClick={downloadCalendar}>
                     <CalendarPlus size={16} />
                     Добавить в календарь
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate('/student/book')}>
+                  <Button variant="ghost" onClick={() => navigate('/student/book')}>
                     Записаться ещё
                   </Button>
-                  <Button variant="ghost" onClick={() => navigate('/student')}>
-                    В кабинет
-                  </Button>
                 </motion.div>
-                <Button className="w-full bg-[#2436D9]" onClick={() => navigate('/student')}>
-                  Перейти в кабинет
-                </Button>
               </section>
             )}
 

@@ -179,6 +179,18 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
   }
 }
 
+export async function getPublicSlots(schoolId: string): Promise<Slot[]> {
+  const { data, error } = await supabase
+    .from('slots')
+    .select('*')
+    .eq('school_id', schoolId)
+    .order('date')
+    .order('time')
+
+  if (error) throw error
+  return (data ?? []).map(mapSlot)
+}
+
 export async function createSupabaseBooking(params: {
   schoolId: string
   studentName: string

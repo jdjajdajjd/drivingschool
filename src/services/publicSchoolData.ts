@@ -1,7 +1,7 @@
 import type { Branch, Instructor, School, Slot } from '../types'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { db } from './storage'
-import { getPublicSchoolBundle } from './supabasePublicService'
+import { getPublicSchoolBundle, getPublicSlots } from './supabasePublicService'
 
 export interface PublicSchoolData {
   school: School
@@ -68,4 +68,14 @@ export function getFutureAvailableSlots(schoolId: string): Slot[] {
     .filter((slot) => slot.status === 'available')
     .filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > now)
     .sort((left, right) => new Date(`${left.date}T${left.time}:00`).getTime() - new Date(`${right.date}T${right.time}:00`).getTime())
+}
+
+export async function refreshPublicSlots(schoolId: string): Promise<Slot[]> {
+  try {
+    const slots = await getPublicSlots(schoolId)
+    slots.forEach((slot) => db.slots.upsert(slot))
+    return slots
+  } catch {
+    return db.slots.bySchool(schoolId)
+  }
 }
