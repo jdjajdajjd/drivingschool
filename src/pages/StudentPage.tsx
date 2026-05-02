@@ -1,10 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BookOpen,
+  Building2,
   CalendarDays,
+  Camera,
   CarFront,
   ChevronRight,
+  Clock3,
   CreditCard,
   GraduationCap,
   Home,
@@ -13,7 +16,8 @@ import {
   MessageCircle,
   Phone,
   Plus,
-  Settings,
+  ShieldCheck,
+  Sparkles,
   UserRound,
   Wallet,
 } from 'lucide-react'
@@ -115,6 +119,42 @@ function StudentAvatar({ name, src }: { name: string; src?: string }) {
       {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : initials(name)}
     </div>
   )
+}
+
+function SchoolLogo({ school }: { school: School }) {
+  return (
+    <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-white text-[#2436D9] shadow-[0_10px_26px_rgba(18,24,38,0.08)]">
+      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building2 size={19} />}
+    </div>
+  )
+}
+
+function imageFileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Не удалось прочитать фото.'))
+    reader.onload = () => {
+      const image = new Image()
+      image.onerror = () => reject(new Error('Не удалось открыть фото.'))
+      image.onload = () => {
+        const size = Math.min(image.width, image.height)
+        const sourceX = Math.max(0, (image.width - size) / 2)
+        const sourceY = Math.max(0, (image.height - size) / 2)
+        const canvas = document.createElement('canvas')
+        canvas.width = 360
+        canvas.height = 360
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('Не удалось обработать фото.'))
+          return
+        }
+        ctx.drawImage(image, sourceX, sourceY, size, size, 0, 0, 360, 360)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      image.src = String(reader.result)
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 function StatusPill({
@@ -323,6 +363,7 @@ function ProgressCard({ progress }: { progress: StudentProgress | null }) {
 
 export function StudentPage() {
   const navigate = useNavigate()
+  const photoInputRef = useRef<HTMLInputElement | null>(null)
   const [school, setSchool] = useState<School | null>(null)
   const [profile, setProfile] = useState<StudentProfile | null>(null)
   const [view, setView] = useState<View>('home')
@@ -364,6 +405,13 @@ export function StudentPage() {
     setView('home')
   }
 
+  async function uploadPhoto(file: File | undefined) {
+    if (!file || !school || !profile) return
+    const avatarUrl = await imageFileToDataUrl(file)
+    const saved = saveStudentProfile(school.id, { name: profile.name, phone: profile.phone, avatarUrl }, { ...profile, avatarUrl })
+    setProfile(saved)
+  }
+
   function logout() {
     if (school) removeStudentProfile(school.id)
     setProfile(null)
@@ -376,15 +424,16 @@ export function StudentPage() {
         {view === 'home' ? (
           <section className="space-y-4">
             <header className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
+              <button className="flex min-w-0 flex-1 items-center gap-3 rounded-[22px] text-left active:scale-[0.98]" onClick={() => setView('profile')}>
                 <StudentAvatar name={profile.name} src={profile.avatarUrl} />
                 <div className="min-w-0">
                   <p className="truncate text-[17px] font-black leading-5 text-[#101216]">{profile.name}</p>
                   <p className="mt-1 truncate text-[12px] font-bold text-[#8B929C]">{school.name}</p>
                 </div>
-              </div>
-              <button className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#101216] shadow-[0_10px_26px_rgba(18,24,38,0.08)] active:scale-[0.97]" onClick={() => setView('profile')} aria-label="Настройки">
-                <Settings size={18} />
+                <ChevronRight className="ml-auto shrink-0 text-[#A6ADB8]" size={20} />
+              </button>
+              <button className="active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}`)} aria-label="Страница автошколы">
+                <SchoolLogo school={school} />
               </button>
             </header>
 
@@ -477,12 +526,25 @@ export function StudentPage() {
               </button>
             </div>
             <section className="rounded-[28px] bg-white p-5 shadow-[0_18px_50px_rgba(18,24,38,0.09)]">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => void uploadPhoto(event.target.files?.[0])}
+              />
               <div className="mb-5 flex items-center gap-3">
-                <StudentAvatar name={profile.name} src={profile.avatarUrl} />
-                <div className="min-w-0">
+                <button className="relative active:scale-[0.97]" onClick={() => photoInputRef.current?.click()} aria-label="Загрузить фото">
+                  <StudentAvatar name={profile.name} src={profile.avatarUrl} />
+                  <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-[#2436D9] text-white shadow-[0_8px_18px_rgba(36,54,217,0.28)]">
+                    <Camera size={14} />
+                  </span>
+                </button>
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-[17px] font-black text-[#101216]">{profile.name}</p>
                   <p className="mt-1 truncate text-[13px] font-bold text-[#8B929C]">{formatPhone(profile.phone)}</p>
                 </div>
+                <StatusPill tone="blue">ученик</StatusPill>
               </div>
               <div className="space-y-4">
                 <Input label="ФИО" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
@@ -491,6 +553,36 @@ export function StudentPage() {
                 <Button className="h-12 w-full rounded-[16px] bg-[#2436D9]" onClick={saveProfile}>
                   Сохранить
                 </Button>
+              </div>
+            </section>
+
+            <section className="rounded-[28px] bg-white p-5 shadow-[0_18px_50px_rgba(18,24,38,0.09)]">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-[20px] font-black tracking-[-0.02em] text-[#101216]">История</h2>
+                  <p className="mt-1 text-[13px] font-bold text-[#8B929C]">Занятия и статусы записей</p>
+                </div>
+                <Clock3 className="text-[#2436D9]" size={22} />
+              </div>
+              <div className="space-y-3">
+                {bookings.length === 0 ? (
+                  <div className="rounded-[20px] bg-[#F6F7FA] p-4">
+                    <p className="text-[14px] font-black text-[#101216]">История пока пустая</p>
+                    <p className="mt-1 text-[13px] font-semibold leading-5 text-[#727985]">После первой записи здесь появятся занятия, отмены и завершённые уроки.</p>
+                  </div>
+                ) : bookings.slice(0, 6).map((item) => <BookingRow key={item.booking.id} item={item} />)}
+              </div>
+            </section>
+
+            <section className="rounded-[28px] bg-[#101216] p-5 text-white shadow-[0_18px_50px_rgba(18,24,38,0.12)]">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-[#8FA0FF]">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <p className="text-[16px] font-black">Данные хранятся на устройстве</p>
+                  <p className="mt-1 text-[13px] font-semibold leading-5 text-[#C8CDD6]">Фото и профиль нужны только для быстрого входа и записи без повторного ввода.</p>
+                </div>
               </div>
             </section>
 
@@ -503,9 +595,9 @@ export function StudentPage() {
                 <MessageCircle className="mb-1 text-[#14995B]" size={19} />
                 Чат
               </button>
-              <button className="grid min-h-20 place-items-center rounded-[22px] bg-white text-center text-[12px] font-black text-[#101216] shadow-[0_10px_28px_rgba(18,24,38,0.06)]" onClick={() => setView('schedule')}>
-                <ChevronRight className="mb-1 text-[#F06B19]" size={19} />
-                Записи
+              <button className="grid min-h-20 place-items-center rounded-[22px] bg-white text-center text-[12px] font-black text-[#101216] shadow-[0_10px_28px_rgba(18,24,38,0.06)]" onClick={() => navigate(`/school/${school.slug}`)}>
+                <Sparkles className="mb-1 text-[#2436D9]" size={19} />
+                Автошкола
               </button>
             </div>
           </section>
