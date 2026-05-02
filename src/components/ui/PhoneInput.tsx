@@ -13,7 +13,10 @@ export function formatPhoneDisplay(value: string): string {
 
 export function rawPhoneDigits(value: string): string {
   const digits = value.replace(/\D/g, '')
-  if (value.trim().startsWith('+7') || value.trim().startsWith('7') || value.trim().startsWith('8')) {
+  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
+    return digits.slice(1)
+  }
+  if (digits.length > 10 && digits.startsWith('7')) {
     return digits.slice(1, 11)
   }
   return digits.slice(0, 10)
@@ -46,11 +49,25 @@ export function PhoneInput({
   )
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault()
+      onChange(value.slice(0, -1))
+      return
+    }
+    if (['Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return
     if (e.ctrlKey || e.metaKey) return
-    if (/^\d$/.test(e.key)) return
+    if (/^\d$/.test(e.key)) {
+      e.preventDefault()
+      onChange((value + e.key).slice(0, 10))
+      return
+    }
     e.preventDefault()
-  }, [])
+  }, [onChange, value])
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    onChange(rawPhoneDigits(e.clipboardData.getData('text')))
+  }, [onChange])
 
   const displayValue = value ? formatPhoneDisplay(value) : ''
   const isComplete = value.length === 10
@@ -65,6 +82,7 @@ export function PhoneInput({
         value={displayValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         onBlur={onBlur}
         placeholder={placeholder}
         autoFocus={autoFocus}

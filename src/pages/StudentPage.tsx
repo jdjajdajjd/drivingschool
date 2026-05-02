@@ -432,7 +432,7 @@ export function StudentPage() {
                 </div>
                 <ChevronRight className="ml-auto shrink-0 text-[#A6ADB8]" size={20} />
               </button>
-              <button className="active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}`)} aria-label="Страница автошколы">
+              <button className="grid min-h-11 min-w-11 place-items-center active:scale-[0.97]" style={{ minHeight: 44, minWidth: 44 }} onClick={() => navigate(`/school/${school.slug}`)} aria-label="Страница автошколы">
                 <SchoolLogo school={school} />
               </button>
             </header>

@@ -140,9 +140,14 @@ function BookingMiniSummary({
 }
 
 function SlotStatusBadge({ mine, busy }: { mine: boolean; busy: boolean }) {
-  if (mine) return <span className="rounded-full bg-[#EFF2FF] px-2.5 py-1 text-[11px] font-black text-[#2436D9]">Вы записаны</span>
-  if (busy) return <span className="rounded-full bg-[#F1F2F5] px-2.5 py-1 text-[11px] font-black text-[#8B929C]">Занято</span>
-  return <span className="rounded-full bg-[#EAF8F0] px-2.5 py-1 text-[11px] font-black text-[#14995B]">Свободно</span>
+  const baseStyle = { borderRadius: 999, padding: '4px 10px', fontSize: 11, lineHeight: '14px', fontWeight: 900 } as const
+  if (mine) return <span style={{ ...baseStyle, background: '#EFF2FF', color: '#2436D9' }}>Вы записаны</span>
+  if (busy) return <span style={{ ...baseStyle, background: '#F1F2F5', color: '#8B929C' }}>Занято</span>
+  return <span style={{ ...baseStyle, background: '#EAF8F0', color: '#14995B' }}>Свободно</span>
+}
+
+function slotInitials(name?: string): string {
+  return (name ?? 'Инструктор').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'И'
 }
 
 function FastSlotCard({
@@ -166,35 +171,39 @@ function FastSlotCard({
       onClick={() => onSelect(item.slot)}
       whileTap={disabled ? undefined : { scale: 0.98 }}
       className="w-full overflow-hidden rounded-[24px] bg-white p-4 text-left shadow-[0_14px_38px_rgba(18,24,38,0.08)] transition disabled:opacity-70"
-      style={{ border: `2px solid ${selected || item.mine ? '#2436D9' : 'rgba(0,0,0,0.06)'}` }}
+      style={{
+        width: '100%',
+        maxWidth: '100%',
+        minHeight: 144,
+        boxSizing: 'border-box',
+        padding: 16,
+        borderRadius: 24,
+        background: 'white',
+        border: `2px solid ${selected || item.mine ? '#2436D9' : 'rgba(0,0,0,0.06)'}`,
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[22px] font-black leading-7 tracking-[-0.03em] text-[#101216]">{formatTimeRange(item.slot)}</p>
-          <p className="mt-1 text-[12px] font-extrabold uppercase tracking-[0.04em] text-[#8B929C]">{item.slot.duration} минут</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 22, lineHeight: '28px', fontWeight: 900, letterSpacing: '-0.03em', color: '#101216' }}>{formatTimeRange(item.slot)}</p>
+          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#8B929C' }}>{item.slot.duration} минут</p>
         </div>
         <SlotStatusBadge mine={item.mine} busy={busy} />
       </div>
-      <div className="mt-4 flex items-center gap-3">
-        <Avatar
-          initials={item.instructor?.avatarInitials || 'И'}
-          color={item.instructor?.avatarColor || '#EFF2FF'}
-          src={item.instructor ? getInstructorPhoto(item.instructor) : undefined}
-          alt={item.instructor?.name ?? 'Инструктор'}
-          size="sm"
-          className="rounded-full text-[#2436D9]"
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-black text-[#101216]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-          <p className="mt-0.5 truncate text-[12px] font-bold text-[#727985]">{item.instructor?.car ?? 'Учебный автомобиль'}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+        <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#EFF2FF] text-[12px] font-black text-[#2436D9]" style={{ width: 36, height: 36 }}>
+          {item.instructor ? <img src={getInstructorPhoto(item.instructor)} alt={item.instructor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : slotInitials()}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p className="truncate" style={{ margin: 0, fontSize: 14, lineHeight: '18px', fontWeight: 900, color: '#101216' }}>{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+          <p className="truncate" style={{ margin: 0, marginTop: 2, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#727985' }}>{item.instructor?.car ?? 'Учебный автомобиль'}</p>
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-2 text-[12px] font-bold text-[#8B929C]">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#8B929C' }}>
         <MapPin size={14} className="shrink-0 text-[#2436D9]" />
         <span className="truncate">{item.branch?.name ?? 'Филиал'}</span>
       </div>
       {!busy ? (
-        <div className="mt-4 grid min-h-11 place-items-center rounded-[15px] bg-[#2436D9] text-[13px] font-black text-white">
+        <div className="grid place-items-center rounded-[15px] bg-[#2436D9] text-white" style={{ marginTop: 12, minHeight: 44, fontSize: 13, lineHeight: '16px', fontWeight: 900 }}>
           {submitting && selected ? 'Записываем...' : selected ? 'Подтвердить запись' : 'Записаться'}
         </div>
       ) : null}
@@ -540,7 +549,7 @@ export function BookingFlowPage() {
           <button
             onClick={goBack}
             className="mb-3 flex min-h-10 items-center gap-2 rounded-md px-1 text-[13px] font-semibold transition active:scale-[0.97]"
-            style={{ color: '#6F747A' }}
+            style={{ color: '#6F747A', minHeight: 40 }}
           >
             <ArrowLeft size={16} />
             Назад
@@ -590,6 +599,7 @@ export function BookingFlowPage() {
                       </div>
                       <button
                         className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#EFF2FF] px-3 text-[12px] font-black text-[#2436D9] active:scale-[0.97]"
+                        style={{ minHeight: 40 }}
                         onClick={() => {
                           if (!school) return
                           setRefreshingSlots(true)

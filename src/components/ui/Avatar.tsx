@@ -1,4 +1,7 @@
 import { cn } from '../../lib/utils'
+import React from 'react'
+
+void React
 
 interface AvatarProps {
   initials: string

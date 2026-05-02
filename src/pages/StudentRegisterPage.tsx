@@ -159,7 +159,7 @@ export default function StudentRegisterPage() {
                 {step === 'success' ? 'Готово' : `Шаг ${currentIndex + 1} из ${steps.length}`}
               </div>
               {step !== 'lastName' && step !== 'success' ? (
-                <button className="inline-flex min-h-9 items-center gap-1 rounded-full bg-[#F4F5F6] px-3 text-[12px] font-extrabold text-[#727985]" onClick={goBack}>
+                <button className="inline-flex items-center gap-1 rounded-full bg-[#F4F5F6] px-3.5 text-[12px] font-extrabold text-[#727985]" style={{ minHeight: 40 }} onClick={goBack}>
                   <ArrowLeft size={14} />
                   Назад
                 </button>
