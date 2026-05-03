@@ -17,6 +17,7 @@ import {
   LogOut,
   MessageCircle,
   Pencil,
+  Phone,
   Settings,
   UserRound,
   Zap,
@@ -28,7 +29,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { db } from '../services/storage'
-import { normalizePhone } from '../services/bookingService'
+import { isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
   findAnyStudentProfile,
@@ -374,7 +375,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Building2; label: 
 
 function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, onClose }: { type: InfoSheet; school: School; profile: StudentProfile; progress: ReturnType<typeof loadStudentProgress>; selectedInstructor: Instructor | null; onClose: () => void }) {
   if (!type) return null
-  const title = type === 'student' ? 'Инфо ученика' : type === 'gosuslugi' ? 'Госуслуги' : type === 'offers' ? 'Акции' : 'Настройки'
+  const title = type === 'student' ? 'Инфо ученика' : type === 'gosuslugi' ? 'Данные ученика' : type === 'offers' ? 'Рекомендации' : 'Настройки'
   return (
     <div className="fixed inset-0 z-[80] flex items-end bg-black/30 px-3 pb-3" onClick={onClose}>
       <section className="mx-auto max-h-[76vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
@@ -391,16 +392,16 @@ function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, o
                 <div>
                   <p className="text-[16px] font-bold text-[#050609]">Внутренний экзамен</p>
                   <p className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-[#050609]">{formatDateValue(progress?.internalExamDate)}</p>
-                  <p className="mt-1 text-[13px] font-semibold text-[#6F747A]">Примерная дата</p>
+                  <p className="mt-1 text-[13px] font-semibold text-[#6F747A]">{progress?.internalExamDate ? 'Примерная дата' : 'Назначит автошкола'}</p>
                 </div>
                 <span className="grid h-16 w-16 place-items-center rounded-full border-[6px] border-[#4A9DFF] bg-white text-center text-[18px] font-bold text-[#050609]">B</span>
               </div>
             </section>
             <section className={cn(card, 'px-4 py-2')}>
               <InfoRow icon={CarFront} label="Категория обучения" value="B" />
-              <InfoRow icon={GraduationCap} label="Учебная группа" value="15-26" />
-              <InfoRow icon={CalendarDays} label="Начало обучения" value="12.02.2026" />
-              <InfoRow icon={CarFront} label="Начало вождения" value="23.02.2026" />
+              <InfoRow icon={GraduationCap} label="Учебная группа" value="Пока не назначено" />
+              <InfoRow icon={CalendarDays} label="Начало обучения" value="Пока не назначено" />
+              <InfoRow icon={CarFront} label="Начало вождения" value="Пока не назначено" />
               <InfoRow icon={FileText} label="Окончание обучения" value={formatDateValue(progress?.gaidExamDate)} />
               <InfoRow icon={Building2} label="Автошкола" value={school.name} />
             </section>
@@ -409,8 +410,8 @@ function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, o
 
         {type === 'gosuslugi' ? (
           <section className={cn(card, 'p-4')}>
-            <h3 className="text-[18px] font-bold text-[#050609]">Данные готовы для сверки</h3>
-            <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">ФИО, телефон и email защищены от случайного изменения. Если автошколе понадобятся данные для заявления, они уже собраны в профиле.</p>
+            <h3 className="text-[18px] font-bold text-[#050609]">Основные данные профиля</h3>
+            <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Эти данные автошкола может использовать для связи и документов. Интеграции с Госуслугами здесь нет.</p>
             <div className="mt-4 space-y-2 rounded-[18px] bg-[#F5F6FA] p-3 text-[14px] font-semibold text-[#050609]">
               <p>{profile.name}</p>
               <p>+{normalizePhone(profile.phone)}</p>
@@ -422,8 +423,8 @@ function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, o
         {type === 'offers' ? (
           <section className="space-y-3">
             <article className="rounded-[22px] bg-[#EEF0FA] p-4">
-              <h3 className="text-[18px] font-bold text-[#050609]">Бонус за регулярность</h3>
-              <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">Запишитесь на 3 занятия вперёд у закреплённого инструктора, чтобы не ловить окна в последний момент.</p>
+              <h3 className="text-[18px] font-bold text-[#050609]">Планируйте занятия заранее</h3>
+              <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">Если у инструктора мало свободных окон, лучше выбирать время на неделю вперёд.</p>
             </article>
             <article className="rounded-[22px] bg-[#EAF6F0] p-4">
               <h3 className="text-[18px] font-bold text-[#050609]">Инструктор закреплён</h3>
@@ -436,7 +437,7 @@ function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, o
           <section className={cn(card, 'px-4 py-2')}>
             <InfoRow icon={UserRound} label="Профиль" value="Локально + синхронизация при сохранении" />
             <InfoRow icon={CalendarDays} label="Расписание" value="Инструктор закрепляется автоматически" />
-            <InfoRow icon={Bell} label="Уведомления" value="Скоро: напоминания о занятиях" />
+            <InfoRow icon={Bell} label="Уведомления" value="Пока не подключены" />
           </section>
         ) : null}
       </section>
@@ -455,6 +456,7 @@ export function StudentPage() {
   const [lessonFilter, setLessonFilter] = useState<LessonFilter>('all')
   const [instructorSheetOpen, setInstructorSheetOpen] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [profileError, setProfileError] = useState('')
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState('')
   const [editingFields, setEditingFields] = useState<Record<ProfileField, boolean>>({ name: false, phone: false, email: false })
   const [infoSheet, setInfoSheet] = useState<InfoSheet>(null)
@@ -514,9 +516,32 @@ export function StudentPage() {
 
   async function saveProfileData() {
     if (!school || !profile) return
+    const email = form.email.trim()
+    const phoneChanged = normalizePhone(form.phone) !== normalizePhone(profile.phone)
+
+    if (!form.name.trim()) {
+      setProfileError('Введите ФИО ученика.')
+      return
+    }
+
+    if (!isValidRussianPhone(form.phone)) {
+      setProfileError('Введите корректный номер телефона.')
+      return
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setProfileError('Введите корректный email или оставьте поле пустым.')
+      return
+    }
+
+    if (phoneChanged && !window.confirm('Телефон используется для поиска ваших записей. После изменения старые записи могут быть привязаны к прежнему номеру. Сохранить новый телефон?')) {
+      return
+    }
+
     const nextAvatarUrl = pendingAvatarUrl || profile.avatarUrl || ''
-    const saved = saveStudentProfile(school.id, { name: form.name, phone: form.phone, email: form.email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email: form.email })
+    const saved = saveStudentProfile(school.id, { name: form.name, phone: form.phone, email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email })
     setProfile(saved)
+    setProfileError('')
     setPendingAvatarUrl('')
     setEditingFields({ name: false, phone: false, email: false })
     db.students.upsert({
@@ -617,7 +642,7 @@ export function StudentPage() {
 
             <div className="grid grid-cols-2 gap-2.5">
               <StatCard title={'Остаток учебных\nчасов'} value={String(drivingRemaining)} subtitle={`${drivingCompleted} из ${drivingTotal} часов пройдено`} tone="green" />
-              <StatCard title={'Списания\nи начисления'} value="0" subtitle="История появится после занятий" />
+              <StatCard title={'Пройдено\nзанятий'} value={String(bookings.filter((item) => item.booking.status === 'completed').length)} subtitle="По отметкам автошколы" />
             </div>
 
             <section className={cn(card, 'p-4')}>
@@ -720,19 +745,20 @@ export function StudentPage() {
 
         {view === 'chat' ? (
           <section className="space-y-5 pt-2">
-            <h1 className={pageTitle}>Чаты</h1>
+            <h1 className={pageTitle}>Связь</h1>
             {[
-              { title: school.name, text: 'Вопросы по обучению и расписанию', icon: Building2, pinned: true },
-              { title: upcoming[0]?.instructor ? formatInstructorName(upcoming[0].instructor.name) : 'Инструктор', text: upcoming[0]?.instructor ? 'Связь по занятию' : 'Появится после назначения', icon: CarFront, pinned: true },
-              { title: 'Автошкола-Контроль', text: 'Уведомления и статусы', icon: Bell, badge: 0 },
-            ].map((chat) => (
-              <button key={chat.title} className="flex min-h-[78px] w-full items-center gap-3 border-b border-[#DDE0E5] text-left">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-[#1F2BD8]"><chat.icon size={24} /></span>
+              { title: school.name, text: school.phone ? `Позвонить: ${school.phone}` : 'Телефон автошколы пока не указан', icon: Building2, action: school.phone ? `tel:${school.phone}` : '' },
+              { title: selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор', text: selectedInstructor?.phone ? `Позвонить: ${selectedInstructor.phone}` : 'Появится после назначения', icon: CarFront, action: selectedInstructor?.phone ? `tel:${selectedInstructor.phone}` : '' },
+              { title: 'Документы и помощь', text: 'По вопросам документов обратитесь в автошколу', icon: FileText, action: school.phone ? `tel:${school.phone}` : '' },
+              { title: 'Уведомления', text: 'Напоминания пока не подключены', icon: Bell, action: '' },
+            ].map((contact) => (
+              <button key={contact.title} className="flex min-h-[78px] w-full items-center gap-3 border-b border-[#DDE0E5] text-left" onClick={() => { if (contact.action) window.location.href = contact.action }}>
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-[#1F2BD8]"><contact.icon size={24} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[20px] font-bold text-[#050609]">{chat.title}</span>
-                  <span className="mt-1 block truncate text-[15px] font-medium text-[#8B8D94]">{chat.text}</span>
+                  <span className="block truncate text-[20px] font-bold text-[#050609]">{contact.title}</span>
+                  <span className="mt-1 block truncate text-[15px] font-medium text-[#8B8D94]">{contact.text}</span>
                 </span>
-                {chat.badge ? <span className="grid h-7 w-7 place-items-center rounded-full bg-[#1F2BD8] text-[12px] font-bold text-white">{chat.badge}</span> : null}
+                {contact.action ? <Phone size={18} className="text-[#B8BABF]" /> : null}
               </button>
             ))}
           </section>
@@ -762,6 +788,7 @@ export function StudentPage() {
               <EditableTextField label="ФИО" value={form.name} locked={Boolean(profile.name) && !editingFields.name} onEdit={() => setEditingFields((current) => ({ ...current, name: true }))} onChange={(value) => setForm((current) => ({ ...current, name: value }))} />
               <EditablePhoneField label="Телефон" value={form.phone} locked={Boolean(profile.phone) && !editingFields.phone} onEdit={() => setEditingFields((current) => ({ ...current, phone: true }))} onChange={(value) => setForm((current) => ({ ...current, phone: value }))} />
               <EditableTextField label="Email, если понадобится" type="email" value={form.email} locked={Boolean(profile.email) && !editingFields.email} onEdit={() => setEditingFields((current) => ({ ...current, email: true }))} onChange={(value) => setForm((current) => ({ ...current, email: value }))} />
+              {profileError ? <p className="rounded-[16px] bg-[#FFEDEF] px-3 py-2 text-[13px] font-semibold text-[#FF3155]">{profileError}</p> : null}
               {profileDirty ? <p className="rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-semibold text-[#1F2BD8]">Есть несохранённые изменения</p> : null}
               <Button size="lg" className="w-full rounded-[18px] text-[16px]" disabled={!profileDirty} onClick={() => void saveProfileData()}>Сохранить</Button>
             </section>
@@ -769,7 +796,7 @@ export function StudentPage() {
               {[
                 { label: 'Автошкола', icon: Building2, onClick: () => navigate(`/school/${school.slug}`) },
                 { label: 'Данные для Госуслуг', icon: FileText, onClick: () => setInfoSheet('gosuslugi') },
-                { label: 'Акции и предложения', icon: Gift, onClick: () => setInfoSheet('offers') },
+                { label: 'Рекомендации', icon: Gift, onClick: () => setInfoSheet('offers') },
                 { label: 'Настройки', icon: Settings, onClick: () => setInfoSheet('settings') },
               ].map((item) => <button key={item.label} className={cn(card, 'flex w-full items-center gap-3 px-4 text-left')} style={{ minHeight: 64 }} onClick={item.onClick}><item.icon className="text-[#1F2BD8]" size={22} /><span className="min-w-0 flex-1 text-[18px] font-semibold text-[#050609]">{item.label}</span><ChevronRight className="text-[#B8BABF]" size={21} /></button>)}
             </section>
@@ -782,7 +809,7 @@ export function StudentPage() {
         { key: 'home', label: 'Главная', icon: <Home size={25} />, active: view === 'home', onClick: () => setView('home') },
         { key: 'schedule', label: 'Расписание', icon: <CalendarDays size={25} />, active: view === 'schedule', onClick: () => setView('schedule') },
         { key: 'theory', label: 'Теория', icon: <BookOpen size={25} />, active: view === 'theory', onClick: () => setView('theory') },
-        { key: 'chat', label: 'Чат', icon: <MessageCircle size={25} />, active: view === 'chat', onClick: () => setView('chat') },
+        { key: 'chat', label: 'Связь', icon: <MessageCircle size={25} />, active: view === 'chat', onClick: () => setView('chat') },
         { key: 'profile', label: 'Профиль', icon: <UserRound size={25} />, active: view === 'profile', onClick: () => setView('profile') },
       ]} />
       <InstructorSheet open={instructorSheetOpen} instructors={instructors} selectedId={selectedInstructor?.id ?? ''} onSelect={setSelectedInstructorId} onClose={() => setInstructorSheetOpen(false)} />
