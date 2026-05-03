@@ -9,7 +9,6 @@ import {
   Comment01Icon,
   File02Icon,
   FilterHorizontalIcon,
-  GraduationScrollIcon,
   Home07Icon,
   Logout03Icon,
   PencilEdit02Icon,
@@ -51,8 +50,9 @@ import { getInstructorPhoto } from '../services/instructorPhotos'
 import type { Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
 import type { InfoSheet, LessonFilter, ProfileField, StudentView } from './student/studentTypes'
-import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, lessonTime, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, trainingStageLabels, weekdayShort } from './student/studentUtils'
+import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, lessonTime, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, weekdayShort } from './student/studentUtils'
 import { AvailableSlotCard, BookingLessonCard, LessonDetailsCard, SchoolLogo, StatusPill, StudentAvatar } from './student/components/CoreCards'
+import { InfoSheetPanel } from './student/components/InfoSheetPanel'
 
 void React
 
@@ -67,7 +67,6 @@ const ChevronRight = createHugeIcon(ArrowRight01Icon)
 const FileText = createHugeIcon(File02Icon)
 const Filter = createHugeIcon(FilterHorizontalIcon)
 const Gift = createHugeIcon(SparklesIcon)
-const GraduationCap = createHugeIcon(GraduationScrollIcon)
 const Home = createHugeIcon(Home07Icon)
 const LogOut = createHugeIcon(Logout03Icon)
 const MessageCircle = createHugeIcon(Comment01Icon)
@@ -312,91 +311,6 @@ function RoadmapStep({ title, text, done, active }: { title: string; text: strin
         <p className="text-[16px] font-bold leading-5 text-[#050609]">{title}</p>
         <p className="mt-1 text-[13px] font-semibold leading-4 text-[#8B8D94]">{text}</p>
       </div>
-    </div>
-  )
-}
-
-function InfoRow({ icon: Icon, label, value }: { icon: typeof Building2; label: string; value: string }) {
-  return (
-    <div className="flex min-h-[64px] items-center gap-3 border-b border-[#EEF0F2] py-2 last:border-b-0">
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#F0F1FB] text-[#1F2BD8]"><Icon size={21} /></span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-[#8B8D94]">{label}</p>
-        <p className="mt-0.5 truncate text-[17px] font-bold text-[#050609]">{value}</p>
-      </div>
-    </div>
-  )
-}
-
-function InfoSheetPanel({ type, school, profile, progress, student, selectedInstructor, onClose }: { type: InfoSheet; school: School; profile: StudentProfile; progress: ReturnType<typeof loadStudentProgress>; student: ReturnType<typeof db.students.byId> | null; selectedInstructor: Instructor | null; onClose: () => void }) {
-  if (!type) return null
-  const title = type === 'student' ? 'Инфо ученика' : type === 'gosuslugi' ? 'Данные ученика' : type === 'offers' ? 'Рекомендации' : 'Настройки'
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end bg-black/30 px-3 pb-3" onClick={onClose}>
-      <section className="mx-auto max-h-[76vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
-        <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-[#D6D8DD]" />
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-[21px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
-          <button className="rounded-full px-3 py-2 text-[14px] font-semibold text-[#8B8D94]" onClick={onClose}>Закрыть</button>
-        </div>
-
-        {type === 'student' ? (
-          <div className="space-y-4">
-            <section className="rounded-[22px] bg-[#D7EBFF] p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[16px] font-bold text-[#050609]">Внутренний экзамен</p>
-                  <p className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-[#050609]">{formatDateValue(progress?.internalExamDate)}</p>
-                  <p className="mt-1 text-[13px] font-semibold text-[#6F747A]">{progress?.internalExamDate ? 'Примерная дата' : 'Назначит автошкола'}</p>
-                </div>
-                <span className="grid h-16 w-16 place-items-center rounded-full border-[6px] border-[#4A9DFF] bg-white text-center text-[18px] font-bold text-[#050609]">B</span>
-              </div>
-            </section>
-            <section className={cn(card, 'px-4 py-2')}>
-              <InfoRow icon={CarFront} label="Категория обучения" value={student?.categoryCodes?.join(', ') || 'B'} />
-              <InfoRow icon={GraduationCap} label="Учебная группа" value={student?.groupName || 'Пока не назначено'} />
-              <InfoRow icon={BookOpen} label="Этап обучения" value={student?.trainingStage ? trainingStageLabels[student.trainingStage] : 'Пока не назначено'} />
-              <InfoRow icon={CalendarDays} label="Начало обучения" value={formatDateValue(student?.trainingStartDate)} />
-              <InfoRow icon={CarFront} label="Начало вождения" value={formatDateValue(student?.drivingStartDate)} />
-              <InfoRow icon={FileText} label="Окончание обучения" value={formatDateValue(student?.trainingEndDate)} />
-              <InfoRow icon={Building2} label="Автошкола" value={school.name} />
-            </section>
-          </div>
-        ) : null}
-
-        {type === 'gosuslugi' ? (
-          <section className={cn(card, 'p-4')}>
-            <h3 className="text-[18px] font-bold text-[#050609]">Основные данные профиля</h3>
-            <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Эти данные автошкола может использовать для связи и документов. Интеграции с Госуслугами здесь нет.</p>
-            <div className="mt-4 space-y-2 rounded-[18px] bg-[#F5F6FA] p-3 text-[14px] font-semibold text-[#050609]">
-              <p>{profile.name}</p>
-              <p>+{normalizePhone(profile.phone)}</p>
-              <p>{profile.email || 'Email не указан'}</p>
-            </div>
-          </section>
-        ) : null}
-
-        {type === 'offers' ? (
-          <section className="space-y-3">
-            <article className="rounded-[22px] bg-[#EEF0FA] p-4">
-              <h3 className="text-[18px] font-bold text-[#050609]">Планируйте занятия заранее</h3>
-              <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">Если у инструктора мало свободных окон, лучше выбирать время на неделю вперёд.</p>
-            </article>
-            <article className="rounded-[22px] bg-[#EAF6F0] p-4">
-              <h3 className="text-[18px] font-bold text-[#050609]">Инструктор закреплён</h3>
-              <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выберите инструктора'} будет первым в расписании на этом устройстве.</p>
-            </article>
-          </section>
-        ) : null}
-
-        {type === 'settings' ? (
-          <section className={cn(card, 'px-4 py-2')}>
-            <InfoRow icon={UserRound} label="Профиль" value="Локально + синхронизация при сохранении" />
-            <InfoRow icon={CalendarDays} label="Расписание" value="Инструктор закрепляется автоматически" />
-            <InfoRow icon={Bell} label="Уведомления" value="Пока не подключены" />
-          </section>
-        ) : null}
-      </section>
     </div>
   )
 }
@@ -861,8 +775,8 @@ export function StudentPage() {
             <section className="space-y-2.5">
               {[
                 { label: 'Автошкола', icon: Building2, onClick: () => navigate(`/school/${school.slug}`) },
-                { label: 'Данные для Госуслуг', icon: FileText, onClick: () => setInfoSheet('gosuslugi') },
-                { label: 'Рекомендации', icon: Gift, onClick: () => setInfoSheet('offers') },
+                { label: 'Данные ученика', icon: FileText, onClick: () => setInfoSheet('profileData') },
+                { label: 'Советы', icon: Gift, onClick: () => setInfoSheet('tips') },
                 { label: 'Настройки', icon: Settings, onClick: () => setInfoSheet('settings') },
               ].map((item) => <button key={item.label} className={cn(card, 'flex w-full items-center gap-3 px-4 text-left')} style={{ minHeight: 64 }} onClick={item.onClick}><item.icon className="text-[#1F2BD8]" size={22} /><span className="min-w-0 flex-1 text-[18px] font-semibold text-[#050609]">{item.label}</span><ChevronRight className="text-[#B8BABF]" size={21} /></button>)}
             </section>

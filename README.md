@@ -5,7 +5,13 @@ DriveDesk is a React + Supabase demo product for driving schools. The current fo
 ## Current Entrances
 
 - Demo hub: `/`
-- Student page: `/school/virazh`
+- Student cabinet: `/student`
+- Student registration: `/student/register`
+- Student booking flow: `/student/book`
+- Student booking from slot: `/student/book?slot=<slotId>`
+- Public school page: `/school/virazh`
+- Public school booking: `/school/virazh/book`
+- Booking confirmation: `/booking/<bookingId>`
 - School staff login: `/staff-entrance-73q`
 - School admin panel after login: `/virazh-office-73q`
 - Super-admin login: `/root-entrance-91x`
