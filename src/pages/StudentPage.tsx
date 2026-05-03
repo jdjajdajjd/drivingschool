@@ -21,7 +21,7 @@ import {
   UserRound,
   Zap,
 } from 'lucide-react'
-import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, isTomorrow, parseISO, startOfMonth, startOfWeek } from 'date-fns'
+import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
@@ -39,128 +39,16 @@ import {
   type StudentProfile,
 } from '../services/studentProfile'
 import { getInstructorPhoto } from '../services/instructorPhotos'
-import type { Booking, Branch, Instructor, School, Slot } from '../types'
+import type { Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
+import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, StudentView } from './student/studentTypes'
+import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonType, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, weekdayShort } from './student/studentUtils'
 
 void React
-
-type View = 'home' | 'schedule' | 'theory' | 'chat' | 'profile' | 'driving'
-type LessonFilter = 'all' | 'main' | 'extra'
-type ProfileField = 'name' | 'phone' | 'email'
-type InfoSheet = 'student' | 'gosuslugi' | 'offers' | 'settings' | null
-
-const selectedInstructorStorageKey = (schoolId: string) => `dd:student_selected_instructor:${schoolId}`
-
-interface ResolvedStudentBooking {
-  booking: Booking
-  slot: Slot | null
-  instructor: Instructor | null
-  branch: Branch | null
-}
 
 const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
 const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
 const sectionTitle = 'text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
-
-function initials(name: string) {
-  return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'У'
-}
-
-function compactStudentName(name: string) {
-  const [lastName = '', firstName = '', middleName = ''] = name.trim().split(/\s+/)
-  const initialsText = [firstName, middleName].filter(Boolean).map((part) => `${part[0]?.toUpperCase()}.`).join('')
-  return [lastName, initialsText].filter(Boolean).join(' ') || name
-}
-
-function weekdayShort(date: Date) {
-  if (date.getDay() === 6) return 'СБ'
-  return format(date, 'EE', { locale: ru }).slice(0, 2).toUpperCase()
-}
-
-function lessonType(slot: Slot): LessonFilter {
-  const hour = Number(slot.time.split(':')[0] ?? 0)
-  return slot.duration > 90 || hour >= 15 ? 'extra' : 'main'
-}
-
-function filterSlots(slots: Slot[], instructorId: string, filter: LessonFilter) {
-  return slots.filter((slot) => {
-    if (instructorId && slot.instructorId !== instructorId) return false
-    if (filter !== 'all' && lessonType(slot) !== filter) return false
-    return true
-  })
-}
-
-function slotTimeRange(slot: Slot | null) {
-  if (!slot) return 'Время не выбрано'
-  const date = parseISO(slot.date)
-  const [hours = 0, minutes = 0] = slot.time.split(':').map(Number)
-  const end = new Date(date)
-  end.setHours(hours, minutes + slot.duration, 0, 0)
-  return `${slot.time} – ${format(end, 'HH:mm')}`
-}
-
-function lessonTime(slot: Slot | null) {
-  if (!slot) return 'Время не выбрано'
-  const date = parseISO(slot.date)
-  const day = isToday(date) ? 'Сегодня' : isTomorrow(date) ? 'Завтра' : format(date, 'EEE d', { locale: ru })
-  return `${day}, ${slotTimeRange(slot)}`
-}
-
-function selectedDayTitle(date: Date) {
-  if (isToday(date)) return `Сегодня, ${format(date, 'd MMMM', { locale: ru })}`
-  if (isTomorrow(date)) return `Завтра, ${format(date, 'd MMMM', { locale: ru })}`
-  return format(date, 'd MMMM', { locale: ru })
-}
-
-function safePercent(completed = 0, total = 0) {
-  if (!total) return 0
-  return Math.min(100, Math.max(0, Math.round((completed / total) * 100)))
-}
-
-function formatDateValue(value: string | null | undefined) {
-  if (!value) return 'Пока не назначено'
-  return format(parseISO(value), 'dd.MM.yyyy', { locale: ru })
-}
-
-function resolveBookings(schoolId: string, profile: StudentProfile): ResolvedStudentBooking[] {
-  const phone = normalizePhone(profile.phone)
-  return db.bookings.bySchool(schoolId)
-    .filter((booking) => booking.studentPhone === phone)
-    .map((booking) => ({
-      booking,
-      slot: db.slots.byId(booking.slotId),
-      instructor: db.instructors.byId(booking.instructorId),
-      branch: db.branches.byId(booking.branchId),
-    }))
-    .sort((left, right) => {
-      const l = left.slot ? new Date(`${left.slot.date}T${left.slot.time}:00`).getTime() : 0
-      const r = right.slot ? new Date(`${right.slot.date}T${right.slot.time}:00`).getTime() : 0
-      return l - r
-    })
-}
-
-function imageFileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onerror = () => reject(new Error('Не удалось прочитать фото.'))
-    reader.onload = () => {
-      const image = new Image()
-      image.onerror = () => reject(new Error('Не удалось открыть фото.'))
-      image.onload = () => {
-        const size = Math.min(image.width, image.height)
-        const canvas = document.createElement('canvas')
-        canvas.width = 360
-        canvas.height = 360
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return reject(new Error('Не удалось обработать фото.'))
-        ctx.drawImage(image, (image.width - size) / 2, (image.height - size) / 2, size, size, 0, 0, 360, 360)
-        resolve(canvas.toDataURL('image/jpeg', 0.82))
-      }
-      image.src = String(reader.result)
-    }
-    reader.readAsDataURL(file)
-  })
-}
 
 function StudentAvatar({ name, src, size = 48 }: { name: string; src?: string; size?: number }) {
   return (
@@ -561,7 +449,7 @@ export function StudentPage() {
   const photoInputRef = useRef<HTMLInputElement | null>(null)
   const [school, setSchool] = useState<School | null>(null)
   const [profile, setProfile] = useState<StudentProfile | null>(null)
-  const [view, setView] = useState<View>('home')
+  const [view, setView] = useState<StudentView>('home')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [selectedInstructorId, setSelectedInstructorId] = useState('')
   const [lessonFilter, setLessonFilter] = useState<LessonFilter>('all')
