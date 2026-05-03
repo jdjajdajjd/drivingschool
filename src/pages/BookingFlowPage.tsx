@@ -493,7 +493,7 @@ export function BookingFlowPage() {
     }
     setSubmitting(true)
     try {
-      saveStudentProfile(school.id, form, { passwordSet: true, assignedBranchId: selectedBranch?.id })
+      saveStudentProfile(school.id, form, { passwordSet: true, assignedBranchId: selectedBranch?.id, assignedInstructorId: selectedInstructor?.id })
       void updateStudentProfileInSupabase({
         schoolId: school.id,
         name: form.name,

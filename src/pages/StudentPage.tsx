@@ -148,16 +148,18 @@ function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (valu
   )
 }
 
-function InstructorChips({ instructors, selectedId, onChange }: { instructors: Instructor[]; selectedId: string; onChange: (id: string) => void }) {
+function InstructorChips({ instructors, selectedId, assignedId, onChange }: { instructors: Instructor[]; selectedId: string; assignedId?: string; onChange: (id: string) => void }) {
   const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId))
   return (
     <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
       {ordered.map((instructor) => {
         const active = instructor.id === selectedId
+        const assigned = instructor.id === assignedId
         return (
           <button key={instructor.id} className={cn('inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold active:scale-[0.98]', active ? 'border-[#1F2BD8] bg-[#EEF0FA] text-[#1F2BD8]' : 'border-[#E1E3EB] bg-white text-[#050609]')} onClick={() => onChange(instructor.id)}>
             <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={24} />
             {formatInstructorName(instructor.name)}
+            {assigned ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold text-[#1F2BD8]">Ваш</span> : null}
           </button>
         )
       })}
@@ -179,9 +181,9 @@ function ScheduleEmptyState({ onShowAll, onChangeInstructor }: { onShowAll: () =
   )
 }
 
-function InstructorSheet({ open, instructors, selectedId, onSelect, onClose }: { open: boolean; instructors: Instructor[]; selectedId: string; onSelect: (id: string) => void; onClose: () => void }) {
+function InstructorSheet({ open, instructors, selectedId, assignedId, onSelect, onClose }: { open: boolean; instructors: Instructor[]; selectedId: string; assignedId?: string; onSelect: (id: string) => void; onClose: () => void }) {
   if (!open) return null
-  const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId))
+  const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId) || Number(right.id === assignedId) - Number(left.id === assignedId))
   return (
     <div className="fixed inset-0 z-[70] flex items-end bg-black/25 px-3 pb-3" onClick={onClose}>
       <section className="mx-auto w-full max-w-[430px] rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
@@ -193,14 +195,15 @@ function InstructorSheet({ open, instructors, selectedId, onSelect, onClose }: {
         <div className="max-h-[55vh] space-y-2 overflow-y-auto">
           {ordered.map((instructor) => {
             const active = instructor.id === selectedId
+            const assigned = instructor.id === assignedId
             return (
               <button key={instructor.id} className={cn('flex min-h-[58px] w-full items-center gap-3 rounded-[18px] px-3 text-left active:scale-[0.99]', active ? 'bg-[#EEF0FA]' : 'bg-[#F7F8FA]')} onClick={() => { onSelect(instructor.id); onClose() }}>
                 <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={38} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[16px] font-bold text-[#050609]">{formatInstructorName(instructor.name)}</span>
-                  <span className="mt-0.5 block truncate text-[13px] font-medium text-[#8B8D94]">{instructor.car ?? 'Учебный автомобиль'}</span>
+                  <span className="mt-0.5 block truncate text-[13px] font-medium text-[#8B8D94]">{assigned ? 'Закреплен за вами' : instructor.car ?? 'Учебный автомобиль'}</span>
                 </span>
-                {active ? <StatusPill tone="blue">Выбран</StatusPill> : null}
+                {active ? <StatusPill tone="blue">{assigned ? 'Ваш' : 'Выбран'}</StatusPill> : null}
               </button>
             )
           })}
@@ -483,6 +486,7 @@ export function StudentPage() {
   const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
   const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school])
   const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
+  const assignedInstructorId = [student?.assignedInstructorId, profile?.assignedInstructorId].find((id) => id && instructors.some((instructor) => instructor.id === id)) ?? ''
   const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? instructors[0] ?? null
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
   const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
@@ -496,6 +500,10 @@ export function StudentPage() {
 
   useEffect(() => {
     if (!school || selectedInstructorId) return
+    if (assignedInstructorId) {
+      setSelectedInstructorId(assignedInstructorId)
+      return
+    }
     const storedInstructorId = localStorage.getItem(selectedInstructorStorageKey(school.id)) ?? ''
     if (storedInstructorId && instructors.some((instructor) => instructor.id === storedInstructorId)) {
       setSelectedInstructorId(storedInstructorId)
@@ -505,7 +513,7 @@ export function StudentPage() {
     const instructorWithSlot = slotsForDate.find((slot) => slot.status === 'available')?.instructorId ?? futureSlots.find((slot) => slot.status === 'available')?.instructorId
     if (instructorWithSlot) setSelectedInstructorId(instructorWithSlot)
     else if (instructors[0]) setSelectedInstructorId(instructors[0].id)
-  }, [futureSlots, instructors, school, selectedInstructorId, slotsForDate])
+  }, [assignedInstructorId, futureSlots, instructors, school, selectedInstructorId, slotsForDate])
 
   useEffect(() => {
     if (!school || !selectedInstructorId) return
@@ -552,6 +560,8 @@ export function StudentPage() {
       normalizedPhone: saved.phone,
       email: saved.email,
       avatarUrl: saved.avatarUrl,
+      assignedBranchId: student?.assignedBranchId ?? saved.assignedBranchId,
+      assignedInstructorId: student?.assignedInstructorId ?? saved.assignedInstructorId,
       createdAt: student?.createdAt ?? new Date().toISOString(),
     })
     void updateStudentProfileInSupabase({ schoolId: school.id, name: saved.name, phone: saved.phone, email: saved.email, password: '', avatarUrl: saved.avatarUrl }).catch(() => undefined)
@@ -613,13 +623,13 @@ export function StudentPage() {
                 <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={44} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[17px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
-                  <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{selectedInstructor?.car ?? 'Выбранный инструктор сохранится'}</p>
+                  <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{selectedInstructor?.id === assignedInstructorId ? 'Закреплен за вами' : selectedInstructor?.car ?? 'Выбранный инструктор сохранится'}</p>
                 </div>
                 <button className="rounded-full bg-[#EEF0FA] px-3 py-2 text-[13px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
               </div>
             </section>
             <div className="space-y-3">
-              <InstructorChips instructors={instructors} selectedId={selectedInstructor?.id ?? ''} onChange={setSelectedInstructorId} />
+              <InstructorChips instructors={instructors} selectedId={selectedInstructor?.id ?? ''} assignedId={assignedInstructorId} onChange={setSelectedInstructorId} />
               <FilterChips value={lessonFilter} onChange={setLessonFilter} />
             </div>
             <MonthCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={filterSlots(futureSlots, selectedInstructor?.id ?? '', lessonFilter)} />
@@ -812,7 +822,7 @@ export function StudentPage() {
         { key: 'chat', label: 'Связь', icon: <MessageCircle size={25} />, active: view === 'chat', onClick: () => setView('chat') },
         { key: 'profile', label: 'Профиль', icon: <UserRound size={25} />, active: view === 'profile', onClick: () => setView('profile') },
       ]} />
-      <InstructorSheet open={instructorSheetOpen} instructors={instructors} selectedId={selectedInstructor?.id ?? ''} onSelect={setSelectedInstructorId} onClose={() => setInstructorSheetOpen(false)} />
+      <InstructorSheet open={instructorSheetOpen} instructors={instructors} selectedId={selectedInstructor?.id ?? ''} assignedId={assignedInstructorId} onSelect={setSelectedInstructorId} onClose={() => setInstructorSheetOpen(false)} />
       <InfoSheetPanel type={infoSheet} school={school} profile={profile} progress={progress} selectedInstructor={selectedInstructor} onClose={() => setInfoSheet(null)} />
     </div>
   )

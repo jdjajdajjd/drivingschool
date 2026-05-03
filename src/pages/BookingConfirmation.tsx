@@ -137,7 +137,7 @@ export function BookingConfirmation() {
     saveStudentProfile(
       first.school.id,
       { name: first.booking.studentName, phone: first.booking.studentPhone, email: first.booking.studentEmail },
-      { passwordSet: false, assignedBranchId: first.branch?.id },
+      { passwordSet: false, assignedBranchId: first.branch?.id, assignedInstructorId: first.instructor?.id },
     )
     navigate('/student')
   }

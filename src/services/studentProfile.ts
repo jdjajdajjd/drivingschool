@@ -8,6 +8,7 @@ export interface StudentProfile {
   avatarUrl: string
   passwordSet: boolean
   assignedBranchId?: string
+  assignedInstructorId?: string
   pendingBranchId?: string
   branchChangeRequestedAt?: string
   updatedAt: string
