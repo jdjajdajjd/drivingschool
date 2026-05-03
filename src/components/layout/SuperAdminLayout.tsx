@@ -1,9 +1,17 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Building2, Car, LogOut, Menu, Plus, Shield } from 'lucide-react'
+import { Add01Icon, Building03Icon, Car03Icon, Logout03Icon, Menu01Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { useState } from 'react'
 import { cn } from '../../lib/utils'
 import { NavLink } from 'react-router-dom'
+import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
+
+const Building2 = createHugeIcon(Building03Icon)
+const Car = createHugeIcon(Car03Icon)
+const LogOut = createHugeIcon(Logout03Icon)
+const Menu = createHugeIcon(Menu01Icon)
+const Plus = createHugeIcon(Add01Icon)
+const Shield = createHugeIcon(Shield01Icon)
 
 const NAV = [
   { to: SUPERADMIN_BASE_PATH, label: 'Обзор', icon: Shield, end: true },

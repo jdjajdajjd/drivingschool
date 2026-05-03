@@ -1,6 +1,7 @@
-import { ExternalLink, Link2, Plus, Power } from 'lucide-react'
+import { Add01Icon, LinkSquare02Icon, Link02Icon, PowerOffIcon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Avatar } from '../../components/ui/Avatar'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { StateView } from '../../components/ui/StateView'
@@ -11,6 +12,11 @@ import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
+
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const Link2 = createHugeIcon(Link02Icon)
+const Plus = createHugeIcon(Add01Icon)
+const Power = createHugeIcon(PowerOffIcon)
 import { formatPhone } from '../../lib/utils'
 import { getUpcomingBookings, validateRussianPhone } from '../../services/bookingService'
 import { DRIVING_CATEGORIES } from '../../services/drivingCategories'

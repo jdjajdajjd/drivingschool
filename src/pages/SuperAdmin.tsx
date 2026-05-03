@@ -1,15 +1,23 @@
 import { addDays, isAfter, isSameDay } from 'date-fns'
-import { AlertTriangle, BarChart3, Building2, CalendarDays, Puzzle, RefreshCw } from 'lucide-react'
+import { Alert02Icon, Building03Icon, Calendar03Icon, ChartBarLineIcon, PuzzleIcon, Refresh03Icon } from '@hugeicons/core-free-icons'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Section } from '../components/ui/Section'
 import { StatCard } from '../components/ui/StatCard'
 import { StateView } from '../components/ui/StateView'
 import { DataRow } from '../components/ui/DataList'
 import { Button } from '../components/ui/Button'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Badge } from '../components/ui/Badge'
 import { formatPrice } from '../lib/utils'
 import { getBillingSummary } from '../services/modules'
 import { performDemoReset } from '../services/schoolService'
+
+const AlertTriangle = createHugeIcon(Alert02Icon)
+const BarChart3 = createHugeIcon(ChartBarLineIcon)
+const Building2 = createHugeIcon(Building03Icon)
+const CalendarDays = createHugeIcon(Calendar03Icon)
+const Puzzle = createHugeIcon(PuzzleIcon)
+const RefreshCw = createHugeIcon(Refresh03Icon)
 import { db } from '../services/storage'
 import { validateDataIntegrity } from '../services/integrityService'
 import { SUPERADMIN_BASE_PATH } from '../services/accessControl'

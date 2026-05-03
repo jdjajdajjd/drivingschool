@@ -1,8 +1,9 @@
-import { ArrowLeft, CalendarDays, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowLeft01Icon, Calendar03Icon, CancelCircleIcon, Refresh03Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -10,6 +11,11 @@ import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
 import { useToast } from '../../components/ui/Toast'
 import { formatInstructorName, formatPhone } from '../../lib/utils'
+
+const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
+const CalendarDays = createHugeIcon(Calendar03Icon)
+const RotateCcw = createHugeIcon(Refresh03Icon)
+const XCircle = createHugeIcon(CancelCircleIcon)
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { cancelBooking, completeBooking, getBookingsByStudent } from '../../services/bookingService'
 import { getStudentById, getStudentStats } from '../../services/studentService'

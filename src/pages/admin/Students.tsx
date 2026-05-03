@@ -1,13 +1,17 @@
-import { Search, UserRound } from 'lucide-react'
+import { Search01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow, DataToolbar } from '../../components/ui/DataList'
 import { FormField } from '../../components/ui/FormField'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { formatPhone } from '../../lib/utils'
+
+const Search = createHugeIcon(Search01Icon)
+const UserRound = createHugeIcon(User03Icon)
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { db } from '../../services/storage'
 import { getStudentsBySchool, getStudentStats } from '../../services/studentService'

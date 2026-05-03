@@ -1,9 +1,10 @@
 import { addDays, endOfWeek, isAfter, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
-import { CalendarPlus2, ExternalLink, Search, Trash2 } from 'lucide-react'
+import { CalendarAdd01Icon, Delete02Icon, LinkSquare02Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow, DataToolbar } from '../../components/ui/DataList'
@@ -17,6 +18,11 @@ import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { createBulkSlots, createSlot, deleteSlot, getSlotsBySchool, updateSlotStatus } from '../../services/slotService'
 import { db } from '../../services/storage'
 import type { LessonType } from '../../types'
+
+const CalendarPlus2 = createHugeIcon(CalendarAdd01Icon)
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const Search = createHugeIcon(Search01Icon)
+const Trash2 = createHugeIcon(Delete02Icon)
 
 type SlotStatusFilter = 'all' | 'available' | 'booked' | 'cancelled'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'

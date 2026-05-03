@@ -1,4 +1,7 @@
-import { Check } from 'lucide-react'
+import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
+import { createHugeIcon } from './HugeIcon'
+
+const Check = createHugeIcon(CheckmarkCircle02Icon)
 import { cn } from '../../lib/utils'
 
 interface StepperProps {

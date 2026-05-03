@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, CalendarPlus, Car, CheckCircle2, Clock3, MapPin, RefreshCw, ShieldCheck } from 'lucide-react'
+import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, MapPinIcon, Refresh03Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
@@ -41,6 +42,15 @@ import { format, isSameDay, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
 void React
+
+const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
+const CalendarPlus = createHugeIcon(CalendarAdd01Icon)
+const Car = createHugeIcon(Car03Icon)
+const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
+const Clock3 = createHugeIcon(Clock01Icon)
+const MapPin = createHugeIcon(MapPinIcon)
+const RefreshCw = createHugeIcon(Refresh03Icon)
+const ShieldCheck = createHugeIcon(Shield01Icon)
 
 type Step = 'date' | 'instructor' | 'time' | 'contacts' | 'confirm' | 'success' | 'account'
 

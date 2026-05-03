@@ -1,5 +1,5 @@
 {
-  "name": "drivedesk",
+  "name": "vroom",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,9 +8,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "supabase:apply": "node scripts/apply-supabase-sql.mjs"
+    "supabase:apply": "node scripts/apply-supabase-sql.mjs",
+    "deploy": "npm run build && bash node_modules/.bin/wrangler pages deploy dist"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.1.1",
+    "@hugeicons/react": "^1.1.6",
     "@supabase/supabase-js": "^2.104.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -30,6 +33,7 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5",
-    "vite": "^5.2.12"
+    "vite": "^5.2.12",
+    "wrangler": "^4.87.0"
   }
 }

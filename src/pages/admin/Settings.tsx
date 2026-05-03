@@ -1,7 +1,8 @@
-import { Copy, ExternalLink, RefreshCw, Settings2 } from 'lucide-react'
+import { Copy01Icon, LinkSquare02Icon, Refresh03Icon, Settings02Icon } from '@hugeicons/core-free-icons'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
 import { Input, Textarea } from '../../components/ui/Input'
@@ -10,6 +11,11 @@ import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatDuration, hexToRgba } from '../../lib/utils'
 import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
+
+const Copy = createHugeIcon(Copy01Icon)
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const RefreshCw = createHugeIcon(Refresh03Icon)
+const Settings2 = createHugeIcon(Settings02Icon)
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
 import { performDemoReset, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { db } from '../../services/storage'

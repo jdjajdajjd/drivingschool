@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, CarFront, Check, UserRound } from 'lucide-react'
+import { ArrowLeft01Icon, ArrowRight01Icon, Car03Icon, CheckmarkCircle02Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { isValidRussianPhone } from '../services/bookingService'
@@ -10,6 +11,12 @@ import { db } from '../services/storage'
 import { findAnyStudentProfile, saveStudentProfile, type StudentProfile } from '../services/studentProfile'
 
 void React
+
+const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
+const ArrowRight = createHugeIcon(ArrowRight01Icon)
+const CarFront = createHugeIcon(Car03Icon)
+const Check = createHugeIcon(CheckmarkCircle02Icon)
+const UserRound = createHugeIcon(User03Icon)
 
 type RegisterStep = 'lastName' | 'firstName' | 'middleName' | 'phone' | 'success'
 

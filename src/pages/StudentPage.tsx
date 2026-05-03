@@ -1,32 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Bell,
-  BookOpen,
-  Building2,
-  CalendarDays,
-  Camera,
-  CarFront,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Filter,
-  Gift,
-  GraduationCap,
-  Home,
-  ListChecks,
-  LogOut,
-  MessageCircle,
-  Pencil,
-  Phone,
-  Settings,
-  UserRound,
-  Zap,
-} from 'lucide-react'
+  BellDotIcon,
+  BookOpen01Icon,
+  Building03Icon,
+  Calendar03Icon,
+  Camera02Icon,
+  Car03Icon,
+  File02Icon,
+  FilterHorizontalIcon,
+  GiftIcon,
+  GraduationScrollIcon,
+  Home05Icon,
+  ListViewIcon,
+  Logout03Icon,
+  Message01Icon,
+  PencilEdit02Icon,
+  SmartPhone01Icon,
+  Settings02Icon,
+  User03Icon,
+  ZapIcon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+} from '@hugeicons/core-free-icons'
 import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { db } from '../services/storage'
@@ -48,6 +49,28 @@ import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, Stu
 import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonTypeLabel, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, weekdayShort } from './student/studentUtils'
 
 void React
+
+const Bell = createHugeIcon(BellDotIcon)
+const BookOpen = createHugeIcon(BookOpen01Icon)
+const Building2 = createHugeIcon(Building03Icon)
+const CalendarDays = createHugeIcon(Calendar03Icon)
+const Camera = createHugeIcon(Camera02Icon)
+const CarFront = createHugeIcon(Car03Icon)
+const ChevronLeft = createHugeIcon(ArrowLeft01Icon)
+const ChevronRight = createHugeIcon(ArrowRight01Icon)
+const FileText = createHugeIcon(File02Icon)
+const Filter = createHugeIcon(FilterHorizontalIcon)
+const Gift = createHugeIcon(GiftIcon)
+const GraduationCap = createHugeIcon(GraduationScrollIcon)
+const Home = createHugeIcon(Home05Icon)
+const ListChecks = createHugeIcon(ListViewIcon)
+const LogOut = createHugeIcon(Logout03Icon)
+const MessageCircle = createHugeIcon(Message01Icon)
+const Pencil = createHugeIcon(PencilEdit02Icon)
+const Phone = createHugeIcon(SmartPhone01Icon)
+const Settings = createHugeIcon(Settings02Icon)
+const UserRound = createHugeIcon(User03Icon)
+const Zap = createHugeIcon(ZapIcon)
 
 const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
 const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'

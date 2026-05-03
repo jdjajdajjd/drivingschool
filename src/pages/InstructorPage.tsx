@@ -2,17 +2,21 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft,
-  XCircle,
-} from 'lucide-react'
+  ArrowLeft01Icon,
+  CancelCircleIcon,
+} from '@hugeicons/core-free-icons'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge, StatusBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { formatPhone, pluralize } from '../lib/utils'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { db } from '../services/storage'
 import type { Booking, Branch, Instructor, Slot } from '../types'
 import { formatDateFull } from '../utils/date'
+
+const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
+const XCircle = createHugeIcon(CancelCircleIcon)
 
 interface BookingRow {
   booking: Booking

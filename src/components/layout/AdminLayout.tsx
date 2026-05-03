@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Menu, Car } from 'lucide-react'
+import { Car03Icon, Menu01Icon } from '@hugeicons/core-free-icons'
 import { AdminSidebar } from './AdminSidebar'
+import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+
+const Menu = createHugeIcon(Menu01Icon)
+const Car = createHugeIcon(Car03Icon)
 
 export function AdminLayout() {
   const navigate = useNavigate()

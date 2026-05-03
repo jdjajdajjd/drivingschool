@@ -2,12 +2,20 @@ import type { ReactNode } from 'react'
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Building2, Mail, MapPin, Phone, UserRound } from 'lucide-react'
+import { ArrowLeft01Icon, Building03Icon, Mail01Icon, MapPinIcon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { StateView } from '../components/ui/StateView'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { loadPublicSchoolData } from '../services/publicSchoolData'
 import type { Branch, Instructor, School } from '../types'
 
 void React
+
+const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
+const Building2 = createHugeIcon(Building03Icon)
+const Mail = createHugeIcon(Mail01Icon)
+const MapPin = createHugeIcon(MapPinIcon)
+const Phone = createHugeIcon(SmartPhone01Icon)
+const UserRound = createHugeIcon(User03Icon)
 
 export function SchoolPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()

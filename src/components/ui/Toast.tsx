@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
+import { Cancel01Icon, CancelCircleIcon, CheckmarkCircle02Icon, InformationCircleIcon } from '@hugeicons/core-free-icons'
 import { cn } from '../../lib/utils'
+import { createHugeIcon } from './HugeIcon'
+
+const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
+const XCircle = createHugeIcon(CancelCircleIcon)
+const Info = createHugeIcon(InformationCircleIcon)
+const X = createHugeIcon(Cancel01Icon)
 
 type ToastType = 'success' | 'error' | 'info'
 

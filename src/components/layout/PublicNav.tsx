@@ -1,6 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Car } from 'lucide-react'
+import { Car03Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../ui/Button'
+import { createHugeIcon } from '../ui/HugeIcon'
+
+const Car = createHugeIcon(Car03Icon)
 
 interface PublicNavProps {
   transparent?: boolean

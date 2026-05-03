@@ -1,6 +1,6 @@
 import { addDays, format, isAfter, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { ArrowRight, CalendarDays, CheckCircle2, ClipboardList, Copy, ExternalLink, MapPin, Users } from 'lucide-react'
+import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, ClipboardIcon, Copy01Icon, LinkSquare02Icon, MapPinIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
@@ -11,9 +11,19 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
 import { useToast } from '../../components/ui/Toast'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { getUpcomingBookings } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { db } from '../../services/storage'
+
+const ArrowRight = createHugeIcon(ArrowRight01Icon)
+const CalendarDays = createHugeIcon(Calendar03Icon)
+const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
+const ClipboardList = createHugeIcon(ClipboardIcon)
+const Copy = createHugeIcon(Copy01Icon)
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const MapPin = createHugeIcon(MapPinIcon)
+const Users = createHugeIcon(UserMultipleIcon)
 
 function getSchool() {
   return db.schools.bySlug('virazh')

@@ -1,6 +1,9 @@
-import { AlertTriangle } from 'lucide-react'
+import { Alert02Icon } from '@hugeicons/core-free-icons'
 import { Button } from './Button'
+import { createHugeIcon } from './HugeIcon'
 import { Modal } from './Modal'
+
+const AlertTriangle = createHugeIcon(Alert02Icon)
 
 interface ConfirmDialogProps {
   open: boolean

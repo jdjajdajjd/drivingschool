@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Car, ShieldCheck, UserCog } from 'lucide-react'
+import { ArrowRight01Icon, Car03Icon, Shield01Icon, UserSettings01Icon } from '@hugeicons/core-free-icons'
 import type { School } from '../types'
 import { db } from '../services/storage'
+import { createHugeIcon } from '../components/ui/HugeIcon'
+
+const ArrowRight = createHugeIcon(ArrowRight01Icon)
+const Car = createHugeIcon(Car03Icon)
+const ShieldCheck = createHugeIcon(Shield01Icon)
+const UserCog = createHugeIcon(UserSettings01Icon)
 
 const entryPoints = [
   {

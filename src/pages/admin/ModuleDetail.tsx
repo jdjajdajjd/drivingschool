@@ -1,4 +1,4 @@
-import { ArrowLeft, BarChart3, Bell, Building2, Code2, CreditCard, FileSpreadsheet, MessageSquare, Palette, Puzzle, Send, UserPlus, Users } from 'lucide-react'
+import { AddTeamIcon, ArrowLeft01Icon, BellDotIcon, Building03Icon, ChartBarLineIcon, CodeIcon, CreditCardIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -6,10 +6,25 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { formatPrice } from '../../lib/utils'
 import { MODULE_CATEGORY_LABELS, disableModule, enableModule, getModuleById, isModuleEnabled } from '../../services/modules'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+
+const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
+const BarChart3 = createHugeIcon(ChartBarLineIcon)
+const Bell = createHugeIcon(BellDotIcon)
+const Building2 = createHugeIcon(Building03Icon)
+const Code2 = createHugeIcon(CodeIcon)
+const CreditCard = createHugeIcon(CreditCardIcon)
+const FileSpreadsheet = createHugeIcon(FileSpreadsheetIcon)
+const MessageSquare = createHugeIcon(Message01Icon)
+const Palette = createHugeIcon(PaintBoardIcon)
+const Puzzle = createHugeIcon(PuzzleIcon)
+const Send = createHugeIcon(MailSend01Icon)
+const UserPlus = createHugeIcon(AddTeamIcon)
+const Users = createHugeIcon(UserMultipleIcon)
 
 const ICON_MAP: Record<string, React.ElementType> = {
   MessageSquare,

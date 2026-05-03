@@ -1,4 +1,4 @@
-import { CalendarDays, Check, ChevronRight, ExternalLink, LogOut, MapPin, Phone, Settings, UserRound } from 'lucide-react'
+import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, LinkSquare02Icon, Logout03Icon, MapPinIcon, Settings02Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'
@@ -6,6 +6,7 @@ import { cn, formatDuration, formatInstructorName, formatPhone } from '../../lib
 import { getInstructorPhoto } from '../../services/instructorPhotos'
 import { loadLessonDescription } from '../../services/studentProfile'
 import { useToast } from '../ui/Toast'
+import { createHugeIcon } from '../ui/HugeIcon'
 import type { Branch, Booking, Instructor, School, Slot } from '../../types'
 import { lessonTypeLabel } from '../../pages/student/studentUtils'
 import {
@@ -19,6 +20,16 @@ import {
 } from '../../utils/date'
 
 void React
+
+const CalendarDays = createHugeIcon(Calendar03Icon)
+const Check = createHugeIcon(CheckmarkCircle02Icon)
+const ChevronRight = createHugeIcon(ArrowRight01Icon)
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const LogOut = createHugeIcon(Logout03Icon)
+const MapPin = createHugeIcon(MapPinIcon)
+const Phone = createHugeIcon(SmartPhone01Icon)
+const Settings = createHugeIcon(Settings02Icon)
+const UserRound = createHugeIcon(User03Icon)
 
 function initialsFromText(value: string): string {
   return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'И'

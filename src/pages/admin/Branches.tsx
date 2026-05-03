@@ -1,7 +1,8 @@
-import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Add01Icon, Delete02Icon, MapPinIcon, PencilEdit02Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
@@ -10,6 +11,11 @@ import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
+
+const MapPin = createHugeIcon(MapPinIcon)
+const Pencil = createHugeIcon(PencilEdit02Icon)
+const Plus = createHugeIcon(Add01Icon)
+const Trash2 = createHugeIcon(Delete02Icon)
 import { createBranch, deleteBranchSafe, getBranchesBySchool, updateBranch } from '../../services/branchService'
 import { db } from '../../services/storage'
 

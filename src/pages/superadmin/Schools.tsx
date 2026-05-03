@@ -1,6 +1,7 @@
-import { ExternalLink, Settings2 } from 'lucide-react'
+import { LinkSquare02Icon, Settings02Icon } from '@hugeicons/core-free-icons'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -8,6 +9,9 @@ import { Section } from '../../components/ui/Section'
 import { Badge } from '../../components/ui/Badge'
 import { formatPrice } from '../../lib/utils'
 import { getSchoolOverview, getSchools } from '../../services/schoolService'
+
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const Settings2 = createHugeIcon(Settings02Icon)
 import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH } from '../../services/accessControl'
 
 export function SuperAdminSchools() {

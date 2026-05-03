@@ -1,18 +1,30 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  CalendarDays,
-  Car,
-  ClipboardList,
-  ExternalLink,
-  LayoutDashboard,
-  MapPin,
-  Settings2,
-  UserRound,
-  Users,
-  X,
-} from 'lucide-react'
+  Calendar03Icon,
+  Car03Icon,
+  ClipboardIcon,
+  DashboardSquare03Icon,
+  LinkSquare02Icon,
+  MapPinIcon,
+  Settings02Icon,
+  User03Icon,
+  UserMultipleIcon,
+  Cancel01Icon,
+} from '@hugeicons/core-free-icons'
 import { cn } from '../../lib/utils'
+import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
+
+const CalendarDays = createHugeIcon(Calendar03Icon)
+const Car = createHugeIcon(Car03Icon)
+const ClipboardList = createHugeIcon(ClipboardIcon)
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const LayoutDashboard = createHugeIcon(DashboardSquare03Icon)
+const MapPin = createHugeIcon(MapPinIcon)
+const Settings2 = createHugeIcon(Settings02Icon)
+const UserRound = createHugeIcon(User03Icon)
+const Users = createHugeIcon(UserMultipleIcon)
+const X = createHugeIcon(Cancel01Icon)
 
 const NAV = [
   { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true },

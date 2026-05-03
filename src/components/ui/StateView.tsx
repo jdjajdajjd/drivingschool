@@ -1,9 +1,16 @@
 import type { ReactNode } from 'react'
 import React from 'react'
-import { AlertCircle, CheckCircle2, Loader2, Search, ShieldAlert } from 'lucide-react'
+import { AlertCircleIcon, CheckmarkCircle02Icon, Loading03Icon, Search01Icon, ShieldQuestionMarkIcon } from '@hugeicons/core-free-icons'
 import { cn } from '../../lib/utils'
+import { createHugeIcon } from './HugeIcon'
 
 void React
+
+const AlertCircle = createHugeIcon(AlertCircleIcon)
+const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
+const Loader2 = createHugeIcon(Loading03Icon)
+const Search = createHugeIcon(Search01Icon)
+const ShieldAlert = createHugeIcon(ShieldQuestionMarkIcon)
 
 type StateKind = 'empty' | 'no-results' | 'loading' | 'error' | 'success' | 'locked'
 

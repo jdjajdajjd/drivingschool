@@ -1,4 +1,7 @@
-import { CheckCircle2 } from 'lucide-react'
+import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
+import { createHugeIcon } from './HugeIcon'
+
+const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
 import type { ReactNode } from 'react'
 
 export function SuccessStateBlock({ title, subtitle, children }: { title: string; subtitle?: string; children?: ReactNode }) {

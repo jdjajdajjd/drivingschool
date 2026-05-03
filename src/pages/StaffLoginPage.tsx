@@ -1,9 +1,14 @@
 import { FormEvent, useState } from 'react'
-import { ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react'
+import { ArrowRight01Icon, LockKeyIcon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
+import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { AccessRole, getAccessConfig, grantAccess, isAccessGranted } from '../services/accessControl'
+
+const ArrowRight = createHugeIcon(ArrowRight01Icon)
+const LockKeyhole = createHugeIcon(LockKeyIcon)
+const ShieldCheck = createHugeIcon(Shield01Icon)
 
 interface StaffLoginPageProps {
   role: AccessRole

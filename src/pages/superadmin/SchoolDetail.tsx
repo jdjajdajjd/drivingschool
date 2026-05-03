@@ -1,13 +1,16 @@
-import { ExternalLink } from 'lucide-react'
+import { LinkSquare02Icon } from '@hugeicons/core-free-icons'
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { StatCard } from '../../components/ui/StatCard'
 import { Badge } from '../../components/ui/Badge'
+
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
 import { formatInstructorName, formatPrice } from '../../lib/utils'
 import { getEnabledModules } from '../../services/modules'
 import { getSchoolOverview } from '../../services/schoolService'

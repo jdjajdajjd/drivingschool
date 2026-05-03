@@ -1,4 +1,7 @@
-import { ChevronRight } from 'lucide-react'
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { createHugeIcon } from './HugeIcon'
+
+const ChevronRight = createHugeIcon(ArrowRight01Icon)
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 

@@ -1,15 +1,21 @@
 import { addDays, endOfWeek, isAfter, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
-import { CheckCircle2, RotateCcw, Search, XCircle } from 'lucide-react'
+import { CancelCircleIcon, CheckmarkCircle02Icon, Refresh03Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow, DataToolbar, TableShell } from '../../components/ui/DataList'
 import { FormField } from '../../components/ui/FormField'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
+
+const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
+const RotateCcw = createHugeIcon(Refresh03Icon)
+const Search = createHugeIcon(Search01Icon)
+const XCircle = createHugeIcon(CancelCircleIcon)
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatInstructorName, formatPhone } from '../../lib/utils'

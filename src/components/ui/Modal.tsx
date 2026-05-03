@@ -1,6 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import type { ReactNode } from 'react'
+import { createHugeIcon } from './HugeIcon'
+
+const X = createHugeIcon(Cancel01Icon)
 
 interface ModalProps {
   open: boolean
