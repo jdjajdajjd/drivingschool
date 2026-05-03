@@ -123,7 +123,7 @@ export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot
       date: slot.date,
       startTime: slot.time,
       duration: slot.duration,
-      lessonType: slot.lessonType ?? 'main',
+      lessonType: slot.lessonType ?? 'driving',
     }),
   )
   return { ok: true, slot }
@@ -216,7 +216,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; r
           date: slot.date,
           startTime: slot.time,
           duration: slot.duration,
-          lessonType: slot.lessonType ?? 'main',
+          lessonType: slot.lessonType ?? 'driving',
         }),
       )
       created.push(slot)

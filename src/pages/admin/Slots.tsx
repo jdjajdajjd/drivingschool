@@ -18,6 +18,7 @@ import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { createBulkSlots, createSlot, deleteSlot, getSlotsBySchool, updateSlotStatus } from '../../services/slotService'
 import { db } from '../../services/storage'
 import type { LessonType } from '../../types'
+import { lessonTypeLabels } from '../student/studentUtils'
 
 const CalendarPlus2 = createHugeIcon(CalendarAdd01Icon)
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
@@ -29,16 +30,23 @@ type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'
 type CreateMode = 'single' | 'bulk'
 
 const lessonTypeOptions: Array<{ value: LessonType; label: string }> = [
+  { value: 'driving', label: 'Вождение' },
   { value: 'main', label: 'Основное' },
   { value: 'extra', label: 'Дополнительное' },
+  { value: 'practice_ground', label: 'Площадка' },
+  { value: 'city', label: 'Город' },
+  { value: 'exam_route', label: 'Экзамен. маршрут' },
+  { value: 'internal_exam', label: 'Внутренний экзамен' },
+  { value: 'retake', label: 'Пересдача' },
+  { value: 'mistakes', label: 'Отработка' },
 ]
 
 function lessonTypeLabel(type: LessonType | undefined) {
-  return type === 'extra' ? 'Дополнительное' : 'Основное'
+  return type ? lessonTypeLabels[type] : 'Вождение'
 }
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border rgba(0,0,0,0.06) bg-white px-3.5 text-[15px] #111418 outline-none transition focus:rgba(246,184,77,0.20) focus:ring-4 focus:ring-accent-soft'
+  return 'h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft'
 }
 
 export function AdminSlots() {
@@ -65,7 +73,7 @@ export function AdminSlots() {
     date: '',
     startTime: '10:00',
     duration: defaultDuration,
-    lessonType: 'main' as LessonType,
+    lessonType: 'driving' as LessonType,
   })
 
   const [bulkForm, setBulkForm] = useState({
@@ -77,7 +85,7 @@ export function AdminSlots() {
     windowStart: '09:00',
     windowEnd: '18:00',
     duration: defaultDuration,
-    lessonType: 'main' as LessonType,
+    lessonType: 'driving' as LessonType,
     breakMinutes: '15',
   })
 
@@ -278,7 +286,7 @@ export function AdminSlots() {
                           }))
                         }
                         className={`rounded-full border px-4 py-2 text-base transition ${
-                          active ? 'border-accent rgba(246,184,77,0.12) #C97F10' : 'rgba(0,0,0,0.06) bg-white #6F747A'
+                          active ? 'border-accent bg-[#F6B84D]/10 text-[#C97F10]' : 'border-black/10 bg-white text-[#6F747A]'
                         }`}
                       >
                         {day.label}
@@ -288,7 +296,7 @@ export function AdminSlots() {
                 </div>
               </FormField>
 
-              <div className="rounded-2xl border rgba(246,184,77,0.20) rgba(246,184,77,0.12) px-4 py-4 text-base #111418">
+              <div className="rounded-2xl border border-[#F6B84D]/20 bg-[#F6B84D]/10 px-4 py-4 text-base text-[#111418]">
                 Проверка перед созданием: система пропустит дубли и занятия в прошлом. Занятые времена не будут перезаписаны.
               </div>
 
@@ -334,12 +342,12 @@ export function AdminSlots() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 #9EA3A8" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Инструктор, филиал, ученик"
-                  className="h-11 w-full rounded-2xl border rgba(0,0,0,0.06) bg-white pl-10 pr-3.5 text-[15px] #111418 outline-none transition focus:rgba(246,184,77,0.20) focus:ring-4 focus:ring-accent-soft"
+                  className="h-11 w-full rounded-2xl border border-black/10 bg-white pl-10 pr-3.5 text-[15px] text-[#111418] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft"
                 />
               </div>
             </FormField>
@@ -387,18 +395,18 @@ export function AdminSlots() {
                       <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <div>
                           <p className="caption">Дата и время</p>
-                          <p className="mt-1 text-base font-bold #111418">{formatHumanDate(entry.slot.date, false)}</p>
-                          <p className="text-sm font-semibold #C97F10">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
-                          <p className="text-xs font-semibold #6F747A">{lessonTypeLabel(entry.slot.lessonType)}</p>
+                          <p className="mt-1 text-base font-bold text-[#111418]">{formatHumanDate(entry.slot.date, false)}</p>
+                          <p className="text-sm font-semibold text-[#C97F10]">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
+                          <p className="text-xs font-semibold text-[#6F747A]">{lessonTypeLabel(entry.slot.lessonType)}</p>
                         </div>
                         <div>
                           <p className="caption">Филиал</p>
-                          <p className="mt-1 text-sm font-bold #111418">{entry.branch?.name ?? 'Не найден'}</p>
+                          <p className="mt-1 text-sm font-bold text-[#111418]">{entry.branch?.name ?? 'Не найден'}</p>
                         </div>
                         <div>
                           <p className="caption">Инструктор</p>
-                          <p className="mt-1 text-sm font-bold #111418">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
-                          <p className="text-sm #9EA3A8">{entry.instructor?.car ?? 'Без машины'}</p>
+                          <p className="mt-1 text-sm font-bold text-[#111418]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
+                          <p className="text-sm text-[#9EA3A8]">{entry.instructor?.car ?? 'Без машины'}</p>
                         </div>
                         <div>
                           <p className="caption">Статус</p>
@@ -406,7 +414,7 @@ export function AdminSlots() {
                         </div>
                         <div>
                           <p className="caption">Ученик</p>
-                          <p className="mt-1 text-sm font-bold #111418">{entry.student?.name ?? 'Нет записи'}</p>
+                          <p className="mt-1 text-sm font-bold text-[#111418]">{entry.student?.name ?? 'Нет записи'}</p>
                         </div>
                       </div>
 

@@ -48,7 +48,7 @@ export interface Instructor {
 }
 
 export type SlotStatus = 'available' | 'booked' | 'cancelled'
-export type LessonType = 'main' | 'extra'
+export type LessonType = 'driving' | 'main' | 'extra' | 'practice_ground' | 'city' | 'exam_route' | 'internal_exam' | 'retake' | 'mistakes'
 
 export interface Slot {
   id: string
@@ -95,10 +95,28 @@ export interface Student {
   avatarUrl?: string
   assignedBranchId?: string
   assignedInstructorId?: string
+  categoryCodes?: string[]
+  trainingStage?: TrainingStage
+  groupName?: string
+  trainingStartDate?: string
+  drivingStartDate?: string
+  trainingEndDate?: string
+  drivingEndDate?: string
   branchChangeRequestedAt?: string
   branchChangeNote?: string
   hasPassword?: boolean
   createdAt: string
+}
+
+export type TrainingStage = 'theory' | 'practice_ground' | 'city' | 'exam_prep' | 'exam' | 'completed'
+export type StudentDocumentType = 'passport' | 'medical_certificate' | 'snils' | 'contract' | 'photo' | 'state_fee'
+export type StudentDocumentStatus = 'missing' | 'pending' | 'provided' | 'approved' | 'rejected'
+
+export interface StudentDocument {
+  studentId: string
+  type: StudentDocumentType
+  status: StudentDocumentStatus
+  updatedAt: string
 }
 
 export interface SlotLock {

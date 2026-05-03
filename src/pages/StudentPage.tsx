@@ -3,21 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import {
   BellDotIcon,
   BookOpen01Icon,
-  Building03Icon,
   Calendar03Icon,
   Camera02Icon,
-  Car03Icon,
+  Car04Icon,
+  Comment01Icon,
   File02Icon,
   FilterHorizontalIcon,
-  GiftIcon,
   GraduationScrollIcon,
-  Home05Icon,
+  Home07Icon,
   ListViewIcon,
   Logout03Icon,
-  Message01Icon,
   PencilEdit02Icon,
+  School01Icon,
   SmartPhone01Icon,
+  SparklesIcon,
   Settings02Icon,
+  StickyNote02Icon,
   User03Icon,
   ZapIcon,
   ArrowLeft01Icon,
@@ -35,40 +36,44 @@ import { isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
   findAnyStudentProfile,
+  loadStudentDocuments,
   loadStudentProfile,
   loadLessonDescription,
   loadStudentProgress,
   removeStudentProfile,
   saveStudentProfile,
+  studentDocumentLabels,
+  studentDocumentStatusLabels,
   type StudentProfile,
 } from '../services/studentProfile'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import type { Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
 import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, StudentView } from './student/studentTypes'
-import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonTypeLabel, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, weekdayShort } from './student/studentUtils'
+import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonTypeLabel, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, trainingStageLabels, weekdayShort } from './student/studentUtils'
 
 void React
 
 const Bell = createHugeIcon(BellDotIcon)
 const BookOpen = createHugeIcon(BookOpen01Icon)
-const Building2 = createHugeIcon(Building03Icon)
+const Building2 = createHugeIcon(School01Icon)
 const CalendarDays = createHugeIcon(Calendar03Icon)
 const Camera = createHugeIcon(Camera02Icon)
-const CarFront = createHugeIcon(Car03Icon)
+const CarFront = createHugeIcon(Car04Icon)
 const ChevronLeft = createHugeIcon(ArrowLeft01Icon)
 const ChevronRight = createHugeIcon(ArrowRight01Icon)
 const FileText = createHugeIcon(File02Icon)
 const Filter = createHugeIcon(FilterHorizontalIcon)
-const Gift = createHugeIcon(GiftIcon)
+const Gift = createHugeIcon(SparklesIcon)
 const GraduationCap = createHugeIcon(GraduationScrollIcon)
-const Home = createHugeIcon(Home05Icon)
+const Home = createHugeIcon(Home07Icon)
 const ListChecks = createHugeIcon(ListViewIcon)
 const LogOut = createHugeIcon(Logout03Icon)
-const MessageCircle = createHugeIcon(Message01Icon)
+const MessageCircle = createHugeIcon(Comment01Icon)
 const Pencil = createHugeIcon(PencilEdit02Icon)
 const Phone = createHugeIcon(SmartPhone01Icon)
 const Settings = createHugeIcon(Settings02Icon)
+const StickyNote = createHugeIcon(StickyNote02Icon)
 const UserRound = createHugeIcon(User03Icon)
 const Zap = createHugeIcon(ZapIcon)
 
@@ -120,7 +125,7 @@ function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | nu
         <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
         <div className="min-w-0 flex-1">
           <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{lessonTime(item.slot)}</p>
-          <p className="mt-1 text-[17px] font-semibold leading-6 text-[#050609]">Основное вождение</p>
+          <p className="mt-1 text-[17px] font-semibold leading-6 text-[#050609]">{lessonTypeLabel(item.slot)}</p>
           <div className="mt-3 flex items-center gap-3">
             <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} />
             <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
@@ -431,7 +436,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Building2; label: 
   )
 }
 
-function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, onClose }: { type: InfoSheet; school: School; profile: StudentProfile; progress: ReturnType<typeof loadStudentProgress>; selectedInstructor: Instructor | null; onClose: () => void }) {
+function InfoSheetPanel({ type, school, profile, progress, student, selectedInstructor, onClose }: { type: InfoSheet; school: School; profile: StudentProfile; progress: ReturnType<typeof loadStudentProgress>; student: ReturnType<typeof db.students.byId> | null; selectedInstructor: Instructor | null; onClose: () => void }) {
   if (!type) return null
   const title = type === 'student' ? 'Инфо ученика' : type === 'gosuslugi' ? 'Данные ученика' : type === 'offers' ? 'Рекомендации' : 'Настройки'
   return (
@@ -456,11 +461,12 @@ function InfoSheetPanel({ type, school, profile, progress, selectedInstructor, o
               </div>
             </section>
             <section className={cn(card, 'px-4 py-2')}>
-              <InfoRow icon={CarFront} label="Категория обучения" value="B" />
-              <InfoRow icon={GraduationCap} label="Учебная группа" value="Пока не назначено" />
-              <InfoRow icon={CalendarDays} label="Начало обучения" value="Пока не назначено" />
-              <InfoRow icon={CarFront} label="Начало вождения" value="Пока не назначено" />
-              <InfoRow icon={FileText} label="Окончание обучения" value={formatDateValue(progress?.gaidExamDate)} />
+              <InfoRow icon={CarFront} label="Категория обучения" value={student?.categoryCodes?.join(', ') || 'B'} />
+              <InfoRow icon={GraduationCap} label="Учебная группа" value={student?.groupName || 'Пока не назначено'} />
+              <InfoRow icon={BookOpen} label="Этап обучения" value={student?.trainingStage ? trainingStageLabels[student.trainingStage] : 'Пока не назначено'} />
+              <InfoRow icon={CalendarDays} label="Начало обучения" value={formatDateValue(student?.trainingStartDate)} />
+              <InfoRow icon={CarFront} label="Начало вождения" value={formatDateValue(student?.drivingStartDate)} />
+              <InfoRow icon={FileText} label="Окончание обучения" value={formatDateValue(student?.trainingEndDate)} />
               <InfoRow icon={Building2} label="Автошкола" value={school.name} />
             </section>
           </div>
@@ -537,6 +543,7 @@ export function StudentPage() {
   const normalizedPhone = profile ? normalizePhone(profile.phone) : ''
   const student = school && normalizedPhone ? db.students.byNormalizedPhone(school.id, normalizedPhone) : null
   const progress = student ? loadStudentProgress(student.id) : null
+  const documents = student ? loadStudentDocuments(student.id) : []
   const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile])
   const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
   const completedLessons = bookings.filter((item) => item.booking.status === 'completed' && item.slot).slice(-3).reverse()
@@ -546,6 +553,7 @@ export function StudentPage() {
   const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? instructors[0] ?? null
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
   const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
+  const usualSlot = futureSlots.find((slot) => slot.status === 'available' && slot.instructorId === selectedInstructor?.id) ?? futureSlots.find((slot) => slot.status === 'available') ?? null
   const profileDirty = Boolean(profile && (form.name.trim() !== profile.name || normalizePhone(form.phone) !== normalizePhone(profile.phone) || form.email.trim() !== (profile.email ?? '') || pendingAvatarUrl))
   const drivingTotal = progress?.drivingHoursTotal ?? 56
   const drivingCompleted = progress?.drivingHoursCompleted ?? 0
@@ -656,12 +664,21 @@ export function StudentPage() {
 
             <section>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className={sectionTitle}>Мои записи</h2>
+                <h2 className={sectionTitle}>{nextLesson?.slot ? (isSameDay(parseISO(nextLesson.slot.date), new Date()) ? 'Сегодня занятие' : 'Следующее занятие') : 'Следующее действие'}</h2>
                 <button className="grid h-10 w-10 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
               </div>
               <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
                 {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
               </div>
+              {!nextLesson?.slot && usualSlot ? (
+                <button className={cn(card, 'mt-3 flex w-full items-center justify-between gap-3 p-4 text-left active:scale-[0.99]')} onClick={() => navigate(`/student/book?slot=${usualSlot.id}`)}>
+                  <span className="min-w-0">
+                    <span className="block text-[16px] font-bold text-[#050609]">Найти похожее время</span>
+                    <span className="mt-1 block truncate text-[13px] font-semibold text-[#8B8D94]">{lessonTime(usualSlot)} · {selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор'}</span>
+                  </span>
+                  <ChevronRight className="text-[#B8BABF]" size={22} />
+                </button>
+              ) : null}
             </section>
 
             <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => navigate(`/student/book?slot=${slot.id}`)} />
@@ -773,6 +790,21 @@ export function StudentPage() {
             </section>
 
             <section>
+              <h2 className={sectionTitle}>Документы</h2>
+              <div className="mt-3 space-y-2">
+                {documents.map((document) => (
+                  <article key={document.type} className={cn(card, 'flex items-center justify-between gap-3 p-4')}>
+                    <div className="min-w-0">
+                      <p className="truncate text-[16px] font-bold text-[#050609]">{studentDocumentLabels[document.type]}</p>
+                      <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">{studentDocumentStatusLabels[document.status]}</p>
+                    </div>
+                    <StatusPill tone={document.status === 'approved' ? 'green' : document.status === 'rejected' ? 'red' : 'blue'}>{document.status === 'approved' ? 'Ок' : 'Статус'}</StatusPill>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section>
               <h2 className={sectionTitle}>Учебное авто</h2>
               <article className={cn(card, 'mt-3 flex items-center gap-3 p-4')}>
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EEF0FA] text-[#1F2BD8]"><CarFront size={24} /></span>
@@ -823,7 +855,7 @@ export function StudentPage() {
               </div>
             </section>
             <div className="grid grid-cols-2 gap-2.5">
-              <TheoryCard title="Тестирование" text={'Промежуточные\nзачёты и экзамены'} tone="#F3E9D8" icon={GraduationCap} />
+              <TheoryCard title="Тестирование" text={'Промежуточные\nзачёты и экзамены'} tone="#F3E9D8" icon={StickyNote} />
               <TheoryCard title="Тренировки" text={'Подготовка\nпо билетам'} tone="#F5D8DF" icon={BookOpen} />
               <TheoryCard title="ПДД" text={'Официальный\nтекст правил'} tone="#E3F0EC" icon={FileText} />
               <TheoryCard title="Материалы" text={'Полезные\nматериалы'} tone="#E3E4F4" icon={Gift} />
@@ -901,7 +933,7 @@ export function StudentPage() {
         { key: 'profile', label: 'Профиль', icon: <UserRound size={25} />, active: view === 'profile', onClick: () => setView('profile') },
       ]} />
       <InstructorSheet open={instructorSheetOpen} instructors={instructors} selectedId={selectedInstructor?.id ?? ''} assignedId={assignedInstructorId} onSelect={setSelectedInstructorId} onClose={() => setInstructorSheetOpen(false)} />
-      <InfoSheetPanel type={infoSheet} school={school} profile={profile} progress={progress} selectedInstructor={selectedInstructor} onClose={() => setInfoSheet(null)} />
+      <InfoSheetPanel type={infoSheet} school={school} profile={profile} progress={progress} student={student} selectedInstructor={selectedInstructor} onClose={() => setInfoSheet(null)} />
     </div>
   )
 }

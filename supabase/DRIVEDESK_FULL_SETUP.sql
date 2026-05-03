@@ -341,7 +341,7 @@ begin
     raise exception 'Slot duration is invalid.';
   end if;
 
-  if p_lesson_type not in ('main', 'extra') then
+  if p_lesson_type not in ('driving', 'main', 'extra', 'practice_ground', 'city', 'exam_route', 'internal_exam', 'retake', 'mistakes') then
     raise exception 'Slot lesson type is invalid.';
   end if;
 
@@ -808,7 +808,7 @@ create table public.slots (
   date date not null,
   time time not null,
   duration integer not null default 90 check (duration between 30 and 240),
-  lesson_type text not null default 'main' check (lesson_type in ('main', 'extra')),
+  lesson_type text not null default 'driving' check (lesson_type in ('driving', 'main', 'extra', 'practice_ground', 'city', 'exam_route', 'internal_exam', 'retake', 'mistakes')),
   status text not null default 'available' check (status in ('available', 'booked', 'cancelled')),
   booking_id text,
   created_at timestamptz not null default now(),
@@ -1364,7 +1364,7 @@ begin
     raise exception 'Slot duration is invalid.';
   end if;
 
-  if p_lesson_type not in ('main', 'extra') then
+  if p_lesson_type not in ('driving', 'main', 'extra', 'practice_ground', 'city', 'exam_route', 'internal_exam', 'retake', 'mistakes') then
     raise exception 'Slot lesson type is invalid.';
   end if;
 

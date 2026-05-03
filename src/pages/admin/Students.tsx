@@ -80,7 +80,7 @@ export function AdminStudents() {
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_280px]">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 #9EA3A8" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -115,12 +115,12 @@ export function AdminStudents() {
                   <DataRow>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl rgba(246,184,77,0.12) #C97F10">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F6B84D]/10 text-[#C97F10]">
                           <UserRound size={18} />
                         </div>
                         <div>
-                          <p className="text-base font-bold #111418">{student.name}</p>
-                          <p className="text-sm font-medium #6F747A">{formatPhone(student.normalizedPhone)}</p>
+                          <p className="text-base font-bold text-[#111418]">{student.name}</p>
+                          <p className="text-sm font-medium text-[#6F747A]">{formatPhone(student.normalizedPhone)}</p>
                         </div>
                       </div>
                       {stats.limitReached ? <Badge variant="warning">Лимит достигнут</Badge> : <Badge variant={stats.activeFutureBookings > 0 ? 'success' : 'muted'}>{stats.activeFutureBookings > 0 ? 'Есть запись' : 'Без активных'}</Badge>}
@@ -128,22 +128,22 @@ export function AdminStudents() {
 
                     <div className="mt-4 grid gap-2 sm:grid-cols-4">
                       <div>
-                        <p className="text-xs font-bold #9EA3A8">Всего записей</p>
-                        <p className="mt-1 text-sm font-bold #111418">{stats.totalBookings}</p>
+                        <p className="text-xs font-bold text-[#9EA3A8]">Всего записей</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">{stats.totalBookings}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold #9EA3A8">Будущих активных</p>
-                        <p className="mt-1 text-sm font-bold #111418">{stats.activeFutureBookings}</p>
+                        <p className="text-xs font-bold text-[#9EA3A8]">Будущих активных</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">{stats.activeFutureBookings}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold #9EA3A8">Последняя запись</p>
-                        <p className="mt-1 text-sm font-bold #111418">
+                        <p className="text-xs font-bold text-[#9EA3A8]">Последняя запись</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">
                           {stats.lastBooking ? new Date(stats.lastBooking.createdAt).toLocaleDateString('ru-RU') : 'Нет'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold #9EA3A8">Ближайшая запись</p>
-                        <p className="mt-1 text-sm font-bold #111418">
+                        <p className="text-xs font-bold text-[#9EA3A8]">Ближайшая запись</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">
                           {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : 'Нет'}
                         </p>
                       </div>

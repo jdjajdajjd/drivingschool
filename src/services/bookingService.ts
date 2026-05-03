@@ -9,6 +9,7 @@ import {
   persistSupabaseMutation,
   rescheduleSupabaseBooking,
 } from './supabaseAdminService'
+import { loadStudentProgress, saveStudentProgress } from './studentProfile'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
 
@@ -346,6 +347,26 @@ export function completeBooking(bookingId: string): BookingMutationResult {
   }
 
   db.bookings.upsert(nextBooking)
+  const student = booking.studentId ? db.students.byId(booking.studentId) : db.students.byNormalizedPhone(booking.schoolId, booking.studentPhone)
+  const slot = db.slots.byId(booking.slotId)
+  if (student && slot) {
+    const progress = loadStudentProgress(student.id)
+    const hours = Math.max(1, Math.round(slot.duration / 60))
+    saveStudentProgress({
+      id: progress?.id ?? `progress-${student.id}`,
+      studentId: student.id,
+      schoolId: student.schoolId,
+      theoryTopicsTotal: progress?.theoryTopicsTotal ?? 0,
+      theoryTopicsCompleted: progress?.theoryTopicsCompleted ?? 0,
+      drivingHoursTotal: progress?.drivingHoursTotal ?? 56,
+      drivingHoursCompleted: Math.min(progress?.drivingHoursTotal ?? 56, (progress?.drivingHoursCompleted ?? 0) + hours),
+      internalExamPassed: progress?.internalExamPassed ?? false,
+      internalExamDate: progress?.internalExamDate ?? null,
+      gaidExamDate: progress?.gaidExamDate ?? null,
+      notes: progress?.notes ?? '',
+      updatedAt: new Date().toISOString(),
+    })
+  }
   persistSupabaseMutation(completeSupabaseBooking(bookingId))
   return { ok: true, booking: nextBooking }
 }

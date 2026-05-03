@@ -124,7 +124,7 @@ export interface Database {
           date: string
           time: string
           duration: number
-          lesson_type: 'main' | 'extra' | null
+          lesson_type: 'driving' | 'main' | 'extra' | 'practice_ground' | 'city' | 'exam_route' | 'internal_exam' | 'retake' | 'mistakes' | null
           status: 'available' | 'booked' | 'cancelled'
           booking_id: string | null
           created_at: string
@@ -275,7 +275,7 @@ export interface Database {
           p_date: string
           p_start_time: string
           p_duration: number
-          p_lesson_type: 'main' | 'extra'
+          p_lesson_type: 'driving' | 'main' | 'extra' | 'practice_ground' | 'city' | 'exam_route' | 'internal_exam' | 'retake' | 'mistakes'
           p_staff_password: string
         }
         Returns: Array<{

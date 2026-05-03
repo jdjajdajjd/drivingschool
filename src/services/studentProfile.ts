@@ -1,5 +1,5 @@
 import { normalizePhone } from './bookingService'
-import type { LessonDescription, StudentProgress } from '../types'
+import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress } from '../types'
 
 export interface StudentProfile {
   name: string
@@ -9,6 +9,13 @@ export interface StudentProfile {
   passwordSet: boolean
   assignedBranchId?: string
   assignedInstructorId?: string
+  categoryCodes?: string[]
+  trainingStage?: 'theory' | 'practice_ground' | 'city' | 'exam_prep' | 'exam' | 'completed'
+  groupName?: string
+  trainingStartDate?: string
+  drivingStartDate?: string
+  trainingEndDate?: string
+  drivingEndDate?: string
   pendingBranchId?: string
   branchChangeRequestedAt?: string
   updatedAt: string
@@ -132,4 +139,48 @@ export function loadLessonDescription(slotId: string): LessonDescription | null 
 
 export function saveLessonDescription(desc: LessonDescription): void {
   localStorage.setItem(getLessonDescriptionKey(desc.slotId), JSON.stringify(desc))
+}
+
+export const studentDocumentLabels: Record<StudentDocumentType, string> = {
+  passport: 'Паспорт',
+  medical_certificate: 'Медсправка',
+  snils: 'СНИЛС',
+  contract: 'Договор',
+  photo: 'Фото',
+  state_fee: 'Госпошлина',
+}
+
+export const studentDocumentStatusLabels: Record<StudentDocumentStatus, string> = {
+  missing: 'Нужно заполнить',
+  pending: 'На проверке',
+  provided: 'Передано',
+  approved: 'Принято',
+  rejected: 'Нужно исправить',
+}
+
+const defaultDocumentTypes: StudentDocumentType[] = ['passport', 'medical_certificate', 'snils', 'contract', 'photo']
+
+export function getStudentDocumentsKey(studentId: string): string {
+  return `dd:student_documents:${studentId}`
+}
+
+export function loadStudentDocuments(studentId: string): StudentDocument[] {
+  try {
+    const raw = localStorage.getItem(getStudentDocumentsKey(studentId))
+    const saved = raw ? JSON.parse(raw) as StudentDocument[] : []
+    const byType = new Map(saved.map((document) => [document.type, document]))
+    return defaultDocumentTypes.map((type) => byType.get(type) ?? { studentId, type, status: 'missing', updatedAt: new Date().toISOString() })
+  } catch {
+    return defaultDocumentTypes.map((type) => ({ studentId, type, status: 'missing', updatedAt: new Date().toISOString() }))
+  }
+}
+
+export function saveStudentDocuments(studentId: string, documents: StudentDocument[]): void {
+  localStorage.setItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
+}
+
+export function updateStudentDocument(studentId: string, type: StudentDocumentType, status: StudentDocumentStatus): StudentDocument[] {
+  const documents = loadStudentDocuments(studentId).map((document) => document.type === type ? { ...document, status, updatedAt: new Date().toISOString() } : document)
+  saveStudentDocuments(studentId, documents)
+  return documents
 }

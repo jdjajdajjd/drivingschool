@@ -165,7 +165,7 @@ function generateSlots(): Slot[] {
           date,
           time,
           duration: SCHOOL.defaultLessonDuration ?? 90,
-          lessonType: time >= '15:00' ? 'extra' : 'main',
+          lessonType: time >= '15:00' ? 'city' : 'practice_ground',
           status: 'available',
           createdAt: new Date().toISOString(),
         })
@@ -176,9 +176,9 @@ function generateSlots(): Slot[] {
 }
 
 const STUDENTS: Student[] = [
-  { id: 'stu-001', schoolId: SCHOOL_ID, name: 'Иванова Анна Михайловна', normalizedPhone: '79161234567', phone: '+79161234567', email: 'ivanova@mail.ru', assignedBranchId: 'branch-central', assignedInstructorId: 'inst-petrov', createdAt: '2024-03-10T09:00:00Z' },
-  { id: 'stu-002', schoolId: SCHOOL_ID, name: 'Соколов Павел Андреевич', normalizedPhone: '79167654321', phone: '+79167654321', email: 'sokolov@gmail.com', assignedBranchId: 'branch-north', assignedInstructorId: 'inst-smirnova', createdAt: '2024-03-12T10:30:00Z' },
-  { id: 'stu-003', schoolId: SCHOOL_ID, name: 'Новикова Елена Дмитриевна', normalizedPhone: '79169876543', phone: '+79169876543', email: 'novikova@yandex.ru', assignedBranchId: 'branch-central', assignedInstructorId: 'inst-kozlov', createdAt: '2024-03-15T14:00:00Z' },
+  { id: 'stu-001', schoolId: SCHOOL_ID, name: 'Иванова Анна Михайловна', normalizedPhone: '79161234567', phone: '+79161234567', email: 'ivanova@mail.ru', assignedBranchId: 'branch-central', assignedInstructorId: 'inst-petrov', categoryCodes: ['B'], trainingStage: 'city', groupName: 'B-24', createdAt: '2024-03-10T09:00:00Z' },
+  { id: 'stu-002', schoolId: SCHOOL_ID, name: 'Соколов Павел Андреевич', normalizedPhone: '79167654321', phone: '+79167654321', email: 'sokolov@gmail.com', assignedBranchId: 'branch-north', assignedInstructorId: 'inst-smirnova', categoryCodes: ['B'], trainingStage: 'practice_ground', groupName: 'B-24', createdAt: '2024-03-12T10:30:00Z' },
+  { id: 'stu-003', schoolId: SCHOOL_ID, name: 'Новикова Елена Дмитриевна', normalizedPhone: '79169876543', phone: '+79169876543', email: 'novikova@yandex.ru', assignedBranchId: 'branch-central', assignedInstructorId: 'inst-kozlov', categoryCodes: ['B', 'C'], trainingStage: 'exam_prep', groupName: 'C-12', createdAt: '2024-03-15T14:00:00Z' },
   { id: 'stu-004', schoolId: SCHOOL_ID, name: 'Морозов Сергей Алексеевич', normalizedPhone: '79163456789', phone: '+79163456789', email: 'morozov@mail.ru', createdAt: '2024-03-18T11:00:00Z' },
   { id: 'stu-005', schoolId: SCHOOL_ID, name: 'Лебедева Ольга Николаевна', normalizedPhone: '79162345678', phone: '+79162345678', email: 'lebedeva@gmail.com', createdAt: '2024-03-20T09:30:00Z' },
   { id: 'stu-006', schoolId: SCHOOL_ID, name: 'Козлова Виктория Игоревна', normalizedPhone: '79168765432', phone: '+79168765432', email: 'kozlova@yandex.ru', createdAt: '2024-03-22T16:00:00Z' },

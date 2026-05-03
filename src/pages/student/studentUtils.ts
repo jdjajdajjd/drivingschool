@@ -3,7 +3,7 @@ import { ru } from 'date-fns/locale'
 import { normalizePhone } from '../../services/bookingService'
 import { db } from '../../services/storage'
 import type { StudentProfile } from '../../services/studentProfile'
-import type { Slot } from '../../types'
+import type { LessonType, Slot, TrainingStage } from '../../types'
 import type { LessonFilter, ResolvedStudentBooking } from './studentTypes'
 
 export const selectedInstructorStorageKey = (schoolId: string) => `dd:student_selected_instructor:${schoolId}`
@@ -24,14 +24,37 @@ export function weekdayShort(date: Date) {
 }
 
 export function lessonType(slot: Slot): LessonFilter {
-  if (slot.lessonType === 'main' || slot.lessonType === 'extra') return slot.lessonType
+  if (slot.lessonType === 'extra') return 'extra'
+  if (slot.lessonType) return 'main'
   const hour = Number(slot.time.split(':')[0] ?? 0)
   return slot.duration > 90 || hour >= 15 ? 'extra' : 'main'
 }
 
+export const lessonTypeLabels: Record<LessonType, string> = {
+  driving: 'Вождение',
+  main: 'Основное вождение',
+  extra: 'Дополнительное вождение',
+  practice_ground: 'Площадка',
+  city: 'Город',
+  exam_route: 'Экзаменационный маршрут',
+  internal_exam: 'Внутренний экзамен',
+  retake: 'Пересдача',
+  mistakes: 'Отработка ошибок',
+}
+
+export const trainingStageLabels: Record<TrainingStage, string> = {
+  theory: 'Теория',
+  practice_ground: 'Площадка',
+  city: 'Город',
+  exam_prep: 'Подготовка к экзамену',
+  exam: 'Экзамен',
+  completed: 'Завершено',
+}
+
 export function lessonTypeLabel(slot: Slot | null) {
   if (!slot) return 'Тип занятия не выбран'
-  return lessonType(slot) === 'extra' ? 'Дополнительное вождение' : 'Основное вождение'
+  if (slot.lessonType) return lessonTypeLabels[slot.lessonType]
+  return 'Вождение'
 }
 
 export function filterSlots(slots: Slot[], instructorId: string, filter: LessonFilter) {

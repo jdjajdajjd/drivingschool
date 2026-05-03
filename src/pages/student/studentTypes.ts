@@ -1,7 +1,7 @@
-import type { Booking, Branch, Instructor, LessonType, Slot } from '../../types'
+import type { Booking, Branch, Instructor, Slot } from '../../types'
 
 export type StudentView = 'home' | 'schedule' | 'theory' | 'chat' | 'profile' | 'driving'
-export type LessonFilter = 'all' | LessonType
+export type LessonFilter = 'all' | 'main' | 'extra'
 export type ProfileField = 'name' | 'phone' | 'email'
 export type InfoSheet = 'student' | 'gosuslugi' | 'offers' | 'settings' | null
 
