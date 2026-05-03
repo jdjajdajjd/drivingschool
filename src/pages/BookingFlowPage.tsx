@@ -254,6 +254,7 @@ export function BookingFlowPage() {
             ...current,
             name: foundProfile.profile.name,
             phone: foundProfile.profile.phone.replace(/^7/, '').slice(0, 10),
+            email: foundProfile.profile.email ?? '',
           }))
         }
 
@@ -824,6 +825,15 @@ export function BookingFlowPage() {
                     error={errors.phone}
                     placeholder="+7"
                     onChange={(val) => setForm((c) => ({ ...c, phone: val }))}
+                  />
+
+                  <Input
+                    label="Email, если понадобится"
+                    type="email"
+                    value={form.email}
+                    error={errors.email}
+                    placeholder="name@example.ru"
+                    onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
                   />
 
                   <div className="rounded-2xl bg-[#EFF2FF] p-4">
