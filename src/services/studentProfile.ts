@@ -1,5 +1,6 @@
 import { normalizePhone } from './bookingService'
 import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
+import { createStudentRequestInSupabase, getStudentDocumentsFromSupabase, getStudentProgressFromSupabase, getStudentRequestsFromSupabase, updateStudentRequestStatusInSupabase, upsertStudentDocumentsInSupabase, upsertStudentProgressInSupabase } from './supabasePublicService'
 
 export interface StudentProfile {
   name: string
@@ -106,8 +107,15 @@ export function loadStudentProgress(studentId: string): StudentProgress | null {
   }
 }
 
+export async function refreshStudentProgressFromSupabase(studentId: string): Promise<StudentProgress | null> {
+  const progress = await getStudentProgressFromSupabase(studentId)
+  if (progress) saveStudentProgress(progress)
+  return progress
+}
+
 export function saveStudentProgress(progress: StudentProgress): void {
   localStorage.setItem(getProgressKey(progress.studentId), JSON.stringify(progress))
+  void upsertStudentProgressInSupabase(progress).catch((error) => console.error('Supabase student progress sync failed', error))
 }
 
 export function findAnyStudentProgress(): { studentId: string; progress: StudentProgress } | null {
@@ -175,8 +183,15 @@ export function loadStudentDocuments(studentId: string): StudentDocument[] {
   }
 }
 
+export async function refreshStudentDocumentsFromSupabase(studentId: string): Promise<StudentDocument[]> {
+  const documents = await getStudentDocumentsFromSupabase(studentId)
+  if (documents.length > 0) saveStudentDocuments(studentId, documents)
+  return documents
+}
+
 export function saveStudentDocuments(studentId: string, documents: StudentDocument[]): void {
   localStorage.setItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
+  void upsertStudentDocumentsInSupabase(documents).catch((error) => console.error('Supabase student documents sync failed', error))
 }
 
 export function updateStudentDocument(studentId: string, type: StudentDocumentType, status: StudentDocumentStatus): StudentDocument[] {
@@ -205,6 +220,12 @@ export function loadStudentRequests(schoolId: string): StudentRequest[] {
   }
 }
 
+export async function refreshStudentRequestsFromSupabase(schoolId: string): Promise<StudentRequest[]> {
+  const requests = await getStudentRequestsFromSupabase(schoolId)
+  saveStudentRequests(schoolId, requests)
+  return requests
+}
+
 export function saveStudentRequests(schoolId: string, requests: StudentRequest[]): void {
   localStorage.setItem(getStudentRequestsKey(schoolId), JSON.stringify(requests))
 }
@@ -219,11 +240,13 @@ export function createStudentRequest(request: Omit<StudentRequest, 'id' | 'statu
     updatedAt: now,
   }
   saveStudentRequests(request.schoolId, [next, ...loadStudentRequests(request.schoolId)])
+  void createStudentRequestInSupabase(next).catch((error) => console.error('Supabase student request sync failed', error))
   return next
 }
 
 export function updateStudentRequestStatus(schoolId: string, requestId: string, status: StudentRequestStatus): StudentRequest[] {
   const requests = loadStudentRequests(schoolId).map((request) => request.id === requestId ? { ...request, status, updatedAt: new Date().toISOString() } : request)
   saveStudentRequests(schoolId, requests)
+  void updateStudentRequestStatusInSupabase(schoolId, requestId, status).catch((error) => console.error('Supabase student request status sync failed', error))
   return requests
 }

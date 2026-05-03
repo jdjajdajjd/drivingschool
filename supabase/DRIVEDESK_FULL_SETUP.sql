@@ -793,6 +793,13 @@ create table public.students (
   avatar_url text,
   assigned_branch_id text references public.branches(id) on delete set null,
   assigned_instructor_id text references public.instructors(id) on delete set null,
+  category_codes text[],
+  training_stage text check (training_stage in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed')),
+  group_name text,
+  training_start_date date,
+  driving_start_date date,
+  training_end_date date,
+  driving_end_date date,
   branch_change_requested_at timestamptz,
   branch_change_note text,
   created_at timestamptz not null default now(),
@@ -844,6 +851,46 @@ create table public.bookings (
   updated_at timestamptz not null default now()
 );
 
+create table public.student_progress (
+  id text primary key,
+  student_id text not null references public.students(id) on delete cascade,
+  school_id text not null references public.schools(id) on delete cascade,
+  theory_topics_total integer not null default 0,
+  theory_topics_completed integer not null default 0,
+  driving_hours_total integer not null default 56,
+  driving_hours_completed integer not null default 0,
+  internal_exam_passed boolean not null default false,
+  internal_exam_date date,
+  internal_exam_status text not null default 'not_scheduled' check (internal_exam_status in ('not_scheduled', 'scheduled', 'passed', 'failed')),
+  gaid_exam_date date,
+  gibdd_exam_status text not null default 'not_scheduled' check (gibdd_exam_status in ('not_scheduled', 'scheduled', 'passed', 'failed')),
+  notes text not null default '',
+  updated_at timestamptz not null default now(),
+  unique (student_id)
+);
+
+create table public.student_documents (
+  student_id text not null references public.students(id) on delete cascade,
+  type text not null check (type in ('passport', 'medical_certificate', 'snils', 'contract', 'photo', 'state_fee')),
+  status text not null default 'missing' check (status in ('missing', 'pending', 'provided', 'approved', 'rejected')),
+  updated_at timestamptz not null default now(),
+  primary key (student_id, type)
+);
+
+create table public.student_requests (
+  id text primary key,
+  school_id text not null references public.schools(id) on delete cascade,
+  student_id text not null references public.students(id) on delete cascade,
+  booking_id text references public.bookings(id) on delete set null,
+  type text not null check (type in ('reschedule', 'cancel')),
+  status text not null default 'new' check (status in ('new', 'reviewing', 'resolved', 'rejected')),
+  reason text not null,
+  preferred_time text,
+  comment text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.slots
   add constraint slots_booking_id_fkey
   foreign key (booking_id) references public.bookings(id) on delete set null;
@@ -863,6 +910,9 @@ create index slots_school_date_idx on public.slots(school_id, date);
 create index slots_instructor_date_idx on public.slots(instructor_id, date);
 create index bookings_school_id_idx on public.bookings(school_id);
 create index bookings_student_id_idx on public.bookings(student_id);
+create index student_progress_school_id_idx on public.student_progress(school_id);
+create index student_requests_school_id_idx on public.student_requests(school_id);
+create index student_requests_student_id_idx on public.student_requests(student_id);
 create unique index bookings_one_active_per_slot_idx on public.bookings(slot_id) where status = 'active';
 
 insert into public.schools (
@@ -1823,6 +1873,9 @@ alter table public.slots enable row level security;
 alter table public.booking_groups enable row level security;
 alter table public.bookings enable row level security;
 alter table public.slot_locks enable row level security;
+alter table public.student_progress enable row level security;
+alter table public.student_documents enable row level security;
+alter table public.student_requests enable row level security;
 
 create policy "Public can read active schools"
   on public.schools for select
@@ -1844,12 +1897,54 @@ create policy "Public can read bookings"
   on public.bookings for select
   using (true);
 
+create policy "Public can read student progress"
+  on public.student_progress for select
+  using (true);
+
+create policy "Public can write student progress"
+  on public.student_progress for insert
+  with check (true);
+
+create policy "Public can update student progress"
+  on public.student_progress for update
+  using (true)
+  with check (true);
+
+create policy "Public can read student documents"
+  on public.student_documents for select
+  using (true);
+
+create policy "Public can write student documents"
+  on public.student_documents for insert
+  with check (true);
+
+create policy "Public can update student documents"
+  on public.student_documents for update
+  using (true)
+  with check (true);
+
+create policy "Public can read student requests"
+  on public.student_requests for select
+  using (true);
+
+create policy "Public can create student requests"
+  on public.student_requests for insert
+  with check (true);
+
+create policy "Public can update student requests"
+  on public.student_requests for update
+  using (true)
+  with check (true);
+
 grant usage on schema public to anon, authenticated;
 grant select on public.schools to anon, authenticated;
 grant select on public.branches to anon, authenticated;
 grant select on public.instructors to anon, authenticated;
 grant select on public.slots to anon, authenticated;
 grant select on public.bookings to anon, authenticated;
+grant select, insert, update on public.student_progress to anon, authenticated;
+grant select, insert, update on public.student_documents to anon, authenticated;
+grant select, insert, update on public.student_requests to anon, authenticated;
 grant execute on function public.public_create_booking(text, text, text, text[]) to anon, authenticated;
 grant execute on function public.public_cancel_booking(text, text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;

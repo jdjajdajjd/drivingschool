@@ -1,4 +1,4 @@
-import type { Booking, Branch, Instructor, School, Slot, Student } from '../types'
+import type { Booking, Branch, Instructor, School, Slot, Student, StudentDocument, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Database } from '../lib/supabaseTypes'
 
@@ -134,6 +134,13 @@ function mapStudent(row: StudentRow): Student {
     avatarUrl: row.avatar_url ?? undefined,
     assignedBranchId: row.assigned_branch_id ?? undefined,
     assignedInstructorId: row.assigned_instructor_id ?? undefined,
+    categoryCodes: row.category_codes?.length ? row.category_codes : undefined,
+    trainingStage: row.training_stage ?? undefined,
+    groupName: row.group_name ?? undefined,
+    trainingStartDate: row.training_start_date ?? undefined,
+    drivingStartDate: row.driving_start_date ?? undefined,
+    trainingEndDate: row.training_end_date ?? undefined,
+    drivingEndDate: row.driving_end_date ?? undefined,
     branchChangeRequestedAt: row.branch_change_requested_at ?? undefined,
     branchChangeNote: row.branch_change_note ?? undefined,
     hasPassword: Boolean(row.password_hash),
@@ -178,6 +185,111 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
     students: studentsResult.data.map(mapStudent),
     bookings: bookingsResult.data.map(mapBooking),
   }
+}
+
+export async function getStudentProgressFromSupabase(studentId: string): Promise<StudentProgress | null> {
+  if (!isSupabaseConfigured()) return null
+  const { data, error } = await supabase.from('student_progress').select('*').eq('student_id', studentId).maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  return {
+    id: data.id,
+    studentId: data.student_id,
+    schoolId: data.school_id,
+    theoryTopicsTotal: data.theory_topics_total,
+    theoryTopicsCompleted: data.theory_topics_completed,
+    drivingHoursTotal: data.driving_hours_total,
+    drivingHoursCompleted: data.driving_hours_completed,
+    internalExamPassed: data.internal_exam_passed,
+    internalExamDate: data.internal_exam_date,
+    internalExamStatus: data.internal_exam_status,
+    gaidExamDate: data.gaid_exam_date,
+    gibddExamStatus: data.gibdd_exam_status,
+    notes: data.notes,
+    updatedAt: data.updated_at,
+  }
+}
+
+export async function upsertStudentProgressInSupabase(progress: StudentProgress): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  const { error } = await supabase.from('student_progress').upsert({
+    id: progress.id,
+    student_id: progress.studentId,
+    school_id: progress.schoolId,
+    theory_topics_total: progress.theoryTopicsTotal,
+    theory_topics_completed: progress.theoryTopicsCompleted,
+    driving_hours_total: progress.drivingHoursTotal,
+    driving_hours_completed: progress.drivingHoursCompleted,
+    internal_exam_passed: progress.internalExamPassed,
+    internal_exam_date: progress.internalExamDate,
+    internal_exam_status: progress.internalExamStatus ?? (progress.internalExamPassed ? 'passed' : 'not_scheduled'),
+    gaid_exam_date: progress.gaidExamDate,
+    gibdd_exam_status: progress.gibddExamStatus ?? 'not_scheduled',
+    notes: progress.notes,
+    updated_at: progress.updatedAt,
+  })
+  if (error) throw error
+}
+
+export async function getStudentDocumentsFromSupabase(studentId: string): Promise<StudentDocument[]> {
+  if (!isSupabaseConfigured()) return []
+  const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', studentId)
+  if (error) throw error
+  return (data ?? []).map((row) => ({ studentId: row.student_id, type: row.type, status: row.status, updatedAt: row.updated_at }))
+}
+
+export async function upsertStudentDocumentsInSupabase(documents: StudentDocument[]): Promise<void> {
+  if (!isSupabaseConfigured() || documents.length === 0) return
+  const { error } = await supabase.from('student_documents').upsert(documents.map((document) => ({
+    student_id: document.studentId,
+    type: document.type,
+    status: document.status,
+    updated_at: document.updatedAt,
+  })))
+  if (error) throw error
+}
+
+export async function getStudentRequestsFromSupabase(schoolId: string): Promise<StudentRequest[]> {
+  if (!isSupabaseConfigured()) return []
+  const { data, error } = await supabase.from('student_requests').select('*').eq('school_id', schoolId).order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    schoolId: row.school_id,
+    studentId: row.student_id,
+    bookingId: row.booking_id ?? undefined,
+    type: row.type,
+    status: row.status,
+    reason: row.reason,
+    preferredTime: row.preferred_time ?? undefined,
+    comment: row.comment ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }))
+}
+
+export async function createStudentRequestInSupabase(request: StudentRequest): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  const { error } = await supabase.from('student_requests').insert({
+    id: request.id,
+    school_id: request.schoolId,
+    student_id: request.studentId,
+    booking_id: request.bookingId ?? null,
+    type: request.type,
+    status: request.status,
+    reason: request.reason,
+    preferred_time: request.preferredTime ?? null,
+    comment: request.comment ?? null,
+    created_at: request.createdAt,
+    updated_at: request.updatedAt,
+  })
+  if (error) throw error
+}
+
+export async function updateStudentRequestStatusInSupabase(schoolId: string, requestId: string, status: StudentRequestStatus): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  const { error } = await supabase.from('student_requests').update({ status, updated_at: new Date().toISOString() }).eq('school_id', schoolId).eq('id', requestId)
+  if (error) throw error
 }
 
 export async function getPublicSlots(schoolId: string): Promise<Slot[]> {
@@ -319,6 +431,13 @@ export async function updateStudentProfileInSupabase(params: {
   email: string
   password: string
   avatarUrl: string
+  categoryCodes?: string[]
+  trainingStage?: Student['trainingStage']
+  groupName?: string
+  trainingStartDate?: string
+  drivingStartDate?: string
+  trainingEndDate?: string
+  drivingEndDate?: string
 }): Promise<{ studentId: string; normalizedPhone: string }> {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase is not configured.')
@@ -336,6 +455,20 @@ export async function updateStudentProfileInSupabase(params: {
   if (error) throw error
   const row = data?.[0]
   if (!row) throw new Error('Student profile was not saved.')
+
+  const studentPatch = {
+    category_codes: params.categoryCodes?.length ? params.categoryCodes : null,
+    training_stage: params.trainingStage ?? null,
+    group_name: params.groupName ?? null,
+    training_start_date: params.trainingStartDate ?? null,
+    driving_start_date: params.drivingStartDate ?? null,
+    training_end_date: params.trainingEndDate ?? null,
+    driving_end_date: params.drivingEndDate ?? null,
+  }
+  if (Object.values(studentPatch).some((value) => value !== null)) {
+    const { error: updateError } = await supabase.from('students').update(studentPatch).eq('id', row.student_id)
+    if (updateError) throw updateError
+  }
 
   return {
     studentId: row.student_id,

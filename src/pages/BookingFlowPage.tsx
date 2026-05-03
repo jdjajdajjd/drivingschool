@@ -511,6 +511,9 @@ export function BookingFlowPage() {
         email: form.email,
         password: form.password,
         avatarUrl: '',
+        categoryCodes: ['B'],
+        trainingStage: 'theory',
+        groupName: '',
       }).catch(() => undefined)
       navigate('/student')
     } catch (error) {
