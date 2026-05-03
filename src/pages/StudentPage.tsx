@@ -14,6 +14,7 @@ import {
   Gift,
   GraduationCap,
   Home,
+  ListChecks,
   LogOut,
   MessageCircle,
   Pencil,
@@ -34,6 +35,7 @@ import { updateStudentProfileInSupabase } from '../services/supabasePublicServic
 import {
   findAnyStudentProfile,
   loadStudentProfile,
+  loadLessonDescription,
   loadStudentProgress,
   removeStudentProfile,
   saveStudentProfile,
@@ -176,6 +178,36 @@ function ScheduleEmptyState({ onShowAll, onChangeInstructor }: { onShowAll: () =
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button className="min-h-11 rounded-[16px] bg-[#EEF0FA] text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={onShowAll}>Показать все</button>
         <button className="min-h-11 rounded-[16px] bg-[#F5F6FA] text-[14px] font-bold text-[#050609] active:scale-[0.98]" onClick={onChangeInstructor}>Инструктор</button>
+      </div>
+    </section>
+  )
+}
+
+function LessonDetailsCard({ title, item }: { title: string; item: ResolvedStudentBooking | null }) {
+  const description = item?.slot ? loadLessonDescription(item.slot.id) : null
+  if (!item?.slot) {
+    return (
+      <section className={cn(card, 'p-4')}>
+        <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
+        <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Запишитесь на занятие, и здесь появятся тема, цели и что взять с собой.</p>
+      </section>
+    )
+  }
+  return (
+    <section className={cn(card, 'p-4')}>
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[17px] bg-[#EEF0FA] text-[#1F2BD8]"><ListChecks size={21} /></span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
+          <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">{lessonTime(item.slot)} · {item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+        </div>
+      </div>
+      <div className="mt-4 rounded-[18px] bg-[#F7F8FA] p-3">
+        <p className="text-[15px] font-bold text-[#050609]">{description?.theme ?? 'Тему уточнит инструктор'}</p>
+        <p className="mt-1 text-[13px] font-semibold leading-5 text-[#8B8D94]">{description?.goals?.length ? description.goals.join(' · ') : 'Цели занятия появятся после отметки автошколы.'}</p>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(description?.whatToBring?.length ? description.whatToBring : ['Паспорт', 'Удобная обувь']).map((item) => <span key={item} className="rounded-full bg-[#EEF0FA] px-3 py-1.5 text-[12px] font-bold text-[#1F2BD8]">{item}</span>)}
       </div>
     </section>
   )
@@ -484,6 +516,7 @@ export function StudentPage() {
   const progress = student ? loadStudentProgress(student.id) : null
   const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile])
   const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
+  const completedLessons = bookings.filter((item) => item.booking.status === 'completed' && item.slot).slice(-3).reverse()
   const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school])
   const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
   const assignedInstructorId = [student?.assignedInstructorId, profile?.assignedInstructorId].find((id) => id && instructors.some((instructor) => instructor.id === id)) ?? ''
@@ -693,6 +726,28 @@ export function StudentPage() {
               </span>
               <ChevronRight className="text-[#B8BABF]" size={22} />
             </button>
+
+            <LessonDetailsCard title="Ближайшее занятие" item={nextLesson} />
+
+            <section>
+              <h2 className={sectionTitle}>История занятий</h2>
+              <div className="mt-3 space-y-2">
+                {completedLessons.length > 0 ? completedLessons.map((item) => {
+                  const description = item.slot ? loadLessonDescription(item.slot.id) : null
+                  return (
+                    <article key={item.booking.id} className={cn(card, 'p-4')}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-[16px] font-bold text-[#050609]">{description?.theme ?? 'Занятие по вождению'}</p>
+                          <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{item.slot ? lessonTime(item.slot) : 'Время не найдено'}</p>
+                        </div>
+                        <StatusPill>Пройдено</StatusPill>
+                      </div>
+                    </article>
+                  )
+                }) : <article className={cn(card, 'p-4 text-[14px] font-semibold leading-5 text-[#8B8D94]')}>Пройденные занятия появятся после отметки автошколы.</article>}
+              </div>
+            </section>
 
             <section>
               <h2 className={sectionTitle}>Учебное авто</h2>
