@@ -24,10 +24,7 @@ export function BottomNav({ items }: { items: BottomNavItem[] }) {
             item.active ? 'active' : '',
           )}
         >
-          <span className="relative">
-            {item.icon}
-            {item.active && <span className="bottom-nav-dot" />}
-          </span>
+          <span>{item.icon}</span>
           <span>{item.label}</span>
         </button>
       ))}
