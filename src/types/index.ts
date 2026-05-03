@@ -119,6 +119,23 @@ export interface StudentDocument {
   updatedAt: string
 }
 
+export type StudentRequestType = 'reschedule' | 'cancel'
+export type StudentRequestStatus = 'new' | 'reviewing' | 'resolved' | 'rejected'
+
+export interface StudentRequest {
+  id: string
+  schoolId: string
+  studentId: string
+  bookingId?: string
+  type: StudentRequestType
+  status: StudentRequestStatus
+  reason: string
+  preferredTime?: string
+  comment?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface SlotLock {
   slotId: string
   sessionId: string
@@ -232,7 +249,9 @@ export interface StudentProgress {
   drivingHoursCompleted: number
   internalExamPassed: boolean
   internalExamDate: string | null
+  internalExamStatus?: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
   gaidExamDate: string | null
+  gibddExamStatus?: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
   notes: string
   updatedAt: string
 }

@@ -11,7 +11,6 @@ import {
   FilterHorizontalIcon,
   GraduationScrollIcon,
   Home07Icon,
-  ListViewIcon,
   Logout03Icon,
   PencilEdit02Icon,
   School01Icon,
@@ -28,6 +27,7 @@ import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, i
 import { ru } from 'date-fns/locale'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
@@ -38,10 +38,11 @@ import {
   findAnyStudentProfile,
   loadStudentDocuments,
   loadStudentProfile,
-  loadLessonDescription,
   loadStudentProgress,
+  loadLessonDescription,
   removeStudentProfile,
   saveStudentProfile,
+  createStudentRequest,
   studentDocumentLabels,
   studentDocumentStatusLabels,
   type StudentProfile,
@@ -49,8 +50,9 @@ import {
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import type { Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
-import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, StudentView } from './student/studentTypes'
-import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonTypeLabel, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, trainingStageLabels, weekdayShort } from './student/studentUtils'
+import type { InfoSheet, LessonFilter, ProfileField, StudentView } from './student/studentTypes'
+import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, lessonTime, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, trainingStageLabels, weekdayShort } from './student/studentUtils'
+import { AvailableSlotCard, BookingLessonCard, LessonDetailsCard, SchoolLogo, StatusPill, StudentAvatar } from './student/components/CoreCards'
 
 void React
 
@@ -67,7 +69,6 @@ const Filter = createHugeIcon(FilterHorizontalIcon)
 const Gift = createHugeIcon(SparklesIcon)
 const GraduationCap = createHugeIcon(GraduationScrollIcon)
 const Home = createHugeIcon(Home07Icon)
-const ListChecks = createHugeIcon(ListViewIcon)
 const LogOut = createHugeIcon(Logout03Icon)
 const MessageCircle = createHugeIcon(Comment01Icon)
 const Pencil = createHugeIcon(PencilEdit02Icon)
@@ -80,85 +81,6 @@ const Zap = createHugeIcon(ZapIcon)
 const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
 const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
 const sectionTitle = 'text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
-
-function StudentAvatar({ name, src, size = 48 }: { name: string; src?: string; size?: number }) {
-  return (
-    <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-white text-[15px] font-bold text-[#1F2BD8]" style={{ width: size, height: size, border: '1px solid #E4E6EC' }}>
-      {src ? <img src={src} alt={name} className="h-full w-full object-cover" style={{ width: '100%', height: '100%', maxWidth: '100%', objectFit: 'cover' }} /> : initials(name)}
-    </div>
-  )
-}
-
-function SchoolLogo({ school }: { school: School }) {
-  return (
-    <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-white text-[#1F2BD8]" style={{ border: '1px solid #E4E6EC' }}>
-      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" style={{ width: '100%', height: '100%', maxWidth: '100%', objectFit: 'cover' }} /> : <Building2 size={20} />}
-    </div>
-  )
-}
-
-function StatusPill({ children, tone = 'green' }: { children: string; tone?: 'green' | 'blue' | 'gray' | 'red' }) {
-  const styles = {
-    green: 'bg-[#EEF9F2] text-[#14934A]',
-    blue: 'bg-[#EEF0FA] text-[#1F2BD8]',
-    gray: 'bg-[#F1F2F5] text-[#8B8D94]',
-    red: 'bg-[#FFEDEF] text-[#FF3155]',
-  }
-  return <span className={cn('inline-flex min-h-7 items-center rounded-[14px] px-3 text-[12px] font-semibold', styles[tone])}>{children}</span>
-}
-
-function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | null; onBook: () => void }) {
-  if (!item?.slot) {
-    return (
-      <section className={cn(card, 'p-4')}>
-        <div className="mb-3 h-1 w-12 rounded-full bg-[#35C45A]" />
-        <h3 className="text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">Вы пока не записаны</h3>
-        <p className="mt-2 text-[15px] font-medium leading-5 text-[#8B8D94]">Выберите свободное окно ниже или откройте расписание</p>
-        <Button size="lg" className="mt-4 w-full rounded-[18px] text-[16px]" onClick={onBook}>Записаться</Button>
-      </section>
-    )
-  }
-
-  return (
-    <article className={cn(card, 'min-w-[300px] p-4')}>
-      <div className="flex gap-3">
-        <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
-        <div className="min-w-0 flex-1">
-          <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[#050609]">{lessonTime(item.slot)}</p>
-          <p className="mt-1 text-[17px] font-semibold leading-6 text-[#050609]">{lessonTypeLabel(item.slot)}</p>
-          <div className="mt-3 flex items-center gap-3">
-            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} />
-            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-          </div>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function AvailableSlotCard({ slot, instructor, onBook, compact = false }: { slot: Slot; instructor: Instructor | null; onBook: () => void; compact?: boolean }) {
-  return (
-    <article className={cn(card, compact ? 'min-w-[260px] p-3' : 'p-3.5')}>
-      <div className="flex gap-3">
-        <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[19px] font-bold leading-6 tracking-[-0.02em] text-[#050609]">{slotTimeRange(slot)}</p>
-              <p className="mt-0.5 truncate text-[14px] font-semibold text-[#050609]">{lessonTypeLabel(slot)}</p>
-            </div>
-            <StatusPill>Свободно</StatusPill>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <StudentAvatar name={instructor?.name ?? 'Инструктор'} src={instructor ? getInstructorPhoto(instructor) : undefined} size={34} />
-            <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#050609]">{instructor ? formatInstructorName(instructor.name) : 'Инструктор'}</p>
-            <Button size="sm" className="rounded-full px-3 text-[13px]" onClick={onBook}>Записаться</Button>
-          </div>
-        </div>
-      </div>
-    </article>
-  )
-}
 
 function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (value: LessonFilter) => void }) {
   const items: Array<{ value: LessonFilter; label: string }> = [
@@ -206,36 +128,6 @@ function ScheduleEmptyState({ onShowAll, onChangeInstructor }: { onShowAll: () =
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button className="min-h-11 rounded-[16px] bg-[#EEF0FA] text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={onShowAll}>Показать все</button>
         <button className="min-h-11 rounded-[16px] bg-[#F5F6FA] text-[14px] font-bold text-[#050609] active:scale-[0.98]" onClick={onChangeInstructor}>Инструктор</button>
-      </div>
-    </section>
-  )
-}
-
-function LessonDetailsCard({ title, item }: { title: string; item: ResolvedStudentBooking | null }) {
-  const description = item?.slot ? loadLessonDescription(item.slot.id) : null
-  if (!item?.slot) {
-    return (
-      <section className={cn(card, 'p-4')}>
-        <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
-        <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Запишитесь на занятие, и здесь появятся тема, цели и что взять с собой.</p>
-      </section>
-    )
-  }
-  return (
-    <section className={cn(card, 'p-4')}>
-      <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[17px] bg-[#EEF0FA] text-[#1F2BD8]"><ListChecks size={21} /></span>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
-          <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">{lessonTime(item.slot)} · {item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-        </div>
-      </div>
-      <div className="mt-4 rounded-[18px] bg-[#F7F8FA] p-3">
-        <p className="text-[15px] font-bold text-[#050609]">{description?.theme ?? 'Тему уточнит инструктор'}</p>
-        <p className="mt-1 text-[13px] font-semibold leading-5 text-[#8B8D94]">{description?.goals?.length ? description.goals.join(' · ') : 'Цели занятия появятся после отметки автошколы.'}</p>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {(description?.whatToBring?.length ? description.whatToBring : ['Паспорт', 'Удобная обувь']).map((item) => <span key={item} className="rounded-full bg-[#EEF0FA] px-3 py-1.5 text-[12px] font-bold text-[#1F2BD8]">{item}</span>)}
       </div>
     </section>
   )
@@ -524,6 +416,12 @@ export function StudentPage() {
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState('')
   const [editingFields, setEditingFields] = useState<Record<ProfileField, boolean>>({ name: false, phone: false, email: false })
   const [infoSheet, setInfoSheet] = useState<InfoSheet>(null)
+  const [phoneConfirmOpen, setPhoneConfirmOpen] = useState(false)
+  const [requestSheetOpen, setRequestSheetOpen] = useState(false)
+  const [requestReason, setRequestReason] = useState('')
+  const [requestPreferredTime, setRequestPreferredTime] = useState('')
+  const [requestComment, setRequestComment] = useState('')
+  const [requestMessage, setRequestMessage] = useState('')
 
   useEffect(() => {
     const found = findAnyStudentProfile()
@@ -606,7 +504,8 @@ export function StudentPage() {
       return
     }
 
-    if (phoneChanged && !window.confirm('Телефон используется для поиска ваших записей. После изменения старые записи могут быть привязаны к прежнему номеру. Сохранить новый телефон?')) {
+    if (phoneChanged && !phoneConfirmOpen) {
+      setPhoneConfirmOpen(true)
       return
     }
 
@@ -614,6 +513,7 @@ export function StudentPage() {
     const saved = saveStudentProfile(school.id, { name: form.name, phone: form.phone, email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email })
     setProfile(saved)
     setProfileError('')
+    setPhoneConfirmOpen(false)
     setPendingAvatarUrl('')
     setEditingFields({ name: false, phone: false, email: false })
     db.students.upsert({
@@ -642,6 +542,28 @@ export function StudentPage() {
     removeStudentProfile(school.id)
     setProfile(null)
     navigate('/student/register', { replace: true })
+  }
+
+  function submitRescheduleRequest() {
+    if (!school || !student || !nextLesson?.booking) return
+    if (!requestReason.trim()) {
+      setRequestMessage('Укажите причину, чтобы администратор понял контекст.')
+      return
+    }
+    createStudentRequest({
+      schoolId: school.id,
+      studentId: student.id,
+      bookingId: nextLesson.booking.id,
+      type: 'reschedule',
+      reason: requestReason.trim(),
+      preferredTime: requestPreferredTime.trim() || undefined,
+      comment: requestComment.trim() || undefined,
+    })
+    setRequestReason('')
+    setRequestPreferredTime('')
+    setRequestComment('')
+    setRequestMessage('Запрос отправлен администратору.')
+    setRequestSheetOpen(false)
   }
 
   return (
@@ -768,6 +690,16 @@ export function StudentPage() {
             </button>
 
             <LessonDetailsCard title="Ближайшее занятие" item={nextLesson} />
+            {nextLesson?.booking ? (
+              <button className={cn(card, 'flex w-full items-center justify-between gap-3 p-4 text-left active:scale-[0.99]')} onClick={() => setRequestSheetOpen(true)}>
+                <span className="min-w-0">
+                  <span className="block text-[16px] font-bold text-[#050609]">Нужно перенести?</span>
+                  <span className="mt-1 block text-[13px] font-semibold text-[#8B8D94]">Отправьте запрос администратору, запись не отменится автоматически.</span>
+                </span>
+                <ChevronRight className="text-[#B8BABF]" size={22} />
+              </button>
+            ) : null}
+            {requestMessage ? <p className="rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-semibold text-[#1F2BD8]">{requestMessage}</p> : null}
 
             <section>
               <h2 className={sectionTitle}>История занятий</h2>
@@ -934,6 +866,33 @@ export function StudentPage() {
       ]} />
       <InstructorSheet open={instructorSheetOpen} instructors={instructors} selectedId={selectedInstructor?.id ?? ''} assignedId={assignedInstructorId} onSelect={setSelectedInstructorId} onClose={() => setInstructorSheetOpen(false)} />
       <InfoSheetPanel type={infoSheet} school={school} profile={profile} progress={progress} student={student} selectedInstructor={selectedInstructor} onClose={() => setInfoSheet(null)} />
+      {requestSheetOpen ? (
+        <div className="fixed inset-0 z-[70] flex items-end bg-black/25 px-3 pb-3" onClick={() => setRequestSheetOpen(false)}>
+          <section className="mx-auto w-full max-w-[430px] rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
+            <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-[#D6D8DD]" />
+            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Запросить перенос</h2>
+            <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Администратор увидит запрос и подберёт новое время.</p>
+            <div className="mt-4 space-y-3">
+              <Input label="Причина" value={requestReason} onChange={(event) => setRequestReason(event.target.value)} placeholder="Например, не успеваю после работы" />
+              <Input label="Желаемое время" value={requestPreferredTime} onChange={(event) => setRequestPreferredTime(event.target.value)} placeholder="Завтра после 18:00" />
+              <Input label="Комментарий" value={requestComment} onChange={(event) => setRequestComment(event.target.value)} placeholder="Необязательно" />
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => setRequestSheetOpen(false)}>Назад</Button>
+                <Button onClick={submitRescheduleRequest}>Отправить</Button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+      <ConfirmDialog
+        open={phoneConfirmOpen}
+        title="Сохранить новый телефон?"
+        description="Телефон используется для поиска ваших записей. После изменения старые записи могут остаться привязаны к прежнему номеру."
+        confirmLabel="Сохранить"
+        cancelLabel="Назад"
+        onConfirm={() => void saveProfileData()}
+        onClose={() => setPhoneConfirmOpen(false)}
+      />
     </div>
   )
 }

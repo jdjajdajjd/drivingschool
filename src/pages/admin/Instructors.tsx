@@ -39,7 +39,7 @@ const initialForm = {
 }
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border rgba(0,0,0,0.06) white px-3.5 text-[15px] #111418 outline-none transition focus:border-accent focus:ring-3 focus:ring-accent/10'
+  return 'h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none transition focus:border-accent focus:ring-3 focus:ring-accent/10'
 }
 
 export function AdminInstructors() {

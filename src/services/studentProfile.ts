@@ -1,5 +1,5 @@
 import { normalizePhone } from './bookingService'
-import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress } from '../types'
+import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
 
 export interface StudentProfile {
   name: string
@@ -183,4 +183,47 @@ export function updateStudentDocument(studentId: string, type: StudentDocumentTy
   const documents = loadStudentDocuments(studentId).map((document) => document.type === type ? { ...document, status, updatedAt: new Date().toISOString() } : document)
   saveStudentDocuments(studentId, documents)
   return documents
+}
+
+export const studentRequestStatusLabels: Record<StudentRequestStatus, string> = {
+  new: 'Новый',
+  reviewing: 'В работе',
+  resolved: 'Решён',
+  rejected: 'Отклонён',
+}
+
+export function getStudentRequestsKey(schoolId: string): string {
+  return `dd:student_requests:${schoolId}`
+}
+
+export function loadStudentRequests(schoolId: string): StudentRequest[] {
+  try {
+    const raw = localStorage.getItem(getStudentRequestsKey(schoolId))
+    return raw ? JSON.parse(raw) as StudentRequest[] : []
+  } catch {
+    return []
+  }
+}
+
+export function saveStudentRequests(schoolId: string, requests: StudentRequest[]): void {
+  localStorage.setItem(getStudentRequestsKey(schoolId), JSON.stringify(requests))
+}
+
+export function createStudentRequest(request: Omit<StudentRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>): StudentRequest {
+  const now = new Date().toISOString()
+  const next: StudentRequest = {
+    ...request,
+    id: `student-request-${Date.now()}`,
+    status: 'new',
+    createdAt: now,
+    updatedAt: now,
+  }
+  saveStudentRequests(request.schoolId, [next, ...loadStudentRequests(request.schoolId)])
+  return next
+}
+
+export function updateStudentRequestStatus(schoolId: string, requestId: string, status: StudentRequestStatus): StudentRequest[] {
+  const requests = loadStudentRequests(schoolId).map((request) => request.id === requestId ? { ...request, status, updatedAt: new Date().toISOString() } : request)
+  saveStudentRequests(schoolId, requests)
+  return requests
 }

@@ -10,6 +10,7 @@ import { Badge, StatusBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { formatPhone, pluralize } from '../lib/utils'
+import { cancelBooking, completeBooking } from '../services/bookingService'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { db } from '../services/storage'
 import type { Booking, Branch, Instructor, Slot } from '../types'
@@ -37,10 +38,14 @@ function Section({
   title,
   items,
   emptyLabel,
+  onComplete,
+  onCancel,
 }: {
   title: string
   items: BookingRow[]
   emptyLabel: string
+  onComplete?: (bookingId: string) => void
+  onCancel?: (bookingId: string) => void
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
@@ -65,7 +70,11 @@ function Section({
                 <p>{slot?.time ?? '—'}</p>
               </div>
 
-              <StatusBadge status={booking.status} />
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <StatusBadge status={booking.status} />
+                {booking.status === 'active' && onComplete ? <Button size="sm" onClick={() => onComplete(booking.id)}>Проведено</Button> : null}
+                {booking.status === 'active' && onCancel ? <Button variant="secondary" size="sm" onClick={() => onCancel(booking.id)}>Отменено</Button> : null}
+              </div>
             </div>
           ))}
         </div>
@@ -80,6 +89,18 @@ export function InstructorPage() {
   const [instructor, setInstructor] = useState<Instructor | null>(null)
   const [branch, setBranch] = useState<Branch | null>(null)
   const [rows, setRows] = useState<BookingRow[]>([])
+
+  function reloadRows(currentInstructor: Instructor): void {
+    setRows(
+      db.bookings
+        .byInstructor(currentInstructor.id)
+        .map((booking) => ({
+          booking,
+          slot: db.slots.byId(booking.slotId),
+        }))
+        .sort(sortAsc),
+    )
+  }
 
   useEffect(() => {
     if (!token) {
@@ -96,16 +117,20 @@ export function InstructorPage() {
 
     setInstructor(currentInstructor)
     setBranch(db.branches.byId(currentInstructor.branchId))
-    setRows(
-      db.bookings
-        .byInstructor(currentInstructor.id)
-        .map((booking) => ({
-          booking,
-          slot: db.slots.byId(booking.slotId),
-        }))
-        .sort(sortAsc),
-    )
+    reloadRows(currentInstructor)
   }, [token])
+
+  function handleComplete(bookingId: string): void {
+    if (!instructor) return
+    completeBooking(bookingId)
+    reloadRows(instructor)
+  }
+
+  function handleCancel(bookingId: string): void {
+    if (!instructor) return
+    cancelBooking(bookingId)
+    reloadRows(instructor)
+  }
 
   const grouped = useMemo(() => {
     const now = Date.now()
@@ -227,7 +252,7 @@ export function InstructorPage() {
         </motion.section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Section title="Ближайшие занятия" items={grouped.upcoming} emptyLabel="На ближайшие дни занятий нет" />
+          <Section title="Ближайшие занятия" items={grouped.upcoming} emptyLabel="На ближайшие дни занятий нет" onComplete={handleComplete} onCancel={handleCancel} />
           <Section title="Прошедшие занятия" items={grouped.past} emptyLabel="Нет прошедших занятий." />
           <Section title="Отменённые" items={grouped.cancelled} emptyLabel="Нет отменённых записей." />
         </div>

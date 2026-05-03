@@ -29,11 +29,11 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <div className="space-y-5 px-5 pb-5 pt-2">
-        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${danger ? 'rgba(229,83,75,0.15) #FEF2F2' : 'rgba(180,83,9,0.15) #FFFBEB'}`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl white ">
-            <AlertTriangle size={16} className={danger ? '#E5534B' : '#B45309'} />
+        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${danger ? 'border-[#E5534B]/15 bg-[#FEF2F2]' : 'border-[#B45309]/15 bg-[#FFFBEB]'}`}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">
+            <AlertTriangle size={16} className={danger ? 'text-[#E5534B]' : 'text-[#B45309]'} />
           </div>
-          <p className="text-[14px] leading-relaxed #6F747A">{description}</p>
+          <p className="text-[14px] leading-relaxed text-[#6F747A]">{description}</p>
         </div>
         <div className="flex gap-2">
           <Button variant={danger ? 'danger' : 'primary'} className="flex-1" onClick={onConfirm}>

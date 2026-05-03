@@ -23,12 +23,14 @@ import { cancelBooking, completeBooking, getBookingsByStudent } from '../../serv
 import { getStudentById, getStudentStats } from '../../services/studentService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import type { StudentDocumentStatus, StudentDocumentType, TrainingStage } from '../../types'
-import { loadStudentDocuments, studentDocumentLabels, studentDocumentStatusLabels, updateStudentDocument } from '../../services/studentProfile'
+import type { StudentDocumentStatus, StudentDocumentType, StudentRequestStatus, TrainingStage } from '../../types'
+import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, saveStudentProgress, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocument, updateStudentRequestStatus } from '../../services/studentProfile'
 import { trainingStageLabels } from '../student/studentUtils'
 
 const trainingStageOptions: TrainingStage[] = ['theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed']
 const documentStatusOptions: StudentDocumentStatus[] = ['missing', 'pending', 'provided', 'approved', 'rejected']
+const requestStatusOptions: StudentRequestStatus[] = ['new', 'reviewing', 'resolved', 'rejected']
+const examStatusLabels = { not_scheduled: 'Не назначен', scheduled: 'Назначен', passed: 'Сдан', failed: 'Не сдан' }
 
 export function AdminStudentDetail() {
   const { studentId } = useParams<{ studentId: string }>()
@@ -43,6 +45,8 @@ export function AdminStudentDetail() {
   const stats = student ? getStudentStats(student.id) : null
   const history = useMemo(() => (student ? getBookingsByStudent(student.id) : []), [student])
   const documents = student ? loadStudentDocuments(student.id) : []
+  const progress = student ? loadStudentProgress(student.id) : null
+  const requests = student ? loadStudentRequests(student.schoolId).filter((request) => request.studentId === student.id) : []
   const instructors = student ? db.instructors.bySchool(student.schoolId).filter((instructor) => instructor.isActive) : []
   const branches = student ? db.branches.bySchool(student.schoolId).filter((branch) => branch.isActive) : []
 
@@ -51,6 +55,29 @@ export function AdminStudentDetail() {
     db.students.upsert({ ...student, ...patch })
     setVersion((value) => value + 1)
     showToast('Данные ученика обновлены.', 'success')
+  }
+
+  function updateProgressPatch(patch: Partial<NonNullable<typeof progress>>): void {
+    if (!student) return
+    saveStudentProgress({
+      id: progress?.id ?? `progress-${student.id}`,
+      studentId: student.id,
+      schoolId: student.schoolId,
+      theoryTopicsTotal: progress?.theoryTopicsTotal ?? 0,
+      theoryTopicsCompleted: progress?.theoryTopicsCompleted ?? 0,
+      drivingHoursTotal: progress?.drivingHoursTotal ?? 56,
+      drivingHoursCompleted: progress?.drivingHoursCompleted ?? 0,
+      internalExamPassed: progress?.internalExamPassed ?? false,
+      internalExamDate: progress?.internalExamDate ?? null,
+      internalExamStatus: progress?.internalExamStatus ?? 'not_scheduled',
+      gaidExamDate: progress?.gaidExamDate ?? null,
+      gibddExamStatus: progress?.gibddExamStatus ?? 'not_scheduled',
+      notes: progress?.notes ?? '',
+      updatedAt: new Date().toISOString(),
+      ...patch,
+    })
+    setVersion((value) => value + 1)
+    showToast('Прогресс ученика обновлён.', 'success')
   }
 
   function handleCancel(): void {
@@ -137,6 +164,7 @@ export function AdminStudentDetail() {
         <Section title="Обучение" description="Назначения и этап обучения видны ученику в кабинете.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Input label="Группа" value={student.groupName ?? ''} placeholder="Пока не назначено" onChange={(event) => updateStudentPatch({ groupName: event.target.value.trim() || undefined })} />
+            <Input label="Категории" value={student.categoryCodes?.join(', ') ?? ''} placeholder="B" onChange={(event) => updateStudentPatch({ categoryCodes: event.target.value.split(',').map((item) => item.trim().toUpperCase()).filter(Boolean) })} />
             <FormField label="Этап обучения">
               <select value={student.trainingStage ?? ''} onChange={(event) => updateStudentPatch({ trainingStage: (event.target.value || undefined) as TrainingStage | undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                 <option value="">Пока не назначено</option>
@@ -158,6 +186,56 @@ export function AdminStudentDetail() {
             <Input label="Начало обучения" type="date" value={student.trainingStartDate ?? ''} onChange={(event) => updateStudentPatch({ trainingStartDate: event.target.value || undefined })} />
             <Input label="Начало вождения" type="date" value={student.drivingStartDate ?? ''} onChange={(event) => updateStudentPatch({ drivingStartDate: event.target.value || undefined })} />
           </div>
+        </Section>
+
+        <Section title="Прогресс" description="Минимальные учебные показатели без фейковых процентов готовности.">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Input label="Тем теории всего" type="number" value={String(progress?.theoryTopicsTotal ?? 0)} onChange={(event) => updateProgressPatch({ theoryTopicsTotal: Number(event.target.value) || 0 })} />
+            <Input label="Тем теории закрыто" type="number" value={String(progress?.theoryTopicsCompleted ?? 0)} onChange={(event) => updateProgressPatch({ theoryTopicsCompleted: Number(event.target.value) || 0 })} />
+            <Input label="Часов вождения всего" type="number" value={String(progress?.drivingHoursTotal ?? 56)} onChange={(event) => updateProgressPatch({ drivingHoursTotal: Number(event.target.value) || 0 })} />
+            <Input label="Часов вождения пройдено" type="number" value={String(progress?.drivingHoursCompleted ?? 0)} onChange={(event) => updateProgressPatch({ drivingHoursCompleted: Number(event.target.value) || 0 })} />
+            <FormField label="Внутренний экзамен">
+              <select value={progress?.internalExamStatus ?? (progress?.internalExamPassed ? 'passed' : 'not_scheduled')} onChange={(event) => updateProgressPatch({ internalExamStatus: event.target.value as NonNullable<typeof progress>['internalExamStatus'], internalExamPassed: event.target.value === 'passed' })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                {Object.entries(examStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </FormField>
+            <Input label="Дата внутреннего экзамена" type="date" value={progress?.internalExamDate ?? ''} onChange={(event) => updateProgressPatch({ internalExamDate: event.target.value || null })} />
+            <FormField label="Экзамен ГИБДД">
+              <select value={progress?.gibddExamStatus ?? 'not_scheduled'} onChange={(event) => updateProgressPatch({ gibddExamStatus: event.target.value as NonNullable<typeof progress>['gibddExamStatus'] })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                {Object.entries(examStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </FormField>
+            <Input label="Дата экзамена ГИБДД" type="date" value={progress?.gaidExamDate ?? ''} onChange={(event) => updateProgressPatch({ gaidExamDate: event.target.value || null })} />
+            <div className="md:col-span-2 xl:col-span-4">
+              <Input label="Заметки администратора" value={progress?.notes ?? ''} onChange={(event) => updateProgressPatch({ notes: event.target.value })} placeholder="Необязательно" />
+            </div>
+          </div>
+        </Section>
+
+        <Section title="Запросы ученика" description="Запросы переноса/отмены без автоматического изменения записи.">
+          {requests.length === 0 ? (
+            <EmptyState title="Запросов нет" description="Когда ученик попросит перенос или отмену, запрос появится здесь." />
+          ) : (
+            <div className="space-y-3">
+              {requests.map((request) => (
+                <article key={request.id} className="rounded-2xl border border-black/10 bg-white p-4">
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
+                    <div>
+                      <p className="text-sm font-bold text-[#111418]">{request.type === 'reschedule' ? 'Запрос переноса' : 'Запрос отмены'}</p>
+                      <p className="mt-1 text-sm font-semibold text-[#6F747A]">Причина: {request.reason}</p>
+                      {request.preferredTime ? <p className="mt-1 text-sm text-[#6F747A]">Желаемое время: {request.preferredTime}</p> : null}
+                      {request.comment ? <p className="mt-1 text-sm text-[#6F747A]">Комментарий: {request.comment}</p> : null}
+                    </div>
+                    <FormField label="Статус">
+                      <select value={request.status} onChange={(event) => { updateStudentRequestStatus(student.schoolId, request.id, event.target.value as StudentRequestStatus); setVersion((value) => value + 1); showToast('Статус запроса обновлён.', 'success') }} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                        {requestStatusOptions.map((status) => <option key={status} value={status}>{studentRequestStatusLabels[status]}</option>)}
+                      </select>
+                    </FormField>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </Section>
 
         <Section title="Документы" description="Минимальный checklist без фейковых статусов.">
