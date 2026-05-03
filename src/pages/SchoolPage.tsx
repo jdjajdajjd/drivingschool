@@ -43,6 +43,8 @@ export function SchoolPage() {
     )
   }
 
+  const categoryLabel = school.enabledCategoryCodes?.length ? school.enabledCategoryCodes.join(', ') : 'B'
+
   return (
     <div className="min-h-dvh bg-[#F5F6F8] text-[#050609]">
       <main className="mx-auto w-full max-w-[430px] px-4 pb-8 pt-5">
@@ -70,7 +72,7 @@ export function SchoolPage() {
           {[
             { value: String(branches.length), label: 'филиала' },
             { value: String(instructors.length), label: 'инструктора' },
-            { value: 'B', label: 'категория' },
+            { value: categoryLabel, label: school.enabledCategoryCodes && school.enabledCategoryCodes.length > 1 ? 'категории' : 'категория' },
           ].map((item) => (
             <div key={item.label} className="rounded-[20px] bg-white p-3 text-center">
               <p className="text-[20px] font-bold text-[#050609]">{item.value}</p>
@@ -98,7 +100,7 @@ export function SchoolPage() {
         {instructors.length > 0 ? (
           <section className="mt-4 rounded-[24px] bg-white p-4">
             <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Инструкторы</h2>
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
               {instructors.map((instructor) => (
                 <div key={instructor.id} className="min-w-[150px] rounded-[18px] bg-[#F7F8FA] p-3">
                   <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1F2BD8]"><UserRound size={20} /></div>

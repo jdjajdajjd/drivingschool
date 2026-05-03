@@ -154,7 +154,7 @@ export function DayChipsScroller({
   getCount: (date: string) => number
 }) {
   return (
-    <div className="-mx-4 overflow-x-auto px-4">
+    <div className="no-scrollbar -mx-4 overflow-x-auto px-4">
       <div className="flex min-w-max gap-2">
         {days.map((date, index) => {
           const active = date === selectedDate

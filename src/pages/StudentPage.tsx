@@ -137,7 +137,7 @@ function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (valu
     { value: 'extra', label: 'Дополнительное' },
   ]
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
       {items.map((item, index) => (
         <button key={item.value} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609] active:scale-[0.98]" style={{ borderColor: value === item.value ? '#050609' : '#E1E3EB' }} onClick={() => onChange(item.value)}>
           {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
@@ -151,7 +151,7 @@ function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (valu
 function InstructorChips({ instructors, selectedId, onChange }: { instructors: Instructor[]; selectedId: string; onChange: (id: string) => void }) {
   const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId))
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+    <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
       {ordered.map((instructor) => {
         const active = instructor.id === selectedId
         return (
@@ -232,7 +232,7 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
         <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
         <button onClick={() => onSelect(addDays(selectedDate, 7))} aria-label="Следующая неделя"><ChevronRight size={22} /></button>
       </div>
-      <div className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1">
+      <div className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 pb-1">
         {days.map((date) => {
           const active = isSameDay(date, selectedDate)
           const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
@@ -245,7 +245,7 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
           )
         })}
       </div>
-      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
         {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[260px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по фильтру. Попробуйте другой тип занятия или инструктора.</div>}
       </div>
     </div>
@@ -593,7 +593,7 @@ export function StudentPage() {
                 <h2 className={sectionTitle}>Мои записи</h2>
                 <button className="grid h-10 w-10 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
               </div>
-              <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
                 {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
               </div>
             </section>
