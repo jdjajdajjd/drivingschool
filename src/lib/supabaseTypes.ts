@@ -122,66 +122,6 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['students']['Row']>
         Relationships: []
       }
-      student_progress: {
-        Row: {
-          id: string
-          student_id: string
-          school_id: string
-          theory_topics_total: number
-          theory_topics_completed: number
-          driving_hours_total: number
-          driving_hours_completed: number
-          internal_exam_passed: boolean
-          internal_exam_date: string | null
-          internal_exam_status: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
-          gaid_exam_date: string | null
-          gibdd_exam_status: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
-          notes: string
-          updated_at: string
-        }
-        Insert: Partial<Database['public']['Tables']['student_progress']['Row']> & {
-          id: string
-          student_id: string
-          school_id: string
-        }
-        Update: Partial<Database['public']['Tables']['student_progress']['Row']>
-        Relationships: []
-      }
-      student_documents: {
-        Row: {
-          student_id: string
-          type: 'passport' | 'medical_certificate' | 'snils' | 'contract' | 'photo' | 'state_fee'
-          status: 'missing' | 'pending' | 'provided' | 'approved' | 'rejected'
-          updated_at: string
-        }
-        Insert: Database['public']['Tables']['student_documents']['Row']
-        Update: Partial<Database['public']['Tables']['student_documents']['Row']>
-        Relationships: []
-      }
-      student_requests: {
-        Row: {
-          id: string
-          school_id: string
-          student_id: string
-          booking_id: string | null
-          type: 'reschedule' | 'cancel'
-          status: 'new' | 'reviewing' | 'resolved' | 'rejected'
-          reason: string
-          preferred_time: string | null
-          comment: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Partial<Database['public']['Tables']['student_requests']['Row']> & {
-          id: string
-          school_id: string
-          student_id: string
-          type: 'reschedule' | 'cancel'
-          reason: string
-        }
-        Update: Partial<Database['public']['Tables']['student_requests']['Row']>
-        Relationships: []
-      }
       slots: {
         Row: {
           id: string

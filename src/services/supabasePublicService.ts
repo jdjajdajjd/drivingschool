@@ -8,6 +8,11 @@ type InstructorRow = Database['public']['Tables']['instructors']['Row']
 type SlotRow = Database['public']['Tables']['slots']['Row']
 type BookingRow = Database['public']['Tables']['bookings']['Row']
 type StudentRow = Database['public']['Tables']['students']['Row']
+type UntypedSupabase = {
+  from: (table: string) => any
+}
+
+const untypedSupabase = supabase as unknown as UntypedSupabase
 
 export interface PublicSchoolBundle {
   school: School
@@ -189,7 +194,7 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
 
 export async function getStudentProgressFromSupabase(studentId: string): Promise<StudentProgress | null> {
   if (!isSupabaseConfigured()) return null
-  const { data, error } = await supabase.from('student_progress').select('*').eq('student_id', studentId).maybeSingle()
+  const { data, error } = await untypedSupabase.from('student_progress').select('*').eq('student_id', studentId).maybeSingle()
   if (error) throw error
   if (!data) return null
   return {
@@ -212,7 +217,7 @@ export async function getStudentProgressFromSupabase(studentId: string): Promise
 
 export async function upsertStudentProgressInSupabase(progress: StudentProgress): Promise<void> {
   if (!isSupabaseConfigured()) return
-  const { error } = await supabase.from('student_progress').upsert({
+  const { error } = await untypedSupabase.from('student_progress').upsert({
     id: progress.id,
     student_id: progress.studentId,
     school_id: progress.schoolId,
@@ -233,14 +238,14 @@ export async function upsertStudentProgressInSupabase(progress: StudentProgress)
 
 export async function getStudentDocumentsFromSupabase(studentId: string): Promise<StudentDocument[]> {
   if (!isSupabaseConfigured()) return []
-  const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', studentId)
+  const { data, error } = await untypedSupabase.from('student_documents').select('*').eq('student_id', studentId)
   if (error) throw error
-  return (data ?? []).map((row) => ({ studentId: row.student_id, type: row.type, status: row.status, updatedAt: row.updated_at }))
+  return (data ?? []).map((row: any) => ({ studentId: row.student_id, type: row.type, status: row.status, updatedAt: row.updated_at }))
 }
 
 export async function upsertStudentDocumentsInSupabase(documents: StudentDocument[]): Promise<void> {
   if (!isSupabaseConfigured() || documents.length === 0) return
-  const { error } = await supabase.from('student_documents').upsert(documents.map((document) => ({
+  const { error } = await untypedSupabase.from('student_documents').upsert(documents.map((document) => ({
     student_id: document.studentId,
     type: document.type,
     status: document.status,
@@ -251,9 +256,9 @@ export async function upsertStudentDocumentsInSupabase(documents: StudentDocumen
 
 export async function getStudentRequestsFromSupabase(schoolId: string): Promise<StudentRequest[]> {
   if (!isSupabaseConfigured()) return []
-  const { data, error } = await supabase.from('student_requests').select('*').eq('school_id', schoolId).order('created_at', { ascending: false })
+  const { data, error } = await untypedSupabase.from('student_requests').select('*').eq('school_id', schoolId).order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map((row: any) => ({
     id: row.id,
     schoolId: row.school_id,
     studentId: row.student_id,
@@ -270,7 +275,7 @@ export async function getStudentRequestsFromSupabase(schoolId: string): Promise<
 
 export async function createStudentRequestInSupabase(request: StudentRequest): Promise<void> {
   if (!isSupabaseConfigured()) return
-  const { error } = await supabase.from('student_requests').insert({
+  const { error } = await untypedSupabase.from('student_requests').insert({
     id: request.id,
     school_id: request.schoolId,
     student_id: request.studentId,
@@ -288,7 +293,7 @@ export async function createStudentRequestInSupabase(request: StudentRequest): P
 
 export async function updateStudentRequestStatusInSupabase(schoolId: string, requestId: string, status: StudentRequestStatus): Promise<void> {
   if (!isSupabaseConfigured()) return
-  const { error } = await supabase.from('student_requests').update({ status, updated_at: new Date().toISOString() }).eq('school_id', schoolId).eq('id', requestId)
+  const { error } = await untypedSupabase.from('student_requests').update({ status, updated_at: new Date().toISOString() }).eq('school_id', schoolId).eq('id', requestId)
   if (error) throw error
 }
 
@@ -326,8 +331,8 @@ export async function createSupabaseBooking(params: {
 
   return {
     bookingGroupId: rows[0]?.booking_group_id ?? '',
-    bookingIds: rows.map((row) => row.booking_id),
-    slotIds: rows.map((row) => row.slot_id),
+    bookingIds: rows.map((row: any) => row.booking_id),
+    slotIds: rows.map((row: any) => row.slot_id),
   }
 }
 
@@ -466,7 +471,7 @@ export async function updateStudentProfileInSupabase(params: {
     driving_end_date: params.drivingEndDate ?? null,
   }
   if (Object.values(studentPatch).some((value) => value !== null)) {
-    const { error: updateError } = await supabase.from('students').update(studentPatch).eq('id', row.student_id)
+    const { error: updateError } = await untypedSupabase.from('students').update(studentPatch).eq('id', row.student_id)
     if (updateError) throw updateError
   }
 
