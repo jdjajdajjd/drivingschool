@@ -1,5 +1,5 @@
 import type { Booking, Branch, Instructor, School, Slot, Student } from '../types'
-import { supabase } from '../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Database } from '../lib/supabaseTypes'
 
 type SchoolRow = Database['public']['Tables']['schools']['Row']
@@ -197,6 +197,10 @@ export async function createSupabaseBooking(params: {
   studentPhone: string
   slotIds: string[]
 }): Promise<SupabaseBookingResult> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase is not configured.')
+  }
+
   const { data, error } = await supabase.rpc('public_create_booking', {
     p_school_id: params.schoolId,
     p_student_name: params.studentName,
@@ -215,6 +219,10 @@ export async function createSupabaseBooking(params: {
 }
 
 export async function getBookingByIdFromSupabase(bookingId: string): Promise<SupabaseBookingBundle | null> {
+  if (!isSupabaseConfigured()) {
+    return null
+  }
+
   const { data: bookingRow, error } = await supabase
     .from('bookings')
     .select('*')
@@ -245,6 +253,10 @@ export async function getBookingByIdFromSupabase(bookingId: string): Promise<Sup
 }
 
 export async function getBookingGroupFromSupabase(bookingId: string): Promise<SupabaseBookingBundle[]> {
+  if (!isSupabaseConfigured()) {
+    return []
+  }
+
   const first = await getBookingByIdFromSupabase(bookingId)
   if (!first) return []
 
@@ -307,6 +319,10 @@ export async function updateStudentProfileInSupabase(params: {
   password: string
   avatarUrl: string
 }): Promise<{ studentId: string; normalizedPhone: string }> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase is not configured.')
+  }
+
   const { data, error } = await supabase.rpc('public_update_student_profile', {
     p_school_id: params.schoolId,
     p_phone: params.phone,
