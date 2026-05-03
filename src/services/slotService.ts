@@ -1,6 +1,6 @@
 import { addMinutes, eachDayOfInterval, format, isBefore, parseISO } from 'date-fns'
 import { generateId } from '../lib/utils'
-import type { BulkSlotCreateResult, ResolvedSlot, Slot, SlotStatus } from '../types'
+import type { BulkSlotCreateResult, LessonType, ResolvedSlot, Slot, SlotStatus } from '../types'
 import { db } from './storage'
 import { getBookingById, getSlotDateTime } from './bookingService'
 import {
@@ -17,6 +17,7 @@ export interface CreateSlotParams {
   date: string
   startTime: string
   duration: number
+  lessonType: LessonType
 }
 
 export interface CreateBulkSlotsParams {
@@ -29,6 +30,7 @@ export interface CreateBulkSlotsParams {
   windowStart: string
   windowEnd: string
   duration: number
+  lessonType: LessonType
   breakMinutes: number
 }
 
@@ -106,6 +108,7 @@ export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot
     date: params.date,
     time: params.startTime,
     duration: params.duration,
+    lessonType: params.lessonType,
     status: 'available',
     createdAt: new Date().toISOString(),
   }
@@ -120,6 +123,7 @@ export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot
       date: slot.date,
       startTime: slot.time,
       duration: slot.duration,
+      lessonType: slot.lessonType ?? 'main',
     }),
   )
   return { ok: true, slot }
@@ -197,6 +201,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; r
         date: entry.date,
         time: entry.time,
         duration: params.duration,
+        lessonType: params.lessonType,
         status: 'available',
         createdAt: new Date().toISOString(),
       }
@@ -211,6 +216,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; r
           date: slot.date,
           startTime: slot.time,
           duration: slot.duration,
+          lessonType: slot.lessonType ?? 'main',
         }),
       )
       created.push(slot)

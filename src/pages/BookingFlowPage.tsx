@@ -34,6 +34,7 @@ import {
 } from '../services/bookingService'
 import { findAnyStudentProfile, saveStudentProfile } from '../services/studentProfile'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
+import { lessonTypeLabel } from './student/studentUtils'
 import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
 import { format, isSameDay, parseISO } from 'date-fns'
@@ -185,7 +186,7 @@ function FastSlotCard({
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 20, lineHeight: '26px', fontWeight: 700, letterSpacing: '-0.02em', color: '#101216' }}>{formatTimeRange(item.slot)}</p>
-          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#8B929C' }}>{item.slot.duration} минут</p>
+          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#8B929C' }}>{lessonTypeLabel(item.slot)} · {item.slot.duration} минут</p>
         </div>
         <SlotStatusBadge mine={item.mine} busy={busy} />
       </div>

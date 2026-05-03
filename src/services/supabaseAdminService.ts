@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { School, SlotStatus } from '../types'
+import type { LessonType, School, SlotStatus } from '../types'
 import type { BranchInput } from './branchService'
 import type { InstructorInput } from './instructorService'
 import { getAccessPassword } from './accessControl'
@@ -150,6 +150,7 @@ export async function createSupabaseSlot(params: {
   date: string
   startTime: string
   duration: number
+  lessonType: LessonType
 }): Promise<void> {
   await runAdminMutation(
     supabase.rpc('public_create_slot', {
@@ -160,6 +161,7 @@ export async function createSupabaseSlot(params: {
       p_date: params.date,
       p_start_time: params.startTime,
       p_duration: params.duration,
+      p_lesson_type: params.lessonType,
       p_staff_password: getAdminPassword(),
     }),
   )

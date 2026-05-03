@@ -7,6 +7,7 @@ import { getInstructorPhoto } from '../../services/instructorPhotos'
 import { loadLessonDescription } from '../../services/studentProfile'
 import { useToast } from '../ui/Toast'
 import type { Branch, Booking, Instructor, School, Slot } from '../../types'
+import { lessonTypeLabel } from '../../pages/student/studentUtils'
 import {
   formatDate,
   formatDayOfWeek,
@@ -238,7 +239,7 @@ export function TimeSlotGrid({
               className="mt-0.5 block text-[12px] font-medium"
               style={{ color: '#6F747A' }}
             >
-              {formatDuration(slot.duration)}
+              {lessonTypeLabel(slot)} · {formatDuration(slot.duration)}
             </span>
           </motion.button>
         )
@@ -317,7 +318,7 @@ export function BookingDetailsCard({
           icon={CalendarDays}
           label="Дата и время"
           value={slot ? formatHumanDate(slot.date) : 'Не выбрано'}
-          subvalue={slot ? `${formatTimeRange(slot)} · ${formatDuration(slot.duration)}` : undefined}
+          subvalue={slot ? `${formatTimeRange(slot)} · ${lessonTypeLabel(slot)} · ${formatDuration(slot.duration)}` : undefined}
         />
         <DetailRow
           icon={UserRound}

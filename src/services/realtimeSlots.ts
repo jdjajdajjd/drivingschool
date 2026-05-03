@@ -118,6 +118,7 @@ class RealtimeSlotService {
             date: row.date as string,
             time: row.time as string,
             duration: row.duration as number,
+            lessonType: row.lesson_type as Slot['lessonType'],
             status: row.status as Slot['status'],
             bookingId: row.booking_id as string | undefined,
           }
@@ -190,7 +191,7 @@ class RealtimeSlotService {
     try {
       const { data, error } = await supabase
         .from('slots')
-        .select('id, school_id, instructor_id, branch_id, date, time, duration, status, booking_id')
+        .select('id, school_id, instructor_id, branch_id, date, time, duration, lesson_type, status, booking_id')
         .eq('school_id', this.schoolId)
         .gte('date', format(startOfDay(new Date()), 'yyyy-MM-dd'))
 
@@ -204,6 +205,7 @@ class RealtimeSlotService {
         date: row.date,
         time: row.time,
         duration: row.duration ?? 90,
+        lessonType: row.lesson_type ?? undefined,
         status: row.status as Slot['status'],
         bookingId: row.booking_id ?? undefined,
       }))

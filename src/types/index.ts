@@ -48,6 +48,7 @@ export interface Instructor {
 }
 
 export type SlotStatus = 'available' | 'booked' | 'cancelled'
+export type LessonType = 'main' | 'extra'
 
 export interface Slot {
   id: string
@@ -57,6 +58,7 @@ export interface Slot {
   date: string
   time: string
   duration: number
+  lessonType?: LessonType
   status: SlotStatus
   bookingId?: string
   createdAt?: string

@@ -165,6 +165,7 @@ function generateSlots(): Slot[] {
           date,
           time,
           duration: SCHOOL.defaultLessonDuration ?? 90,
+          lessonType: time >= '15:00' ? 'extra' : 'main',
           status: 'available',
           createdAt: new Date().toISOString(),
         })

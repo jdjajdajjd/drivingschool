@@ -16,10 +16,20 @@ import { formatDuration, formatInstructorName } from '../../lib/utils'
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { createBulkSlots, createSlot, deleteSlot, getSlotsBySchool, updateSlotStatus } from '../../services/slotService'
 import { db } from '../../services/storage'
+import type { LessonType } from '../../types'
 
 type SlotStatusFilter = 'all' | 'available' | 'booked' | 'cancelled'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'
 type CreateMode = 'single' | 'bulk'
+
+const lessonTypeOptions: Array<{ value: LessonType; label: string }> = [
+  { value: 'main', label: 'Основное' },
+  { value: 'extra', label: 'Дополнительное' },
+]
+
+function lessonTypeLabel(type: LessonType | undefined) {
+  return type === 'extra' ? 'Дополнительное' : 'Основное'
+}
 
 function selectClassName() {
   return 'h-11 w-full rounded-2xl border rgba(0,0,0,0.06) bg-white px-3.5 text-[15px] #111418 outline-none transition focus:rgba(246,184,77,0.20) focus:ring-4 focus:ring-accent-soft'
@@ -49,6 +59,7 @@ export function AdminSlots() {
     date: '',
     startTime: '10:00',
     duration: defaultDuration,
+    lessonType: 'main' as LessonType,
   })
 
   const [bulkForm, setBulkForm] = useState({
@@ -60,6 +71,7 @@ export function AdminSlots() {
     windowStart: '09:00',
     windowEnd: '18:00',
     duration: defaultDuration,
+    lessonType: 'main' as LessonType,
     breakMinutes: '15',
   })
 
@@ -118,6 +130,7 @@ export function AdminSlots() {
       date: singleForm.date,
       startTime: singleForm.startTime,
       duration: Number(singleForm.duration),
+      lessonType: singleForm.lessonType,
     })
 
     if (!result.ok) {
@@ -139,6 +152,7 @@ export function AdminSlots() {
       windowStart: bulkForm.windowStart,
       windowEnd: bulkForm.windowEnd,
       duration: Number(bulkForm.duration),
+      lessonType: bulkForm.lessonType,
       breakMinutes: Number(bulkForm.breakMinutes),
     })
 
@@ -226,6 +240,11 @@ export function AdminSlots() {
                 <Input label="Дата до" type="date" value={bulkForm.dateTo} onChange={(event) => setBulkForm((current) => ({ ...current, dateTo: event.target.value }))} />
                 <Input label="Начало дня" type="time" value={bulkForm.windowStart} onChange={(event) => setBulkForm((current) => ({ ...current, windowStart: event.target.value }))} />
                 <Input label="Конец дня" type="time" value={bulkForm.windowEnd} onChange={(event) => setBulkForm((current) => ({ ...current, windowEnd: event.target.value }))} />
+                <FormField label="Тип занятия">
+                  <select value={bulkForm.lessonType} onChange={(event) => setBulkForm((current) => ({ ...current, lessonType: event.target.value as LessonType }))} className={selectClassName()}>
+                    {lessonTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </FormField>
                 <Input label="Длительность" type="number" step={15} helperText={formatDuration(Number(bulkForm.duration || defaultDuration))} value={bulkForm.duration} onChange={(event) => setBulkForm((current) => ({ ...current, duration: event.target.value }))} />
                 <Input label="Перерыв, минут" type="number" value={bulkForm.breakMinutes} onChange={(event) => setBulkForm((current) => ({ ...current, breakMinutes: event.target.value }))} />
               </div>
@@ -288,6 +307,11 @@ export function AdminSlots() {
               </FormField>
               <Input label="Дата" type="date" value={singleForm.date} onChange={(event) => setSingleForm((current) => ({ ...current, date: event.target.value }))} />
               <Input label="Время" type="time" value={singleForm.startTime} onChange={(event) => setSingleForm((current) => ({ ...current, startTime: event.target.value }))} />
+              <FormField label="Тип занятия">
+                <select value={singleForm.lessonType} onChange={(event) => setSingleForm((current) => ({ ...current, lessonType: event.target.value as LessonType }))} className={selectClassName()}>
+                  {lessonTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </FormField>
               <Input label="Длительность" type="number" step={15} helperText={formatDuration(Number(singleForm.duration || defaultDuration))} value={singleForm.duration} onChange={(event) => setSingleForm((current) => ({ ...current, duration: event.target.value }))} />
               <div className="md:col-span-2 xl:col-span-5">
                 <Button size="lg" className="min-h-12 text-base" onClick={handleCreateSingle}>
@@ -359,6 +383,7 @@ export function AdminSlots() {
                           <p className="caption">Дата и время</p>
                           <p className="mt-1 text-base font-bold #111418">{formatHumanDate(entry.slot.date, false)}</p>
                           <p className="text-sm font-semibold #C97F10">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
+                          <p className="text-xs font-semibold #6F747A">{lessonTypeLabel(entry.slot.lessonType)}</p>
                         </div>
                         <div>
                           <p className="caption">Филиал</p>

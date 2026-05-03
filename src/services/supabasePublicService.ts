@@ -86,6 +86,7 @@ function mapSlot(row: SlotRow): Slot {
     date: row.date,
     time: row.time.slice(0, 5),
     duration: row.duration,
+    lessonType: row.lesson_type ?? undefined,
     status: row.status,
     bookingId: row.booking_id ?? undefined,
     createdAt: row.created_at,

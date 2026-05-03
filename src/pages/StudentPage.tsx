@@ -43,7 +43,7 @@ import { getInstructorPhoto } from '../services/instructorPhotos'
 import type { Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
 import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, StudentView } from './student/studentTypes'
-import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonType, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, weekdayShort } from './student/studentUtils'
+import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, initials, lessonTime, lessonTypeLabel, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, slotTimeRange, weekdayShort } from './student/studentUtils'
 
 void React
 
@@ -115,7 +115,7 @@ function AvailableSlotCard({ slot, instructor, onBook, compact = false }: { slot
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[19px] font-bold leading-6 tracking-[-0.02em] text-[#050609]">{slotTimeRange(slot)}</p>
-              <p className="mt-0.5 truncate text-[14px] font-semibold text-[#050609]">{lessonType(slot) === 'extra' ? 'Дополнительное' : 'Основное'} вождение</p>
+              <p className="mt-0.5 truncate text-[14px] font-semibold text-[#050609]">{lessonTypeLabel(slot)}</p>
             </div>
             <StatusPill>Свободно</StatusPill>
           </div>

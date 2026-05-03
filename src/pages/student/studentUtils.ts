@@ -24,8 +24,14 @@ export function weekdayShort(date: Date) {
 }
 
 export function lessonType(slot: Slot): LessonFilter {
+  if (slot.lessonType === 'main' || slot.lessonType === 'extra') return slot.lessonType
   const hour = Number(slot.time.split(':')[0] ?? 0)
   return slot.duration > 90 || hour >= 15 ? 'extra' : 'main'
+}
+
+export function lessonTypeLabel(slot: Slot | null) {
+  if (!slot) return 'Тип занятия не выбран'
+  return lessonType(slot) === 'extra' ? 'Дополнительное вождение' : 'Основное вождение'
 }
 
 export function filterSlots(slots: Slot[], instructorId: string, filter: LessonFilter) {

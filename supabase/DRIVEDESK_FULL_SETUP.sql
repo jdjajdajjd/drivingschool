@@ -53,6 +53,7 @@ drop function if exists public.public_reschedule_booking(text, text, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text);
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer, text);
+drop function if exists public.public_create_slot(text, text, text, text, text, text, integer, text, text);
 drop function if exists public.public_update_slot_status(text, text, text);
 drop function if exists public.public_delete_slot(text, text);
 drop function if exists public.public_upsert_branch(text, text, text, text, text, boolean, text);
@@ -313,6 +314,7 @@ create or replace function public.public_create_slot(
   p_date text,
   p_start_time text,
   p_duration integer,
+  p_lesson_type text,
   p_staff_password text
 )
 returns table (
@@ -339,6 +341,10 @@ begin
     raise exception 'Slot duration is invalid.';
   end if;
 
+  if p_lesson_type not in ('main', 'extra') then
+    raise exception 'Slot lesson type is invalid.';
+  end if;
+
   if not exists (
     select 1
     from public.instructors
@@ -351,9 +357,9 @@ begin
   end if;
 
   insert into public.slots (
-    id, school_id, branch_id, instructor_id, date, time, duration, status
+    id, school_id, branch_id, instructor_id, date, time, duration, lesson_type, status
   ) values (
-    p_slot_id, p_school_id, p_branch_id, p_instructor_id, v_slot_date, v_slot_time, p_duration, 'available'
+    p_slot_id, p_school_id, p_branch_id, p_instructor_id, v_slot_date, v_slot_time, p_duration, p_lesson_type, 'available'
   );
 
   slot_id := p_slot_id;
@@ -642,7 +648,7 @@ grant execute on function public.public_cancel_booking(text, text) to anon, auth
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text, text) to anon, authenticated;
 grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text) to anon, authenticated;
-grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text) to anon, authenticated;
+grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text, text) to anon, authenticated;
 grant execute on function public.public_update_slot_status(text, text, text) to anon, authenticated;
 grant execute on function public.public_delete_slot(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_branch(text, text, text, text, text, boolean, text) to anon, authenticated;
@@ -676,6 +682,7 @@ drop function if exists public.public_update_school_settings(text, text, text, t
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text);
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer);
 drop function if exists public.public_create_slot(text, text, text, text, text, text, integer, text);
+drop function if exists public.public_create_slot(text, text, text, text, text, text, integer, text, text);
 drop function if exists public.public_update_slot_status(text, text);
 drop function if exists public.public_update_slot_status(text, text, text);
 drop function if exists public.public_delete_slot(text);
@@ -801,6 +808,7 @@ create table public.slots (
   date date not null,
   time time not null,
   duration integer not null default 90 check (duration between 30 and 240),
+  lesson_type text not null default 'main' check (lesson_type in ('main', 'extra')),
   status text not null default 'available' check (status in ('available', 'booked', 'cancelled')),
   booking_id text,
   created_at timestamptz not null default now(),
@@ -1329,6 +1337,7 @@ create or replace function public.public_create_slot(
   p_date text,
   p_start_time text,
   p_duration integer,
+  p_lesson_type text,
   p_staff_password text
 )
 returns table (
@@ -1355,6 +1364,10 @@ begin
     raise exception 'Slot duration is invalid.';
   end if;
 
+  if p_lesson_type not in ('main', 'extra') then
+    raise exception 'Slot lesson type is invalid.';
+  end if;
+
   if not exists (
     select 1
     from public.instructors
@@ -1367,9 +1380,9 @@ begin
   end if;
 
   insert into public.slots (
-    id, school_id, branch_id, instructor_id, date, time, duration, status
+    id, school_id, branch_id, instructor_id, date, time, duration, lesson_type, status
   ) values (
-    p_slot_id, p_school_id, p_branch_id, p_instructor_id, v_slot_date, v_slot_time, p_duration, 'available'
+    p_slot_id, p_school_id, p_branch_id, p_instructor_id, v_slot_date, v_slot_time, p_duration, p_lesson_type, 'available'
   );
 
   slot_id := p_slot_id;
@@ -1842,7 +1855,7 @@ grant execute on function public.public_cancel_booking(text, text) to anon, auth
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text, text) to anon, authenticated;
 grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text) to anon, authenticated;
-grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text) to anon, authenticated;
+grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text, text) to anon, authenticated;
 grant execute on function public.public_update_slot_status(text, text, text) to anon, authenticated;
 grant execute on function public.public_delete_slot(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_branch(text, text, text, text, text, boolean, text) to anon, authenticated;
