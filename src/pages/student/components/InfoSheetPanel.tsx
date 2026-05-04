@@ -44,9 +44,8 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
   const title = type === 'student' ? 'Инфо ученика' : type === 'profileData' ? 'Данные ученика' : type === 'tips' ? 'Советы' : theorySheet ? 'Теория' : 'Настройки'
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end bg-black/30 px-3 pb-3" onClick={onClose}>
-      <section className="mx-auto max-h-[76vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
-        <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-[#D6D8DD]" />
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-3 py-5" onClick={onClose}>
+      <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-[21px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
           <button className="rounded-full px-3 py-2 text-[14px] font-semibold text-[#8B8D94]" onClick={onClose}>Закрыть</button>

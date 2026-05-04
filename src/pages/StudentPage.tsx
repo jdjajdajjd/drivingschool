@@ -83,6 +83,53 @@ const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
 const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
 const sectionTitle = 'text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
 
+function HorizontalScroller({ children, className, contentClassName, step = 280 }: { children: React.ReactNode; className?: string; contentClassName?: string; step?: number }) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  function updateScrollState() {
+    const element = ref.current
+    if (!element) return
+    setCanScrollLeft(element.scrollLeft > 4)
+    setCanScrollRight(element.scrollLeft + element.clientWidth < element.scrollWidth - 4)
+  }
+
+  useEffect(() => {
+    updateScrollState()
+    const element = ref.current
+    if (!element) return
+    element.addEventListener('scroll', updateScrollState, { passive: true })
+    window.addEventListener('resize', updateScrollState)
+    return () => {
+      element.removeEventListener('scroll', updateScrollState)
+      window.removeEventListener('resize', updateScrollState)
+    }
+  }, [children])
+
+  function scrollByDirection(direction: -1 | 1) {
+    ref.current?.scrollBy({ left: direction * step, behavior: 'smooth' })
+  }
+
+  return (
+    <div className={cn('relative', className)}>
+      {canScrollLeft ? (
+        <button type="button" className="absolute left-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-[#E6E8EE] bg-white/90 text-[#1F2BD8] shadow-[0_8px_24px_rgba(15,20,25,0.10)] backdrop-blur active:scale-[0.96]" onClick={() => scrollByDirection(-1)} aria-label="Прокрутить влево">
+          <ChevronLeft size={17} />
+        </button>
+      ) : null}
+      <div ref={ref} className={cn('no-scrollbar overflow-x-auto scroll-smooth', contentClassName)}>
+        {children}
+      </div>
+      {canScrollRight ? (
+        <button type="button" className="absolute right-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-[#E6E8EE] bg-white/90 text-[#1F2BD8] shadow-[0_8px_24px_rgba(15,20,25,0.10)] backdrop-blur active:scale-[0.96]" onClick={() => scrollByDirection(1)} aria-label="Прокрутить вправо">
+          <ChevronRight size={17} />
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (value: LessonFilter) => void }) {
   const items: Array<{ value: LessonFilter; label: string }> = [
     { value: 'all', label: 'Все' },
@@ -138,9 +185,8 @@ function InstructorSheet({ open, instructors, selectedId, assignedId, onSelect, 
   if (!open) return null
   const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId) || Number(right.id === assignedId) - Number(left.id === assignedId))
   return (
-    <div className="fixed inset-0 z-[70] flex items-end bg-black/25 px-3 pb-3" onClick={onClose}>
-      <section className="mx-auto w-full max-w-[430px] rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
-        <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-[#D6D8DD]" />
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-3 py-5" onClick={onClose}>
+      <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Выберите инструктора</h2>
           <button className="rounded-full px-3 py-2 text-[14px] font-semibold text-[#8B8D94]" onClick={onClose}>Закрыть</button>
@@ -188,22 +234,26 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
         <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
         <button onClick={() => onSelect(addDays(selectedDate, 7))} aria-label="Следующая неделя"><ChevronRight size={22} /></button>
       </div>
-      <div className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 pb-1">
-        {days.map((date) => {
-          const active = isSameDay(date, selectedDate)
-          const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
-          return (
-            <button key={date.toISOString()} className={cn('grid shrink-0 place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ minHeight: 68, minWidth: 44 }} onClick={() => onSelect(date)}>
-              <span className="text-[12px] font-semibold uppercase">{weekdayShort(date)}</span>
-              <span className="text-[20px] font-bold leading-6">{format(date, 'd')}</span>
-              <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#35C45A]' : 'bg-transparent')} />
-            </button>
-          )
-        })}
-      </div>
-      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-        {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[260px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по фильтру. Попробуйте другой тип занятия или инструктора.</div>}
-      </div>
+      <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={336}>
+        <div className="flex gap-1">
+          {days.map((date) => {
+            const active = isSameDay(date, selectedDate)
+            const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
+            return (
+              <button key={date.toISOString()} className={cn('grid shrink-0 place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ flexBasis: 'calc((100% - 24px) / 7)', minHeight: 68, minWidth: 44 }} onClick={() => onSelect(date)}>
+                <span className="text-[12px] font-semibold uppercase">{weekdayShort(date)}</span>
+                <span className="text-[20px] font-bold leading-6">{format(date, 'd')}</span>
+                <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#35C45A]' : 'bg-transparent')} />
+              </button>
+            )
+          })}
+        </div>
+      </HorizontalScroller>
+      <HorizontalScroller className="-mx-4 mt-3" contentClassName="px-4 pb-1" step={272}>
+        <div className="flex gap-2">
+          {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[260px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по фильтру. Попробуйте другой тип занятия или инструктора.</div>}
+        </div>
+      </HorizontalScroller>
     </div>
   )
 }
@@ -250,11 +300,11 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
 
 function TheoryCard({ title, text, tone, icon: Icon, action, onClick }: { title: string; text: string; tone: string; icon: typeof BookOpen; action: string; onClick: () => void }) {
   return (
-    <button className="relative min-h-[150px] overflow-hidden rounded-[22px] p-4 text-left active:scale-[0.98]" style={{ background: tone }} onClick={onClick}>
-      <h3 className="text-[21px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">{title}</h3>
-      <p className="mt-2 whitespace-pre-line text-[15px] font-medium leading-5 text-[#8B8D94]">{text}</p>
-      <span className="absolute bottom-4 left-4 rounded-full bg-white/80 px-3 py-1.5 text-[12px] font-bold text-[#1F2BD8]">{action}</span>
-      <div className="absolute bottom-3 right-3 grid h-12 w-12 place-items-center rounded-[18px] bg-white/70 text-[#1F2BD8]">
+    <button className="relative flex min-h-[142px] flex-col overflow-hidden rounded-[22px] p-3.5 text-left active:scale-[0.98]" style={{ background: tone }} onClick={onClick}>
+      <h3 className="text-[20px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">{title}</h3>
+      <p className="mt-1.5 whitespace-pre-line pr-10 text-[14px] font-semibold leading-5 text-[#7B7F87]">{text}</p>
+      <span className="mt-auto inline-flex w-fit rounded-full bg-white/85 px-3 py-1.5 text-[12px] font-bold text-[#1F2BD8]">{action}</span>
+      <div className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-[16px] bg-white/70 text-[#1F2BD8]">
         <Icon size={25} />
       </div>
     </button>
@@ -528,9 +578,11 @@ export function StudentPage() {
                 <h2 className={sectionTitle}>Мои записи</h2>
                 <button className="grid h-10 w-10 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
               </div>
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-                {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
-              </div>
+              <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={312}>
+                <div className="flex gap-3">
+                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
+                </div>
+              </HorizontalScroller>
             </section>
 
             <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => navigate(`/student/book?slot=${slot.id}`)} />
@@ -844,9 +896,8 @@ export function StudentPage() {
       <InstructorSheet open={instructorSheetOpen} instructors={instructors} selectedId={selectedInstructor?.id ?? ''} assignedId={assignedInstructorId} onSelect={setSelectedInstructorId} onClose={() => setInstructorSheetOpen(false)} />
       <InfoSheetPanel type={infoSheet} school={school} profile={profile} progress={progress} student={student} selectedInstructor={selectedInstructor} onClose={() => setInfoSheet(null)} />
       {requestSheetOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-end bg-black/25 px-3 pb-3" onClick={() => setRequestSheetOpen(false)}>
-          <section className="mx-auto w-full max-w-[430px] rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
-            <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-[#D6D8DD]" />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-3 py-5" onClick={() => setRequestSheetOpen(false)}>
+          <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
             <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Запросить перенос</h2>
             <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Администратор увидит запрос и подберёт новое время.</p>
             <div className="mt-4 space-y-3">
