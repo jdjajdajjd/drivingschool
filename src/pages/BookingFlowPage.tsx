@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Location01Icon, Refresh03Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
@@ -561,14 +562,17 @@ export function BookingFlowPage() {
     <div className="min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
       <main className="mx-auto w-full max-w-[430px] overflow-x-hidden px-4 pb-8 pt-5">
         <header className="mb-4">
-          <button
-            onClick={goBack}
-            className="mb-3 flex min-h-10 items-center gap-2 rounded-md px-1 text-[13px] font-semibold transition active:scale-[0.97]"
-            style={{ color: '#6F747A', minHeight: 40 }}
-          >
-            <ArrowLeft size={16} />
-            Назад
-          </button>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <button
+              onClick={goBack}
+              className="flex min-h-10 items-center gap-2 rounded-md px-1 text-[13px] font-semibold transition active:scale-[0.97]"
+              style={{ color: '#6F747A', minHeight: 40 }}
+            >
+              <ArrowLeft size={16} />
+              Назад
+            </button>
+            <ThemeToggle compact />
+          </div>
           {step !== 'date' ? <Progress step={step} /> : null}
         </header>
 

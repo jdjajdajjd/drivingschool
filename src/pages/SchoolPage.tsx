@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft01Icon, Building03Icon, Location01Icon, Mail01Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { StateView } from '../components/ui/StateView'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { loadPublicSchoolData } from '../services/publicSchoolData'
 import type { Branch, Instructor, School } from '../types'
 
@@ -56,10 +57,13 @@ export function SchoolPage() {
   return (
     <div className="min-h-dvh bg-[#F5F6F8] text-[#050609]">
       <main className="mx-auto w-full max-w-[430px] px-4 pb-8 pt-5">
-        <button className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-white px-4 text-[14px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={() => navigate('/student')}>
-          <ArrowLeft size={17} />
-          Вернуться в кабинет
-        </button>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <button className="inline-flex min-h-10 items-center gap-2 rounded-full bg-white px-4 text-[14px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={() => navigate('/student')}>
+            <ArrowLeft size={17} />
+            Вернуться в кабинет
+          </button>
+          <ThemeToggle compact />
+        </div>
 
         <section className="rounded-[28px] bg-white p-5">
           <div className="flex items-start gap-4">

@@ -31,6 +31,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
+import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { db } from '../services/storage'
 import { isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { updateStudentProfileInSupabase } from '../services/supabasePublicService'
@@ -557,7 +558,7 @@ export function StudentPage() {
   }
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
+    <div className="student-animated min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
       <main className="mx-auto w-full max-w-[430px] px-4 pb-32 pt-5">
         {view === 'home' ? (
           <section className="space-y-6">
@@ -569,9 +570,12 @@ export function StudentPage() {
                   <p className="mt-1 text-[14px] font-medium leading-5 text-[#8B8D94]">Категория B</p>
                 </div>
               </button>
-              <button className="grid place-items-center active:scale-[0.97]" style={{ minHeight: 48, minWidth: 48 }} onClick={() => navigate(`/school/${school.slug}`)} aria-label="Автошкола">
-                <SchoolLogo school={school} />
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <ThemeToggle compact />
+                <button className="grid place-items-center active:scale-[0.97]" style={{ minHeight: 48, minWidth: 48 }} onClick={() => navigate(`/school/${school.slug}`)} aria-label="Автошкола">
+                  <SchoolLogo school={school} />
+                </button>
+              </div>
             </header>
 
             <section>
@@ -848,7 +852,10 @@ export function StudentPage() {
                 <h1 className={pageTitle}>Профиль</h1>
                 <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Личные данные и обучение</p>
               </div>
-              <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1F2BD8] active:scale-[0.96]" onClick={() => setInfoSheet('settings')} aria-label="Настройки"><Settings size={20} /></button>
+              <div className="flex items-center gap-2">
+                <ThemeToggle compact />
+                <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1F2BD8] active:scale-[0.96]" onClick={() => setInfoSheet('settings')} aria-label="Настройки"><Settings size={20} /></button>
+              </div>
             </div>
             <div className={cn(card, 'p-4 text-center')}>
               <button className="relative mx-auto block" onClick={() => photoInputRef.current?.click()}>
