@@ -62,7 +62,7 @@ export function AdminStudents() {
   if (!school) {
     return (
       <div className="max-w-7xl p-6 md:p-8">
-        <StateView kind="error" title="Школа не найдена" description="Демо-данные не загружены." />
+        <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }

@@ -23,15 +23,15 @@ const Settings = createHugeIcon(Settings02Icon)
 const StickyNote = createHugeIcon(StickyNote02Icon)
 const UserRound = createHugeIcon(User03Icon)
 
-const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
+const card = 'rounded-[24px] border border-[var(--border)] bg-[var(--surface)]'
 
 function InfoRow({ icon: Icon, label, value }: { icon: typeof Building2; label: string; value: string }) {
   return (
-    <div className="flex min-h-[64px] items-center gap-3 border-b border-[#EEF0F2] py-2 last:border-b-0">
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#F0F1FB] text-[#1F2BD8]"><Icon size={21} /></span>
+    <div className="flex min-h-[64px] items-center gap-3 border-b border-[var(--border)] py-2 last:border-b-0">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={21} /></span>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-[#8B8D94]">{label}</p>
-        <p className="mt-0.5 truncate text-[17px] font-bold text-[#050609]">{value}</p>
+        <p className="text-[13px] font-semibold text-[var(--text-soft)]">{label}</p>
+        <p className="mt-0.5 truncate text-[17px] font-bold text-[var(--text)]">{value}</p>
       </div>
     </div>
   )
@@ -45,22 +45,22 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-3 py-5" onClick={onClose}>
-      <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
+      <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-card)]" onClick={(event) => event.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-[21px] font-bold tracking-[-0.02em] text-[#050609]">{title}</h2>
-          <button className="rounded-full px-3 py-2 text-[14px] font-semibold text-[#8B8D94]" onClick={onClose}>Закрыть</button>
+          <h2 className="text-[21px] font-bold tracking-[-0.02em] text-[var(--text)]">{title}</h2>
+          <button className="rounded-full px-3 py-2 text-[14px] font-semibold text-[var(--text-soft)]" onClick={onClose}>Закрыть</button>
         </div>
 
         {type === 'student' ? (
           <div className="space-y-4">
-            <section className="rounded-[22px] bg-[#D7EBFF] p-4">
+            <section className="rounded-[22px] bg-[var(--blue-soft)] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[16px] font-bold text-[#050609]">Внутренний экзамен</p>
-                  <p className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-[#050609]">{formatDateValue(progress?.internalExamDate)}</p>
-                  <p className="mt-1 text-[13px] font-semibold text-[#6F747A]">{progress?.internalExamDate ? 'Примерная дата' : 'Назначит автошкола'}</p>
+                  <p className="text-[16px] font-bold text-[var(--text)]">Внутренний экзамен</p>
+                  <p className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-[var(--text)]">{formatDateValue(progress?.internalExamDate)}</p>
+                  <p className="mt-1 text-[13px] font-semibold text-[var(--text-muted)]">{progress?.internalExamDate ? 'Примерная дата' : 'Назначит автошкола'}</p>
                 </div>
-                <span className="grid h-16 w-16 place-items-center rounded-full border-[6px] border-[#4A9DFF] bg-white text-center text-[18px] font-bold text-[#050609]">B</span>
+                <span className="grid h-16 w-16 place-items-center rounded-full border-[6px] border-[#4A9DFF] bg-[var(--surface)] text-center text-[18px] font-bold text-[var(--text)]">B</span>
               </div>
             </section>
             <section className={cn(card, 'px-4 py-2')}>
@@ -77,9 +77,9 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
 
         {type === 'profileData' ? (
           <section className={cn(card, 'p-4')}>
-            <h3 className="text-[18px] font-bold text-[#050609]">Основные данные профиля</h3>
-            <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Эти данные автошкола может использовать для связи, документов и обучения.</p>
-            <div className="mt-4 space-y-2 rounded-[18px] bg-[#F5F6FA] p-3 text-[14px] font-semibold text-[#050609]">
+            <h3 className="text-[18px] font-bold text-[var(--text)]">Основные данные профиля</h3>
+            <p className="mt-2 text-[14px] font-semibold leading-5 text-[var(--text-soft)]">Эти данные автошкола может использовать для связи, документов и обучения.</p>
+            <div className="mt-4 space-y-2 rounded-[18px] bg-[var(--surface-soft)] p-3 text-[14px] font-semibold text-[var(--text)]">
               <p>{profile.name}</p>
               <p>+{normalizePhone(profile.phone)}</p>
               <p>{profile.email || 'Email не указан'}</p>
@@ -89,13 +89,13 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
 
         {type === 'tips' ? (
           <section className="space-y-3">
-            <article className="rounded-[22px] bg-[#EEF0FA] p-4">
-              <h3 className="text-[18px] font-bold text-[#050609]">Планируйте занятия заранее</h3>
-              <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">Если у инструктора мало свободных окон, лучше выбирать время на неделю вперёд.</p>
+            <article className="rounded-[22px] bg-[var(--accent-soft)] p-4">
+              <h3 className="text-[18px] font-bold text-[var(--text)]">Планируйте занятия заранее</h3>
+              <p className="mt-2 text-[14px] font-semibold leading-5 text-[var(--text-muted)]">Если у инструктора мало свободных окон, лучше выбирать время на неделю вперёд.</p>
             </article>
-            <article className="rounded-[22px] bg-[#EAF6F0] p-4">
-              <h3 className="text-[18px] font-bold text-[#050609]">Инструктор закреплён</h3>
-              <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выберите инструктора'} будет первым в расписании на этом устройстве.</p>
+            <article className="rounded-[22px] bg-[var(--green-soft)] p-4">
+              <h3 className="text-[18px] font-bold text-[var(--text)]">Инструктор закреплён</h3>
+              <p className="mt-2 text-[14px] font-semibold leading-5 text-[var(--text-muted)]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выберите инструктора'} будет первым в расписании на этом устройстве.</p>
             </article>
           </section>
         ) : null}
@@ -114,14 +114,14 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
             {type === 'theoryTickets' ? (
               <article className={cn(card, 'p-4')}>
                 <div className="flex items-start gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EEF0FA] text-[#1F2BD8]"><StickyNote size={23} /></span>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[var(--accent-soft)] text-[var(--accent)]"><StickyNote size={23} /></span>
                   <div>
-                    <h3 className="text-[18px] font-bold text-[#050609]">Быстрая тренировка</h3>
-                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">10 вопросов по текущим темам. Результат можно показать преподавателю на занятии.</p>
+                    <h3 className="text-[18px] font-bold text-[var(--text)]">Быстрая тренировка</h3>
+                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[var(--text-soft)]">10 вопросов по текущим темам. Результат можно показать преподавателю на занятии.</p>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  {['ПДД', 'Знаки', 'Манёвры'].map((item) => <span key={item} className="rounded-[16px] bg-[#F7F8FA] px-2 py-3 text-[13px] font-bold text-[#050609]">{item}</span>)}
+                  {['ПДД', 'Знаки', 'Манёвры'].map((item) => <span key={item} className="rounded-[16px] bg-[var(--surface-soft)] px-2 py-3 text-[13px] font-bold text-[var(--text)]">{item}</span>)}
                 </div>
               </article>
             ) : null}
@@ -129,10 +129,10 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
             {type === 'theoryMistakes' ? (
               <article className={cn(card, 'p-4')}>
                 <div className="flex items-start gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#F5E9EF] text-[#1F2BD8]"><BookOpen size={23} /></span>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[var(--red-soft)] text-[var(--accent)]"><BookOpen size={23} /></span>
                   <div>
-                    <h3 className="text-[18px] font-bold text-[#050609]">Работа над ошибками</h3>
-                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Здесь собираются вопросы, которые ученик чаще всего пропускает. Пока ошибок нет, блок предлагает повторить сложные темы.</p>
+                    <h3 className="text-[18px] font-bold text-[var(--text)]">Работа над ошибками</h3>
+                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[var(--text-soft)]">Здесь собираются вопросы, которые ученик чаще всего пропускает. Пока ошибок нет, блок предлагает повторить сложные темы.</p>
                   </div>
                 </div>
               </article>
@@ -140,9 +140,9 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
 
             {type === 'theoryRules' ? (
               <article className={cn(card, 'p-4')}>
-                <h3 className="text-[18px] font-bold text-[#050609]">Темы курса</h3>
+                <h3 className="text-[18px] font-bold text-[var(--text)]">Темы курса</h3>
                 <div className="mt-3 space-y-2">
-                  {['Общие положения', 'Дорожные знаки', 'Проезд перекрёстков', 'Остановка и стоянка', 'Безопасность движения'].map((item) => <div key={item} className="rounded-[16px] bg-[#F7F8FA] px-3 py-3 text-[14px] font-bold text-[#050609]">{item}</div>)}
+                  {['Общие положения', 'Дорожные знаки', 'Проезд перекрёстков', 'Остановка и стоянка', 'Безопасность движения'].map((item) => <div key={item} className="rounded-[16px] bg-[var(--surface-soft)] px-3 py-3 text-[14px] font-bold text-[var(--text)]">{item}</div>)}
                 </div>
               </article>
             ) : null}
@@ -150,10 +150,10 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
             {type === 'theoryExam' ? (
               <article className={cn(card, 'p-4')}>
                 <div className="flex items-start gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#F2EBDD] text-[#1F2BD8]"><License size={23} /></span>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[var(--surface-muted)] text-[var(--accent)]"><License size={23} /></span>
                   <div>
-                    <h3 className="text-[18px] font-bold text-[#050609]">Зачёты и экзамены</h3>
-                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Автошкола отметит внутренний зачёт в карточке ученика. Ученик видит дату и статус без лишних процентов готовности.</p>
+                    <h3 className="text-[18px] font-bold text-[var(--text)]">Зачёты и экзамены</h3>
+                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[var(--text-soft)]">Автошкола отметит внутренний зачёт в карточке ученика. Ученик видит дату и статус без лишних процентов готовности.</p>
                   </div>
                 </div>
               </article>

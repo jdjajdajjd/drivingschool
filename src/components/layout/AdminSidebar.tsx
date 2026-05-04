@@ -66,7 +66,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               <Car size={18} className="text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold #111418">DriveDesk</p>
+              <p className="text-sm font-bold #111418">vroom</p>
               <p className="text-xs font-medium #9EA3A8">Панель автошколы</p>
             </div>
           </button>

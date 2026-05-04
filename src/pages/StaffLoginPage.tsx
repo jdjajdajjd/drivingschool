@@ -23,7 +23,7 @@ const copy = {
   superadmin: {
     title: 'Вход супер-админа',
     subtitle: 'Служебный раздел платформы скрыт от публичных страниц.',
-    badge: 'DriveDesk Core',
+    badge: 'vroom Core',
   },
 }
 

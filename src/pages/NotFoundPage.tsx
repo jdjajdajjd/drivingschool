@@ -24,7 +24,7 @@ export function NotFoundPage() {
             <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-stone-400">404</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">Страница не найдена</h1>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-stone-500">
-              Возможно, ссылка устарела или в демо-режиме эта страница была сброшена вместе с локальными данными.
+              Возможно, ссылка устарела или страница перемещена. Перейдите в кабинет ученика или откройте страницу автошколы.
             </p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -33,7 +33,7 @@ export function NotFoundPage() {
                 На главную
               </Button>
               <Button variant="secondary" onClick={() => navigate('/school/virazh')}>
-                Открыть демо записи
+                Открыть автошколу
               </Button>
             </div>
           </Card>

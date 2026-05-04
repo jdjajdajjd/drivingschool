@@ -545,7 +545,7 @@ export function generateIcsFile(bookingId: string): string | null {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//DriveDesk//Booking Flow//RU',
+    'PRODID:-//vroom//Booking Flow//RU',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
     `UID:${booking.id}@drivedesk.local`,

@@ -13,7 +13,7 @@ const configured = Boolean(
 )
 
 if (!configured) {
-  console.warn('Supabase is not configured. Public demo data will be used where possible.')
+  console.warn('Supabase is not configured. Public local data will be used where possible.')
 }
 
 export const supabase = createClient(

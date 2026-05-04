@@ -27,7 +27,7 @@ export function AdminLayout() {
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
               <Car size={16} className="text-white" />
             </div>
-            <span className="text-sm font-bold #111418">DriveDesk</span>
+            <span className="text-sm font-bold #111418">vroom</span>
           </button>
         </header>
       </div>

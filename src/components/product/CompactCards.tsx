@@ -31,6 +31,24 @@ const Phone = createHugeIcon(SmartPhone01Icon)
 const Settings = createHugeIcon(Settings02Icon)
 const UserRound = createHugeIcon(User03Icon)
 
+const ui = {
+  surface: 'var(--surface)',
+  surfaceSoft: 'var(--surface-soft)',
+  surfaceMuted: 'var(--surface-muted)',
+  text: 'var(--text)',
+  textMuted: 'var(--text-muted)',
+  textSoft: 'var(--text-soft)',
+  border: 'var(--border)',
+  accent: 'var(--accent)',
+  accentSoft: 'var(--accent-soft)',
+  green: 'var(--green)',
+  greenSoft: 'var(--green-soft)',
+  red: 'var(--red)',
+  redSoft: 'var(--red-soft)',
+  blueSoft: 'var(--blue-soft)',
+  shadowCard: 'var(--shadow-card)',
+} as const
+
 function initialsFromText(value: string): string {
   return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'И'
 }
@@ -58,10 +76,10 @@ export function InstructorCompactCard({
       whileTap={{ scale: 0.97 }}
       className={cn(
         'flex w-full items-center gap-3.5 p-4 text-left transition-all duration-150',
-        'bg-white',
+        'bg-[var(--surface)]',
         selected
           ? 'border-2 shadow-[0_0_0_3px_rgba(36,54,217,0.14),0_18px_45px_rgba(15,20,25,0.10)]'
-          : 'border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,20,25,0.14)]',
+          : 'border border-[var(--border)] shadow-[var(--shadow-card)] hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]',
       )}
       style={{ borderRadius: '24px' }}
     >
@@ -71,11 +89,11 @@ export function InstructorCompactCard({
         src={getInstructorPhoto(instructor)}
         alt={instructor.name}
         size="lg"
-        className="rounded-full text-[#2436D9]"
+        className="rounded-full text-[var(--accent)]"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">{shortName}</p>
-        <p className="mt-1 text-[13px] font-medium" style={{ color: '#6F747A' }}>
+        <p className="text-[15px] font-extrabold tracking-tight" style={{ color: ui.text }}>{shortName}</p>
+        <p className="mt-1 text-[13px] font-medium" style={{ color: ui.textMuted }}>
           {instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}
         </p>
         <div className="mt-2 flex flex-wrap gap-1">
@@ -83,7 +101,7 @@ export function InstructorCompactCard({
             <span
               key={category}
               className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-              style={{ background: '#F4F5F6', color: '#6F747A' }}
+              style={{ background: ui.surfaceMuted, color: ui.textMuted }}
             >
               {category}
             </span>
@@ -91,7 +109,7 @@ export function InstructorCompactCard({
           {branch ? (
             <span
               className="max-w-[110px] truncate rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-              style={{ background: '#F4F5F6', color: '#9EA3A8' }}
+              style={{ background: ui.surfaceMuted, color: ui.textSoft }}
             >
               {branch.name}
             </span>
@@ -101,18 +119,18 @@ export function InstructorCompactCard({
       <div className="flex w-[80px] shrink-0 flex-col items-end gap-2">
         {nextSlot ? (
           <div className="text-right">
-            <p className="text-[13px] font-extrabold text-[#111418]">{nextSlot.time}</p>
-            <p className="text-[12px] font-medium" style={{ color: '#9EA3A8' }}>{formatDate(nextSlot.date)}</p>
+            <p className="text-[13px] font-extrabold" style={{ color: ui.text }}>{nextSlot.time}</p>
+            <p className="text-[12px] font-medium" style={{ color: ui.textSoft }}>{formatDate(nextSlot.date)}</p>
           </div>
         ) : (
-          <p className="text-right text-[12px] font-medium" style={{ color: '#9EA3A8' }}>Нет окон</p>
+          <p className="text-right text-[12px] font-medium" style={{ color: ui.textSoft }}>Нет окон</p>
         )}
         <span
           className="inline-flex min-h-8 items-center rounded-full px-3 text-[12px] font-extrabold transition-all duration-150"
           style={
             selected
-              ? { background: '#2436D9', color: 'white', boxShadow: '0 12px 28px rgba(36,54,217,0.24)' }
-              : { background: 'rgba(36,54,217,0.10)', color: '#2436D9' }
+              ? { background: ui.accent, color: 'white', boxShadow: '0 12px 28px rgba(36,54,217,0.24)' }
+              : { background: ui.accentSoft, color: ui.accent }
           }
         >
           {selected ? <Check size={12} /> : cta}
@@ -130,26 +148,26 @@ export function BranchCompactCard({ branch, onSelect }: { branch: Branch; onSele
       whileTap={{ scale: 0.97 }}
       className="flex w-full items-center gap-3.5 p-4 text-left transition-all duration-150 hover:-translate-y-1"
       style={{
-        background: 'white',
-        border: '1px solid rgba(0,0,0,0.06)',
+        background: ui.surface,
+        border: `1px solid ${ui.border}`,
         borderRadius: '24px',
-        boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+        boxShadow: ui.shadowCard,
       }}
     >
       <span
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
+        style={{ background: ui.accentSoft, color: ui.accent }}
       >
         <Location size={18} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-extrabold tracking-tight text-[#111418]">{branch.name}</span>
-        <span className="mt-1 block truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>{branch.address}</span>
+        <span className="block truncate text-[15px] font-extrabold tracking-tight" style={{ color: ui.text }}>{branch.name}</span>
+        <span className="mt-1 block truncate text-[13px] font-medium" style={{ color: ui.textMuted }}>{branch.address}</span>
         {branch.phone ? (
-          <span className="mt-0.5 block text-[13px] font-medium" style={{ color: '#9EA3A8' }}>{formatPhone(branch.phone)}</span>
+          <span className="mt-0.5 block text-[13px] font-medium" style={{ color: ui.textSoft }}>{formatPhone(branch.phone)}</span>
         ) : null}
       </span>
-      <ChevronRight size={16} style={{ color: '#9EA3A8' }} />
+      <ChevronRight size={16} style={{ color: ui.textSoft }} />
     </motion.button>
   )
 }
@@ -179,25 +197,25 @@ export function DayChipsScroller({
               whileTap={{ scale: 0.97 }}
               className="relative flex w-[88px] flex-col items-start justify-start p-3 text-left transition-all duration-100"
               style={{
-                background: active ? 'rgba(36,54,217,0.10)' : 'white',
-                border: `2px solid ${active ? '#2436D9' : 'rgba(0,0,0,0.06)'}`,
+                background: active ? ui.accentSoft : ui.surface,
+                border: `2px solid ${active ? ui.accent : ui.border}`,
                 borderRadius: '18px',
                 boxShadow: active ? '0 0 0 3px rgba(36,54,217,0.14)' : '0 18px 45px rgba(15,20,25,0.10)',
                 minHeight: '68px',
               }}
             >
               {active && (
-                <Check size={12} className="absolute right-2 top-2" style={{ color: '#2436D9' }} />
+                <Check size={12} className="absolute right-2 top-2" style={{ color: ui.accent }} />
               )}
-              <span className="text-[12px] font-extrabold text-[#111418]">
+              <span className="text-[12px] font-extrabold" style={{ color: ui.text }}>
                 {index === 0 ? 'Сегодня' : index === 1 ? 'Завтра' : formatDayOfWeek(date).slice(0, 2)}
               </span>
-              <span className="mt-0.5 text-[11px] font-medium" style={{ color: '#6F747A' }}>
+              <span className="mt-0.5 text-[11px] font-medium" style={{ color: ui.textMuted }}>
                 {formatHumanDate(date, false)}
               </span>
               <span
                 className="mt-1 text-[11px] font-bold"
-                style={{ color: active ? '#2436D9' : '#9EA3A8' }}
+                style={{ color: active ? ui.accent : ui.textSoft }}
               >
                 {count} слотов
               </span>
@@ -230,8 +248,8 @@ export function TimeSlotGrid({
             whileTap={{ scale: 0.97 }}
             className="p-4 text-left transition-all duration-100"
             style={{
-              background: active ? 'rgba(36,54,217,0.10)' : 'white',
-              border: `2px solid ${active ? '#2436D9' : 'rgba(0,0,0,0.06)'}`,
+              background: active ? ui.accentSoft : ui.surface,
+              border: `2px solid ${active ? ui.accent : ui.border}`,
               borderRadius: '18px',
               boxShadow: active ? '0 0 0 3px rgba(36,54,217,0.14)' : '0 18px 45px rgba(15,20,25,0.10)',
               minHeight: '80px',
@@ -240,15 +258,15 @@ export function TimeSlotGrid({
             <span className="flex items-center justify-between gap-2">
               <span
                 className="font-extrabold tracking-tight"
-                style={{ fontSize: '18px', color: '#111418' }}
+                style={{ fontSize: '18px', color: ui.text }}
               >
                 {formatTimeRange(slot)}
               </span>
-              {active && <Check size={16} style={{ color: '#2436D9' }} />}
+              {active && <Check size={16} style={{ color: ui.accent }} />}
             </span>
             <span
               className="mt-0.5 block text-[12px] font-medium"
-              style={{ color: '#6F747A' }}
+              style={{ color: ui.textMuted }}
             >
               {lessonTypeLabel(slot)} · {formatDuration(slot.duration)}
             </span>
@@ -273,25 +291,26 @@ function DetailRow({
   return (
     <div
       className="flex items-start gap-3.5 py-4 last:pb-0"
-      style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+      style={{ borderBottom: `1px solid ${ui.border}` }}
     >
       <span
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
+        style={{ background: ui.accentSoft, color: ui.accent }}
       >
         <Icon size={15} />
       </span>
       <span className="min-w-0">
-        <span className="block text-[11px] font-semibold" style={{ color: '#9EA3A8' }}>
+        <span className="block text-[11px] font-semibold" style={{ color: ui.textSoft }}>
           {label}
         </span>
         <span
-          className="mt-1 block text-[15px] font-extrabold tracking-tight text-[#111418]"
+          className="mt-1 block text-[15px] font-extrabold tracking-tight"
+          style={{ color: ui.text }}
         >
           {value}
         </span>
         {subvalue ? (
-          <span className="mt-0.5 block text-[13px] font-medium" style={{ color: '#6F747A' }}>
+          <span className="mt-0.5 block text-[13px] font-medium" style={{ color: ui.textMuted }}>
             {subvalue}
           </span>
         ) : null}
@@ -317,13 +336,13 @@ export function BookingDetailsCard({
     <div
       className="p-5"
       style={{
-        background: 'white',
-        border: '1px solid rgba(0,0,0,0.06)',
+        background: ui.surface,
+        border: `1px solid ${ui.border}`,
         borderRadius: '24px',
-        boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+        boxShadow: ui.shadowCard,
       }}
     >
-      <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">Детали записи</p>
+      <p className="text-[15px] font-extrabold tracking-tight" style={{ color: ui.text }}>Детали записи</p>
       <div className="mt-2">
         <DetailRow
           icon={CalendarDays}
@@ -374,7 +393,7 @@ export function SuccessHeader({
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className="p-5"
       style={{
-        background: '#F0FDF4',
+        background: ui.greenSoft,
         border: '1px solid rgba(21,128,61,0.15)',
         borderRadius: '24px',
       }}
@@ -385,21 +404,21 @@ export function SuccessHeader({
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className="flex h-12 w-12 items-center justify-center rounded-2xl"
         style={{
-          background: 'white',
+          background: ui.surface,
           border: '1px solid rgba(21,128,61,0.15)',
-          color: '#15803D',
-          boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+          color: ui.green,
+          boxShadow: ui.shadowCard,
         }}
       >
         <Check size={24} strokeWidth={2.5} />
       </motion.div>
       <h1
         className="mt-4 font-extrabold tracking-tight"
-        style={{ fontSize: '22px', lineHeight: '1.2', color: '#111418' }}
+        style={{ fontSize: '22px', lineHeight: '1.2', color: ui.text }}
       >
         {title}
       </h1>
-      <p className="body-lg mt-2" style={{ color: '#6F747A' }}>
+      <p className="body-lg mt-2" style={{ color: ui.textMuted }}>
         {subtitle}
       </p>
     </motion.div>
@@ -408,12 +427,12 @@ export function SuccessHeader({
 
 function bookingCardStyles(state: BookingUrgencyState): React.CSSProperties {
   return {
-    'future-muted': { background: 'rgba(244,245,246,0.8)', border: '1px solid rgba(0,0,0,0.06)' },
-    'soon-2-days': { background: 'rgba(36,54,217,0.08)', border: '1px solid rgba(36,54,217,0.18)' },
-    tomorrow: { background: 'white', border: '1px solid rgba(36,54,217,0.18)' },
-    today: { background: 'rgba(36,54,217,0.08)', border: '1px solid rgba(36,54,217,0.24)' },
-    completed: { background: 'rgba(244,245,246,0.6)', border: '1px solid rgba(0,0,0,0.06)', opacity: 0.9 },
-    cancelled: { background: 'rgba(244,245,246,0.6)', border: '1px solid rgba(0,0,0,0.06)', opacity: 0.8 },
+    'future-muted': { background: ui.surfaceSoft, border: `1px solid ${ui.border}` },
+    'soon-2-days': { background: ui.accentSoft, border: '1px solid rgba(36,54,217,0.18)' },
+    tomorrow: { background: ui.surface, border: '1px solid rgba(36,54,217,0.18)' },
+    today: { background: ui.accentSoft, border: '1px solid rgba(36,54,217,0.24)' },
+    completed: { background: ui.surfaceMuted, border: `1px solid ${ui.border}`, opacity: 0.9 },
+    cancelled: { background: ui.surfaceMuted, border: `1px solid ${ui.border}`, opacity: 0.8 },
   }[state] as React.CSSProperties
 }
 
@@ -428,12 +447,12 @@ export function BookingStatusChip({ state, slot }: { state: BookingUrgencyState;
           : getRelativeLessonLabel(slot)
 
   const chipStyles: Record<BookingUrgencyState, React.CSSProperties> = {
-    today: { background: 'rgba(36,54,217,0.10)', color: '#2436D9', border: '1px solid rgba(36,54,217,0.18)' },
-    tomorrow: { background: 'rgba(36,54,217,0.10)', color: '#2436D9', border: '1px solid rgba(36,54,217,0.18)' },
-    'soon-2-days': { background: 'rgba(36,54,217,0.10)', color: '#2436D9', border: '1px solid rgba(36,54,217,0.18)' },
-    'future-muted': { background: '#F4F5F6', color: '#6F747A', border: '1px solid rgba(0,0,0,0.06)' },
-    completed: { background: '#F0FDF4', color: '#15803D', border: '1px solid rgba(21,128,61,0.15)' },
-    cancelled: { background: '#FEF2F2', color: '#E5534B', border: '1px solid rgba(229,83,75,0.15)' },
+    today: { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(36,54,217,0.18)' },
+    tomorrow: { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(36,54,217,0.18)' },
+    'soon-2-days': { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(36,54,217,0.18)' },
+    'future-muted': { background: ui.surfaceMuted, color: ui.textMuted, border: `1px solid ${ui.border}` },
+    completed: { background: ui.greenSoft, color: ui.green, border: '1px solid rgba(21,128,61,0.15)' },
+    cancelled: { background: ui.redSoft, color: ui.red, border: '1px solid rgba(229,83,75,0.15)' },
   }
   const s = chipStyles[state]
 
@@ -513,13 +532,13 @@ export function StudentBookingCard({
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="sm"
-          className="rounded-full text-[#2436D9] shrink-0"
+          className="rounded-full shrink-0 text-[var(--accent)]"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-extrabold tracking-tight" style={{ color: muted ? '#9EA3A8' : '#111418' }}>
+          <p className="truncate text-[13px] font-extrabold tracking-tight" style={{ color: muted ? ui.textSoft : ui.text }}>
             {shortName}
           </p>
-          <p className="truncate text-[12px] font-medium" style={{ color: '#6F747A' }}>
+          <p className="truncate text-[12px] font-medium" style={{ color: ui.textMuted }}>
             {slot ? `${lessonLabel}, ${lessonTime}` : ''}
           </p>
         </div>
@@ -544,15 +563,15 @@ export function StudentBookingCard({
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="lg"
-          className="rounded-full text-[#2436D9] shrink-0"
+          className="rounded-full shrink-0 text-[var(--accent)]"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[15px] font-extrabold tracking-tight" style={{ color: muted ? '#9EA3A8' : '#111418' }}>
+              <p className="text-[15px] font-extrabold tracking-tight" style={{ color: muted ? ui.textSoft : ui.text }}>
                 {shortName}
               </p>
-              <p className="mt-0.5 text-[13px] font-medium" style={{ color: '#6F747A' }}>
+              <p className="mt-0.5 text-[13px] font-medium" style={{ color: ui.textMuted }}>
                 {instructor?.car ?? 'Учебный автомобиль'} · {instructor?.transmission === 'auto' ? 'Автомат' : 'Механика'}
               </p>
             </div>
@@ -566,10 +585,10 @@ export function StudentBookingCard({
         <div className="px-4 pb-2">
           <div
             className="flex items-center gap-2 rounded-2xl px-3.5 py-2.5"
-            style={{ background: 'rgba(36,54,217,0.08)' }}
+            style={{ background: ui.accentSoft }}
           >
-            <CalendarDays size={15} style={{ color: '#2436D9' }} />
-            <p className="text-[14px] font-semibold" style={{ color: '#111418' }}>
+            <CalendarDays size={15} style={{ color: ui.accent }} />
+            <p className="text-[14px] font-semibold" style={{ color: ui.text }}>
               {lessonLabel}, {lessonTime}
             </p>
           </div>
@@ -580,8 +599,8 @@ export function StudentBookingCard({
       {branch && (
         <div className="px-4 pb-2">
           <div className="flex items-center gap-2">
-            <Location size={14} style={{ color: '#9EA3A8' }} />
-            <p className="flex-1 truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
+            <Location size={14} style={{ color: ui.textSoft }} />
+            <p className="flex-1 truncate text-[13px] font-medium" style={{ color: ui.textMuted }}>
               {branch.name}, {branch.address}
             </p>
             {mapUrl && (
@@ -590,7 +609,7 @@ export function StudentBookingCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 flex items-center gap-1 text-[12px] font-bold transition-colors"
-                style={{ color: '#2436D9' }}
+                style={{ color: ui.accent }}
                 onClick={(e) => e.stopPropagation()}
               >
                 Карта <Maps size={12} />
@@ -604,8 +623,8 @@ export function StudentBookingCard({
       {instructor?.phone && (
         <div className="px-4 pb-2">
           <div className="flex items-center gap-2">
-            <Phone size={14} style={{ color: '#9EA3A8' }} />
-            <a href={`tel:${instructor.phone}`} className="text-[13px] font-medium" style={{ color: '#6F747A' }}>
+            <Phone size={14} style={{ color: ui.textSoft }} />
+            <a href={`tel:${instructor.phone}`} className="text-[13px] font-medium" style={{ color: ui.textMuted }}>
               {formatPhone(instructor.phone)}
             </a>
           </div>
@@ -615,11 +634,11 @@ export function StudentBookingCard({
       {/* Lesson description */}
       {lessonDesc && lessonDesc.theme && (
         <div className="px-4 pb-2">
-          <div className="rounded-2xl px-3.5 py-2.5" style={{ background: '#F7F8F9' }}>
-            <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: '#9EA3A8' }}>Тема урока</p>
-            <p className="mt-1 text-[14px] font-semibold" style={{ color: '#111418' }}>{lessonDesc.theme}</p>
+          <div className="rounded-2xl px-3.5 py-2.5" style={{ background: ui.surfaceSoft }}>
+            <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: ui.textSoft }}>Тема урока</p>
+            <p className="mt-1 text-[14px] font-semibold" style={{ color: ui.text }}>{lessonDesc.theme}</p>
             {lessonDesc.whatToBring?.length > 0 && (
-              <p className="mt-1 text-[12px] font-medium" style={{ color: '#6F747A' }}>
+              <p className="mt-1 text-[12px] font-medium" style={{ color: ui.textMuted }}>
                 Взять: {lessonDesc.whatToBring.join(', ')}
               </p>
             )}
@@ -629,24 +648,24 @@ export function StudentBookingCard({
 
       {/* Actions */}
       {booking.status === 'active' && (
-        <div className="flex items-center gap-2 border-t px-4 py-3" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+        <div className="flex items-center gap-2 border-t px-4 py-3" style={{ borderColor: ui.border }}>
           <button
             className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
-            style={{ background: '#F4F5F6', color: '#6F747A' }}
+            style={{ background: ui.surfaceMuted, color: ui.textMuted }}
             onClick={downloadCalendar}
           >
             Календарь
           </button>
           <button
             className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
-            style={{ background: 'rgba(229,83,75,0.08)', color: '#E5534B' }}
+            style={{ background: ui.redSoft, color: ui.red }}
             onClick={handleCancel}
           >
             Отменить
           </button>
           <button
             className="flex-1 rounded-full py-2.5 text-[13px] font-extrabold transition-all"
-            style={{ background: 'rgba(36,54,217,0.08)', color: '#2436D9' }}
+            style={{ background: ui.accentSoft, color: ui.accent }}
             onClick={handleReschedule}
           >
             Перенести
@@ -674,10 +693,10 @@ export function StudentProfileHeader({
     <div
       className="flex items-center gap-3.5 p-4"
       style={{
-        background: 'white',
-        border: '1px solid rgba(0,0,0,0.06)',
+        background: ui.surface,
+        border: `1px solid ${ui.border}`,
         borderRadius: '24px',
-        boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+        boxShadow: ui.shadowCard,
         minHeight: '88px',
       }}
     >
@@ -686,20 +705,20 @@ export function StudentProfileHeader({
         src={profile.avatarUrl}
         alt={profile.name}
         size="lg"
-        className="rounded-full text-[#2436D9]"
+        className="rounded-full text-[var(--accent)]"
       />
       <div className="min-w-0 flex-1">
         <p className="t-micro" style={{ fontWeight: 700 }}>Кабинет ученика</p>
         <h1
-          className="truncate font-extrabold tracking-tight text-[#111418]"
-          style={{ fontSize: '20px', lineHeight: '1.2' }}
+          className="truncate font-extrabold tracking-tight"
+          style={{ fontSize: '20px', lineHeight: '1.2', color: ui.text }}
           title={profile.name}
         >
           {profile.name}
         </h1>
         <p
           className="truncate text-[13px] font-medium"
-          style={{ color: '#6F747A' }}
+          style={{ color: ui.textMuted }}
           title={`${school.name}${branch ? ` · ${branch.name}` : ''}`}
         >
           {school.name}
@@ -709,7 +728,7 @@ export function StudentProfileHeader({
       <button
         aria-label="Настройки"
         className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:-translate-y-0.5"
-        style={{ background: '#F4F5F6', color: '#6F747A' }}
+        style={{ background: ui.surfaceMuted, color: ui.textMuted }}
         onClick={onSettings}
       >
         <Settings size={16} />
@@ -717,7 +736,7 @@ export function StudentProfileHeader({
       <button
         aria-label="Выйти"
         className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:-translate-y-0.5"
-        style={{ background: '#FEF2F2', color: '#E5534B' }}
+        style={{ background: ui.redSoft, color: ui.red }}
         onClick={onLogout}
       >
         <LogOut size={16} />
@@ -746,15 +765,15 @@ export function NearestLessonCard({
       <div
         className="p-5"
         style={{
-          background: 'white',
-          border: '1px solid rgba(0,0,0,0.06)',
+          background: ui.surface,
+          border: `1px solid ${ui.border}`,
           borderRadius: '24px',
-          boxShadow: '0 18px 45px rgba(15,20,25,0.10)',
+          boxShadow: ui.shadowCard,
         }}
       >
         <p className="t-micro" style={{ fontWeight: 700 }}>Ближайшее занятие</p>
         <h2 className="mt-3 display-sm" style={{ fontSize: '22px' }}>Активных записей нет</h2>
-        <p className="body mt-2" style={{ color: '#6F747A' }}>
+        <p className="body mt-2" style={{ color: ui.textMuted }}>
           Выберите удобное время и инструктор появится здесь.
         </p>
         <button
@@ -775,14 +794,14 @@ export function NearestLessonCard({
   return (
     <div
       className="p-5"
-      style={{ ...cardStyle, borderRadius: '24px', ...(cardStyle.border ? {} : { border: '1px solid rgba(0,0,0,0.06)' }) }}
+      style={{ ...cardStyle, borderRadius: '24px', ...(cardStyle.border ? {} : { border: `1px solid ${ui.border}` }) }}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="t-micro" style={{ fontWeight: 700 }}>Ближайшее занятие</p>
           <h2
-            className="mt-3 font-extrabold tracking-tight text-[#111418]"
-            style={{ fontSize: '24px', lineHeight: '1.2' }}
+            className="mt-3 font-extrabold tracking-tight"
+            style={{ fontSize: '24px', lineHeight: '1.2', color: ui.text }}
           >
             {isImmediate
               ? `${relativeLabel}, ${formatTimeRange(slot)}`
@@ -798,13 +817,13 @@ export function NearestLessonCard({
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="lg"
-          className="rounded-full text-[#2436D9]"
+          className="rounded-full text-[var(--accent)]"
         />
         <div className="min-w-0">
-          <p className="text-[15px] font-extrabold tracking-tight text-[#111418]">
+          <p className="text-[15px] font-extrabold tracking-tight" style={{ color: ui.text }}>
             {instructor ? formatInstructorName(instructor.name) : 'Инструктор'}
           </p>
-          <p className="mt-1 text-[13px] font-medium" style={{ color: '#6F747A' }}>
+          <p className="mt-1 text-[13px] font-medium" style={{ color: ui.textMuted }}>
             {instructor?.car ?? 'Учебный автомобиль'} · {branch?.name ?? 'Филиал'}
           </p>
         </div>

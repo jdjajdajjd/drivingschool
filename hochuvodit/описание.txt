@@ -1,0 +1,1731 @@
+Понял. Ниже — **чистое полное описание интерфейса по референсам**, без инструкций.
+
+---
+
+# Общее описание интерфейса
+
+Мобильное приложение для ученика автошколы. Интерфейс выполнен в стиле современного iOS-приложения: светлый фон, крупная жирная типографика, большие скруглённые карточки, минимум декоративных элементов, много воздуха, яркий синий как основной акцентный цвет.
+
+Основной визуальный характер: простой, плотный, крупный, уверенный. Дизайн не тонкий и не “воздушный SaaS”, а скорее мобильный сервис с крупными интерактивными зонами.
+
+---
+
+# Размер экрана и сетка
+
+Ориентир — вертикальный мобильный экран формата iPhone, примерно:
+
+```txt
+Ширина: 390–393 pt
+Высота: 844–852 pt
+```
+
+Основная сетка:
+
+```txt
+Горизонтальный отступ экрана: 16 px
+Отступ между крупными блоками: 16–24 px
+Отступ внутри карточек: 20–24 px
+Радиус карточек: 20–24 px
+Радиус маленьких элементов: 12–16 px
+Радиус кнопок: 16–20 px
+```
+
+Фон почти на всех экранах:
+
+```txt
+Page background: #F5F6F8 / #F6F7F9
+Card background: #FFFFFF
+Primary blue: #1E2BD8 / #1C2CCB
+Text black: #050609 / #07080B
+Secondary gray: #8B8D94
+Light gray text: #B6B8BD
+Border gray: #E5E7EC
+Divider gray: #E3E4E8
+```
+
+---
+
+# Типографика
+
+Шрифт похож на системный iOS: `SF Pro Display / SF Pro Text`, либо очень близкий системный sans-serif.
+
+Общий стиль текста — крупный, жирный, с плотной посадкой.
+
+```txt
+H1 / главный заголовок экрана:
+- 42–48 px
+- font-weight: 800–900
+- color: почти чёрный
+- line-height: 1.05–1.15
+
+H2 / крупный заголовок секции:
+- 30–36 px
+- font-weight: 800
+- line-height: 1.1–1.2
+
+H3 / заголовок карточки:
+- 24–28 px
+- font-weight: 800
+- line-height: 1.15–1.25
+
+Основной текст:
+- 18–22 px
+- font-weight: 700–800
+
+Вторичный текст:
+- 17–20 px
+- font-weight: 700
+- color: #8B8D94
+
+Мелкий текст:
+- 12–15 px
+- font-weight: 600–700
+
+Текст кнопок:
+- 20–24 px
+- font-weight: 800
+```
+
+Почти весь интерфейс использует жирные начертания. Тонкого текста почти нет.
+
+---
+
+# Status bar
+
+Верхняя системная строка iOS видна на всех экранах.
+
+```txt
+Высота зоны status bar: около 44–52 px
+Время слева: чёрное, жирное, около 17 px
+Иконки сети/Wi-Fi/батареи справа: чёрные/серые
+```
+
+Контент начинается ниже status bar с большим отступом.
+
+---
+
+# Нижняя навигация
+
+На основных экранах присутствует fixed bottom navigation.
+
+```txt
+Положение: fixed bottom
+Высота: 86–96 px
+Фон: #FFFFFF
+Верхние углы: скругление 20–24 px
+Тень: очень мягкая или почти отсутствует
+Верхняя граница: едва заметная
+```
+
+Внутри 5 пунктов:
+
+```txt
+1. Главная
+2. Расписание
+3. Теория
+4. Чат
+5. Профиль
+```
+
+Каждый пункт:
+
+```txt
+Ширина: равная, 20% от ширины экрана
+Иконка: 24–28 px
+Текст: 11–13 px
+Расстояние иконка–текст: 4–6 px
+```
+
+Состояния:
+
+```txt
+Inactive:
+- icon color: #B8BABF
+- label color: #B8BABF
+
+Active:
+- icon color: #1427C8
+- label color: #1427C8
+- label font-weight: 700–800
+```
+
+У пункта “Чат” есть badge:
+
+```txt
+Badge:
+- красный/розово-красный #FF2F55
+- круглый
+- размер: 20–24 px
+- текст: белый, 11–13 px, bold
+- расположен над правым верхним углом иконки чата
+- значение: 50
+```
+
+---
+
+# Общие карточки
+
+Основной строительный элемент интерфейса — белая карточка.
+
+```txt
+Background: #FFFFFF
+Border-radius: 20–24 px
+Padding: 20–24 px
+Shadow: отсутствует или очень слабая
+Border: чаще отсутствует, иногда тонкий #EBECF0
+```
+
+Карточки крупные, визуально мягкие, без жёстких линий.
+
+---
+
+# Кнопки
+
+## Primary button
+
+```txt
+Background: #1F2BD8
+Color: #FFFFFF
+Height: 52–60 px
+Border-radius: 18–22 px
+Font-size: 22–24 px
+Font-weight: 800
+Padding horizontal: 24–32 px
+```
+
+Пример: кнопка “Записаться”, “Оплатить”.
+
+## Secondary outline button
+
+```txt
+Background: #FFFFFF
+Border: 1–1.5 px solid #DADDF0 / #1F2BD8
+Color: #1F2BD8
+Height: 52–60 px
+Border-radius: 18–22 px
+Font-size: 22–24 px
+Font-weight: 800
+```
+
+Пример: “Подробнее”, “Отменить”.
+
+## Pale button
+
+```txt
+Background: #E9EBF8 / #EEF0FA
+Color: #1F2BD8
+Height: 56–64 px
+Border-radius: 16–18 px
+Font-size: 22–24 px
+Font-weight: 800
+```
+
+Пример: “Купить новую услугу”.
+
+---
+
+# Экран “Главная”
+
+Фон: светло-серый `#F5F6F8`.
+
+Вверху:
+
+```txt
+Status bar
+Ниже — пользовательский блок
+```
+
+## Пользовательский блок
+
+Слева круглый аватар:
+
+```txt
+Размер: 44–52 px
+Background: #FFFFFF
+Внутри фирменная иконка приложения
+```
+
+Рядом:
+
+```txt
+Имя: “Арина”
+Font-size: 20–22 px
+Font-weight: 800
+Color: black
+
+Под именем:
+“B”
+Font-size: 18–20 px
+Font-weight: 700
+Color: #8B8D94
+```
+
+Справа — маленький круглый аватар/иконка:
+
+```txt
+Размер: 44–52 px
+Background: #FFFFFF
+Border: тонкий светло-серый
+```
+
+## Розовая карточка задолженности
+
+Расположена под верхним блоком.
+
+```txt
+Margin top: 24–28 px
+Height: около 120–140 px
+Border-radius: 20–24 px
+Background: мягкий розовый градиент слева направо
+Left color: #F7C8E5 / #F8D0E8
+Right color: #FFE1DC / #FFE4DD
+Padding: 24 px
+```
+
+Текст:
+
+```txt
+“Просроченная задолженность
+на сегодня: 3 000 ₽”
+
+Font-size: 26–30 px
+Font-weight: 800–900
+Line-height: 1.15
+Color: black
+```
+
+Справа внутри карточки — контурная иконка warning:
+
+```txt
+Размер: 54–70 px
+Color: светло-розовый #F3AFC0
+Opacity: 0.7
+```
+
+## Секция “Мои записи”
+
+```txt
+Margin top: 28–32 px
+Заголовок слева: “Мои записи”
+Font-size: 34–38 px
+Font-weight: 900
+
+Справа chevron:
+Color: #B8BBC2
+Size: 24–28 px
+```
+
+Ниже — горизонтальный список карточек записей.
+
+Карточка записи:
+
+```txt
+Width: около 340–360 px
+Height: 140–150 px
+Background: white
+Border-radius: 20–24 px
+Padding: 20 px
+Position: horizontal carousel
+```
+
+Слева вертикальная зелёная полоска:
+
+```txt
+Width: 4 px
+Height: почти вся карточка
+Color: #35C45A
+Border-radius: 8 px
+```
+
+Внутри:
+
+```txt
+“Вт 5, 13:00 – 14:30”
+Font-size: 25–28 px
+Font-weight: 900
+
+“Основное вождение”
+Font-size: 22–24 px
+Font-weight: 800
+```
+
+Нижняя строка:
+
+```txt
+Avatar instructor:
+- круглый
+- 40–46 px
+- фото
+
+Имя:
+“Соколов И.Ю.”
+Font-size: 20–22 px
+Font-weight: 800
+```
+
+Кнопка справа:
+
+```txt
+Text: “Отменить”
+Background: white
+Border: 1 px solid #E0E2EF
+Color: #1F2BD8
+Height: 48–54 px
+Border-radius: 24 px
+Padding horizontal: 24 px
+```
+
+## Секция “Расписание автошколы”
+
+Белый крупный блок с календарём.
+
+```txt
+Margin top: 28–32 px
+Background: white
+Border-radius: 24 px
+Padding top: 24 px
+Padding horizontal: 16 px
+```
+
+Заголовок:
+
+```txt
+“Расписание автошколы”
+Font-size: 30–34 px
+Font-weight: 900
+Color: black
+```
+
+Справа chevron серый.
+
+Фильтры-чипы:
+
+```txt
+Расположены горизонтально, с overflow по ширине
+Height: 42–48 px
+Border-radius: 24 px
+Padding horizontal: 18–22 px
+Border: 1 px solid #E1E3EB
+Background: white
+```
+
+Активный чип “Все”:
+
+```txt
+Border: 1.5 px solid black
+Text color: black
+```
+
+Чип “Основное вождение”:
+
+```txt
+Dot green: #39BF57
+Text black
+```
+
+Чип “Дополнитель...”:
+
+```txt
+Dot purple: #7259C7
+```
+
+Календарь в этом блоке:
+
+```txt
+Month row:
+- left arrow
+- centered “Май 2026”
+- right arrow
+
+Month title:
+Font-size: 27–30 px
+Font-weight: 900
+```
+
+Сетка дней компактная, в одну видимую неделю:
+
+```txt
+Weekday labels:
+Font-size: 17–20 px
+Font-weight: 800
+Color weekdays gray, weekends blue
+
+Dates:
+Font-size: 24–28 px
+Font-weight: 800
+```
+
+Выбранная дата:
+
+```txt
+Для “Сб 2” — вертикальная синяя rounded pill
+Width: 52–56 px
+Height: 68–76 px
+Border-radius: 18–20 px
+Background: #1F2BD8
+Text white
+```
+
+---
+
+# Экран “Расписание”
+
+Фон: `#F5F6F8`.
+
+Вверху:
+
+```txt
+Title: “Расписание”
+Position: слева, после status bar
+Font-size: 44–48 px
+Font-weight: 900
+```
+
+Справа на уровне заголовка — иконка фильтра:
+
+```txt
+Size: 24–28 px
+Color: black
+```
+
+## Заголовок месяца
+
+```txt
+Text: “Май 2026”
+Font-size: 30–34 px
+Font-weight: 900
+Margin top: 24–30 px
+```
+
+Справа от месяца — стрелки переключения:
+
+```txt
+Left arrow и right arrow
+Size: 28–32 px
+Color: black
+Spacing: около 32 px
+```
+
+## Большой календарь
+
+Календарная сетка занимает верхнюю половину экрана.
+
+```txt
+Columns: 7
+Rows: 5
+Horizontal padding: 16–24 px
+Vertical gap: 26–34 px
+```
+
+Дни недели:
+
+```txt
+Пн Вт Ср Чт Пт Сб Вс
+Font-size: 18–20 px
+Font-weight: 800
+```
+
+Цвета:
+
+```txt
+Weekdays: #8F9197
+Weekend labels: #1F2BD8
+Inactive previous/next month dates: #D6D8DD
+Regular dates: black or light gray depending on availability
+```
+
+Выбранный день:
+
+```txt
+Date “2”
+Background: black
+Color: white
+Circle size: 52–58 px
+Border-radius: 999 px
+Font-size: 28–30 px
+Font-weight: 900
+```
+
+Дни с доступными занятиями имеют маленькую зелёную точку:
+
+```txt
+Dot size: 5–7 px
+Color: #35C45A
+Position: под числом
+```
+
+## Блок выбранного дня
+
+```txt
+Title: “Сегодня, 2 мая”
+Font-size: 34–38 px
+Font-weight: 900
+Margin top: 34–44 px
+```
+
+## Карточка занятия
+
+```txt
+Background: white
+Border-radius: 20–24 px
+Height: 140–160 px
+Padding: 20 px
+Position: relative
+```
+
+Слева зелёная полоска:
+
+```txt
+Width: 4 px
+Color: #35C45A
+Border-radius: 8 px
+```
+
+Текст:
+
+```txt
+“16:00 – 17:30”
+Font-size: 26–30 px
+Font-weight: 900
+
+“Основное вождение”
+Font-size: 22–24 px
+Font-weight: 900
+```
+
+Статус справа сверху:
+
+```txt
+Text: “Свободно”
+Background: #EEF9F2
+Color: #14934A
+Height: 34–40 px
+Border-radius: 12–14 px
+Padding horizontal: 14–18 px
+Font-size: 17–19 px
+Font-weight: 800
+```
+
+Низ карточки:
+
+```txt
+Avatar: круглый 42–48 px
+Text: “Соколов И.Ю.”
+Font-size: 20–22 px
+Font-weight: 800
+
+Button:
+Text: “Записаться”
+Background: #1F2BD8
+Color: white
+Height: 54–60 px
+Border-radius: 22–28 px
+Font-size: 22–24 px
+Font-weight: 900
+```
+
+---
+
+# Экран “Теория”
+
+Фон: `#F5F6F8`.
+
+Заголовок:
+
+```txt
+Text: “Теория”
+Font-size: 44–48 px
+Font-weight: 900
+Margin top после status bar: около 70–90 px
+Margin left/right: 16 px
+```
+
+## Большая карточка “Теоретический курс”
+
+```txt
+Width: full minus 32 px
+Height: 130–150 px
+Background: #CFE7FA / мягкий голубой
+Border-radius: 20–24 px
+Padding: 20 px
+```
+
+Верхняя строка:
+
+```txt
+Left text: “Теоретический курс”
+Font-size: 24–28 px
+Font-weight: 900
+Color: black
+
+Right pill:
+Text: “Прогресс 0%”
+Background: white
+Color: #1F2BD8
+Height: 34–40 px
+Border-radius: 999 px
+Padding horizontal: 16–20 px
+Font-size: 17–19 px
+Font-weight: 800
+```
+
+Ниже:
+
+```txt
+“0 из 0 тем изучено”
+Font-size: 22–24 px
+Font-weight: 900
+Margin top: 42–48 px
+```
+
+Progress bar:
+
+```txt
+Height: 7–8 px
+Border-radius: 999 px
+Background: #F5F7FB
+Width: около 70% карточки
+```
+
+Справа в карточке — 3D-иллюстрация книги/блокнота:
+
+```txt
+Size: 100–120 px
+Position: bottom right
+```
+
+## Сетка карточек разделов
+
+Под большой карточкой — сетка 2 колонки.
+
+```txt
+Columns: 2
+Gap: 8–12 px
+Card height: 180–200 px
+Border-radius: 20–24 px
+Padding: 20 px
+```
+
+Карточка “Тестирование”:
+
+```txt
+Background: #F3E9D8 / светлый бежевый
+Title: “Тестирование”
+Font-size: 25–28 px
+Font-weight: 900
+Description:
+“Промежуточные
+зачёты и внутренние
+экзамены”
+Font-size: 19–21 px
+Font-weight: 800
+Color: #8B8D94
+Illustration: graduation cap + green checklist, bottom right
+```
+
+Карточка “Тренировки”:
+
+```txt
+Background: #F5D8DF / светло-розовый
+Title: “Тренировки”
+Description:
+“Подготовка
+к экзаменам
+по официальным
+билетам”
+Illustration: book/device, bottom right
+```
+
+Карточка “ПДД”:
+
+```txt
+Background: #E3F0EC / светлый зелёно-серый
+Title: “ПДД”
+Description:
+“Официальный текст
+правил дорожного
+движения РФ”
+Illustration: traffic light + road sign, bottom right
+```
+
+Карточка “Материалы автошколы”:
+
+```txt
+Background: #E3E4F4 / светлый лавандовый
+Title:
+“Материалы
+автошколы”
+Description:
+“Полезные
+материалы по
+обучению”
+Illustration: yellow folder/documents, bottom right
+```
+
+---
+
+# Экран “Расчеты”
+
+Фон: `#F5F6F8`.
+
+Вверху:
+
+```txt
+Back arrow:
+Position: left 16 px
+Size: 28–32 px
+Color: black
+```
+
+Заголовок:
+
+```txt
+Text: “Расчеты”
+Font-size: 44–48 px
+Font-weight: 900
+Margin top: 70–90 px
+```
+
+## Карточка задолженности
+
+```txt
+Background: white
+Border-radius: 20–24 px
+Padding: 24 px
+Height: 180–200 px
+```
+
+Верхний badge:
+
+```txt
+Text: “! Просрочен 31.01.2026”
+Background: #FFEDEF
+Color: #FF3155
+Height: 32–38 px
+Border-radius: 999 px
+Padding horizontal: 14–18 px
+Font-size: 18–20 px
+Font-weight: 800
+```
+
+Основной заголовок:
+
+```txt
+Text: “Аренда АВТО”
+Font-size: 34–38 px
+Font-weight: 900
+Margin top: 18–22 px
+```
+
+Строка деталей:
+
+```txt
+Left: “Количество — 1”
+Right: “3 000 ₽”
+
+Font-size: 24–28 px
+Font-weight: 900
+```
+
+Кнопки снизу:
+
+```txt
+Layout: 2 колонки
+Gap: 8–12 px
+Height: 56–62 px
+```
+
+Левая:
+
+```txt
+Text: “Подробнее”
+Background: white
+Border: 1.5 px solid #1F2BD8
+Color: #1F2BD8
+Border-radius: 16–18 px
+```
+
+Правая:
+
+```txt
+Text: “Оплатить”
+Background: #1F2BD8
+Color: white
+Border-radius: 16–18 px
+```
+
+## “Завершенные покупки”
+
+```txt
+Margin top: 32–40 px
+Icon eye слева: 18–22 px
+Text: “Завершенные покупки”
+Font-size: 24–26 px
+Font-weight: 900
+```
+
+## Кнопка “Купить новую услугу”
+
+```txt
+Margin top: 28–32 px
+Width: full
+Height: 62–68 px
+Background: #E9EBF8
+Color: #1F2BD8
+Border-radius: 14–18 px
+Font-size: 24–26 px
+Font-weight: 900
+```
+
+---
+
+# Экран “Информация об автошколе”
+
+Фон: `#F5F6F8`.
+
+Верх:
+
+```txt
+Back arrow:
+Position: top left
+Size: 28–32 px
+Color: black
+```
+
+Большая белая карточка начинается примерно с середины экрана:
+
+```txt
+Position: нижняя часть экрана
+Background: white
+Border-radius top-left/top-right: 24–28 px
+Padding: 24 px
+Min-height: около 480–520 px
+```
+
+## Заголовок карточки
+
+```txt
+Label: “Автошкола”
+Font-size: 22–24 px
+Font-weight: 800
+Color: #8B8D94
+
+Title: “ИП Гуров М.В.”
+Font-size: 34–38 px
+Font-weight: 900
+Color: black
+```
+
+Справа — круглая иконка приложения:
+
+```txt
+Size: 54–60 px
+Background: white
+Border: 1 px solid #E4E5EA
+```
+
+## Контактные строки
+
+Каждая строка:
+
+```txt
+Display: icon слева + текст справа
+Padding vertical: 16–20 px
+Divider bottom: 1 px solid #ECEDEF
+```
+
+Иконка:
+
+```txt
+Size: 20–24 px
+Color: #B8BABF
+```
+
+Label:
+
+```txt
+Font-size: 20–22 px
+Font-weight: 800
+Color: #8B8D94
+```
+
+Value:
+
+```txt
+Font-size: 24–26 px
+Font-weight: 900
+Color: black
+Margin top: 4–6 px
+```
+
+Контент строк:
+
+```txt
+Телефон
++7 487 270-03-43
+
+Ссылка
+Label верхней строки: https://vk.com/avtoshkolatorc
+Value: https://auto-school71.ru
+
+Адрес
+Тульская обл, г Тула, ул Макаренко
+
+Ваш менеджер
+Алла Юрьевна
+```
+
+## Контактные кнопки
+
+Внизу карточки — 3 горизонтальные кнопки.
+
+```txt
+Layout: 3 columns
+Gap: 8–12 px
+Height: 60–66 px
+Border-radius: 14–18 px
+```
+
+Кнопки:
+
+```txt
+Phone:
+Background: #F5F5F5
+Icon black
+
+Chat:
+Background: #EEF0FA
+Icon blue #1F2BD8
+
+Telegram:
+Background: #EAF6F0
+Icon blue/cyan #0A8DFF
+```
+
+---
+
+# Экран “Настройки”
+
+Фон: `#F5F6F8`.
+
+Верх:
+
+```txt
+Back arrow слева
+Title centered: “Настройки”
+Font-size: 28–32 px
+Font-weight: 900
+```
+
+Список состоит из отдельных белых карточек-строк.
+
+```txt
+Horizontal margin: 16 px
+Gap between rows: 10–12 px
+```
+
+## Строка настройки
+
+```txt
+Background: white
+Border-radius: 16–20 px
+Min-height: 78–96 px
+Padding horizontal: 20–24 px
+Display: flex row
+Align center
+```
+
+Текст:
+
+```txt
+Title:
+Font-size: 25–28 px
+Font-weight: 900
+Color: black
+
+Subtitle:
+Font-size: 19–21 px
+Font-weight: 800
+Color: #8B8D94
+Margin top: 4 px
+```
+
+Переключатель:
+
+```txt
+Width: 64–72 px
+Height: 36–42 px
+Track active: #1F2BD8
+Thumb: white
+Thumb size: 34–38 px
+```
+
+Строки:
+
+```txt
+1. Автоповорот экрана
+   Switch enabled
+
+2. Подтверждение ответа
+   Subtitle: “Подтверждать двойным нажатием”
+   Switch enabled
+
+3. Тема оформления
+   Subtitle: “Системная”
+   Chevron right серый
+```
+
+---
+
+# Экран профиля
+
+Фон: `#F5F6F8`.
+
+В правом верхнем углу:
+
+```txt
+Small circular button with add-user icon
+Size: 40–44 px
+Background: white
+Icon: black
+```
+
+## Центральный профильный блок
+
+```txt
+Avatar:
+Size: 92–104 px
+Background: white
+Position: centered
+Margin top: около 100–120 px
+```
+
+Имя:
+
+```txt
+Text: “Арина”
+Font-size: 34–38 px
+Font-weight: 900
+Text-align: center
+```
+
+Логин:
+
+```txt
+Text: “Логин: 331487951”
+Font-size: 20–22 px
+Font-weight: 800
+Color: #8B8D94
+```
+
+## Три быстрые карточки
+
+```txt
+Layout: 3 columns
+Gap: 8–10 px
+Margin top: 28–32 px
+```
+
+Каждая карточка:
+
+```txt
+Background: white
+Border-radius: 18–22 px
+Height: 96–110 px
+Padding: 16 px
+Align center
+```
+
+Иконка:
+
+```txt
+Size container: 44–50 px
+Background: #F0F1FB
+Border-radius: 999 px
+Icon color: #1F2BD8
+```
+
+Текст:
+
+```txt
+Font-size: 22–24 px
+Font-weight: 900
+Color: black
+Margin top: 10–12 px
+```
+
+Карточки:
+
+```txt
+Расчеты
+Вождение
+Инфо
+```
+
+## Список меню
+
+```txt
+Margin top: 24–28 px
+```
+
+Каждая строка:
+
+```txt
+Background: white
+Border-radius: 16–18 px
+Height: 76–84 px
+Padding horizontal: 20–24 px
+Display: row
+```
+
+Левая иконка:
+
+```txt
+Size: 24–28 px
+Color: #1F2BD8
+```
+
+Текст:
+
+```txt
+Font-size: 25–28 px
+Font-weight: 900
+Color: black
+```
+
+Chevron справа:
+
+```txt
+Size: 22–26 px
+Color: #B8BABF
+```
+
+Пункты:
+
+```txt
+Автошкола
+Данные для Госуслуг
+Акции и предложения
+Настройки
+```
+
+Ниже:
+
+```txt
+Text: “О приложении”
+Font-size: 22–24 px
+Font-weight: 800
+Color: #8B8D94
+Margin top: 26–32 px
+```
+
+Внизу перед tab bar:
+
+```txt
+Text: “Выйти из профиля”
+Icon logout слева
+Color: #8B8D94
+Font-size: 22–24 px
+Font-weight: 800
+```
+
+---
+
+# Bottom sheet профиля / информации ученика
+
+Экран затемнён overlay:
+
+```txt
+Overlay color: rgba(0,0,0,0.55)
+```
+
+На фоне виден профиль, но затемнён и неактивен.
+
+Снизу открыт bottom sheet:
+
+```txt
+Background: white
+Border-radius top-left/top-right: 24–28 px
+Height: около 70–75% экрана
+Padding: 16–24 px
+```
+
+Вверху bottom sheet:
+
+```txt
+Handle:
+Width: 42–48 px
+Height: 5 px
+Border-radius: 999 px
+Color: #EEF0F2
+Centered
+```
+
+## Голубая карточка экзамена
+
+```txt
+Background: #D6EAFF / #D7EBFF
+Border-radius: 18–22 px
+Height: 140–160 px
+Padding: 20 px
+```
+
+Слева:
+
+```txt
+Title: “Внутренний экзамен”
+Font-size: 23–26 px
+Font-weight: 900
+
+Date: “21.05.2026 10:00”
+Font-size: 30–34 px
+Font-weight: 900
+
+Subtitle: “Примерная дата экзамена”
+Font-size: 20–22 px
+Font-weight: 800
+Color: #8B8D94
+```
+
+Справа — круговой прогресс:
+
+```txt
+Circle size: 88–100 px
+Stroke: 6–8 px
+Stroke color: #4A9DFF
+Track color: #C8DCF8
+
+Center:
+“18”
+Font-size: 36–42 px
+Font-weight: 900
+
+“дней”
+Font-size: 18–20 px
+Font-weight: 800
+```
+
+## Список данных
+
+Каждая строка:
+
+```txt
+Height: 72–86 px
+Display: icon + text
+Divider bottom: 1 px solid #E8E9ED
+```
+
+Иконка слева:
+
+```txt
+Container size: 48–54 px
+Background: #F0F1FB
+Border-radius: 10–12 px
+Icon color: #1F2BD8
+Icon size: 24–28 px
+```
+
+Текст справа:
+
+```txt
+Label:
+Font-size: 21–23 px
+Font-weight: 800
+Color: #8B8D94
+
+Value:
+Font-size: 26–30 px
+Font-weight: 900
+Color: black
+Margin top: 2–4 px
+```
+
+Строки:
+
+```txt
+Категория обучения
+B
+
+Учебная группа
+15-26
+
+Начало обучения
+12.02.2026
+
+Начало вождения
+23.02.2026
+
+Окончание вождения
+21.05.2026
+
+Окончание обучения
+21.05.2026
+
+Внутренний экзамен
+21.05.2026 10:00
+```
+
+---
+
+# Экран “Вождение”
+
+Фон: `#F5F6F8`.
+
+Верх:
+
+```txt
+Back arrow слева
+Title: “Вождение”
+Font-size: 44–48 px
+Font-weight: 900
+Margin top: 70–90 px
+```
+
+## Две верхние карточки
+
+```txt
+Layout: 2 columns
+Gap: 10–12 px
+```
+
+Карточка 1:
+
+```txt
+Background: white
+Border-radius: 20–24 px
+Height: 140–150 px
+Padding: 20 px
+
+Title:
+“Остатки учебных
+часов”
+Font-size: 24–27 px
+Font-weight: 900
+
+Green circle:
+Size: 48–54 px
+Background: #006C0D / dark green
+Text: “24”
+Color: white
+Font-size: 20–22 px
+Font-weight: 900
+```
+
+Карточка 2:
+
+```txt
+Title:
+“Списания
+и начисления”
+
+Нижний блок:
+Pale green circle with “0”
+Text: “-2 ч”
+Color: #12A255
+Subtitle: “Вчера”
+Color: #8B8D94
+```
+
+## Карточка прогресса навыков
+
+```txt
+Background: white
+Border-radius: 20–24 px
+Padding: 20 px
+Height: 120–140 px
+Margin top: 14–16 px
+```
+
+Верхняя строка:
+
+```txt
+Lightning icon blue
+Text: “Прогресс навыков вождения”
+Font-size: 24–27 px
+Font-weight: 900
+Chevron right gray
+```
+
+Нижняя строка:
+
+```txt
+Left: “0 из 0 навыков освоено”
+Color: #8B8D94
+Font-size: 20–22 px
+Font-weight: 800
+
+Right: “0%”
+Color: black
+Font-size: 22–24 px
+Font-weight: 900
+```
+
+Progress bar:
+
+```txt
+Height: 7–8 px
+Background: #F0F1F4
+Border-radius: 999 px
+```
+
+## Карточка “Мои записи”
+
+```txt
+Background: white
+Border-radius: 18–22 px
+Height: 82–90 px
+Padding: 16–20 px
+Display: row
+```
+
+Иконка:
+
+```txt
+Container size: 52–58 px
+Background: #F5F6FA
+Emoji/car icon
+```
+
+Текст:
+
+```txt
+Title: “Мои записи”
+Font-size: 25–28 px
+Font-weight: 900
+
+Subtitle: “Ближайшая: Вт 5 в 13:00”
+Font-size: 19–21 px
+Font-weight: 800
+Color: #8B8D94
+```
+
+## Секция “Учебное транспортное средство”
+
+```txt
+Title:
+Font-size: 31–36 px
+Font-weight: 900
+Margin top: 28–34 px
+```
+
+Карточка автомобиля:
+
+```txt
+Background: white
+Border-radius: 20–24 px
+Height: 100–120 px
+Padding: 20 px
+Display: row
+```
+
+Слева иконка приложения:
+
+```txt
+Size: 36–44 px
+```
+
+По центру:
+
+```txt
+Car model: “SOLARIS HS”
+Font-size: 24–27 px
+Font-weight: 900
+
+License plate:
+White plate with black border
+Text: “X045CA | 071”
+Font-size: 28–32 px
+Font-weight: 900
+Border-radius: 6–8 px
+```
+
+## Секция “Ваш инструктор”
+
+```txt
+Title:
+Font-size: 31–36 px
+Font-weight: 900
+```
+
+Карточка инструктора:
+
+```txt
+Background: white
+Border-radius: 20–24 px
+Padding: 20 px
+```
+
+Верхняя строка:
+
+```txt
+Avatar photo: 52–60 px
+Text: “Игорь Юрьевич Соколов”
+Font-size: 24–27 px
+Font-weight: 900
+```
+
+Нижние кнопки:
+
+```txt
+3 equal buttons
+Height: 58–64 px
+Gap: 8–12 px
+Border-radius: 14–18 px
+```
+
+Цвета кнопок:
+
+```txt
+Phone: #F5F5F5, black icon
+Chat: #EEF0FA, blue icon
+Telegram: #EAF6F0, blue/cyan icon
+```
+
+---
+
+# Экран “Чаты”
+
+Фон: `#F5F6F8`.
+
+Заголовок:
+
+```txt
+Text: “Чаты”
+Font-size: 44–48 px
+Font-weight: 900
+Margin left: 16 px
+Margin top после status bar: 70–90 px
+```
+
+Список чатов начинается ниже.
+
+Каждая строка:
+
+```txt
+Height: 90–110 px
+Display: row
+Divider bottom: 1 px solid #DDE0E5
+```
+
+Аватар слева:
+
+```txt
+Size: 62–72 px
+Border-radius: 999 px
+```
+
+Текстовый блок:
+
+```txt
+Margin left: 14–18 px
+```
+
+Имя:
+
+```txt
+Font-size: 25–30 px
+Font-weight: 900
+Color: black
+```
+
+Описание:
+
+```txt
+Font-size: 20–23 px
+Font-weight: 700–800
+Color: black или #8B8D94
+```
+
+Первые два чата закреплены:
+
+```txt
+Pin icon справа
+Size: 16–20 px
+Color: #8B8D94
+```
+
+Третий чат:
+
+```txt
+Name: “Автошкола-Контроль”
+Date справа: “01.05.2026”
+Date color: #8B8D94
+Unread badge: blue circle with “50”
+Badge size: 28–34 px
+Background: #1F2BD8
+Text white
+```
+
+---
+
+# Визуальный язык и детали
+
+Интерфейс использует очень крупные заголовки, особенно на главных экранах. Текст почти всегда жирный. Даже второстепенные подписи имеют вес 700–800.
+
+Главные цвета:
+
+```txt
+Синий: основной action/accent
+Зелёный: свободно, успешно, доступное занятие
+Красный/розовый: просрочка, долг, уведомления
+Серый: вторичная информация
+Белый: карточки
+Светло-серый: общий фон
+```
+
+Скругления очень заметные:
+
+```txt
+Маленькие элементы: 12–16 px
+Средние карточки/кнопки: 18–22 px
+Крупные карточки/sheets: 24–28 px
+Круглые элементы: 999 px
+```
+
+Тени почти отсутствуют. Разделение создаётся фоном, белыми карточками, мягкими границами и скруглением.
+
+Иконки:
+
+```txt
+Стиль: outline / line icons
+Stroke width: 2–2.5 px
+Active icon color: #1F2BD8
+Inactive icon color: #B8BABF
+System icons: black или gray
+```
+
+Иллюстрации в разделе “Теория” — 3D/изометрические, яркие, с округлыми формами, расположены в правом нижнем углу карточек и частично занимают нижнюю часть.
+
+---
+
+# Цветовая палитра
+
+```txt
+Background main: #F5F6F8
+White: #FFFFFF
+Black text: #050609
+Muted text: #8B8D94
+Light muted: #B8BABF
+Divider: #E3E5EA
+Primary blue: #1F2BD8
+Dark blue active: #1427C8
+Green: #35C45A
+Green text: #14934A
+Green pale bg: #EEF9F2
+Red/pink: #FF3155
+Red pale bg: #FFEDEF
+Blue card bg: #D6EAFF
+Beige card bg: #F3E9D8
+Pink card bg: #F5D8DF
+Mint card bg: #E3F0EC
+Lavender card bg: #E3E4F4
+Pale action bg: #E9EBF8
+```
+
+---
+
+# Общая композиция приложения
+
+Приложение выглядит как набор крупных карточек на светло-сером фоне. Основной контент почти всегда расположен с отступом 16 px от краёв. Навигация внизу всегда белая, плавающая, с большими скруглёнными верхними углами.
+
+Интерфейс не использует мелкие таблицы, плотные списки или тонкую типографику. Все действия должны быть крупными и хорошо нажимаемыми. Карточки воспринимаются как отдельные физические блоки. Главные данные показываются максимально крупно: время занятия, сумма оплаты, название раздела, имя пользователя, название экрана.

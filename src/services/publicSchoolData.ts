@@ -54,7 +54,7 @@ export async function loadPublicSchoolData(slug: string): Promise<PublicSchoolDa
         }
       }
     } catch {
-      // Local demo data remains the fallback when Supabase is unavailable or slow.
+      // Local public data remains the fallback when Supabase is unavailable or slow.
     }
   }
 

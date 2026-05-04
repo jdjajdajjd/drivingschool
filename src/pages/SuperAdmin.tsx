@@ -10,7 +10,7 @@ import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Badge } from '../components/ui/Badge'
 import { formatPrice } from '../lib/utils'
 import { getBillingSummary } from '../services/modules'
-import { performDemoReset } from '../services/schoolService'
+import { resetProductData } from '../services/schoolService'
 
 const AlertTriangle = createHugeIcon(Alert02Icon)
 const BarChart3 = createHugeIcon(ChartBarLineIcon)
@@ -65,19 +65,19 @@ export function SuperAdminOverview() {
   return (
     <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
-        eyebrow="DriveDesk"
+        eyebrow="vroom"
         title="Superadmin"
         description="Обзор по автошколам, выручке, активности записей и сигналам, которые требуют внимания владельца платформы."
         actions={
           <Button
             variant="secondary"
             onClick={() => {
-              performDemoReset()
+              resetProductData()
               window.location.href = SUPERADMIN_BASE_PATH
             }}
           >
             <RefreshCw size={15} />
-            Сбросить демо-данные
+            Сбросить данные
           </Button>
         }
       />

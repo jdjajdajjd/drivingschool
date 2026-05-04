@@ -23,7 +23,7 @@ export function PublicNav({ transparent = false }: PublicNavProps) {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
             <Car size={18} className="text-white" />
           </div>
-          <span className="text-base font-semibold #111418">DriveDesk</span>
+          <span className="text-base font-semibold #111418">vroom</span>
         </Link>
 
         <Button

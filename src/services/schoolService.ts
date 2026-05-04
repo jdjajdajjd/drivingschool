@@ -3,7 +3,7 @@ import { generateId } from '../lib/utils'
 import type { School, SchoolOverview } from '../types'
 import { DRIVING_CATEGORIES } from './drivingCategories'
 import { getBillingSummary } from './modules'
-import { resetDemoData } from './seed'
+import { resetDemoData as resetSeedData } from './seed'
 import { db } from './storage'
 import { validateDataIntegrity } from './integrityService'
 import { persistSupabaseMutation, updateSupabaseSchoolSettings } from './supabaseAdminService'
@@ -184,8 +184,8 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
   return { ok: true, school: updated }
 }
 
-export function performDemoReset(): void {
-  resetDemoData()
+export function resetProductData(): void {
+  resetSeedData()
 }
 
 export function getSchoolOverview(schoolId: string): SchoolOverview | null {

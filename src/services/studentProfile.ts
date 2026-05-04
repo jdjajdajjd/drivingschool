@@ -35,6 +35,27 @@ export function getProfileKey(schoolId: string): string {
   return `dd:student_profile:${schoolId}`
 }
 
+function getCredentialKey(phone: string): string {
+  return `dd:student_login:${normalizePhone(phone)}`
+}
+
+export function saveStudentCredentials(phone: string, password: string, schoolId: string): void {
+  const normalizedPhone = normalizePhone(phone)
+  localStorage.setItem(getCredentialKey(normalizedPhone), JSON.stringify({ schoolId, phone: normalizedPhone, password }))
+}
+
+export function verifyStudentCredentials(phone: string, password: string): { schoolId: string } | null {
+  try {
+    const raw = localStorage.getItem(getCredentialKey(phone))
+    if (!raw) return null
+    const saved = JSON.parse(raw) as { schoolId?: string; password?: string }
+    if (!saved.schoolId || saved.password !== password) return null
+    return { schoolId: saved.schoolId }
+  } catch {
+    return null
+  }
+}
+
 export function loadStudentProfile(schoolId: string): StudentProfile | null {
   try {
     const raw = localStorage.getItem(getProfileKey(schoolId))

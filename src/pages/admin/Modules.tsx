@@ -99,7 +99,7 @@ export function AdminModules() {
   if (!school || !billing) {
     return (
       <div className="max-w-7xl p-4 md:p-6">
-        <EmptyState title="Школа не найдена" description="Демо-данные не загружены." />
+        <EmptyState title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }

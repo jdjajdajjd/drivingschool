@@ -17,7 +17,7 @@ const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 const Settings2 = createHugeIcon(Settings02Icon)
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
-import { performDemoReset, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
+import { resetProductData, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
@@ -143,7 +143,7 @@ export function AdminSettings() {
   }
 
   function handleReset(): void {
-    performDemoReset()
+    resetProductData()
     setResetOpen(false)
     showToast('Локальные данные обновлены.', 'success')
     window.location.href = `${ADMIN_BASE_PATH}/settings`

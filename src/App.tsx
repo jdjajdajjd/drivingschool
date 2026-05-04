@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { ProtectedAccess } from './components/layout/ProtectedAccess'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
@@ -9,6 +9,9 @@ const SchoolPage = lazy(() => import('./pages/SchoolPage').then((module) => ({ d
 const BookingFlowPage = lazy(() => import('./pages/BookingFlowPage').then((module) => ({ default: module.BookingFlowPage })))
 const StudentPage = lazy(() => import('./pages/StudentPage').then((module) => ({ default: module.StudentPage })))
 const StudentRegisterPage = lazy(() => import('./pages/StudentRegisterPage'))
+const StudentLoginPage = lazy(() => import('./pages/StudentLoginPage'))
+const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })))
+const LegalPage = lazy(() => import('./pages/LegalPage').then((module) => ({ default: module.LegalPage })))
 const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation').then((module) => ({ default: module.BookingConfirmation })))
 const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage').then((module) => ({ default: module.StaffLoginPage })))
 const InstructorPage = lazy(() => import('./pages/InstructorPage').then((module) => ({ default: module.InstructorPage })))
@@ -62,7 +65,14 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
         <Routes>
-          <Route path="/" element={<StudentPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<StudentLoginPage />} />
+          <Route path="/register" element={<Navigate to="/student/register" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/student" replace />} />
+          <Route path="/demo" element={<Navigate to="/school/virazh" replace />} />
+          <Route path="/terms" element={<LegalPage />} />
+          <Route path="/privacy" element={<LegalPage />} />
+          <Route path="/school" element={<Navigate to="/school/virazh" replace />} />
           <Route path="/school/:slug" element={<SchoolPage />} />
           <Route path="/school/:slug/book" element={<BookingFlowPage />} />
           <Route path="/student/register" element={<StudentRegisterPage />} />
@@ -85,6 +95,8 @@ function App() {
               <Route path="settings" element={<AdminSettings />} />
             </Route>
           </Route>
+          <Route path="/instructor" element={<Navigate to="/instructor/tok-petrov-2024" replace />} />
+          <Route path="/instructor/register" element={<Navigate to="/admin/instructors" replace />} />
           <Route path="/instructor/:token" element={<InstructorPage />} />
           <Route element={<ProtectedAccess role="superadmin" />}>
             <Route path={SUPERADMIN_BASE_PATH} element={<SuperAdminLayout />}>

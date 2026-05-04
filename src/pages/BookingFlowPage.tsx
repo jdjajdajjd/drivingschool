@@ -53,6 +53,22 @@ const Location = createHugeIcon(Location01Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 const ShieldCheck = createHugeIcon(Shield01Icon)
 
+const ui = {
+  surface: 'var(--surface)',
+  surfaceSoft: 'var(--surface-soft)',
+  surfaceMuted: 'var(--surface-muted)',
+  text: 'var(--text)',
+  textMuted: 'var(--text-muted)',
+  textSoft: 'var(--text-soft)',
+  border: 'var(--border)',
+  accent: 'var(--accent)',
+  accentSoft: 'var(--accent-soft)',
+  green: 'var(--green)',
+  greenSoft: 'var(--green-soft)',
+  blueSoft: 'var(--blue-soft)',
+  shadowCard: 'var(--shadow-card)',
+} as const
+
 type Step = 'date' | 'instructor' | 'time' | 'contacts' | 'confirm' | 'success' | 'account'
 
 interface ContactForm {
@@ -87,22 +103,22 @@ function Progress({ step }: { step: Step }) {
     <div
       className="px-4 py-3"
       style={{
-        background: 'white',
-        border: '1px solid rgba(0,0,0,0.06)',
+        background: ui.surface,
+        border: `1px solid ${ui.border}`,
         borderRadius: '18px',
-        boxShadow: '0 12px 28px rgba(15,20,25,0.08)',
+        boxShadow: ui.shadowCard,
       }}
     >
       <div className="flex items-center justify-between">
         <p className="t-micro">
           {step === 'success' || step === 'account' ? 'Готово' : `Шаг ${current} из 5`}
         </p>
-        <p className="t-micro" style={{ color: '#9EA3A8' }}>{pct}%</p>
+        <p className="t-micro" style={{ color: ui.textSoft }}>{pct}%</p>
       </div>
-      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full" style={{ background: '#F4F5F6' }}>
+      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full" style={{ background: ui.surfaceMuted }}>
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, background: '#2436D9' }}
+          style={{ width: `${pct}%`, background: ui.accent }}
         />
       </div>
     </div>
@@ -124,26 +140,26 @@ function BookingMiniSummary({
     <div
       className="flex items-center gap-3.5 p-4"
       style={{
-        background: 'white',
-        border: '1px solid rgba(0,0,0,0.06)',
+        background: ui.surface,
+        border: `1px solid ${ui.border}`,
         borderRadius: '18px',
-        boxShadow: '0 12px 28px rgba(15,20,25,0.08)',
+        boxShadow: ui.shadowCard,
       }}
     >
       <div
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
+        style={{ background: ui.accentSoft, color: ui.accent }}
       >
         <Car size={18} />
       </div>
       <div className="min-w-0 flex-1">
         <p
           className="truncate font-semibold leading-5"
-          style={{ fontSize: '14px', color: '#111418' }}
+          style={{ fontSize: '14px', color: ui.text }}
         >
           {slot ? `${formatHumanDate(slot.date, false)}, ${formatTimeRange(slot)}` : 'Время не выбрано'}
         </p>
-        <p className="mt-0.5 truncate text-[12px] font-medium leading-5" style={{ color: '#6F747A' }}>
+        <p className="mt-0.5 truncate text-[12px] font-medium leading-5" style={{ color: ui.textMuted }}>
           {instructor ? formatInstructorName(instructor.name) : 'Инструктор'} · {branch?.name ?? 'Филиал'}
         </p>
       </div>
@@ -153,9 +169,9 @@ function BookingMiniSummary({
 
 function SlotStatusBadge({ mine, busy }: { mine: boolean; busy: boolean }) {
   const baseStyle = { borderRadius: 999, padding: '4px 10px', fontSize: 11, lineHeight: '14px', fontWeight: 700 } as const
-  if (mine) return <span style={{ ...baseStyle, background: '#EFF2FF', color: '#2436D9' }}>Вы записаны</span>
-  if (busy) return <span style={{ ...baseStyle, background: '#F1F2F5', color: '#8B929C' }}>Занято</span>
-  return <span style={{ ...baseStyle, background: '#EAF8F0', color: '#14995B' }}>Свободно</span>
+  if (mine) return <span style={{ ...baseStyle, background: ui.blueSoft, color: ui.accent }}>Вы записаны</span>
+  if (busy) return <span style={{ ...baseStyle, background: ui.surfaceMuted, color: ui.textSoft }}>Занято</span>
+  return <span style={{ ...baseStyle, background: ui.greenSoft, color: ui.green }}>Свободно</span>
 }
 
 function slotInitials(name?: string): string {
@@ -182,7 +198,7 @@ function FastSlotCard({
       disabled={disabled}
       onClick={() => onSelect(item.slot)}
       whileTap={disabled ? undefined : { scale: 0.98 }}
-      className="w-full overflow-hidden rounded-[22px] bg-white p-4 text-left shadow-[0_10px_28px_rgba(18,24,38,0.06)] transition disabled:opacity-70"
+      className="w-full overflow-hidden rounded-[22px] p-4 text-left transition disabled:opacity-70"
       style={{
         width: '100%',
         maxWidth: '100%',
@@ -190,28 +206,29 @@ function FastSlotCard({
         boxSizing: 'border-box',
         padding: 16,
         borderRadius: 22,
-        background: 'white',
-        border: `2px solid ${selected || item.mine ? '#2436D9' : 'rgba(0,0,0,0.06)'}`,
+        background: ui.surface,
+        border: `2px solid ${selected || item.mine ? ui.accent : ui.border}`,
+        boxShadow: ui.shadowCard,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 20, lineHeight: '26px', fontWeight: 700, letterSpacing: '-0.02em', color: '#101216' }}>{formatTimeRange(item.slot)}</p>
-          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#8B929C' }}>{lessonTypeLabel(item.slot)} · {item.slot.duration} минут</p>
+          <p style={{ margin: 0, fontSize: 20, lineHeight: '26px', fontWeight: 700, letterSpacing: '-0.02em', color: ui.text }}>{formatTimeRange(item.slot)}</p>
+          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: ui.textSoft }}>{lessonTypeLabel(item.slot)} · {item.slot.duration} минут</p>
         </div>
         <SlotStatusBadge mine={item.mine} busy={busy} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-        <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#EFF2FF] text-[12px] font-bold text-[#2436D9]" style={{ width: 34, height: 34 }}>
+        <div className="grid shrink-0 place-items-center overflow-hidden rounded-full text-[12px] font-bold" style={{ width: 34, height: 34, background: ui.blueSoft, color: ui.accent }}>
           {item.instructor ? <img src={getInstructorPhoto(item.instructor)} alt={item.instructor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : slotInitials()}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <p className="truncate" style={{ margin: 0, fontSize: 14, lineHeight: '18px', fontWeight: 700, color: '#101216' }}>{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-          <p className="truncate" style={{ margin: 0, marginTop: 2, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: '#727985' }}>{item.instructor?.car ?? 'Учебный автомобиль'}</p>
+          <p className="truncate" style={{ margin: 0, fontSize: 14, lineHeight: '18px', fontWeight: 700, color: ui.text }}>{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
+          <p className="truncate" style={{ margin: 0, marginTop: 2, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: ui.textMuted }}>{item.instructor?.car ?? 'Учебный автомобиль'}</p>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: '#8B929C' }}>
-        <Location size={14} className="shrink-0 text-[#2436D9]" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: ui.textSoft }}>
+        <Location size={14} className="shrink-0" style={{ color: ui.accent }} />
         <span className="truncate">{item.branch?.name ?? 'Филиал'}</span>
       </div>
       {!busy ? (
@@ -559,14 +576,14 @@ export function BookingFlowPage() {
   }
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
+    <div className="min-h-dvh overflow-x-hidden" style={{ background: 'var(--page-bg)', color: ui.text }}>
       <main className="mx-auto w-full max-w-[430px] overflow-x-hidden px-4 pb-8 pt-5">
         <header className="mb-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <button
               onClick={goBack}
               className="flex min-h-10 items-center gap-2 rounded-md px-1 text-[13px] font-semibold transition active:scale-[0.97]"
-              style={{ color: '#6F747A', minHeight: 40 }}
+              style={{ color: ui.textMuted, minHeight: 40 }}
             >
               <ArrowLeft size={16} />
               Назад
@@ -582,8 +599,8 @@ export function BookingFlowPage() {
             {/* ── Step 1: Date ── */}
             {step === 'date' && (
               <section>
-                <h2 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">Расписание</h2>
-                <p className="mt-2 text-[15px] font-medium leading-5 text-[#8B8D94]">Нажмите свободный слот, чтобы записаться</p>
+                <h2 className="text-[30px] font-bold leading-tight tracking-[-0.02em]" style={{ color: ui.text }}>Расписание</h2>
+                <p className="mt-2 text-[15px] font-medium leading-5" style={{ color: ui.textSoft }}>Нажмите свободный слот, чтобы записаться</p>
 
                 <div className="mt-5 space-y-4">
                   <DayChipsScroller
@@ -597,21 +614,21 @@ export function BookingFlowPage() {
                     }}
                   />
 
-                  <div className="rounded-[24px] border border-[#EBECF0] bg-white p-4">
+                  <div className="rounded-[24px] p-4" style={{ background: ui.surface, border: `1px solid ${ui.border}` }}>
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">
+                        <p className="text-[22px] font-bold tracking-[-0.02em]" style={{ color: ui.text }}>
                           {selectedDate ? format(selectedDate, 'd MMMM', { locale: ru }) : 'Выберите день'}
                         </p>
-                        <p className="mt-1 text-[14px] font-medium text-[#8B8D94]">
+                        <p className="mt-1 text-[14px] font-medium" style={{ color: ui.textSoft }}>
                           {selectedDateKey
                             ? `${slotsForSelectedDate.filter((item) => item.slot.status === 'available').length} свободных из ${slotsForSelectedDate.length}`
                             : 'Покажем только актуальные окна'}
                         </p>
                       </div>
                       <button
-                        className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#EFF2FF] px-3 text-[12px] font-semibold text-[#2436D9] active:scale-[0.97]"
-                        style={{ minHeight: 40 }}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-[12px] font-semibold active:scale-[0.97]"
+                        style={{ minHeight: 40, background: ui.blueSoft, color: ui.accent }}
                         onClick={() => {
                           if (!school) return
                           setRefreshingSlots(true)
@@ -626,15 +643,15 @@ export function BookingFlowPage() {
                         Обновить
                       </button>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-medium text-[#1F2BD8]">
-                      <ShieldCheck size={15} className="text-[#1F2BD8]" />
+                    <div className="mt-3 flex items-center gap-2 rounded-[16px] px-3 py-2 text-[13px] font-medium" style={{ background: ui.accentSoft, color: ui.accent }}>
+                      <ShieldCheck size={15} />
                       Обновляем свободные места автоматически
                     </div>
                     <div className="mt-4 space-y-3">
                       {slotsForSelectedDate.length === 0 ? (
-                        <div className="rounded-[20px] bg-[#F7F8FA] p-5 text-center">
-                          <p className="text-[15px] font-semibold text-[#101216]">На этот день окон нет</p>
-                          <p className="mt-1 text-[13px] font-semibold text-[#727985]">Выберите другой день выше.</p>
+                        <div className="rounded-[20px] p-5 text-center" style={{ background: ui.surfaceSoft }}>
+                          <p className="text-[15px] font-semibold" style={{ color: ui.text }}>На этот день окон нет</p>
+                          <p className="mt-1 text-[13px] font-semibold" style={{ color: ui.textMuted }}>Выберите другой день выше.</p>
                         </div>
                       ) : slotsForSelectedDate.map((item) => (
                         <FastSlotCard
@@ -647,14 +664,14 @@ export function BookingFlowPage() {
                       ))}
                     </div>
                     {lastSlotsRefreshAt ? (
-                      <p className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-[#9EA3A8]">
+                      <p className="mt-3 flex items-center gap-1.5 text-[11px] font-bold" style={{ color: ui.textSoft }}>
                         <Clock3 size={12} /> Обновлено {format(lastSlotsRefreshAt, 'HH:mm:ss')}
                       </p>
                     ) : null}
                   </div>
                 </div>
 
-                <button className="mt-4 w-full rounded-[18px] border border-[#DADDF0] bg-white px-5 py-3.5 text-[16px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setStep('instructor')}>
+                <button className="mt-4 w-full rounded-[18px] px-5 py-3.5 text-[16px] font-semibold active:scale-[0.98]" style={{ background: ui.surface, border: `1px solid ${ui.border}`, color: ui.accent }} onClick={() => setStep('instructor')}>
                   Выбрать по инструктору
                 </button>
               </section>
@@ -665,11 +682,11 @@ export function BookingFlowPage() {
               <section>
                 <h2
                   className="font-bold tracking-tight"
-                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: ui.text }}
                 >
                   Инструкторы
                 </h2>
-                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                <p className="t-body mt-2" style={{ color: ui.textMuted }}>
                   {selectedDate
                     ? `На ${format(selectedDate, 'd MMMM', { locale: ru })} доступны:`
                     : 'Выберите инструктора'}
@@ -679,7 +696,7 @@ export function BookingFlowPage() {
                 {selectedDate && (
                   <div
                     className="mt-3 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5"
-                    style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
+                    style={{ background: ui.accentSoft, color: ui.accent }}
                   >
                     <CalendarPlus size={13} />
                     <span className="text-[12px] font-semibold">
@@ -692,9 +709,9 @@ export function BookingFlowPage() {
                   {instructorsOnDate.length === 0 ? (
                     <div
                       className="rounded-2xl p-6 text-center"
-                      style={{ background: 'white', borderRadius: '24px', boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
+                      style={{ background: ui.surface, borderRadius: '24px', boxShadow: ui.shadowCard }}
                     >
-                      <p className="t-body" style={{ color: '#6F747A' }}>Нет инструкторов на этот день</p>
+                      <p className="t-body" style={{ color: ui.textMuted }}>Нет инструкторов на этот день</p>
                       <button
                         onClick={() => setStep('date')}
                         className="btn btn-secondary btn-sm mt-3"
@@ -745,7 +762,7 @@ export function BookingFlowPage() {
               <section>
                 <h2
                   className="font-bold tracking-tight"
-                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: ui.text }}
                 >
                   Время занятия
                 </h2>
@@ -758,10 +775,10 @@ export function BookingFlowPage() {
                       src={getInstructorPhoto(selectedInstructor)}
                       alt={selectedInstructor.name}
                       size="md"
-                      className="rounded-full text-[#2436D9]"
+                      className="rounded-full text-[var(--accent)]"
                     />
                     <div className="min-w-0">
-                      <p className="text-[15px] font-semibold tracking-tight" style={{ color: '#111418' }}>
+                      <p className="text-[15px] font-semibold tracking-tight" style={{ color: ui.text }}>
                         {formatInstructorName(selectedInstructor.name)}
                       </p>
                       <p className="t-small mt-0.5">
@@ -772,7 +789,7 @@ export function BookingFlowPage() {
                 )}
 
                 {selectedDate && (
-                  <p className="t-micro mt-3" style={{ color: '#6F747A' }}>
+                  <p className="t-micro mt-3" style={{ color: ui.textMuted }}>
                     {format(selectedDate, 'EEEE, d MMMM', { locale: ru })}
                   </p>
                 )}
@@ -781,9 +798,9 @@ export function BookingFlowPage() {
                   {slotsForSelection.length === 0 ? (
                     <div
                       className="rounded-2xl p-6 text-center"
-                      style={{ background: 'white', borderRadius: '24px', boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
+                      style={{ background: ui.surface, borderRadius: '24px', boxShadow: ui.shadowCard }}
                     >
-                      <p className="t-body" style={{ color: '#6F747A' }}>Нет свободных окон</p>
+                      <p className="t-body" style={{ color: ui.textMuted }}>Нет свободных окон</p>
                       <button onClick={() => setStep('instructor')} className="btn btn-secondary btn-sm mt-3">
                         Выбрать другого инструктора
                       </button>
@@ -814,11 +831,11 @@ export function BookingFlowPage() {
               <section>
                 <h2
                   className="font-bold tracking-tight"
-                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: ui.text }}
                 >
                   Ваши контакты
                 </h2>
-                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                <p className="t-body mt-2" style={{ color: ui.textMuted }}>
                   Имя и телефон нужны для записи.
                 </p>
 
@@ -854,8 +871,8 @@ export function BookingFlowPage() {
                     onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
                   />
 
-                  <div className="rounded-2xl bg-[#EFF2FF] p-4">
-                    <p className="text-[13px] font-semibold leading-5 text-[#2436D9]">
+                  <div className="rounded-2xl p-4" style={{ background: ui.blueSoft }}>
+                    <p className="text-[13px] font-semibold leading-5" style={{ color: ui.accent }}>
                       После нажатия сразу проверим доступность слота и запишем вас без лишнего экрана подтверждения.
                     </p>
                   </div>
@@ -878,11 +895,11 @@ export function BookingFlowPage() {
               <section>
                 <h2
                   className="font-bold tracking-tight"
-                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: ui.text }}
                 >
                   Проверьте запись
                 </h2>
-                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                <p className="t-body mt-2" style={{ color: ui.textMuted }}>
                   Если всё верно — подтвердите.
                 </p>
 
@@ -952,11 +969,11 @@ export function BookingFlowPage() {
               <section>
                 <h2
                   className="font-bold tracking-tight"
-                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: '#111418' }}
+                  style={{ fontSize: 'clamp(26px, 6vw, 32px)', lineHeight: 1.15, color: ui.text }}
                 >
                   Создать кабинет
                 </h2>
-                <p className="t-body mt-2" style={{ color: '#6F747A' }}>
+                <p className="t-body mt-2" style={{ color: ui.textMuted }}>
                   Проверьте данные и задайте пароль.
                 </p>
 
@@ -964,17 +981,17 @@ export function BookingFlowPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3.5"
                     style={{
-                      background: 'rgba(21,128,61,0.07)',
+                      background: ui.greenSoft,
                       border: '1px solid rgba(21,128,61,0.15)',
                       borderRadius: '18px',
                     }}
                   >
-                    <CheckCircle2 size={18} style={{ color: '#15803D', flexShrink: 0 }} />
+                    <CheckCircle2 size={18} style={{ color: ui.green, flexShrink: 0 }} />
                     <div>
-                      <p className="text-[14px] font-semibold" style={{ color: '#111418' }}>
+                      <p className="text-[14px] font-semibold" style={{ color: ui.text }}>
                         Запись уже сохранена
                       </p>
-                      <p className="t-micro mt-0.5" style={{ color: '#6F747A' }}>
+                      <p className="t-micro mt-0.5" style={{ color: ui.textMuted }}>
                         {selectedSlot
                           ? `${formatHumanDate(selectedSlot.date, false)}, ${formatTimeRange(selectedSlot)}`
                           : 'Выбранное занятие'}

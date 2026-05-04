@@ -94,7 +94,7 @@ function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
     .filter(Boolean)
 
   if (events.length === 0) return null
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DriveDesk//Booking Flow//RU', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//vroom//Booking Flow//RU', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
 }
 
 export function BookingConfirmation() {
