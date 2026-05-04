@@ -368,7 +368,6 @@ export function StudentPage() {
   const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? instructors[0] ?? null
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
   const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
-  const usualSlot = futureSlots.find((slot) => slot.status === 'available' && slot.instructorId === selectedInstructor?.id) ?? futureSlots.find((slot) => slot.status === 'available') ?? null
   const profileDirty = Boolean(profile && (form.name.trim() !== profile.name || normalizePhone(form.phone) !== normalizePhone(profile.phone) || form.email.trim() !== (profile.email ?? '') || pendingAvatarUrl))
   const drivingTotal = progress?.drivingHoursTotal ?? 56
   const drivingCompleted = progress?.drivingHoursCompleted ?? 0
@@ -526,21 +525,12 @@ export function StudentPage() {
 
             <section>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className={sectionTitle}>{nextLesson?.slot ? (isSameDay(parseISO(nextLesson.slot.date), new Date()) ? 'Сегодня занятие' : 'Следующее занятие') : 'Следующее действие'}</h2>
+                <h2 className={sectionTitle}>Мои записи</h2>
                 <button className="grid h-10 w-10 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
               </div>
               <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
                 {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
               </div>
-              {!nextLesson?.slot && usualSlot ? (
-                <button className={cn(card, 'mt-3 flex w-full items-center justify-between gap-3 p-4 text-left active:scale-[0.99]')} onClick={() => navigate(`/student/book?slot=${usualSlot.id}`)}>
-                  <span className="min-w-0">
-                    <span className="block text-[16px] font-bold text-[#050609]">Найти похожее время</span>
-                    <span className="mt-1 block truncate text-[13px] font-semibold text-[#8B8D94]">{lessonTime(usualSlot)} · {selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор'}</span>
-                  </span>
-                  <ChevronRight className="text-[#B8BABF]" size={22} />
-                </button>
-              ) : null}
             </section>
 
             <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => navigate(`/student/book?slot=${slot.id}`)} />
