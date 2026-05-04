@@ -89,7 +89,7 @@ export function PhoneInput({
         disabled={disabled}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className={['input', error ? 'input-error' : ''].join(' ')}
+        className={['input', error ? 'input-error' : '', disabled ? 'opacity-55' : ''].join(' ')}
         style={{ fontSize: '16px', letterSpacing: value.length > 0 ? '0.04em' : 'normal' }}
       />
       {error && <p className="input-error-msg">{error}</p>}

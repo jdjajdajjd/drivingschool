@@ -1,5 +1,5 @@
 import React from 'react'
-import { BellDotIcon, BookOpen01Icon, Calendar03Icon, Car04Icon, File02Icon, GraduationScrollIcon, School01Icon, Settings02Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { BellDotIcon, BookOpen01Icon, Calendar03Icon, Car04Icon, File02Icon, GraduationScrollIcon, LicenseDraftIcon, School01Icon, Settings02Icon, StickyNote02Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { createHugeIcon } from '../../../components/ui/HugeIcon'
 import { db } from '../../../services/storage'
 import { normalizePhone } from '../../../services/bookingService'
@@ -18,7 +18,9 @@ const CalendarDays = createHugeIcon(Calendar03Icon)
 const CarFront = createHugeIcon(Car04Icon)
 const FileText = createHugeIcon(File02Icon)
 const GraduationCap = createHugeIcon(GraduationScrollIcon)
+const License = createHugeIcon(LicenseDraftIcon)
 const Settings = createHugeIcon(Settings02Icon)
+const StickyNote = createHugeIcon(StickyNote02Icon)
 const UserRound = createHugeIcon(User03Icon)
 
 const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
@@ -38,7 +40,8 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Building2; label: 
 export function InfoSheetPanel({ type, school, profile, progress, student, selectedInstructor, onClose }: { type: InfoSheet; school: School; profile: StudentProfile; progress: ReturnType<typeof loadStudentProgress>; student: ReturnType<typeof db.students.byId> | null; selectedInstructor: Instructor | null; onClose: () => void }) {
   if (!type) return null
 
-  const title = type === 'student' ? 'Инфо ученика' : type === 'profileData' ? 'Данные ученика' : type === 'tips' ? 'Советы' : 'Настройки'
+  const theorySheet = type === 'theoryTickets' || type === 'theoryMistakes' || type === 'theoryRules' || type === 'theoryExam'
+  const title = type === 'student' ? 'Инфо ученика' : type === 'profileData' ? 'Данные ученика' : type === 'tips' ? 'Советы' : theorySheet ? 'Теория' : 'Настройки'
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end bg-black/30 px-3 pb-3" onClick={onClose}>
@@ -104,6 +107,58 @@ export function InfoSheetPanel({ type, school, profile, progress, student, selec
             <InfoRow icon={CalendarDays} label="Расписание" value="Инструктор закрепляется автоматически" />
             <InfoRow icon={Bell} label="Уведомления" value="Пока не подключены" />
             <InfoRow icon={Settings} label="Настройки" value="Базовые параметры кабинета" />
+          </section>
+        ) : null}
+
+        {theorySheet ? (
+          <section className="space-y-3">
+            {type === 'theoryTickets' ? (
+              <article className={cn(card, 'p-4')}>
+                <div className="flex items-start gap-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EEF0FA] text-[#1F2BD8]"><StickyNote size={23} /></span>
+                  <div>
+                    <h3 className="text-[18px] font-bold text-[#050609]">Быстрая тренировка</h3>
+                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">10 вопросов по текущим темам. Результат можно показать преподавателю на занятии.</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  {['ПДД', 'Знаки', 'Манёвры'].map((item) => <span key={item} className="rounded-[16px] bg-[#F7F8FA] px-2 py-3 text-[13px] font-bold text-[#050609]">{item}</span>)}
+                </div>
+              </article>
+            ) : null}
+
+            {type === 'theoryMistakes' ? (
+              <article className={cn(card, 'p-4')}>
+                <div className="flex items-start gap-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#F5E9EF] text-[#1F2BD8]"><BookOpen size={23} /></span>
+                  <div>
+                    <h3 className="text-[18px] font-bold text-[#050609]">Работа над ошибками</h3>
+                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Здесь собираются вопросы, которые ученик чаще всего пропускает. Пока ошибок нет, блок предлагает повторить сложные темы.</p>
+                  </div>
+                </div>
+              </article>
+            ) : null}
+
+            {type === 'theoryRules' ? (
+              <article className={cn(card, 'p-4')}>
+                <h3 className="text-[18px] font-bold text-[#050609]">Темы курса</h3>
+                <div className="mt-3 space-y-2">
+                  {['Общие положения', 'Дорожные знаки', 'Проезд перекрёстков', 'Остановка и стоянка', 'Безопасность движения'].map((item) => <div key={item} className="rounded-[16px] bg-[#F7F8FA] px-3 py-3 text-[14px] font-bold text-[#050609]">{item}</div>)}
+                </div>
+              </article>
+            ) : null}
+
+            {type === 'theoryExam' ? (
+              <article className={cn(card, 'p-4')}>
+                <div className="flex items-start gap-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#F2EBDD] text-[#1F2BD8]"><License size={23} /></span>
+                  <div>
+                    <h3 className="text-[18px] font-bold text-[#050609]">Зачёты и экзамены</h3>
+                    <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Автошкола отметит внутренний зачёт в карточке ученика. Ученик видит дату и статус без лишних процентов готовности.</p>
+                  </div>
+                </div>
+              </article>
+            ) : null}
           </section>
         ) : null}
       </section>
