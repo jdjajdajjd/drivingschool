@@ -1,4 +1,4 @@
-import { Add01Icon, Delete02Icon, MapPinIcon, PencilEdit02Icon } from '@hugeicons/core-free-icons'
+import { Add01Icon, Delete02Icon, Location01Icon, PencilEdit02Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -12,7 +12,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 
-const MapPin = createHugeIcon(MapPinIcon)
+const Location = createHugeIcon(Location01Icon)
 const Pencil = createHugeIcon(PencilEdit02Icon)
 const Plus = createHugeIcon(Add01Icon)
 const Trash2 = createHugeIcon(Delete02Icon)
@@ -133,7 +133,7 @@ export function AdminBranches() {
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px_220px] xl:items-center">
                     <div className="flex items-start gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl rgba(246,184,77,0.12) #C97F10">
-                        <MapPin size={18} />
+                        <Location size={18} />
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">

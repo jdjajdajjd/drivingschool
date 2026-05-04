@@ -5,7 +5,7 @@ import {
   ClipboardIcon,
   DashboardSquare03Icon,
   LinkSquare02Icon,
-  MapPinIcon,
+  Location01Icon,
   Settings02Icon,
   User03Icon,
   UserMultipleIcon,
@@ -20,7 +20,7 @@ const Car = createHugeIcon(Car03Icon)
 const ClipboardList = createHugeIcon(ClipboardIcon)
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const LayoutDashboard = createHugeIcon(DashboardSquare03Icon)
-const MapPin = createHugeIcon(MapPinIcon)
+const Location = createHugeIcon(Location01Icon)
 const Settings2 = createHugeIcon(Settings02Icon)
 const UserRound = createHugeIcon(User03Icon)
 const Users = createHugeIcon(UserMultipleIcon)
@@ -32,7 +32,7 @@ const NAV = [
   { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание', icon: CalendarDays },
   { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound },
   { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users },
-  { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: MapPin },
+  { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: Location },
   { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2 },
 ]
 

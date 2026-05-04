@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft01Icon, Building03Icon, Mail01Icon, MapPinIcon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, Building03Icon, Location01Icon, Mail01Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { StateView } from '../components/ui/StateView'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { loadPublicSchoolData } from '../services/publicSchoolData'
@@ -13,7 +13,7 @@ void React
 const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
 const Building2 = createHugeIcon(Building03Icon)
 const Mail = createHugeIcon(Mail01Icon)
-const MapPin = createHugeIcon(MapPinIcon)
+const Location = createHugeIcon(Location01Icon)
 const Phone = createHugeIcon(SmartPhone01Icon)
 const UserRound = createHugeIcon(User03Icon)
 
@@ -91,7 +91,7 @@ export function SchoolPage() {
 
         <section className="mt-4 space-y-2.5 rounded-[24px] bg-white p-4">
           <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Контакты</h2>
-          {school.address ? <InfoRow icon={<MapPin size={18} />} label="Адрес" value={school.address} /> : null}
+          {school.address ? <InfoRow icon={<Location size={18} />} label="Адрес" value={school.address} /> : null}
           {school.phone ? <InfoRow icon={<Phone size={18} />} label="Телефон" value={school.phone} /> : null}
           {school.email ? <InfoRow icon={<Mail size={18} />} label="Email" value={school.email} /> : null}
         </section>
@@ -100,7 +100,7 @@ export function SchoolPage() {
           <section className="mt-4 rounded-[24px] bg-white p-4">
             <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Филиалы</h2>
             <div className="mt-3 space-y-3">
-              {branches.map((branch) => <InfoRow key={branch.id} icon={<MapPin size={18} />} label={branch.name} value={branch.address} />)}
+              {branches.map((branch) => <InfoRow key={branch.id} icon={<Location size={18} />} label={branch.name} value={branch.address} />)}
             </div>
           </section>
         ) : null}

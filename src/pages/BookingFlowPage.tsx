@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, MapPinIcon, Refresh03Icon, Shield01Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Location01Icon, Refresh03Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
@@ -48,7 +48,7 @@ const CalendarPlus = createHugeIcon(CalendarAdd01Icon)
 const Car = createHugeIcon(Car03Icon)
 const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
 const Clock3 = createHugeIcon(Clock01Icon)
-const MapPin = createHugeIcon(MapPinIcon)
+const Location = createHugeIcon(Location01Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 const ShieldCheck = createHugeIcon(Shield01Icon)
 
@@ -210,7 +210,7 @@ function FastSlotCard({
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: '#8B929C' }}>
-        <MapPin size={14} className="shrink-0 text-[#2436D9]" />
+        <Location size={14} className="shrink-0 text-[#2436D9]" />
         <span className="truncate">{item.branch?.name ?? 'Филиал'}</span>
       </div>
       {!busy ? (

@@ -1,6 +1,6 @@
 import { addDays, format, isAfter, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, ClipboardIcon, Copy01Icon, LinkSquare02Icon, MapPinIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, ClipboardIcon, Copy01Icon, LinkSquare02Icon, Location01Icon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
@@ -22,7 +22,7 @@ const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
 const ClipboardList = createHugeIcon(ClipboardIcon)
 const Copy = createHugeIcon(Copy01Icon)
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
-const MapPin = createHugeIcon(MapPinIcon)
+const Location = createHugeIcon(Location01Icon)
 const Users = createHugeIcon(UserMultipleIcon)
 
 function getSchool() {
@@ -222,7 +222,7 @@ export function AdminDashboard() {
             <div className="space-y-2.5">
               {data.branches.map((branch) => (
                 <div key={branch.id} className="flex gap-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6/80 px-3.5 py-3.5">
-                  <MapPin size={19} className="mt-0.5 shrink- #9EA3A8" />
+                  <Location size={19} className="mt-0.5 shrink- #9EA3A8" />
                   <div>
                     <p className="text-sm font-semibold #111418">{branch.name}</p>
                     <p className="mt-1 text-sm #9EA3A8">{branch.address}</p>

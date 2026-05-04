@@ -1,4 +1,4 @@
-import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, LinkSquare02Icon, Logout03Icon, MapPinIcon, Settings02Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, Location01Icon, Logout03Icon, MapsIcon, Settings02Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'
@@ -24,9 +24,9 @@ void React
 const CalendarDays = createHugeIcon(Calendar03Icon)
 const Check = createHugeIcon(CheckmarkCircle02Icon)
 const ChevronRight = createHugeIcon(ArrowRight01Icon)
-const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const Location = createHugeIcon(Location01Icon)
 const LogOut = createHugeIcon(Logout03Icon)
-const MapPin = createHugeIcon(MapPinIcon)
+const Maps = createHugeIcon(MapsIcon)
 const Phone = createHugeIcon(SmartPhone01Icon)
 const Settings = createHugeIcon(Settings02Icon)
 const UserRound = createHugeIcon(User03Icon)
@@ -140,7 +140,7 @@ export function BranchCompactCard({ branch, onSelect }: { branch: Branch; onSele
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
         style={{ background: 'rgba(36,54,217,0.10)', color: '#2436D9' }}
       >
-        <MapPin size={18} />
+        <Location size={18} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-extrabold tracking-tight text-[#111418]">{branch.name}</span>
@@ -338,7 +338,7 @@ export function BookingDetailsCard({
           subvalue={instructor?.car ?? 'Учебный автомобиль'}
         />
         <DetailRow
-          icon={MapPin}
+          icon={Location}
           label="Филиал"
           value={branch?.name ?? 'Не выбран'}
           subvalue={branch?.address}
@@ -580,7 +580,7 @@ export function StudentBookingCard({
       {branch && (
         <div className="px-4 pb-2">
           <div className="flex items-center gap-2">
-            <MapPin size={14} style={{ color: '#9EA3A8' }} />
+            <Location size={14} style={{ color: '#9EA3A8' }} />
             <p className="flex-1 truncate text-[13px] font-medium" style={{ color: '#6F747A' }}>
               {branch.name}, {branch.address}
             </p>
@@ -593,7 +593,7 @@ export function StudentBookingCard({
                 style={{ color: '#2436D9' }}
                 onClick={(e) => e.stopPropagation()}
               >
-                Карта <ExternalLink size={11} />
+                Карта <Maps size={12} />
               </a>
             )}
           </div>
