@@ -93,7 +93,7 @@ export function PhoneInput({
         style={{ fontSize: '16px', letterSpacing: value.length > 0 ? '0.04em' : 'normal' }}
       />
       {error && <p className="input-error-msg">{error}</p>}
-      {!error && isComplete && (
+      {!disabled && !error && isComplete && (
         <p style={{ fontSize: '11px', fontWeight: 600, color: '#15803D' }}>Номер введён верно</p>
       )}
     </div>

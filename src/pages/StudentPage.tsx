@@ -487,6 +487,7 @@ export function StudentPage() {
     const nextAvatarUrl = pendingAvatarUrl || profile.avatarUrl || ''
     const saved = saveStudentProfile(school.id, { name: form.name, phone: form.phone, email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email })
     setProfile(saved)
+    setForm({ name: saved.name, phone: normalizePhone(saved.phone).replace(/^7/, '').slice(0, 10), email: saved.email ?? '' })
     setProfileError('')
     setPhoneConfirmOpen(false)
     setPendingAvatarUrl('')
