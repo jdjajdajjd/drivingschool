@@ -103,7 +103,7 @@ export function AdminBranches() {
       showToast(result.error ?? 'Не удалось выключить филиал.', 'error')
       return
     }
-    showToast('Филиал выключен и скрыт из публичной записи.', 'success')
+    showToast('Филиал выключен, будущие свободные слоты скрыты. Брони не изменены.', 'success')
   }
 
   if (!school) {
@@ -209,7 +209,7 @@ export function AdminBranches() {
       <ConfirmDialog
         open={Boolean(deleteId)}
         title="Выключить филиал"
-        description="Филиал останется в истории и админке, но исчезнет из публичной записи и выбора новых занятий. Связанные прошлые записи не удаляются."
+        description="Филиал останется в истории и админке, существующие брони не изменятся. Будущие свободные слоты филиала будут отменены и скрыты из публичной записи."
         confirmLabel={archiving ? 'Выключаем...' : 'Выключить филиал'}
         onClose={() => setDeleteId(null)}
         onConfirm={() => void handleArchive()}
