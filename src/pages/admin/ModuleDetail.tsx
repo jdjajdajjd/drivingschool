@@ -1,4 +1,4 @@
-import { AddTeamIcon, ArrowLeft01Icon, BellDotIcon, Building03Icon, ChartBarLineIcon, CodeIcon, CreditCardIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { AddTeamIcon, ArrowLeft01Icon, BellDotIcon, BookOpen01Icon, Building03Icon, ChartBarLineIcon, CodeIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -15,9 +15,9 @@ import { ADMIN_BASE_PATH } from '../../services/accessControl'
 const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
 const BarChart3 = createHugeIcon(ChartBarLineIcon)
 const Bell = createHugeIcon(BellDotIcon)
+const BookOpen = createHugeIcon(BookOpen01Icon)
 const Building2 = createHugeIcon(Building03Icon)
 const Code2 = createHugeIcon(CodeIcon)
-const CreditCard = createHugeIcon(CreditCardIcon)
 const FileSpreadsheet = createHugeIcon(FileSpreadsheetIcon)
 const MessageSquare = createHugeIcon(Message01Icon)
 const Palette = createHugeIcon(PaintBoardIcon)
@@ -28,10 +28,10 @@ const Users = createHugeIcon(UserMultipleIcon)
 
 const ICON_MAP: Record<string, React.ElementType> = {
   MessageSquare,
+  BookOpen,
   Send,
   Palette,
   Code2,
-  CreditCard,
   BarChart3,
   Users,
   Bell,
@@ -71,6 +71,11 @@ export function AdminModuleDetail() {
         : `${formatPrice(currentModule.monthlyPrice ?? 0)}/мес`
 
   function handleToggle(): void {
+    if (currentModule.isComingSoon) {
+      showToast('Модуль скоро появится. Сейчас его нельзя подключить.', 'error')
+      return
+    }
+
     if (enabled) {
       disableModule(currentSchool.id, currentModule.id)
       showToast('Модуль отключён', 'success')
@@ -98,8 +103,8 @@ export function AdminModuleDetail() {
         title={module.name}
         description={module.description}
         actions={
-          <Button variant={enabled ? 'secondary' : 'primary'} onClick={handleToggle}>
-            {enabled ? 'Отключить модуль' : module.priceType === 'one_time' ? 'Добавить услугу' : 'Подключить модуль'}
+          <Button variant={enabled ? 'secondary' : 'primary'} disabled={module.isComingSoon} onClick={handleToggle}>
+            {module.isComingSoon ? 'Скоро' : enabled ? 'Отключить модуль' : module.priceType === 'one_time' ? 'Добавить услугу' : 'Подключить модуль'}
           </Button>
         }
       />
@@ -113,7 +118,7 @@ export function AdminModuleDetail() {
             <div>
               <div className="flex flex-wrap gap-2">
                 <Badge variant={enabled ? 'success' : 'default'}>
-                  {enabled ? 'Подключено' : 'Не подключено'}
+                  {module.isComingSoon ? 'Скоро' : enabled ? 'Подключено' : 'Не подключено'}
                 </Badge>
                 {module.isRecommended ? <Badge variant="outline">Рекомендуем</Badge> : null}
               </div>
@@ -146,7 +151,7 @@ export function AdminModuleDetail() {
             <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Режим</p>
               <p className="mt-1 text-sm font-semibold #111418">
-                {enabled ? 'Уже включён в школу' : 'Можно подключить в один клик'}
+                {module.isComingSoon ? 'Готовим к запуску' : enabled ? 'Уже включён в школу' : 'Можно подключить в один клик'}
               </p>
             </div>
           </div>

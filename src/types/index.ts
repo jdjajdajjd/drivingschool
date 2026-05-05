@@ -207,6 +207,7 @@ export interface Module {
   icon: string
   features: string[]
   isRecommended?: boolean
+  isComingSoon?: boolean
 }
 
 export interface SchoolModule {

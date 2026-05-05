@@ -1,6 +1,7 @@
 import { addMinutes, endOfDay, format, isAfter, isBefore, isSameDay, parseISO, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { generateId } from '../lib/utils'
+import { isSupabaseConfigured } from '../lib/supabase'
 import type { Booking, ResolvedBooking, School, Slot, Student } from '../types'
 import { db } from './storage'
 import {
@@ -296,7 +297,7 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
   return result
 }
 
-export function cancelBooking(bookingId: string): BookingMutationResult {
+export function cancelBooking(bookingId: string, options: { skipRemote?: boolean } = {}): BookingMutationResult {
   const booking = db.bookings.byId(bookingId)
   if (!booking) {
     return { ok: false, error: 'Запись не найдена.' }
@@ -315,7 +316,7 @@ export function cancelBooking(bookingId: string): BookingMutationResult {
   const slot = db.slots.byId(booking.slotId)
   if (!slot) {
     db.bookings.upsert(nextBooking)
-    persistSupabaseMutation(cancelSupabaseBooking(bookingId))
+    if (!options.skipRemote) persistSupabaseMutation(cancelSupabaseBooking(bookingId))
     return { ok: true, booking: nextBooking }
   }
 
@@ -326,11 +327,16 @@ export function cancelBooking(bookingId: string): BookingMutationResult {
   }
 
   const result = saveBookingAndSlot(nextBooking, nextSlot)
-  persistSupabaseMutation(cancelSupabaseBooking(bookingId))
+  if (!options.skipRemote) persistSupabaseMutation(cancelSupabaseBooking(bookingId))
   return result
 }
 
-export function completeBooking(bookingId: string): BookingMutationResult {
+export async function cancelBookingConfirmed(bookingId: string): Promise<BookingMutationResult> {
+  if (isSupabaseConfigured()) await cancelSupabaseBooking(bookingId)
+  return cancelBooking(bookingId, { skipRemote: true })
+}
+
+export function completeBooking(bookingId: string, options: { skipRemote?: boolean } = {}): BookingMutationResult {
   const booking = db.bookings.byId(bookingId)
   if (!booking) {
     return { ok: false, error: 'Запись не найдена.' }
@@ -367,11 +373,16 @@ export function completeBooking(bookingId: string): BookingMutationResult {
       updatedAt: new Date().toISOString(),
     })
   }
-  persistSupabaseMutation(completeSupabaseBooking(bookingId))
+  if (!options.skipRemote) persistSupabaseMutation(completeSupabaseBooking(bookingId))
   return { ok: true, booking: nextBooking }
 }
 
-export function rescheduleBooking(params: RescheduleBookingParams): BookingMutationResult {
+export async function completeBookingConfirmed(bookingId: string): Promise<BookingMutationResult> {
+  if (isSupabaseConfigured()) await completeSupabaseBooking(bookingId)
+  return completeBooking(bookingId, { skipRemote: true })
+}
+
+export function rescheduleBooking(params: RescheduleBookingParams, options: { skipRemote?: boolean } = {}): BookingMutationResult {
   const booking = db.bookings.byId(params.bookingId)
   if (!booking) {
     return { ok: false, error: 'Запись не найдена.' }
@@ -433,7 +444,7 @@ export function rescheduleBooking(params: RescheduleBookingParams): BookingMutat
     bookingId: booking.id,
   })
 
-  persistSupabaseMutation(rescheduleSupabaseBooking(params.bookingId, params.newSlotId))
+  if (!options.skipRemote) persistSupabaseMutation(rescheduleSupabaseBooking(params.bookingId, params.newSlotId))
 
   return {
     ok: true,
@@ -443,6 +454,11 @@ export function rescheduleBooking(params: RescheduleBookingParams): BookingMutat
         ? 'Перенос выполнен. Администратор может обходить лимит будущих записей.'
         : undefined,
   }
+}
+
+export async function rescheduleBookingConfirmed(params: RescheduleBookingParams): Promise<BookingMutationResult> {
+  if (isSupabaseConfigured()) await rescheduleSupabaseBooking(params.bookingId, params.newSlotId)
+  return rescheduleBooking(params, { skipRemote: true })
 }
 
 export function getBookingById(bookingId: string): ResolvedBooking | null {

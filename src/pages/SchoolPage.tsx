@@ -21,6 +21,14 @@ const UserRound = createHugeIcon(User03Icon)
 const surface = 'bg-[var(--surface)] text-[var(--text)]'
 const soft = 'bg-[var(--surface-soft)]'
 
+function pluralizeRu(count: number, one: string, few: string, many: string) {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
+}
+
 export function SchoolPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
@@ -81,12 +89,19 @@ export function SchoolPage() {
           <p className="mt-5 text-[16px] font-medium leading-6 text-[var(--text-muted)]">
             {school.description || 'Информация об автошколе, филиалах и контактах для учеников.'}
           </p>
+          <div className="mt-5 grid gap-2">
+            <button className="min-h-12 rounded-[18px] bg-[var(--accent)] px-4 text-[15px] font-extrabold text-white active:scale-[0.98]" onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться на занятие</button>
+            <div className="grid gap-2 text-[13px] font-semibold leading-5 text-[var(--text-muted)]">
+              {school.phone ? <a className="inline-flex items-center gap-2 rounded-[16px] bg-[var(--surface-soft)] px-3 py-2 text-[var(--text)]" href={`tel:${school.phone}`}><Phone size={16} />{school.phone}</a> : null}
+              {school.address ? <span className="inline-flex items-center gap-2 rounded-[16px] bg-[var(--surface-soft)] px-3 py-2"><Location size={16} />{school.address}</span> : null}
+            </div>
+          </div>
         </section>
 
         <section className="mt-4 grid grid-cols-3 gap-2.5">
           {[
-            { value: String(branches.length), label: 'филиала' },
-            { value: String(instructors.length), label: 'инструктора' },
+            { value: String(branches.length), label: pluralizeRu(branches.length, 'филиал', 'филиала', 'филиалов') },
+            { value: String(instructors.length), label: pluralizeRu(instructors.length, 'инструктор', 'инструктора', 'инструкторов') },
             { value: categoryLabel, label: school.enabledCategoryCodes && school.enabledCategoryCodes.length > 1 ? 'категории' : 'категория' },
           ].map((item) => (
             <div key={item.label} className={`rounded-[20px] p-3 text-center ${surface}`}>
@@ -115,17 +130,21 @@ export function SchoolPage() {
         {instructors.length > 0 ? (
           <section className={`mt-4 rounded-[24px] p-4 ${surface}`}>
             <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[var(--text)]">Инструкторы</h2>
-            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {instructors.map((instructor) => (
-                <div key={instructor.id} className={`min-w-[150px] rounded-[18px] p-3 ${soft}`}>
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-[var(--accent)]"><UserRound size={20} /></div>
-                  <p className="mt-3 text-[15px] font-bold leading-5 text-[var(--text)]">{instructor.name}</p>
-                  <p className="mt-1 text-[12px] font-semibold text-[var(--text-soft)]">{instructor.car ?? 'Учебный автомобиль'}</p>
+                <div key={instructor.id} className={`flex items-center gap-3 rounded-[18px] p-3 ${soft}`}>
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--surface)] text-[var(--accent)]"><UserRound size={20} /></div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-bold leading-5 text-[var(--text)]">{instructor.name}</p>
+                    <p className="mt-1 truncate text-[12px] font-semibold text-[var(--text-soft)]">{instructor.car ?? 'Учебный автомобиль'}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </section>
         ) : null}
+
+        <button className="mt-4 min-h-12 w-full rounded-[18px] bg-[var(--accent)] px-4 text-[15px] font-extrabold text-white active:scale-[0.98]" onClick={() => navigate(`/school/${school.slug}/book`)}>Записаться на занятие</button>
       </main>
     </div>
   )

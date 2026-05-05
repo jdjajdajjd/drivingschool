@@ -1,4 +1,4 @@
-import { AddTeamIcon, BellDotIcon, Building03Icon, ChartBarLineIcon, CodeIcon, CreditCardIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { AddTeamIcon, BellDotIcon, BookOpen01Icon, Building03Icon, ChartBarLineIcon, CodeIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
@@ -22,9 +22,9 @@ import {
 
 const BarChart3 = createHugeIcon(ChartBarLineIcon)
 const Bell = createHugeIcon(BellDotIcon)
+const BookOpen = createHugeIcon(BookOpen01Icon)
 const Building2 = createHugeIcon(Building03Icon)
 const Code2 = createHugeIcon(CodeIcon)
-const CreditCard = createHugeIcon(CreditCardIcon)
 const FileSpreadsheet = createHugeIcon(FileSpreadsheetIcon)
 const MessageSquare = createHugeIcon(Message01Icon)
 const Palette = createHugeIcon(PaintBoardIcon)
@@ -38,10 +38,10 @@ import type { Module, ModuleCategory } from '../../types'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   MessageSquare,
+  BookOpen,
   Send,
   Palette,
   Code2,
-  CreditCard,
   BarChart3,
   Users,
   Bell,
@@ -81,6 +81,11 @@ export function AdminModules() {
 
   function handleToggle(module: Module): void {
     if (!school) {
+      return
+    }
+
+    if (module.isComingSoon) {
+      showToast('Модуль скоро появится. Сейчас его нельзя подключить.', 'error')
       return
     }
 
@@ -216,7 +221,7 @@ export function AdminModules() {
                         </div>
                       </div>
                       <Badge variant={enabledState ? 'success' : 'default'}>
-                        {enabledState ? 'Подключено' : 'Не подключено'}
+                        {module.isComingSoon ? 'Скоро' : enabledState ? 'Подключено' : 'Не подключено'}
                       </Badge>
                     </div>
 
@@ -234,9 +239,10 @@ export function AdminModules() {
                         variant={enabledState ? 'secondary' : 'primary'}
                         size="sm"
                         className="flex-1"
+                        disabled={module.isComingSoon}
                         onClick={() => handleToggle(module)}
                       >
-                        {enabledState ? 'Отключить' : 'Подключить'}
+                        {module.isComingSoon ? 'Скоро' : enabledState ? 'Отключить' : 'Подключить'}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => navigate(`${ADMIN_BASE_PATH}/modules/${module.id}`)}>
                         Подробнее

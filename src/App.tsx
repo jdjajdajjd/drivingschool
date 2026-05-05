@@ -52,8 +52,8 @@ function App() {
       .catch(() => undefined)
       .finally(() => setIsReady(true))
 
-    // Set ready after 500ms even if sync hangs (prevents blank screen)
-    const fallback = setTimeout(() => setIsReady(true), 500)
+    // Keep first render behind the short sync window so admin pages do not mount with an empty data bridge.
+    const fallback = setTimeout(() => setIsReady(true), 4000)
     return () => clearTimeout(fallback)
   }, [])
 

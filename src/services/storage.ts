@@ -8,6 +8,7 @@ import type {
   Student,
   SchoolModule,
 } from '../types'
+import { isSupabaseConfigured } from '../lib/supabase'
 
 export const SEED_VERSION = '6'
 
@@ -24,7 +25,25 @@ const K = {
   SEED_VERSION: 'dd:seed_version',
 } as const
 
+let clearedLocalDbForSupabase = false
+const memoryStore = new Map<string, unknown[]>()
+
+export function clearLocalDbWhenSupabaseConfigured(): void {
+  if (!isSupabaseConfigured() || clearedLocalDbForSupabase || typeof localStorage === 'undefined') return
+  clearedLocalDbForSupabase = true
+  const keysToRemove: string[] = []
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index)
+    if (key?.startsWith('dd:')) keysToRemove.push(key)
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key))
+}
+
 function readAll<T>(key: string): T[] {
+  if (isSupabaseConfigured()) {
+    clearLocalDbWhenSupabaseConfigured()
+    return [...((memoryStore.get(key) as T[] | undefined) ?? [])]
+  }
   try {
     const raw = localStorage.getItem(key)
     return raw ? (JSON.parse(raw) as T[]) : []
@@ -34,6 +53,11 @@ function readAll<T>(key: string): T[] {
 }
 
 function writeAll<T>(key: string, data: T[]): void {
+  if (isSupabaseConfigured()) {
+    clearLocalDbWhenSupabaseConfigured()
+    memoryStore.set(key, data)
+    return
+  }
   localStorage.setItem(key, JSON.stringify(data))
 }
 
@@ -205,13 +229,21 @@ export const db = {
   },
 
   isSeeded: () =>
+    isSupabaseConfigured() ||
     localStorage.getItem(K.SEEDED) === 'true' &&
     localStorage.getItem(K.SEED_VERSION) === SEED_VERSION,
 
   markSeeded: () => {
+    if (isSupabaseConfigured()) return
     localStorage.setItem(K.SEEDED, 'true')
     localStorage.setItem(K.SEED_VERSION, SEED_VERSION)
   },
 
-  reset: () => Object.values(K).forEach((key) => localStorage.removeItem(key)),
+  reset: () => {
+    if (isSupabaseConfigured()) {
+      memoryStore.clear()
+      return
+    }
+    Object.values(K).forEach((key) => localStorage.removeItem(key))
+  },
 }

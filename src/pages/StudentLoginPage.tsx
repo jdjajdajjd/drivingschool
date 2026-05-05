@@ -6,7 +6,8 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { isValidRussianPhone } from '../services/bookingService'
-import { verifyStudentCredentials } from '../services/studentProfile'
+import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
+import { isSupabaseConfigured } from '../lib/supabase'
 
 void React
 
@@ -20,7 +21,7 @@ export default function StudentLoginPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  function submit() {
+  async function submit() {
     setError('')
     if (!isValidRussianPhone(phone)) {
       setError('Введите корректный номер телефона.')
@@ -32,21 +33,26 @@ export default function StudentLoginPage() {
     }
 
     setSubmitting(true)
-    window.setTimeout(() => {
-      const result = verifyStudentCredentials(phone, password)
+    try {
+      const result = isSupabaseConfigured()
+        ? await loginStudentProfileFromSupabase('school-virazh', phone, password)
+        : verifyStudentCredentials(phone, password)
       setSubmitting(false)
       if (!result) {
         setError('Телефон или пароль не совпадают. Если кабинета ещё нет, зарегистрируйтесь.')
         return
       }
       navigate('/student', { replace: true })
-    }, 180)
+    } catch {
+      setSubmitting(false)
+      setError('Не удалось войти. Попробуйте ещё раз.')
+    }
   }
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    submit()
+    void submit()
   }
 
   return (
@@ -82,10 +88,14 @@ export default function StudentLoginPage() {
               <Input label="Пароль" type="password" value={password} error={error && isValidRussianPhone(phone) ? error : ''} placeholder="Ваш пароль" autoComplete="current-password" onChange={(event) => { setError(''); setPassword(event.target.value) }} />
             </div>
 
-            <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={submitting || !isValidRussianPhone(phone) || password.trim().length < 6} onClick={submit}>
+            <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={submitting || !isValidRussianPhone(phone) || password.trim().length < 6} onClick={() => void submit()}>
               {submitting ? 'Входим...' : 'Войти'}
               <ArrowRight size={18} />
             </Button>
+            <button type="button" className="mt-3 w-full rounded-[16px] bg-[var(--surface-muted)] px-4 py-3 text-[13px] font-extrabold text-[var(--text-muted)]" onClick={() => setError('Восстановление пароля скоро появится. Пока обратитесь в автошколу.')}>Забыли пароль?</button>
+            <p className="mt-4 text-center text-[12px] font-semibold leading-5 text-[var(--text-soft)]">
+              Продолжая, вы принимаете <a className="font-extrabold text-[var(--accent)]" href="/terms">условия сервиса</a> и <a className="font-extrabold text-[var(--accent)]" href="/privacy">политику конфиденциальности</a>.
+            </p>
           </div>
         </section>
       </main>

@@ -66,8 +66,8 @@ export function SuperAdminOverview() {
     <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow="vroom"
-        title="Superadmin"
-        description="Обзор по автошколам, выручке, активности записей и сигналам, которые требуют внимания владельца платформы."
+        title="Панель оператора"
+        description="Контроль автошкол: активность записей, свободные слоты, подключённые модули и проблемы, которые нужно быстро разобрать."
         actions={
           <Button
             variant="secondary"
@@ -77,7 +77,7 @@ export function SuperAdminOverview() {
             }}
           >
             <RefreshCw size={15} />
-            Сбросить данные
+            Обновить данные
           </Button>
         }
       />
@@ -93,9 +93,9 @@ export function SuperAdminOverview() {
       </div>
 
       <div className="mt-6">
-        <Section title="Операционные сигналы" description="Список помогает быстро понять, где закончились свободные слоты или появились проблемы в конфигурации.">
+        <Section title="Что требует внимания" description="Сначала проверьте школы без свободных слотов и школы с предупреждениями по настройкам.">
           {metrics.length === 0 ? (
-            <StateView title="Автошкол пока нет" description="Создайте первую автошколу в панели владельца сервиса." />
+            <StateView title="Автошкол пока нет" description="Создайте первую автошколу в разделе школ." />
           ) : (
             <div className="space-y-3">
               {metrics.map((item) => (
@@ -108,8 +108,8 @@ export function SuperAdminOverview() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {item.noSlots ? <Badge variant="warning">Нет слотов на 7 дней</Badge> : null}
-                      {item.warnings.length > 0 ? <Badge variant="error">Предупреждений: {item.warnings.length}</Badge> : null}
+                      {item.noSlots ? <Badge variant="warning">Добавить расписание</Badge> : null}
+                      {item.warnings.length > 0 ? <Badge variant="error">Проверить настройки: {item.warnings.length}</Badge> : null}
                       {!item.noSlots && item.warnings.length === 0 ? <Badge variant="success">Стабильно</Badge> : null}
                     </div>
                   </div>

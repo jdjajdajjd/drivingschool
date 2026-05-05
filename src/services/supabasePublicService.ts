@@ -23,6 +23,13 @@ export interface PublicSchoolBundle {
   bookings: Booking[]
 }
 
+export interface PublicInstructorBundle {
+  instructor: Instructor
+  branch: Branch | null
+  slots: Slot[]
+  bookings: Booking[]
+}
+
 export interface SupabaseBookingResult {
   bookingGroupId: string
   bookingIds: string[]
@@ -189,6 +196,36 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
     slots: slotsResult.data.map(mapSlot),
     students: studentsResult.data.map(mapStudent),
     bookings: bookingsResult.data.map(mapBooking),
+  }
+}
+
+export async function getPublicInstructorBundle(token: string): Promise<PublicInstructorBundle | null> {
+  const { data: instructorRow, error: instructorError } = await supabase
+    .from('instructors')
+    .select('*')
+    .eq('token', token)
+    .maybeSingle()
+
+  if (instructorError) throw instructorError
+  if (!instructorRow) return null
+
+  const instructor = mapInstructor(instructorRow)
+
+  const [branchResult, slotsResult, bookingsResult] = await Promise.all([
+    supabase.from('branches').select('*').eq('id', instructor.branchId).maybeSingle(),
+    supabase.from('slots').select('*').eq('instructor_id', instructor.id).order('date').order('time'),
+    supabase.from('bookings').select('*').eq('instructor_id', instructor.id).order('created_at', { ascending: false }),
+  ])
+
+  if (branchResult.error) throw branchResult.error
+  if (slotsResult.error) throw slotsResult.error
+  if (bookingsResult.error) throw bookingsResult.error
+
+  return {
+    instructor,
+    branch: branchResult.data ? mapBranch(branchResult.data) : null,
+    slots: (slotsResult.data ?? []).map(mapSlot),
+    bookings: (bookingsResult.data ?? []).map(mapBooking),
   }
 }
 

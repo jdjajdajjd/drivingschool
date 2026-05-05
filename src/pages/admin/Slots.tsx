@@ -15,7 +15,7 @@ import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatDuration, formatInstructorName } from '../../lib/utils'
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
-import { createBulkSlots, createSlot, deleteSlot, getSlotsBySchool, updateSlotStatus } from '../../services/slotService'
+import { createBulkSlots, createBulkSlotsConfirmed, createSlot, createSlotConfirmed, deleteSlot, deleteSlotConfirmed, getSlotsBySchool, updateSlotStatus, updateSlotStatusConfirmed } from '../../services/slotService'
 import { db } from '../../services/storage'
 import type { LessonType } from '../../types'
 import { lessonTypeLabels } from '../student/studentUtils'
@@ -90,6 +90,7 @@ export function AdminSlots() {
   })
 
   const slots = school ? getSlotsBySchool(school.id) : []
+  const scheduleStep = !bulkForm.branchId || !bulkForm.instructorId ? 1 : !bulkForm.dateFrom || !bulkForm.dateTo ? 2 : 3
 
   const filteredSlots = useMemo(() => {
     const now = new Date()
@@ -135,17 +136,23 @@ export function AdminSlots() {
     return true
   }
 
-  function handleCreateSingle(): void {
+  async function handleCreateSingle(): Promise<void> {
     if (!school || !validateBase(singleForm.branchId, singleForm.instructorId)) return
-    const result = createSlot({
-      schoolId: school.id,
-      branchId: singleForm.branchId,
-      instructorId: singleForm.instructorId,
-      date: singleForm.date,
-      startTime: singleForm.startTime,
-      duration: Number(singleForm.duration),
-      lessonType: singleForm.lessonType,
-    })
+    let result: ReturnType<typeof createSlot>
+    try {
+      result = await createSlotConfirmed({
+        schoolId: school.id,
+        branchId: singleForm.branchId,
+        instructorId: singleForm.instructorId,
+        date: singleForm.date,
+        startTime: singleForm.startTime,
+        duration: Number(singleForm.duration),
+        lessonType: singleForm.lessonType,
+      })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось создать занятие.', 'error')
+      return
+    }
 
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось создать занятие.', 'error')
@@ -154,21 +161,27 @@ export function AdminSlots() {
     showToast('Занятие добавлено в расписание.', 'success')
   }
 
-  function handleCreateBulk(): void {
+  async function handleCreateBulk(): Promise<void> {
     if (!school || !validateBase(bulkForm.branchId, bulkForm.instructorId)) return
-    const result = createBulkSlots({
-      schoolId: school.id,
-      branchId: bulkForm.branchId,
-      instructorId: bulkForm.instructorId,
-      dateFrom: bulkForm.dateFrom,
-      dateTo: bulkForm.dateTo,
-      weekdays: bulkForm.weekdays,
-      windowStart: bulkForm.windowStart,
-      windowEnd: bulkForm.windowEnd,
-      duration: Number(bulkForm.duration),
-      lessonType: bulkForm.lessonType,
-      breakMinutes: Number(bulkForm.breakMinutes),
-    })
+    let result: ReturnType<typeof createBulkSlots>
+    try {
+      result = await createBulkSlotsConfirmed({
+        schoolId: school.id,
+        branchId: bulkForm.branchId,
+        instructorId: bulkForm.instructorId,
+        dateFrom: bulkForm.dateFrom,
+        dateTo: bulkForm.dateTo,
+        weekdays: bulkForm.weekdays,
+        windowStart: bulkForm.windowStart,
+        windowEnd: bulkForm.windowEnd,
+        duration: Number(bulkForm.duration),
+        lessonType: bulkForm.lessonType,
+        breakMinutes: Number(bulkForm.breakMinutes),
+      })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось создать расписание.', 'error')
+      return
+    }
 
     if (!result.ok || !result.result) {
       showToast(result.error ?? 'Не удалось создать расписание.', 'error')
@@ -183,9 +196,16 @@ export function AdminSlots() {
     showToast(`Создано занятий: ${createdCount}. Пропущено дублей: ${skippedDuplicates}. В прошлом: ${skippedPast}.`, 'success')
   }
 
-  function handleDeleteSlot(): void {
+  async function handleDeleteSlot(): Promise<void> {
     if (!deleteSlotId) return
-    const result = deleteSlot(deleteSlotId)
+    let result: ReturnType<typeof deleteSlot>
+    try {
+      result = await deleteSlotConfirmed(deleteSlotId)
+    } catch (error) {
+      setDeleteSlotId(null)
+      showToast(error instanceof Error ? error.message : 'Не удалось удалить занятие.', 'error')
+      return
+    }
     setDeleteSlotId(null)
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось удалить занятие.', 'error')
@@ -194,12 +214,19 @@ export function AdminSlots() {
     showToast('Занятие удалено.', 'success')
   }
 
-  function handleToggleSlot(): void {
+  async function handleToggleSlot(): Promise<void> {
     if (!toggleSlotId) return
     const entry = slots.find((item) => item.slot.id === toggleSlotId)
     if (!entry) return
     const nextStatus = entry.slot.status === 'cancelled' ? 'available' : 'cancelled'
-    const result = updateSlotStatus(toggleSlotId, nextStatus)
+    let result: ReturnType<typeof updateSlotStatus>
+    try {
+      result = await updateSlotStatusConfirmed(toggleSlotId, nextStatus)
+    } catch (error) {
+      setToggleSlotId(null)
+      showToast(error instanceof Error ? error.message : 'Не удалось изменить статус занятия.', 'error')
+      return
+    }
     setToggleSlotId(null)
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось изменить статус занятия.', 'error')
@@ -226,6 +253,19 @@ export function AdminSlots() {
 
       <div className="mt-8 space-y-6">
         <Section title="Добавить занятия" description="Для запуска обычно удобнее создать серию занятий на неделю или две вперед.">
+          <div className="mb-5 grid gap-2 sm:grid-cols-3">
+            {[
+              { step: 1, title: 'Кто ведёт', text: 'Филиал и инструктор' },
+              { step: 2, title: 'Когда', text: 'Даты и дни недели' },
+              { step: 3, title: 'Как долго', text: 'Время, тип, перерыв' },
+            ].map((item) => (
+              <div key={item.step} className={`rounded-2xl border px-4 py-3 ${scheduleStep === item.step ? 'border-accent bg-[#F6B84D]/10' : 'border-black/10 bg-white'}`}>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Шаг {item.step}</p>
+                <p className="mt-1 text-sm font-bold text-[#111418]">{item.title}</p>
+                <p className="text-xs font-semibold text-[#6F747A]">{item.text}</p>
+              </div>
+            ))}
+          </div>
           <div className="mb-5 grid gap-2 sm:grid-cols-2">
             <Button variant={mode === 'bulk' ? 'primary' : 'secondary'} onClick={() => setMode('bulk')}>
               Серия занятий
@@ -297,10 +337,10 @@ export function AdminSlots() {
               </FormField>
 
               <div className="rounded-2xl border border-[#F6B84D]/20 bg-[#F6B84D]/10 px-4 py-4 text-base text-[#111418]">
-                Проверка перед созданием: система пропустит дубли и занятия в прошлом. Занятые времена не будут перезаписаны.
+                Проверьте: {branches.find((branch) => branch.id === bulkForm.branchId)?.name ?? 'филиал не выбран'}, {instructors.find((instructor) => instructor.id === bulkForm.instructorId)?.name ?? 'инструктор не выбран'}, период {bulkForm.dateFrom || 'дата от'} - {bulkForm.dateTo || 'дата до'}, время {bulkForm.windowStart}-{bulkForm.windowEnd}. Дубли и занятия в прошлом будут пропущены.
               </div>
 
-              <Button size="lg" className="min-h-12 text-base" onClick={handleCreateBulk}>
+              <Button size="lg" className="min-h-12 text-base" onClick={() => void handleCreateBulk()}>
                 <CalendarPlus2 size={18} />
                 Создать серию занятий
               </Button>
@@ -328,7 +368,7 @@ export function AdminSlots() {
               </FormField>
               <Input label="Длительность" type="number" step={15} helperText={formatDuration(Number(singleForm.duration || defaultDuration))} value={singleForm.duration} onChange={(event) => setSingleForm((current) => ({ ...current, duration: event.target.value }))} />
               <div className="md:col-span-2 xl:col-span-5">
-                <Button size="lg" className="min-h-12 text-base" onClick={handleCreateSingle}>
+                <Button size="lg" className="min-h-12 text-base" onClick={() => void handleCreateSingle()}>
                   <CalendarPlus2 size={18} />
                   Добавить занятие
                 </Button>
@@ -446,7 +486,7 @@ export function AdminSlots() {
         description="Удалить можно только свободное занятие. Если занятие занято учеником, сначала обработайте запись."
         confirmLabel="Удалить"
         onClose={() => setDeleteSlotId(null)}
-        onConfirm={handleDeleteSlot}
+        onConfirm={() => void handleDeleteSlot()}
         danger
       />
 
@@ -456,7 +496,7 @@ export function AdminSlots() {
         description="Свободное занятие можно скрыть из записи, а скрытое - вернуть в расписание."
         confirmLabel="Подтвердить"
         onClose={() => setToggleSlotId(null)}
-        onConfirm={handleToggleSlot}
+        onConfirm={() => void handleToggleSlot()}
       />
     </div>
   )

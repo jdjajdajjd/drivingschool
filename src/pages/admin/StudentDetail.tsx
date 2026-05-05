@@ -107,7 +107,7 @@ export function AdminStudentDetail() {
       <div className="max-w-7xl p-4 md:p-6">
         <EmptyState
           title="Ученик не найден"
-          description="В localStorage нет данных по этому ученику или ссылка устарела."
+          description="Данные по этому ученику не найдены или ссылка устарела."
           action={
             <Button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}>К списку учеников</Button>
           }

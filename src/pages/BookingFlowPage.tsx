@@ -435,7 +435,7 @@ export function BookingFlowPage() {
       return
     }
 
-    await submitBooking(slot)
+    setStep('confirm')
   }
 
   async function submitBooking(slotOverride?: Slot) {
@@ -873,7 +873,7 @@ export function BookingFlowPage() {
 
                   <div className="rounded-2xl p-4" style={{ background: ui.blueSoft }}>
                     <p className="text-[13px] font-semibold leading-5" style={{ color: ui.accent }}>
-                      После нажатия сразу проверим доступность слота и запишем вас без лишнего экрана подтверждения.
+                      На следующем шаге покажем итог записи. После подтверждения ещё раз проверим, что слот свободен.
                     </p>
                   </div>
                 </div>
@@ -882,9 +882,12 @@ export function BookingFlowPage() {
                   <Button
                     className="w-full"
                     disabled={!form.name.trim() || !form.phone.trim()}
-                    onClick={() => void submitBooking()}
+                    onClick={() => {
+                      if (!validateContacts()) return
+                      setStep('confirm')
+                    }}
                   >
-                    {submitting ? 'Записываем...' : 'Записаться'}
+                    Продолжить
                   </Button>
                 </StickyActionBar>
               </section>

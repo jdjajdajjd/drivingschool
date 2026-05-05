@@ -8,7 +8,8 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { isValidRussianPhone } from '../services/bookingService'
 import { db } from '../services/storage'
-import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, type StudentProfile } from '../services/studentProfile'
+import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabase, type StudentProfile } from '../services/studentProfile'
+import { isSupabaseConfigured } from '../lib/supabase'
 
 void React
 
@@ -46,6 +47,8 @@ export default function StudentRegisterPage() {
   const [middleName, setMiddleName] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -58,7 +61,8 @@ export default function StudentRegisterPage() {
     const found = findAnyStudentProfile()
     if (!found) {
       try {
-        const draft = JSON.parse(localStorage.getItem(draftKey) ?? '{}') as Partial<Record<'lastName' | 'first' | 'middleName' | 'phone', string>>
+        const draftStorage = isSupabaseConfigured() ? sessionStorage : localStorage
+        const draft = JSON.parse(draftStorage.getItem(draftKey) ?? '{}') as Partial<Record<'lastName' | 'first' | 'middleName' | 'phone', string>>
         setLastName(draft.lastName ?? '')
         setFirst(draft.first ?? '')
         setMiddleName(draft.middleName ?? '')
@@ -78,7 +82,8 @@ export default function StudentRegisterPage() {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(draftKey, JSON.stringify({ lastName, first, middleName, phone }))
+    const draftStorage = isSupabaseConfigured() ? sessionStorage : localStorage
+    draftStorage.setItem(draftKey, JSON.stringify({ lastName, first, middleName, phone }))
   }, [first, lastName, middleName, phone])
 
   useEffect(() => {
@@ -153,12 +158,25 @@ export default function StudentRegisterPage() {
       setError('Пароль должен быть не короче 6 символов.')
       return
     }
+    if (password !== confirmPassword) {
+      setError('Пароли не совпадают.')
+      return
+    }
+    if (!acceptedTerms) {
+      setError('Подтвердите согласие с условиями и политикой.')
+      return
+    }
 
     setSubmitting(true)
     try {
-      saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
-      saveStudentCredentials(phone, password, school.id)
+      if (isSupabaseConfigured()) {
+        await saveStudentProfileToSupabase(school.id, { name: fullName, phone, password }, { passwordSet: true })
+      } else {
+        saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
+        saveStudentCredentials(phone, password, school.id)
+      }
       localStorage.removeItem(draftKey)
+      sessionStorage.removeItem(draftKey)
     } catch {
       setSubmitting(false)
       setError('Не удалось сохранить кабинет. Попробуйте ещё раз.')
@@ -287,10 +305,18 @@ export default function StudentRegisterPage() {
                 <motion.div key="password" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
                   <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Пароль для входа</h1>
                   <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Телефон и пароль будут использоваться для входа в кабинет.</p>
-                  <div className="mt-6">
+                  <div className="mt-6 space-y-3">
                     <Input ref={inputRef} label="Пароль *" type="password" value={password} error={error} helperText="Минимум 6 символов" placeholder="Минимум 6 символов" autoComplete="new-password" onChange={(event) => { setError(''); setPassword(event.target.value) }} />
+                    <Input label="Повторите пароль *" type="password" value={confirmPassword} error={password && confirmPassword && password !== confirmPassword ? 'Пароли не совпадают.' : undefined} placeholder="Ещё раз пароль" autoComplete="new-password" onChange={(event) => { setError(''); setConfirmPassword(event.target.value) }} />
                   </div>
-                  <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={submitting || password.trim().length < 6} onClick={() => void submit()}>
+                  <label className="mt-4 flex items-start gap-3 rounded-[18px] bg-[var(--surface-muted)] p-3 text-[12px] font-semibold leading-5 text-[var(--text-muted)]">
+                    <input className="mt-1 h-4 w-4 accent-[var(--accent)]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
+                    <span>
+                      Согласен с <a className="font-extrabold text-[var(--accent)]" href="/terms">условиями сервиса</a> и <a className="font-extrabold text-[var(--accent)]" href="/privacy">политикой конфиденциальности</a>.
+                    </span>
+                  </label>
+                  {error ? <p className="mt-3 rounded-[16px] bg-[#FFEDEF] px-3 py-2 text-[13px] font-semibold text-[#FF3155]">{error}</p> : null}
+                  <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={submitting || password.trim().length < 6 || password !== confirmPassword || !acceptedTerms} onClick={() => void submit()}>
                     {submitting ? 'Создаём...' : 'Создать кабинет'}
                     <ArrowRight size={18} />
                   </Button>

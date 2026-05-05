@@ -1,5 +1,6 @@
 import { addMinutes, eachDayOfInterval, format, isBefore, parseISO } from 'date-fns'
 import { generateId } from '../lib/utils'
+import { isSupabaseConfigured } from '../lib/supabase'
 import type { BulkSlotCreateResult, LessonType, ResolvedSlot, Slot, SlotStatus } from '../types'
 import { db } from './storage'
 import { getBookingById, getSlotDateTime } from './bookingService'
@@ -81,7 +82,7 @@ export function checkSlotDuplicate(instructorId: string, date: string, startTime
     .some((slot) => slot.time === startTime)
 }
 
-export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot; error?: string } {
+export function createSlot(params: CreateSlotParams, options: { skipRemote?: boolean } = {}): { ok: boolean; slot?: Slot; error?: string } {
   const instructor = db.instructors.byId(params.instructorId)
   if (!instructor) {
     return { ok: false, error: 'Инструктор не найден.' }
@@ -114,7 +115,7 @@ export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot
   }
 
   db.slots.upsert(slot)
-  persistSupabaseMutation(
+  if (!options.skipRemote) persistSupabaseMutation(
     createSupabaseSlot({
       slotId: slot.id,
       schoolId: slot.schoolId,
@@ -127,6 +128,29 @@ export function createSlot(params: CreateSlotParams): { ok: boolean; slot?: Slot
     }),
   )
   return { ok: true, slot }
+}
+
+export async function createSlotConfirmed(params: CreateSlotParams): Promise<{ ok: boolean; slot?: Slot; error?: string }> {
+  const result = createSlot(params, { skipRemote: true })
+  if (!result.ok || !result.slot) return result
+  if (isSupabaseConfigured()) {
+    try {
+      await createSupabaseSlot({
+        slotId: result.slot.id,
+        schoolId: result.slot.schoolId,
+        branchId: result.slot.branchId,
+        instructorId: result.slot.instructorId,
+        date: result.slot.date,
+        startTime: result.slot.time,
+        duration: result.slot.duration,
+        lessonType: result.slot.lessonType ?? 'driving',
+      })
+    } catch (error) {
+      db.slots.remove(result.slot.id)
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить занятие.' }
+    }
+  }
+  return result
 }
 
 function iterateWindow(
@@ -148,7 +172,7 @@ function iterateWindow(
   return items
 }
 
-export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; result?: BulkSlotCreateResult; error?: string } {
+export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRemote?: boolean } = {}): { ok: boolean; result?: BulkSlotCreateResult; error?: string } {
   const instructor = db.instructors.byId(params.instructorId)
   if (!instructor) {
     return { ok: false, error: 'Инструктор не найден.' }
@@ -207,7 +231,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; r
       }
 
       db.slots.upsert(slot)
-      persistSupabaseMutation(
+      if (!options.skipRemote) persistSupabaseMutation(
         createSupabaseSlot({
           slotId: slot.id,
           schoolId: slot.schoolId,
@@ -235,9 +259,36 @@ export function createBulkSlots(params: CreateBulkSlotsParams): { ok: boolean; r
   }
 }
 
+export async function createBulkSlotsConfirmed(params: CreateBulkSlotsParams): Promise<{ ok: boolean; result?: BulkSlotCreateResult; error?: string }> {
+  const result = createBulkSlots(params, { skipRemote: true })
+  if (!result.ok || !result.result) return result
+  if (isSupabaseConfigured()) {
+    const created = result.result.created
+    try {
+      for (const slot of created) {
+        await createSupabaseSlot({
+          slotId: slot.id,
+          schoolId: slot.schoolId,
+          branchId: slot.branchId,
+          instructorId: slot.instructorId,
+          date: slot.date,
+          startTime: slot.time,
+          duration: slot.duration,
+          lessonType: slot.lessonType ?? 'driving',
+        })
+      }
+    } catch (error) {
+      created.forEach((slot) => db.slots.remove(slot.id))
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить серию занятий.' }
+    }
+  }
+  return result
+}
+
 export function updateSlotStatus(
   slotId: string,
   status: SlotStatus,
+  options: { skipRemote?: boolean } = {},
 ): { ok: boolean; slot?: Slot; error?: string } {
   const slot = db.slots.byId(slotId)
   if (!slot) {
@@ -259,11 +310,16 @@ export function updateSlotStatus(
     bookingId: status === 'available' ? undefined : slot.bookingId,
   }
   db.slots.upsert(nextSlot)
-  persistSupabaseMutation(updateSupabaseSlotStatus(slotId, status))
+  if (!options.skipRemote) persistSupabaseMutation(updateSupabaseSlotStatus(slotId, status))
   return { ok: true, slot: nextSlot }
 }
 
-export function deleteSlot(slotId: string): { ok: boolean; error?: string } {
+export async function updateSlotStatusConfirmed(slotId: string, status: SlotStatus): Promise<{ ok: boolean; slot?: Slot; error?: string }> {
+  if (isSupabaseConfigured()) await updateSupabaseSlotStatus(slotId, status)
+  return updateSlotStatus(slotId, status, { skipRemote: true })
+}
+
+export function deleteSlot(slotId: string, options: { skipRemote?: boolean } = {}): { ok: boolean; error?: string } {
   const slot = db.slots.byId(slotId)
   if (!slot) {
     return { ok: false, error: 'Слот не найден.' }
@@ -274,6 +330,11 @@ export function deleteSlot(slotId: string): { ok: boolean; error?: string } {
   }
 
   db.slots.remove(slotId)
-  persistSupabaseMutation(deleteSupabaseSlot(slotId))
+  if (!options.skipRemote) persistSupabaseMutation(deleteSupabaseSlot(slotId))
   return { ok: true }
+}
+
+export async function deleteSlotConfirmed(slotId: string): Promise<{ ok: boolean; error?: string }> {
+  if (isSupabaseConfigured()) await deleteSupabaseSlot(slotId)
+  return deleteSlot(slotId, { skipRemote: true })
 }

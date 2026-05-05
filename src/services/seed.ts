@@ -1,5 +1,5 @@
 import { addDays, format } from 'date-fns'
-import { db } from './storage'
+import { clearLocalDbWhenSupabaseConfigured, db } from './storage'
 import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule, StudentProgress, LessonDescription } from '../types'
 import { saveStudentProgress, saveLessonDescription } from './studentProfile'
 
@@ -239,6 +239,7 @@ const ACTIVE_MODULES: SchoolModule[] = [
 ]
 
 export function seedIfNeeded(): void {
+  clearLocalDbWhenSupabaseConfigured()
   if (db.isSeeded()) return
 
   db.reset()

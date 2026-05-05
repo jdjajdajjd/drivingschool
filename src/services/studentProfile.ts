@@ -1,6 +1,7 @@
 import { normalizePhone } from './bookingService'
 import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
-import { createStudentRequestInSupabase, getStudentDocumentsFromSupabase, getStudentProgressFromSupabase, getStudentRequestsFromSupabase, updateStudentRequestStatusInSupabase, upsertStudentDocumentsInSupabase, upsertStudentProgressInSupabase } from './supabasePublicService'
+import { createStudentRequestInSupabase, getStudentDocumentsFromSupabase, getStudentProgressFromSupabase, getStudentRequestsFromSupabase, loginStudentInSupabase, updateStudentProfileInSupabase, updateStudentRequestStatusInSupabase, upsertStudentDocumentsInSupabase, upsertStudentProgressInSupabase } from './supabasePublicService'
+import { isSupabaseConfigured } from '../lib/supabase'
 
 export interface StudentProfile {
   name: string
@@ -40,11 +41,13 @@ function getCredentialKey(phone: string): string {
 }
 
 export function saveStudentCredentials(phone: string, password: string, schoolId: string): void {
+  if (isSupabaseConfigured()) return
   const normalizedPhone = normalizePhone(phone)
   localStorage.setItem(getCredentialKey(normalizedPhone), JSON.stringify({ schoolId, phone: normalizedPhone, password }))
 }
 
 export function verifyStudentCredentials(phone: string, password: string): { schoolId: string } | null {
+  if (isSupabaseConfigured()) return null
   try {
     const raw = localStorage.getItem(getCredentialKey(phone))
     if (!raw) return null
@@ -56,7 +59,27 @@ export function verifyStudentCredentials(phone: string, password: string): { sch
   }
 }
 
+const sessionProfileKey = 'vroom:student_session_profile'
+
+export function saveStudentSessionProfile(schoolId: string, profile: StudentProfile): void {
+  sessionStorage.setItem(sessionProfileKey, JSON.stringify({ schoolId, profile }))
+}
+
+export function loadStudentSessionProfile(): { schoolId: string; profile: StudentProfile } | null {
+  try {
+    const raw = sessionStorage.getItem(sessionProfileKey)
+    return raw ? JSON.parse(raw) as { schoolId: string; profile: StudentProfile } : null
+  } catch {
+    return null
+  }
+}
+
+export function clearStudentSessionProfile(): void {
+  sessionStorage.removeItem(sessionProfileKey)
+}
+
 export function loadStudentProfile(schoolId: string): StudentProfile | null {
+  if (isSupabaseConfigured()) return loadStudentSessionProfile()?.profile ?? null
   try {
     const raw = localStorage.getItem(getProfileKey(schoolId))
     if (!raw) return null
@@ -74,6 +97,7 @@ export function loadStudentProfile(schoolId: string): StudentProfile | null {
 }
 
 export function findAnyStudentProfile(): { schoolId: string; profile: StudentProfile } | null {
+  if (isSupabaseConfigured()) return loadStudentSessionProfile()
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index)
     if (!key?.startsWith('dd:student_profile:')) continue
@@ -99,11 +123,19 @@ export function saveStudentProfile(
     createdByConsent: true,
     ...extra,
   }
+  if (isSupabaseConfigured()) {
+    saveStudentSessionProfile(schoolId, profile)
+    return profile
+  }
   localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
   return profile
 }
 
 export function removeStudentProfile(schoolId: string): void {
+  if (isSupabaseConfigured()) {
+    clearStudentSessionProfile()
+    return
+  }
   localStorage.removeItem(getProfileKey(schoolId))
 }
 
@@ -126,6 +158,53 @@ export function loadStudentProgress(studentId: string): StudentProgress | null {
   } catch {
     return null
   }
+}
+
+export async function saveStudentProfileToSupabase(schoolId: string, form: StudentProfileForm, extra?: Partial<StudentProfile>): Promise<StudentProfile> {
+  const result = await updateStudentProfileInSupabase({
+    schoolId,
+    name: form.name,
+    phone: form.phone,
+    email: form.email ?? '',
+    password: form.password ?? '',
+    avatarUrl: form.avatarUrl ?? '',
+    categoryCodes: extra?.categoryCodes,
+    trainingStage: extra?.trainingStage,
+    groupName: extra?.groupName,
+    trainingStartDate: extra?.trainingStartDate,
+    drivingStartDate: extra?.drivingStartDate,
+    trainingEndDate: extra?.trainingEndDate,
+    drivingEndDate: extra?.drivingEndDate,
+  })
+  const profile: StudentProfile = {
+    name: form.name.trim(),
+    phone: result.normalizedPhone,
+    email: form.email?.trim() ?? '',
+    avatarUrl: form.avatarUrl?.trim() ?? '',
+    passwordSet: Boolean(form.password?.trim() || extra?.passwordSet),
+    updatedAt: new Date().toISOString(),
+    createdByConsent: true,
+    ...extra,
+  }
+  saveStudentSessionProfile(schoolId, profile)
+  return profile
+}
+
+export async function loginStudentProfileFromSupabase(schoolId: string, phone: string, password: string): Promise<StudentProfile | null> {
+  const result = await loginStudentInSupabase({ schoolId, phone, password })
+  if (!result) return null
+  const profile: StudentProfile = {
+    name: result.name,
+    phone: result.phone,
+    email: result.email,
+    avatarUrl: result.avatarUrl,
+    passwordSet: true,
+    assignedBranchId: result.assignedBranchId || undefined,
+    updatedAt: new Date().toISOString(),
+    createdByConsent: true,
+  }
+  saveStudentSessionProfile(schoolId, profile)
+  return profile
 }
 
 export async function refreshStudentProgressFromSupabase(studentId: string): Promise<StudentProgress | null> {

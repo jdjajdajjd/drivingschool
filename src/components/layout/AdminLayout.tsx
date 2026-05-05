@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Car03Icon, Menu01Icon } from '@hugeicons/core-free-icons'
 import { AdminSidebar } from './AdminSidebar'
 import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
 
 const Menu = createHugeIcon(Menu01Icon)
 const Car = createHugeIcon(Car03Icon)
@@ -11,6 +12,23 @@ const Car = createHugeIcon(Car03Icon)
 export function AdminLayout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let disposed = false
+    syncSupabaseSchoolToLocalDb('virazh')
+      .catch(() => undefined)
+      .finally(() => {
+        if (!disposed) setReady(true)
+      })
+    const fallback = window.setTimeout(() => setReady(true), 4000)
+    return () => {
+      disposed = true
+      window.clearTimeout(fallback)
+    }
+  }, [])
+
+  if (!ready) return <div className="min-h-screen bg-[#F4F5F6]" />
 
   return (
     <div className="shell">

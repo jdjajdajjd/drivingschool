@@ -2,14 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BellDotIcon,
-  BookOpen01Icon,
   Calendar03Icon,
   Camera02Icon,
   Car04Icon,
   Comment01Icon,
   File02Icon,
   FilterHorizontalIcon,
-  LicenseDraftIcon,
   Home07Icon,
   Logout03Icon,
   PencilEdit02Icon,
@@ -17,7 +15,6 @@ import {
   SmartPhone01Icon,
   SparklesIcon,
   Settings02Icon,
-  StickyNote02Icon,
   User03Icon,
   ZapIcon,
   ArrowLeft01Icon,
@@ -59,7 +56,6 @@ import { InfoSheetPanel } from './student/components/InfoSheetPanel'
 void React
 
 const Bell = createHugeIcon(BellDotIcon)
-const BookOpen = createHugeIcon(BookOpen01Icon)
 const Building2 = createHugeIcon(School01Icon)
 const CalendarDays = createHugeIcon(Calendar03Icon)
 const Camera = createHugeIcon(Camera02Icon)
@@ -70,13 +66,11 @@ const FileText = createHugeIcon(File02Icon)
 const Filter = createHugeIcon(FilterHorizontalIcon)
 const Gift = createHugeIcon(SparklesIcon)
 const Home = createHugeIcon(Home07Icon)
-const License = createHugeIcon(LicenseDraftIcon)
 const LogOut = createHugeIcon(Logout03Icon)
 const MessageCircle = createHugeIcon(Comment01Icon)
 const Pencil = createHugeIcon(PencilEdit02Icon)
 const Phone = createHugeIcon(SmartPhone01Icon)
 const Settings = createHugeIcon(Settings02Icon)
-const StickyNote = createHugeIcon(StickyNote02Icon)
 const UserRound = createHugeIcon(User03Icon)
 const Zap = createHugeIcon(ZapIcon)
 
@@ -299,19 +293,6 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
   )
 }
 
-function TheoryCard({ title, text, tone, icon: Icon, action, onClick }: { title: string; text: string; tone: string; icon: typeof BookOpen; action: string; onClick: () => void }) {
-  return (
-    <button className="relative flex min-h-[142px] flex-col overflow-hidden rounded-[22px] p-3.5 text-left active:scale-[0.98]" style={{ background: tone }} onClick={onClick}>
-      <h3 className="text-[20px] font-bold leading-tight tracking-[-0.02em] text-[#050609]">{title}</h3>
-      <p className="mt-1.5 whitespace-pre-line pr-10 text-[14px] font-semibold leading-5 text-[#7B7F87]">{text}</p>
-      <span className="mt-auto inline-flex w-fit rounded-full bg-white/85 px-3 py-1.5 text-[12px] font-bold text-[#1F2BD8]">{action}</span>
-      <div className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-[16px] bg-white/70 text-[#1F2BD8]">
-        <Icon size={25} />
-      </div>
-    </button>
-  )
-}
-
 function EditableTextField({ label, value, type = 'text', locked, onEdit, onChange }: { label: string; value: string; type?: string; locked: boolean; onEdit: () => void; onChange: (value: string) => void }) {
   return (
     <div className="relative">
@@ -424,17 +405,7 @@ export function StudentPage() {
   const drivingCompleted = progress?.drivingHoursCompleted ?? 0
   const drivingRemaining = Math.max(0, drivingTotal - drivingCompleted)
   const drivingPercent = safePercent(drivingCompleted, drivingTotal)
-  const theoryPercent = safePercent(progress?.theoryTopicsCompleted, progress?.theoryTopicsTotal)
   const nextLesson = upcoming[0] ?? null
-  const theoryTotal = progress?.theoryTopicsTotal ?? 40
-  const theoryCompleted = progress?.theoryTopicsCompleted ?? 0
-  const theoryRemaining = Math.max(0, theoryTotal - theoryCompleted)
-  const theoryModules = [
-    { title: 'ПДД и знаки', done: Math.min(theoryCompleted, 12), total: 12, icon: FileText },
-    { title: 'Перекрёстки', done: Math.min(Math.max(theoryCompleted - 12, 0), 10), total: 10, icon: BookOpen },
-    { title: 'Манёвры', done: Math.min(Math.max(theoryCompleted - 22, 0), 8), total: 8, icon: CarFront },
-    { title: 'Экзамен', done: Math.min(Math.max(theoryCompleted - 30, 0), 10), total: 10, icon: StickyNote },
-  ]
 
   useEffect(() => {
     if (!school || selectedInstructorId) return
@@ -657,11 +628,11 @@ export function StudentPage() {
                   <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">Маршрут обучения</h2>
                   <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Что уже пройдено и что дальше</p>
                 </div>
-                <span className="rounded-full bg-[#EEF0FA] px-3 py-1.5 text-[13px] font-bold text-[#1F2BD8]">{Math.round((theoryPercent + drivingPercent) / 2)}%</span>
+                <span className="rounded-full bg-[#EEF0FA] px-3 py-1.5 text-[13px] font-bold text-[#1F2BD8]">{drivingPercent}%</span>
               </div>
               <div className="mt-4">
-                <RoadmapStep title="Теория" text={`${progress?.theoryTopicsCompleted ?? 0} из ${progress?.theoryTopicsTotal ?? 0} тем закрыто`} done={theoryPercent >= 100} active={theoryPercent < 100} />
-                <RoadmapStep title="Вождение" text={`${drivingRemaining} часов осталось до завершения`} done={drivingPercent >= 100} active={theoryPercent >= 100 || drivingPercent > 0} />
+                <RoadmapStep title="Теория" text="Модуль появится позже" active={false} />
+                <RoadmapStep title="Вождение" text={`${drivingRemaining} часов осталось до завершения`} done={drivingPercent >= 100} active={drivingPercent > 0} />
                 <RoadmapStep title="Внутренний экзамен" text={progress?.internalExamPassed ? 'Сдан' : formatDateValue(progress?.internalExamDate)} done={progress?.internalExamPassed} active={!progress?.internalExamPassed && drivingPercent >= 70} />
                 <RoadmapStep title="Экзамен ГИБДД" text={formatDateValue(progress?.gaidExamDate)} active={Boolean(progress?.internalExamPassed)} />
               </div>
@@ -753,76 +724,6 @@ export function StudentPage() {
           </section>
         ) : null}
 
-        {view === 'theory' ? (
-          <section className="space-y-5 pt-1">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h1 className={pageTitle}>Теория</h1>
-                <p className="mt-1 text-[14px] font-semibold text-[#8B8D94]">Билеты, темы и готовность к зачётам</p>
-              </div>
-              <button className="rounded-full bg-white px-3 py-2 text-[13px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setView('driving')}>Маршрут</button>
-            </div>
-
-            <section className="relative overflow-hidden rounded-[26px] bg-[#DCEBFF] p-5">
-              <div className="absolute -right-10 -top-8 h-32 w-32 rounded-full bg-white/45" />
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-[24px] font-bold tracking-[-0.03em] text-[#050609]">Теоретический курс</h2>
-                  <p className="mt-2 text-[14px] font-semibold leading-5 text-[#6F747A]">{theoryRemaining > 0 ? `Осталось ${theoryRemaining} тем до полного курса` : 'Курс закрыт, можно повторять билеты'}</p>
-                </div>
-                <span className="rounded-full bg-white px-3 py-1.5 text-[13px] font-bold text-[#1F2BD8]">{theoryPercent}%</span>
-              </div>
-              <div className="relative mt-8 grid grid-cols-[auto_1fr] items-end gap-4">
-                <span className="text-[44px] font-bold leading-none tracking-[-0.05em] text-[#050609]">{theoryCompleted}</span>
-                <div className="pb-1">
-                  <p className="text-[14px] font-bold text-[#050609]">из {theoryTotal} тем изучено</p>
-                  <div className="mt-2"><ProgressBar value={theoryPercent} /></div>
-                </div>
-              </div>
-            </section>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <TheoryCard title="Билеты" text={'Тренировка\nпо темам'} tone="#EEF0FA" icon={StickyNote} action="Решать" onClick={() => setInfoSheet('theoryTickets')} />
-              <TheoryCard title="Ошибки" text={'Повторить\nсложные вопросы'} tone="#F5E9EF" icon={BookOpen} action="Повторить" onClick={() => setInfoSheet('theoryMistakes')} />
-              <TheoryCard title="ПДД" text={'Правила, знаки\nи разметка'} tone="#EAF6F0" icon={FileText} action="Открыть" onClick={() => setInfoSheet('theoryRules')} />
-              <TheoryCard title="Зачёты" text={'Готовность\nк экзамену'} tone="#F2EBDD" icon={License} action="Проверить" onClick={() => setInfoSheet('theoryExam')} />
-            </div>
-
-            <section className={cn(card, 'p-4')}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">План занятий</h2>
-                  <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Темы, которые видит ученик</p>
-                </div>
-                <StatusPill tone={theoryPercent >= 100 ? 'green' : 'blue'}>{theoryPercent >= 100 ? 'Готово' : 'В процессе'}</StatusPill>
-              </div>
-              <div className="mt-4 space-y-3">
-                {theoryModules.map((module) => {
-                  const modulePercent = safePercent(module.done, module.total)
-                  return (
-                    <button key={module.title} className="flex w-full items-center gap-3 rounded-[18px] bg-[#F7F8FA] p-3 text-left active:scale-[0.99]" onClick={() => setInfoSheet('theoryRules')}>
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-white text-[#1F2BD8]"><module.icon size={20} /></span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-bold text-[#050609]">{module.title}</span>
-                        <span className="mt-1 block text-[12px] font-semibold text-[#8B8D94]">{module.done} из {module.total} тем</span>
-                        <span className="mt-2 block"><ProgressBar value={modulePercent} /></span>
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section className={cn(card, 'p-4')}>
-              <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">Сегодня</h2>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button className="min-h-12 rounded-[16px] bg-[#1F2BD8] px-3 text-[14px] font-bold text-white active:scale-[0.98]" onClick={() => setInfoSheet('theoryTickets')}>10 вопросов</button>
-                <button className="min-h-12 rounded-[16px] bg-[#EEF0FA] px-3 text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setInfoSheet('theoryMistakes')}>Работа над ошибками</button>
-              </div>
-            </section>
-          </section>
-        ) : null}
-
         {view === 'chat' ? (
           <section className="space-y-5 pt-2">
             <h1 className={pageTitle}>Связь</h1>
@@ -869,7 +770,7 @@ export function StudentPage() {
             <div className="grid grid-cols-3 gap-2.5">
               {[
                 { label: 'Вождение', icon: CarFront, onClick: () => setView('driving') },
-                { label: 'Теория', icon: BookOpen, onClick: () => setView('theory') },
+                { label: 'Запись', icon: CalendarDays, onClick: () => setView('schedule') },
                 { label: 'Инфо', icon: Building2, onClick: () => setInfoSheet('student') },
               ].map((item) => <button key={item.label} className={cn(card, 'grid place-items-center gap-2 p-3 text-[15px] font-bold text-[#050609] active:scale-[0.98]')} style={{ minHeight: 82 }} onClick={item.onClick}><span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF0FA] text-[#1F2BD8]"><item.icon size={21} /></span>{item.label}</button>)}
             </div>
@@ -897,7 +798,6 @@ export function StudentPage() {
       <BottomNav items={[
         { key: 'home', label: 'Главная', icon: <Home size={25} />, active: view === 'home', onClick: () => setView('home') },
         { key: 'schedule', label: 'Расписание', icon: <CalendarDays size={25} />, active: view === 'schedule', onClick: () => setView('schedule') },
-        { key: 'theory', label: 'Теория', icon: <BookOpen size={25} />, active: view === 'theory', onClick: () => setView('theory') },
         { key: 'chat', label: 'Связь', icon: <MessageCircle size={25} />, active: view === 'chat', onClick: () => setView('chat') },
         { key: 'profile', label: 'Профиль', icon: <UserRound size={25} />, active: view === 'profile', onClick: () => setView('profile') },
       ]} />

@@ -22,10 +22,13 @@ import { formatInstructorName, formatPhone } from '../../lib/utils'
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import {
   cancelBooking,
+  cancelBookingConfirmed,
   completeBooking,
+  completeBookingConfirmed,
   getBookingsBySchool,
   getSlotDateTime,
   rescheduleBooking,
+  rescheduleBookingConfirmed,
 } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { db } from '../../services/storage'
@@ -58,6 +61,8 @@ export function AdminBookings() {
   const branches = school ? db.branches.bySchool(school.id) : []
   const instructors = school ? db.instructors.bySchool(school.id) : []
   const allBookings = school ? getBookingsBySchool(school.id) : []
+  const activeCount = allBookings.filter((entry) => entry.booking.status === 'active').length
+  const todayCount = allBookings.filter((entry) => entry.slot && isSameDay(getSlotDateTime(entry.slot), new Date())).length
 
   const filteredBookings = useMemo(() => {
     const now = new Date()
@@ -130,11 +135,18 @@ export function AdminBookings() {
     setSelectedNewSlotId('')
   }
 
-  function handleCancelConfirm(): void {
+  async function handleCancelConfirm(): Promise<void> {
     if (!cancelBookingId) {
       return
     }
-    const result = cancelBooking(cancelBookingId)
+    let result: ReturnType<typeof cancelBooking>
+    try {
+      result = await cancelBookingConfirmed(cancelBookingId)
+    } catch (error) {
+      setCancelBookingId(null)
+      showToast(error instanceof Error ? error.message : 'Не удалось отменить запись.', 'error')
+      return
+    }
     setCancelBookingId(null)
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось отменить запись.', 'error')
@@ -143,11 +155,18 @@ export function AdminBookings() {
     showToast('Запись отменена. Слот снова доступен.', 'success')
   }
 
-  function handleCompleteConfirm(): void {
+  async function handleCompleteConfirm(): Promise<void> {
     if (!completeBookingId) {
       return
     }
-    const result = completeBooking(completeBookingId)
+    let result: ReturnType<typeof completeBooking>
+    try {
+      result = await completeBookingConfirmed(completeBookingId)
+    } catch (error) {
+      setCompleteBookingId(null)
+      showToast(error instanceof Error ? error.message : 'Не удалось отметить запись проведённой.', 'error')
+      return
+    }
     setCompleteBookingId(null)
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось отметить запись проведённой.', 'error')
@@ -156,17 +175,23 @@ export function AdminBookings() {
     showToast('Занятие отмечено проведённым.', 'success')
   }
 
-  function handleRescheduleConfirm(): void {
+  async function handleRescheduleConfirm(): Promise<void> {
     if (!rescheduleBookingId || !selectedNewSlotId) {
       showToast('Выберите новый свободный слот.', 'error')
       return
     }
 
-    const result = rescheduleBooking({
-      bookingId: rescheduleBookingId,
-      newSlotId: selectedNewSlotId,
-      ignoreLimits: true,
-    })
+    let result: ReturnType<typeof rescheduleBooking>
+    try {
+      result = await rescheduleBookingConfirmed({
+        bookingId: rescheduleBookingId,
+        newSlotId: selectedNewSlotId,
+        ignoreLimits: true,
+      })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось перенести запись.', 'error')
+      return
+    }
 
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось перенести запись.', 'error')
@@ -195,6 +220,21 @@ export function AdminBookings() {
       />
 
       <div className="mt-6 space-y-5">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Всего</p>
+            <p className="mt-1 text-2xl font-bold text-[#111418]">{allBookings.length}</p>
+          </div>
+          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Активные</p>
+            <p className="mt-1 text-2xl font-bold text-[#111418]">{activeCount}</p>
+          </div>
+          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Сегодня</p>
+            <p className="mt-1 text-2xl font-bold text-[#111418]">{todayCount}</p>
+          </div>
+        </div>
+
         <Section title="Фильтры" description="Ищите по ученику, телефону, периоду и статусу.">
           <DataToolbar>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
@@ -429,20 +469,20 @@ export function AdminBookings() {
       <ConfirmDialog
         open={Boolean(cancelBookingId)}
         title="Отменить запись"
-        description="Запись перейдёт в статус «Отменена», а слот снова станет доступным для выбора."
+        description="Запись перейдёт в статус «Отменена», слот снова станет доступным для учеников. Действие попадёт в историю записи."
         confirmLabel="Отменить запись"
         onClose={() => setCancelBookingId(null)}
-        onConfirm={handleCancelConfirm}
+        onConfirm={() => void handleCancelConfirm()}
         danger
       />
 
       <ConfirmDialog
         open={Boolean(completeBookingId)}
         title="Отметить проведённой"
-        description="Запись перейдёт в статус «Проведена». Слот останется занятым."
+        description="Запись перейдёт в статус «Проведена». Используйте только после фактического занятия."
         confirmLabel="Отметить проведённой"
         onClose={() => setCompleteBookingId(null)}
-        onConfirm={handleCompleteConfirm}
+        onConfirm={() => void handleCompleteConfirm()}
       />
 
       <Modal open={Boolean(rescheduleBookingId)} onClose={() => setRescheduleBookingId(null)} title="Перенести запись" size="lg">
@@ -508,7 +548,7 @@ export function AdminBookings() {
           )}
 
           <div className="flex gap-3">
-            <Button className="flex-1" onClick={handleRescheduleConfirm} disabled={!selectedNewSlotId}>
+            <Button className="flex-1" onClick={() => void handleRescheduleConfirm()} disabled={!selectedNewSlotId}>
               Подтвердить перенос
             </Button>
             <Button variant="secondary" className="flex-1" onClick={() => setRescheduleBookingId(null)}>

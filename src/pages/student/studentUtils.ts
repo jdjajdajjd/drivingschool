@@ -6,7 +6,7 @@ import type { StudentProfile } from '../../services/studentProfile'
 import type { LessonType, Slot, TrainingStage } from '../../types'
 import type { LessonFilter, ResolvedStudentBooking } from './studentTypes'
 
-export const selectedInstructorStorageKey = (schoolId: string) => `dd:student_selected_instructor:${schoolId}`
+export const selectedInstructorStorageKey = (schoolId: string) => `vroom:student_selected_instructor:${schoolId}`
 
 export function initials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'У'

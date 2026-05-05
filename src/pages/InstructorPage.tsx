@@ -10,9 +10,10 @@ import { Badge, StatusBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { formatPhone, pluralize } from '../lib/utils'
-import { cancelBooking, completeBooking } from '../services/bookingService'
 import { getInstructorPhoto } from '../services/instructorPhotos'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { db } from '../services/storage'
+import { getPublicInstructorBundle } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, Slot } from '../types'
 import { formatDateFull } from '../utils/date'
 
@@ -38,14 +39,10 @@ function Section({
   title,
   items,
   emptyLabel,
-  onComplete,
-  onCancel,
 }: {
   title: string
   items: BookingRow[]
   emptyLabel: string
-  onComplete?: (bookingId: string) => void
-  onCancel?: (bookingId: string) => void
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
@@ -72,8 +69,6 @@ function Section({
 
               <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 <StatusBadge status={booking.status} />
-                {booking.status === 'active' && onComplete ? <Button size="sm" onClick={() => onComplete(booking.id)}>Проведено</Button> : null}
-                {booking.status === 'active' && onCancel ? <Button variant="secondary" size="sm" onClick={() => onCancel(booking.id)}>Отменено</Button> : null}
               </div>
             </div>
           ))}
@@ -107,6 +102,35 @@ export function InstructorPage() {
       return
     }
 
+    if (isSupabaseConfigured()) {
+      void getPublicInstructorBundle(token)
+        .then((bundle) => {
+          if (!bundle) {
+            setInstructor(null)
+            setBranch(null)
+            setRows([])
+            return
+          }
+
+          setInstructor(bundle.instructor)
+          setBranch(bundle.branch)
+          setRows(
+            bundle.bookings
+              .map((booking) => ({
+                booking,
+                slot: bundle.slots.find((slot) => slot.id === booking.slotId) ?? null,
+              }))
+              .sort(sortAsc),
+          )
+        })
+        .catch(() => {
+          setInstructor(null)
+          setBranch(null)
+          setRows([])
+        })
+      return
+    }
+
     const currentInstructor = db.instructors.byToken(token)
     if (!currentInstructor) {
       setInstructor(null)
@@ -119,18 +143,6 @@ export function InstructorPage() {
     setBranch(db.branches.byId(currentInstructor.branchId))
     reloadRows(currentInstructor)
   }, [token])
-
-  function handleComplete(bookingId: string): void {
-    if (!instructor) return
-    completeBooking(bookingId)
-    reloadRows(instructor)
-  }
-
-  function handleCancel(bookingId: string): void {
-    if (!instructor) return
-    cancelBooking(bookingId)
-    reloadRows(instructor)
-  }
 
   const grouped = useMemo(() => {
     const now = Date.now()
@@ -172,9 +184,7 @@ export function InstructorPage() {
             <XCircle size={26} className="text-red-500" />
           </div>
           <p className="mt-5 text-xl font-semibold text-stone-900">Инструктор не найден</p>
-          <p className="mt-2 text-sm leading-relaxed text-stone-500">
-            Токен недействителен или инструкция ещё не была добавлена в локальные данные.
-          </p>
+            <p className="mt-2 text-sm leading-relaxed text-stone-500">Ссылка недействительна или инструктор пока не добавлен в систему.</p>
           <Button className="mt-6 w-full" onClick={() => navigate('/')}>
             На главную
           </Button>
@@ -252,7 +262,10 @@ export function InstructorPage() {
         </motion.section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Section title="Ближайшие занятия" items={grouped.upcoming} emptyLabel="На ближайшие дни занятий нет" onComplete={handleComplete} onCancel={handleCancel} />
+          <div className="lg:col-span-3 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium leading-6 text-amber-900">
+            Эта страница только показывает расписание. Отметки «проведено» и отмены доступны после входа в защищённую админку автошколы.
+          </div>
+          <Section title="Ближайшие занятия" items={grouped.upcoming} emptyLabel="На ближайшие дни занятий нет" />
           <Section title="Прошедшие занятия" items={grouped.past} emptyLabel="Нет прошедших занятий." />
           <Section title="Отменённые" items={grouped.cancelled} emptyLabel="Нет отменённых записей." />
         </div>

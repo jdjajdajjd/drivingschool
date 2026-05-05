@@ -50,15 +50,16 @@ export const MODULE_CATALOG: Module[] = [
     features: ['Кнопка записи', 'Встраиваемая форма', 'Использование на сайте автошколы'],
   },
   {
-    id: 'payments',
-    name: 'Онлайн-оплата',
-    category: 'sales',
-    description: 'Приём предоплаты или оплаты занятий онлайн.',
+    id: 'theory',
+    name: 'Теория',
+    category: 'management',
+    description: 'Билеты, темы и зачёты для ученика. Модуль появится позже и пока не подключается.',
     priceType: 'monthly',
-    monthlyPrice: 990,
-    usageNote: 'Плюс комиссия эквайринга',
-    icon: 'CreditCard',
-    features: ['Предоплата занятий', 'Онлайн-оплата', 'Подготовка к эквайрингу'],
+    monthlyPrice: 0,
+    usageNote: 'Скоро',
+    icon: 'BookOpen',
+    features: ['Билеты ПДД', 'Работа над ошибками', 'Готовность к экзамену'],
+    isComingSoon: true,
   },
   {
     id: 'analytics',
@@ -176,7 +177,7 @@ export function isModuleEnabled(schoolId: string, moduleId: string): boolean {
 
 export function enableModule(schoolId: string, moduleId: string): SchoolModule | null {
   const module = getModuleById(moduleId)
-  if (!module) {
+  if (!module || module.isComingSoon) {
     return null
   }
 
