@@ -16,7 +16,7 @@ const Location = createHugeIcon(Location01Icon)
 const Pencil = createHugeIcon(PencilEdit02Icon)
 const Plus = createHugeIcon(Add01Icon)
 const Trash2 = createHugeIcon(Delete02Icon)
-import { createBranch, deleteBranchSafe, getBranchesBySchool, updateBranch } from '../../services/branchService'
+import { archiveBranchConfirmed, createBranchConfirmed, getBranchesBySchool, updateBranchConfirmed } from '../../services/branchService'
 import { db } from '../../services/storage'
 
 const initialForm = {
@@ -33,6 +33,8 @@ export function AdminBranches() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [form, setForm] = useState(initialForm)
+  const [saving, setSaving] = useState(false)
+  const [archiving, setArchiving] = useState(false)
 
   const branches = school ? getBranchesBySchool(school.id) : []
   const rows = useMemo(
@@ -70,15 +72,17 @@ export function AdminBranches() {
     setModalOpen(true)
   }
 
-  function handleSubmit(): void {
-    if (!school) return
+  async function handleSubmit(): Promise<void> {
+    if (!school || saving) return
 
+    setSaving(true)
     const result = editingId
-      ? updateBranch(editingId, form)
-      : createBranch({
+      ? await updateBranchConfirmed(editingId, form)
+      : await createBranchConfirmed({
           schoolId: school.id,
           ...form,
         })
+    setSaving(false)
 
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось сохранить филиал.', 'error')
@@ -89,15 +93,17 @@ export function AdminBranches() {
     showToast(editingId ? 'Филиал обновлён.' : 'Филиал создан.', 'success')
   }
 
-  function handleDelete(): void {
-    if (!deleteId) return
-    const result = deleteBranchSafe(deleteId)
+  async function handleArchive(): Promise<void> {
+    if (!deleteId || archiving) return
+    setArchiving(true)
+    const result = await archiveBranchConfirmed(deleteId)
+    setArchiving(false)
     setDeleteId(null)
     if (!result.ok) {
-      showToast(result.error ?? 'Не удалось удалить филиал.', 'error')
+      showToast(result.error ?? 'Не удалось выключить филиал.', 'error')
       return
     }
-    showToast('Филиал удалён.', 'success')
+    showToast('Филиал выключен и скрыт из публичной записи.', 'success')
   }
 
   if (!school) {
@@ -169,7 +175,7 @@ export function AdminBranches() {
                       </Button>
                       <Button variant="danger" size="sm" onClick={() => setDeleteId(branch.id)}>
                         <Trash2 size={14} />
-                        Удалить
+                        Выключить
                       </Button>
                     </div>
                   </div>
@@ -190,8 +196,8 @@ export function AdminBranches() {
             Филиал активен
           </label>
           <div className="flex gap-3">
-            <Button className="flex-1" onClick={handleSubmit}>
-              {editingId ? 'Сохранить изменения' : 'Создать филиал'}
+            <Button className="flex-1" onClick={() => void handleSubmit()} disabled={saving}>
+              {saving ? 'Сохраняем...' : editingId ? 'Сохранить изменения' : 'Создать филиал'}
             </Button>
             <Button variant="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
               Закрыть
@@ -202,11 +208,11 @@ export function AdminBranches() {
 
       <ConfirmDialog
         open={Boolean(deleteId)}
-        title="Удалить филиал"
-        description="Если у филиала есть связанные инструкторы, слоты или записи, удаление будет запрещено."
-        confirmLabel="Удалить филиал"
+        title="Выключить филиал"
+        description="Филиал останется в истории и админке, но исчезнет из публичной записи и выбора новых занятий. Связанные прошлые записи не удаляются."
+        confirmLabel={archiving ? 'Выключаем...' : 'Выключить филиал'}
         onClose={() => setDeleteId(null)}
-        onConfirm={handleDelete}
+        onConfirm={() => void handleArchive()}
         danger
       />
     </div>
