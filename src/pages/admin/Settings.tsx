@@ -17,7 +17,7 @@ const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 const Settings2 = createHugeIcon(Settings02Icon)
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
-import { resetProductData, updateSchool, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
+import { resetProductData, updateSchoolConfirmed, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
@@ -26,6 +26,7 @@ export function AdminSettings() {
   const { showToast } = useToast()
   const school = db.schools.bySlug('virazh')
   const [resetOpen, setResetOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     name: '',
     slug: '',
@@ -82,8 +83,8 @@ export function AdminSettings() {
     })
   }
 
-  function handleSave(): void {
-    if (!school) {
+  async function handleSave(): Promise<void> {
+    if (!school || saving) {
       return
     }
 
@@ -117,35 +118,42 @@ export function AdminSettings() {
       return
     }
 
-    const result = updateSchool(school.id, {
-      name: form.name,
-      slug: form.slug,
-      description: form.description,
-      primaryColor: form.primaryColor,
-      logoUrl: form.logoUrl,
-      bookingLimitEnabled: form.bookingLimitEnabled,
-      maxActiveBookingsPerStudent: form.maxActiveBookingsPerStudent,
-      branchSelectionMode: form.branchSelectionMode,
-      maxSlotsPerBooking: form.maxSlotsPerBooking,
-      defaultLessonDuration: form.defaultLessonDuration,
-      enabledCategoryCodes: form.enabledCategoryCodes,
-    })
+    try {
+      setSaving(true)
+      const result = await updateSchoolConfirmed(school.id, {
+        name: form.name,
+        slug: form.slug,
+        description: form.description,
+        primaryColor: form.primaryColor,
+        logoUrl: form.logoUrl,
+        bookingLimitEnabled: form.bookingLimitEnabled,
+        maxActiveBookingsPerStudent: form.maxActiveBookingsPerStudent,
+        branchSelectionMode: form.branchSelectionMode,
+        maxSlotsPerBooking: form.maxSlotsPerBooking,
+        defaultLessonDuration: form.defaultLessonDuration,
+        enabledCategoryCodes: form.enabledCategoryCodes,
+      })
 
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось сохранить настройки школы.', 'error')
-      return
-    }
+      if (!result.ok) {
+        showToast(result.error ?? 'Не удалось сохранить настройки школы.', 'error')
+        return
+      }
 
-    showToast('Настройки автошколы сохранены.', 'success')
-    if (result.school?.slug !== school.slug) {
-      navigate(`${ADMIN_BASE_PATH}/settings`, { replace: true })
+      showToast('Настройки автошколы сохранены.', 'success')
+      if (result.school?.slug !== school.slug) {
+        navigate(`${ADMIN_BASE_PATH}/settings`, { replace: true })
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось сохранить настройки школы.', 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
   function handleReset(): void {
     resetProductData()
     setResetOpen(false)
-    showToast('Локальные данные обновлены.', 'success')
+    showToast('Данные обновлены.', 'success')
     window.location.href = `${ADMIN_BASE_PATH}/settings`
   }
 
@@ -164,9 +172,9 @@ export function AdminSettings() {
         title="Настройки"
         description="Основные данные школы, публичная страница и правила записи для учеников."
         actions={
-          <Button onClick={handleSave}>
+          <Button onClick={() => void handleSave()} disabled={saving}>
             <Settings2 size={16} />
-            Сохранить изменения
+            {saving ? 'Сохраняем...' : 'Сохранить изменения'}
           </Button>
         }
       />

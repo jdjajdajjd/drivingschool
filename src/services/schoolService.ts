@@ -1,4 +1,5 @@
 import { addDays, isAfter, subDays } from 'date-fns'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { generateId } from '../lib/utils'
 import type { School, SchoolOverview } from '../types'
 import { DRIVING_CATEGORIES } from './drivingCategories'
@@ -6,7 +7,7 @@ import { getBillingSummary } from './modules'
 import { resetDemoData as resetSeedData } from './seed'
 import { db } from './storage'
 import { validateDataIntegrity } from './integrityService'
-import { persistSupabaseMutation, updateSupabaseSchoolSettings } from './supabaseAdminService'
+import { updateSupabaseSchoolSettings } from './supabaseAdminService'
 
 export function getSchools(): School[] {
   return [...db.schools.all()].sort((left, right) => left.name.localeCompare(right.name, 'ru'))
@@ -166,22 +167,42 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
   }
 
   db.schools.upsert(updated)
-  persistSupabaseMutation(
-    updateSupabaseSchoolSettings(schoolId, {
-      name: updated.name,
-      slug: updated.slug,
-      description: updated.description,
-      primaryColor: updated.primaryColor,
-      logoUrl: updated.logoUrl,
-      bookingLimitEnabled: updated.bookingLimitEnabled,
-      maxActiveBookingsPerStudent: updated.maxActiveBookingsPerStudent,
-      branchSelectionMode: updated.branchSelectionMode,
-      maxSlotsPerBooking: updated.maxSlotsPerBooking,
-      defaultLessonDuration: updated.defaultLessonDuration,
-      enabledCategoryCodes: updated.enabledCategoryCodes,
-    }),
-  )
   return { ok: true, school: updated }
+}
+
+export async function updateSchoolConfirmed(schoolId: string, patch: Partial<SchoolInput>): Promise<{ ok: boolean; school?: School; error?: string }> {
+  const school = db.schools.byId(schoolId)
+  if (!school) {
+    return { ok: false, error: 'Автошкола не найдена.' }
+  }
+
+  const result = updateSchool(schoolId, patch)
+  if (!result.ok || !result.school) {
+    return result
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      await updateSupabaseSchoolSettings(schoolId, {
+        name: result.school.name,
+        slug: result.school.slug,
+        description: result.school.description,
+        primaryColor: result.school.primaryColor,
+        logoUrl: result.school.logoUrl,
+        bookingLimitEnabled: result.school.bookingLimitEnabled,
+        maxActiveBookingsPerStudent: result.school.maxActiveBookingsPerStudent,
+        branchSelectionMode: result.school.branchSelectionMode,
+        maxSlotsPerBooking: result.school.maxSlotsPerBooking,
+        defaultLessonDuration: result.school.defaultLessonDuration,
+        enabledCategoryCodes: result.school.enabledCategoryCodes,
+      })
+    } catch (error) {
+      db.schools.upsert(school)
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить настройки школы.' }
+    }
+  }
+
+  return result
 }
 
 export function resetProductData(): void {
