@@ -1,8 +1,10 @@
 import { generateId } from '../lib/utils'
+import { isSupabaseConfigured } from '../lib/supabase'
 import type { Instructor, Transmission } from '../types'
 import { db } from './storage'
-import { normalizePhone, validateRussianPhone } from './bookingService'
+import { getSlotDateTime, normalizePhone, validateRussianPhone } from './bookingService'
 import { persistSupabaseMutation, updateSupabaseInstructorActive, upsertSupabaseInstructor } from './supabaseAdminService'
+import { updateSlotStatusConfirmed } from './slotService'
 
 export interface InstructorInput {
   schoolId: string
@@ -161,4 +163,150 @@ export function toggleInstructorActive(
   db.instructors.upsert(nextInstructor)
   persistSupabaseMutation(updateSupabaseInstructorActive(instructorId, nextInstructor.isActive))
   return { ok: true, instructor: nextInstructor }
+}
+
+export async function createInstructorConfirmed(input: InstructorInput): Promise<{ ok: boolean; instructor?: Instructor; error?: string }> {
+  const trimmedName = input.name.trim()
+  if (!trimmedName) return { ok: false, error: 'Укажите имя инструктора.' }
+  if (!input.branchId) return { ok: false, error: 'Выберите филиал.' }
+
+  const normalizedPhone = input.phone ? normalizePhone(input.phone) : ''
+  if (normalizedPhone && !validateRussianPhone(normalizedPhone)) {
+    return { ok: false, error: 'Телефон инструктора указан в неверном формате.' }
+  }
+
+  const instructor: Instructor = {
+    id: generateId('inst'),
+    schoolId: input.schoolId,
+    branchId: input.branchId,
+    name: trimmedName,
+    phone: normalizedPhone,
+    email: input.email?.trim() ?? '',
+    token: generateInstructorToken(trimmedName),
+    bio: input.bio?.trim() ?? '',
+    experience: 0,
+    isActive: input.isActive,
+    categories: input.categories?.length ? input.categories : ['B'],
+    avatarInitials: createInitials(trimmedName),
+    avatarColor: colorFromName(trimmedName),
+    car: input.car?.trim() || undefined,
+    transmission: input.transmission,
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      await upsertSupabaseInstructor(instructor.id, { ...input, phone: normalizedPhone, name: trimmedName }, instructor.token)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить инструктора.' }
+    }
+  }
+
+  db.instructors.upsert(instructor)
+  return { ok: true, instructor }
+}
+
+export async function updateInstructorConfirmed(
+  instructorId: string,
+  input: Omit<InstructorInput, 'schoolId'>,
+): Promise<{ ok: boolean; instructor?: Instructor; error?: string }> {
+  const current = db.instructors.byId(instructorId)
+  if (!current) return { ok: false, error: 'Инструктор не найден.' }
+
+  const trimmedName = input.name.trim()
+  if (!trimmedName) return { ok: false, error: 'Укажите имя инструктора.' }
+
+  const normalizedPhone = input.phone ? normalizePhone(input.phone) : ''
+  if (normalizedPhone && !validateRussianPhone(normalizedPhone)) {
+    return { ok: false, error: 'Телефон инструктора указан в неверном формате.' }
+  }
+
+  const nextInstructor: Instructor = {
+    ...current,
+    branchId: input.branchId,
+    name: trimmedName,
+    phone: normalizedPhone,
+    email: input.email?.trim() ?? '',
+    bio: input.bio?.trim() ?? '',
+    car: input.car?.trim() || undefined,
+    transmission: input.transmission,
+    categories: input.categories?.length ? input.categories : current.categories?.length ? current.categories : ['B'],
+    isActive: input.isActive,
+    avatarInitials: createInitials(trimmedName),
+    avatarColor: colorFromName(trimmedName),
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      await upsertSupabaseInstructor(
+        nextInstructor.id,
+        {
+          schoolId: nextInstructor.schoolId,
+          branchId: nextInstructor.branchId,
+          name: nextInstructor.name,
+          phone: nextInstructor.phone,
+          email: nextInstructor.email,
+          bio: nextInstructor.bio,
+          car: nextInstructor.car,
+          transmission: nextInstructor.transmission,
+          categories: nextInstructor.categories,
+          isActive: nextInstructor.isActive,
+        },
+        nextInstructor.token,
+      )
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить инструктора.' }
+    }
+  }
+
+  if (!nextInstructor.isActive) {
+    const cancelled = await cancelFutureAvailableSlotsForInstructor(nextInstructor.id)
+    if (!cancelled.ok) return { ok: false, error: cancelled.error }
+  }
+  db.instructors.upsert(nextInstructor)
+  return { ok: true, instructor: nextInstructor }
+}
+
+export async function toggleInstructorActiveConfirmed(
+  instructorId: string,
+  isActive?: boolean,
+): Promise<{ ok: boolean; instructor?: Instructor; error?: string }> {
+  const instructor = db.instructors.byId(instructorId)
+  if (!instructor) return { ok: false, error: 'Инструктор не найден.' }
+
+  const nextInstructor: Instructor = {
+    ...instructor,
+    isActive: typeof isActive === 'boolean' ? isActive : !instructor.isActive,
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      await updateSupabaseInstructorActive(instructorId, nextInstructor.isActive)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось изменить статус инструктора.' }
+    }
+  }
+
+  if (!nextInstructor.isActive) {
+    const cancelled = await cancelFutureAvailableSlotsForInstructor(nextInstructor.id)
+    if (!cancelled.ok) return { ok: false, error: cancelled.error }
+  }
+  db.instructors.upsert(nextInstructor)
+  return { ok: true, instructor: nextInstructor }
+}
+
+async function cancelFutureAvailableSlotsForInstructor(instructorId: string): Promise<{ ok: boolean; error?: string }> {
+  const futureAvailableSlots = db.slots
+    .byInstructor(instructorId)
+    .filter((slot) => slot.status === 'available')
+    .filter((slot) => getSlotDateTime(slot).getTime() >= Date.now())
+
+  try {
+    for (const slot of futureAvailableSlots) {
+      await updateSlotStatusConfirmed(slot.id, 'cancelled')
+    }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Не удалось скрыть будущие слоты инструктора.' }
+  }
+
+  return { ok: true }
 }

@@ -20,7 +20,7 @@ const Power = createHugeIcon(PowerOffIcon)
 import { formatPhone } from '../../lib/utils'
 import { getUpcomingBookings, validateRussianPhone } from '../../services/bookingService'
 import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
-import { createInstructor, getInstructorsBySchool, toggleInstructorActive, updateInstructor } from '../../services/instructorService'
+import { createInstructorConfirmed, getInstructorsBySchool, toggleInstructorActiveConfirmed, updateInstructorConfirmed } from '../../services/instructorService'
 import { getInstructorPhoto } from '../../services/instructorPhotos'
 import { db } from '../../services/storage'
 import { getAvailableSlots } from '../../services/slotService'
@@ -48,6 +48,8 @@ export function AdminInstructors() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(initialForm)
+  const [saving, setSaving] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   const branches = school ? db.branches.bySchool(school.id) : []
   const instructors = school ? getInstructorsBySchool(school.id) : []
@@ -93,20 +95,22 @@ export function AdminInstructors() {
     setModalOpen(true)
   }
 
-  function handleSubmit(): void {
-    if (!school) return
+  async function handleSubmit(): Promise<void> {
+    if (!school || saving) return
 
     if (form.phone && !validateRussianPhone(form.phone)) {
       showToast('Телефон инструктора указан в неверном формате.', 'error')
       return
     }
 
+    setSaving(true)
     const result = editingId
-      ? updateInstructor(editingId, form)
-      : createInstructor({
+      ? await updateInstructorConfirmed(editingId, form)
+      : await createInstructorConfirmed({
           schoolId: school.id,
           ...form,
         })
+    setSaving(false)
 
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось сохранить инструктора.', 'error')
@@ -137,13 +141,16 @@ export function AdminInstructors() {
     showToast('Ссылка скопирована.', 'success')
   }
 
-  function toggle(instructor: Instructor): void {
-    const result = toggleInstructorActive(instructor.id)
+  async function toggle(instructor: Instructor): Promise<void> {
+    if (togglingId) return
+    setTogglingId(instructor.id)
+    const result = await toggleInstructorActiveConfirmed(instructor.id)
+    setTogglingId(null)
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось изменить статус инструктора.', 'error')
       return
     }
-    showToast(result.instructor?.isActive ? 'Инструктор включён.' : 'Инструктор выключен.', 'success')
+    showToast(result.instructor?.isActive ? 'Инструктор включён.' : 'Инструктор выключен и скрыт из публичной записи.', 'success')
   }
 
   if (!school) {
@@ -161,7 +168,7 @@ export function AdminInstructors() {
         title="Инструкторы"
         description="Управление карточками инструкторов, их доступностью и личными ссылками."
         actions={
-          <Button onClick={openCreate}>
+          <Button onClick={openCreate} disabled={saving || Boolean(togglingId)}>
             <Plus size={16} />
             Создать инструктора
           </Button>
@@ -171,7 +178,7 @@ export function AdminInstructors() {
       <div className="mt-8">
         <Section title="Команда" description={`В школе ${rows.length} инструкторов.`}>
           {rows.length === 0 ? (
-            <StateView title="Инструкторов пока нет" description="Создайте первого инструктора, чтобы он появился в записи и расписании." action={<Button onClick={openCreate}>Создать инструктора</Button>} />
+            <StateView title="Инструкторов пока нет" description="Создайте первого инструктора, чтобы он появился в записи и расписании." action={<Button onClick={openCreate} disabled={saving || Boolean(togglingId)}>Создать инструктора</Button>} />
           ) : (
             <div className="grid gap-3">
               {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
@@ -235,20 +242,20 @@ export function AdminInstructors() {
                   </div>
 
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)}>
+                    <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)} disabled={saving || Boolean(togglingId)}>
                       Редактировать
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => void copyLink(instructor)}>
+                    <Button variant="secondary" size="sm" onClick={() => void copyLink(instructor)} disabled={saving || Boolean(togglingId)}>
                       <Link2 size={14} />
                       Скопировать
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => window.open(`/instructor/${instructor.token}`, '_blank')}>
+                    <Button variant="secondary" size="sm" onClick={() => window.open(`/instructor/${instructor.token}`, '_blank')} disabled={saving || Boolean(togglingId)}>
                       <ExternalLink size={14} />
                       Открыть
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => toggle(instructor)}>
+                    <Button variant="secondary" size="sm" onClick={() => void toggle(instructor)} disabled={saving || Boolean(togglingId)}>
                       <Power size={14} />
-                      {instructor.isActive ? 'Выключить' : 'Включить'}
+                      {togglingId === instructor.id ? 'Сохраняем...' : instructor.isActive ? 'Выключить' : 'Включить'}
                     </Button>
                   </div>
                   </div>
@@ -319,11 +326,15 @@ export function AdminInstructors() {
             Инструктор активен и доступен в публичной записи
           </label>
 
+          <p className="rounded-2xl bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-[#8A5A00]">
+            При выключении инструктора будущие свободные слоты будут скрыты из публичной записи. Занятые слоты сохраняются.
+          </p>
+
           <div className="flex gap-3">
-            <Button className="flex-1" onClick={handleSubmit}>
-              {editingId ? 'Сохранить изменения' : 'Создать инструктора'}
+            <Button className="flex-1" onClick={() => void handleSubmit()} disabled={saving || Boolean(togglingId)}>
+              {saving ? 'Сохраняем...' : editingId ? 'Сохранить изменения' : 'Создать инструктора'}
             </Button>
-            <Button variant="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
+            <Button variant="secondary" className="flex-1" onClick={() => setModalOpen(false)} disabled={saving}>
               Закрыть
             </Button>
           </div>
