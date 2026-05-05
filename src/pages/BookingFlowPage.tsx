@@ -368,6 +368,7 @@ export function BookingFlowPage() {
   const slotsForSelection = useMemo(() => {
     if (!selectedDate || !selectedInstructorId) return []
     return getInstructorSlots(selectedInstructorId, isoDate(selectedDate), sessionId.current)
+      .filter((slot) => db.branches.byId(slot.branchId)?.isActive !== false)
   }, [selectedDate, selectedInstructorId])
 
   const slotsForSelectedDate = useMemo<SlotCardItem[]>(() => {
@@ -376,6 +377,7 @@ export function BookingFlowPage() {
     return db.slots.bySchool(school.id)
       .filter((slot) => slot.date === selectedDateKey)
       .filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now())
+      .filter((slot) => db.branches.byId(slot.branchId)?.isActive !== false)
       .map((slot) => {
         const booking = slot.bookingId ? allBookings.find((item) => item.id === slot.bookingId) ?? null : null
         return {
@@ -449,7 +451,7 @@ export function BookingFlowPage() {
     try {
       await refreshPublicSlots(school.id)
       const freshSlot = db.slots.byId(bookingSlot.id)
-      if (!freshSlot || freshSlot.status !== 'available') {
+      if (!freshSlot || freshSlot.status !== 'available' || db.branches.byId(freshSlot.branchId)?.isActive === false) {
         setSlotsVersion((current) => current + 1)
         throw new Error('Этот слот только что заняли. Выберите другое время.')
       }

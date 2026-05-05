@@ -38,8 +38,10 @@ export function AdminBranches() {
 
   const branches = school ? getBranchesBySchool(school.id) : []
   const rows = useMemo(
-    () =>
-      branches.map((branch) => ({
+    () => {
+      const now = Date.now()
+      const sevenDaysFromNow = now + 7 * 24 * 60 * 60 * 1000
+      return branches.map((branch) => ({
         branch,
         instructorCount: db.instructors.byBranch(branch.id).length,
         futureBookings: db.bookings
@@ -47,9 +49,13 @@ export function AdminBranches() {
           .filter((booking) => booking.branchId === branch.id && booking.status === 'active').length,
         freeSlots7d: db.slots
           .byBranch(branch.id)
-          .filter((slot) => slot.status === 'available' && new Date(`${slot.date}T${slot.time}:00`).getTime() <= Date.now() + 7 * 24 * 60 * 60 * 1000)
+          .filter((slot) => {
+            const startsAt = new Date(`${slot.date}T${slot.time}:00`).getTime()
+            return slot.status === 'available' && startsAt >= now && startsAt <= sevenDaysFromNow
+          })
           .length,
-      })),
+      }))
+    },
     [branches],
   )
 
