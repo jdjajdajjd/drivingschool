@@ -250,6 +250,14 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
     return { ok: false, error: 'Не удалось найти данные для записи.' }
   }
 
+  if (!branch.isActive || !instructor.isActive) {
+    return { ok: false, error: 'Это время больше недоступно для записи.' }
+  }
+
+  if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) {
+    return { ok: false, error: 'Данные слота изменились. Выберите другое время.' }
+  }
+
   if (slot.status !== 'available') {
     return { ok: false, error: 'Этот слот уже занят. Выберите другое время.' }
   }

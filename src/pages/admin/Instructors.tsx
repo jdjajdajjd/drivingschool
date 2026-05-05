@@ -103,22 +103,27 @@ export function AdminInstructors() {
       return
     }
 
-    setSaving(true)
-    const result = editingId
-      ? await updateInstructorConfirmed(editingId, form)
-      : await createInstructorConfirmed({
-          schoolId: school.id,
-          ...form,
-        })
-    setSaving(false)
+    try {
+      setSaving(true)
+      const result = editingId
+        ? await updateInstructorConfirmed(editingId, form)
+        : await createInstructorConfirmed({
+            schoolId: school.id,
+            ...form,
+          })
 
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось сохранить инструктора.', 'error')
-      return
+      if (!result.ok) {
+        showToast(result.error ?? 'Не удалось сохранить инструктора.', 'error')
+        return
+      }
+
+      setModalOpen(false)
+      showToast(editingId ? 'Инструктор обновлён.' : 'Инструктор создан.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось сохранить инструктора.', 'error')
+    } finally {
+      setSaving(false)
     }
-
-    setModalOpen(false)
-    showToast(editingId ? 'Инструктор обновлён.' : 'Инструктор создан.', 'success')
   }
 
   function toggleCategory(code: string): void {
@@ -143,14 +148,19 @@ export function AdminInstructors() {
 
   async function toggle(instructor: Instructor): Promise<void> {
     if (togglingId) return
-    setTogglingId(instructor.id)
-    const result = await toggleInstructorActiveConfirmed(instructor.id)
-    setTogglingId(null)
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось изменить статус инструктора.', 'error')
-      return
+    try {
+      setTogglingId(instructor.id)
+      const result = await toggleInstructorActiveConfirmed(instructor.id)
+      if (!result.ok) {
+        showToast(result.error ?? 'Не удалось изменить статус инструктора.', 'error')
+        return
+      }
+      showToast(result.instructor?.isActive ? 'Инструктор включён.' : 'Инструктор выключен и скрыт из публичной записи.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось изменить статус инструктора.', 'error')
+    } finally {
+      setTogglingId(null)
     }
-    showToast(result.instructor?.isActive ? 'Инструктор включён.' : 'Инструктор выключен и скрыт из публичной записи.', 'success')
   }
 
   if (!school) {

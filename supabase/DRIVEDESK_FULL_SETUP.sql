@@ -1101,6 +1101,17 @@ begin
       raise exception 'Один из выбранных слотов уже занят.';
     end if;
 
+    if not exists (
+      select 1
+      from public.branches b
+      join public.instructors i on i.id = v_slot.instructor_id
+      where b.id = v_slot.branch_id
+        and b.is_active = true
+        and i.is_active = true
+    ) then
+      raise exception 'Один из выбранных слотов больше недоступен.';
+    end if;
+
     v_booking_id := 'booking-' || replace(gen_random_uuid()::text, '-', '');
 
     insert into public.bookings (

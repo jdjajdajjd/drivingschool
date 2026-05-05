@@ -3,8 +3,7 @@ import { isSupabaseConfigured } from '../lib/supabase'
 import type { Instructor, Transmission } from '../types'
 import { db } from './storage'
 import { getSlotDateTime, normalizePhone, validateRussianPhone } from './bookingService'
-import { persistSupabaseMutation, updateSupabaseInstructorActive, upsertSupabaseInstructor } from './supabaseAdminService'
-import { updateSlotStatusConfirmed } from './slotService'
+import { persistSupabaseMutation, updateSupabaseInstructorActive, updateSupabaseSlotStatus, upsertSupabaseInstructor } from './supabaseAdminService'
 
 export interface InstructorInput {
   schoolId: string
@@ -236,7 +235,11 @@ export async function updateInstructorConfirmed(
   }
 
   if (isSupabaseConfigured()) {
+    const futureAvailableSlots = !nextInstructor.isActive ? getFutureAvailableSlotsForInstructor(nextInstructor.id) : []
     try {
+      for (const slot of futureAvailableSlots) {
+        await updateSupabaseSlotStatus(slot.id, 'cancelled')
+      }
       await upsertSupabaseInstructor(
         nextInstructor.id,
         {
@@ -259,8 +262,7 @@ export async function updateInstructorConfirmed(
   }
 
   if (!nextInstructor.isActive) {
-    const cancelled = await cancelFutureAvailableSlotsForInstructor(nextInstructor.id)
-    if (!cancelled.ok) return { ok: false, error: cancelled.error }
+    cancelFutureAvailableSlotsForInstructor(nextInstructor.id)
   }
   db.instructors.upsert(nextInstructor)
   return { ok: true, instructor: nextInstructor }
@@ -278,35 +280,43 @@ export async function toggleInstructorActiveConfirmed(
     isActive: typeof isActive === 'boolean' ? isActive : !instructor.isActive,
   }
 
-  if (isSupabaseConfigured()) {
+  if (!nextInstructor.isActive) {
+    const futureAvailableSlots = getFutureAvailableSlotsForInstructor(nextInstructor.id)
+    if (isSupabaseConfigured()) {
+      try {
+        for (const slot of futureAvailableSlots) {
+          await updateSupabaseSlotStatus(slot.id, 'cancelled')
+        }
+        await updateSupabaseInstructorActive(instructorId, false)
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : 'Не удалось изменить статус инструктора.' }
+      }
+    }
+    cancelSlots(futureAvailableSlots)
+  } else if (isSupabaseConfigured()) {
     try {
-      await updateSupabaseInstructorActive(instructorId, nextInstructor.isActive)
+      await updateSupabaseInstructorActive(instructorId, true)
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : 'Не удалось изменить статус инструктора.' }
     }
-  }
-
-  if (!nextInstructor.isActive) {
-    const cancelled = await cancelFutureAvailableSlotsForInstructor(nextInstructor.id)
-    if (!cancelled.ok) return { ok: false, error: cancelled.error }
   }
   db.instructors.upsert(nextInstructor)
   return { ok: true, instructor: nextInstructor }
 }
 
-async function cancelFutureAvailableSlotsForInstructor(instructorId: string): Promise<{ ok: boolean; error?: string }> {
-  const futureAvailableSlots = db.slots
+function getFutureAvailableSlotsForInstructor(instructorId: string) {
+  return db.slots
     .byInstructor(instructorId)
     .filter((slot) => slot.status === 'available')
     .filter((slot) => getSlotDateTime(slot).getTime() >= Date.now())
+}
 
-  try {
-    for (const slot of futureAvailableSlots) {
-      await updateSlotStatusConfirmed(slot.id, 'cancelled')
-    }
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Не удалось скрыть будущие слоты инструктора.' }
+function cancelFutureAvailableSlotsForInstructor(instructorId: string): void {
+  cancelSlots(getFutureAvailableSlotsForInstructor(instructorId))
+}
+
+function cancelSlots(slots: ReturnType<typeof getFutureAvailableSlotsForInstructor>): void {
+  for (const slot of slots) {
+    db.slots.upsert({ ...slot, status: 'cancelled' })
   }
-
-  return { ok: true }
 }

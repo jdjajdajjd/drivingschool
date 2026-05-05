@@ -66,6 +66,8 @@ export function getFutureAvailableSlots(schoolId: string): Slot[] {
   const now = Date.now()
   return db.slots.bySchool(schoolId)
     .filter((slot) => slot.status === 'available')
+    .filter((slot) => db.branches.byId(slot.branchId)?.isActive === true)
+    .filter((slot) => db.instructors.byId(slot.instructorId)?.isActive === true)
     .filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > now)
     .sort((left, right) => new Date(`${left.date}T${left.time}:00`).getTime() - new Date(`${right.date}T${right.time}:00`).getTime())
 }
