@@ -205,9 +205,13 @@ begin
   if not exists (
     select 1
     from public.schools s
-    join public.branches b on b.id = v_next_slot.branch_id and b.school_id = s.id
-    join public.instructors i on i.id = v_next_slot.instructor_id and i.school_id = s.id
-    where s.id = v_next_slot.school_id
+    join public.branches b on b.id = v_next_slot.branch_id
+    join public.instructors i on i.id = v_next_slot.instructor_id
+    where s.id = v_booking.school_id
+      and v_next_slot.school_id = v_booking.school_id
+      and b.school_id = v_booking.school_id
+      and i.school_id = v_booking.school_id
+      and i.branch_id = v_next_slot.branch_id
       and s.is_active = true
       and b.is_active = true
       and i.is_active = true
@@ -1120,6 +1124,9 @@ begin
       from public.branches b
       join public.instructors i on i.id = v_slot.instructor_id
       where b.id = v_slot.branch_id
+        and b.school_id = p_school_id
+        and i.school_id = p_school_id
+        and i.branch_id = v_slot.branch_id
         and b.is_active = true
         and i.is_active = true
     ) then
@@ -1303,9 +1310,13 @@ begin
   if not exists (
     select 1
     from public.schools s
-    join public.branches b on b.id = v_next_slot.branch_id and b.school_id = s.id
-    join public.instructors i on i.id = v_next_slot.instructor_id and i.school_id = s.id
-    where s.id = v_next_slot.school_id
+    join public.branches b on b.id = v_next_slot.branch_id
+    join public.instructors i on i.id = v_next_slot.instructor_id
+    where s.id = v_booking.school_id
+      and v_next_slot.school_id = v_booking.school_id
+      and b.school_id = v_booking.school_id
+      and i.school_id = v_booking.school_id
+      and i.branch_id = v_next_slot.branch_id
       and s.is_active = true
       and b.is_active = true
       and i.is_active = true
