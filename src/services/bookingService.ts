@@ -420,6 +420,13 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
   }
 
   const school = db.schools.byId(booking.schoolId)
+  const nextBranch = db.branches.byId(nextSlot.branchId)
+  const nextInstructor = db.instructors.byId(nextSlot.instructorId)
+
+  if (!school?.isActive || !nextBranch?.isActive || !nextInstructor?.isActive) {
+    return { ok: false, error: 'Новое время больше недоступно для записи.' }
+  }
+
   if (school && !params.ignoreLimits && school.bookingLimitEnabled && school.maxActiveBookingsPerStudent) {
     const futureCount = getStudentActiveFutureBookingsCount(booking.schoolId, booking.studentPhone)
     const currentSlotIsFuture = currentSlot ? isAfter(getSlotDateTime(currentSlot), new Date()) : false
@@ -442,7 +449,7 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
 
   db.bookings.upsert(nextBooking)
 
-  if (currentSlot) {
+  if (currentSlot?.bookingId === booking.id) {
     db.slots.upsert({
       ...currentSlot,
       status: 'available',

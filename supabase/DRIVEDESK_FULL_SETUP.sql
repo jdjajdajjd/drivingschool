@@ -202,11 +202,25 @@ begin
     raise exception 'New slot is in the past.';
   end if;
 
+  if not exists (
+    select 1
+    from public.schools s
+    join public.branches b on b.id = v_next_slot.branch_id and b.school_id = s.id
+    join public.instructors i on i.id = v_next_slot.instructor_id and i.school_id = s.id
+    where s.id = v_next_slot.school_id
+      and s.is_active = true
+      and b.is_active = true
+      and i.is_active = true
+  ) then
+    raise exception 'New slot is no longer available.';
+  end if;
+
   update public.slots
     set status = 'available',
         booking_id = null,
         updated_at = now()
-    where id = v_booking.slot_id;
+    where id = v_booking.slot_id
+      and booking_id = p_booking_id;
 
   update public.bookings
     set slot_id = v_next_slot.id,
@@ -1286,11 +1300,25 @@ begin
     raise exception 'New slot is in the past.';
   end if;
 
+  if not exists (
+    select 1
+    from public.schools s
+    join public.branches b on b.id = v_next_slot.branch_id and b.school_id = s.id
+    join public.instructors i on i.id = v_next_slot.instructor_id and i.school_id = s.id
+    where s.id = v_next_slot.school_id
+      and s.is_active = true
+      and b.is_active = true
+      and i.is_active = true
+  ) then
+    raise exception 'New slot is no longer available.';
+  end if;
+
   update public.slots
     set status = 'available',
         booking_id = null,
         updated_at = now()
-    where id = v_booking.slot_id;
+    where id = v_booking.slot_id
+      and booking_id = p_booking_id;
 
   update public.bookings
     set slot_id = v_next_slot.id,
