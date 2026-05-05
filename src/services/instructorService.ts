@@ -234,12 +234,10 @@ export async function updateInstructorConfirmed(
     avatarColor: colorFromName(trimmedName),
   }
 
+  const disabling = current.isActive && !nextInstructor.isActive
   if (isSupabaseConfigured()) {
-    const futureAvailableSlots = !nextInstructor.isActive ? getFutureAvailableSlotsForInstructor(nextInstructor.id) : []
+    const futureAvailableSlots = disabling ? getFutureAvailableSlotsForInstructor(nextInstructor.id) : []
     try {
-      for (const slot of futureAvailableSlots) {
-        await updateSupabaseSlotStatus(slot.id, 'cancelled')
-      }
       await upsertSupabaseInstructor(
         nextInstructor.id,
         {
@@ -256,12 +254,20 @@ export async function updateInstructorConfirmed(
         },
         nextInstructor.token,
       )
+      for (const slot of futureAvailableSlots) {
+        try {
+          await updateSupabaseSlotStatus(slot.id, 'cancelled')
+        } catch (slotError) {
+          await updateSupabaseInstructorActive(nextInstructor.id, current.isActive)
+          throw slotError
+        }
+      }
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить инструктора.' }
     }
   }
 
-  if (!nextInstructor.isActive) {
+  if (disabling) {
     cancelFutureAvailableSlotsForInstructor(nextInstructor.id)
   }
   db.instructors.upsert(nextInstructor)
@@ -280,14 +286,20 @@ export async function toggleInstructorActiveConfirmed(
     isActive: typeof isActive === 'boolean' ? isActive : !instructor.isActive,
   }
 
-  if (!nextInstructor.isActive) {
+  const disabling = instructor.isActive && !nextInstructor.isActive
+  if (disabling) {
     const futureAvailableSlots = getFutureAvailableSlotsForInstructor(nextInstructor.id)
     if (isSupabaseConfigured()) {
       try {
-        for (const slot of futureAvailableSlots) {
-          await updateSupabaseSlotStatus(slot.id, 'cancelled')
-        }
         await updateSupabaseInstructorActive(instructorId, false)
+        for (const slot of futureAvailableSlots) {
+          try {
+            await updateSupabaseSlotStatus(slot.id, 'cancelled')
+          } catch (slotError) {
+            await updateSupabaseInstructorActive(instructorId, instructor.isActive)
+            throw slotError
+          }
+        }
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : 'Не удалось изменить статус инструктора.' }
       }

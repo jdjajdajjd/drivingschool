@@ -476,11 +476,30 @@ export function BookingFlowPage() {
         bookingId = result.bookingIds[0] ?? ''
         bookingGroupId = result.bookingGroupId
       } catch {
+        const freshData = await loadPublicSchoolData(slug)
+        const freshLocalSlot = db.slots.byId(bookingSlot.id)
+        const freshBranchActive = freshLocalSlot
+          ? freshData?.branches.some((branch) => branch.id === freshLocalSlot.branchId && branch.isActive)
+          : false
+        const freshInstructorActive = freshLocalSlot
+          ? freshData?.instructors.some((instructor) => instructor.id === freshLocalSlot.instructorId && instructor.isActive)
+          : false
+        if (
+          !freshData?.school.isActive ||
+          !freshLocalSlot ||
+          freshLocalSlot.status !== 'available' ||
+          !freshBranchActive ||
+          !freshInstructorActive
+        ) {
+          setSlotsVersion((current) => current + 1)
+          throw new Error('Этот слот больше недоступен. Выберите другое время.')
+        }
+
         const local = createBooking({
           schoolId: school.id,
-          branchId: bookingSlot.branchId,
-          instructorId: bookingSlot.instructorId,
-          slotId: bookingSlot.id,
+          branchId: freshLocalSlot.branchId,
+          instructorId: freshLocalSlot.instructorId,
+          slotId: freshLocalSlot.id,
           studentName: form.name,
           studentPhone: form.phone,
           sessionId: sessionId.current,

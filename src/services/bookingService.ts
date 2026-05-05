@@ -250,6 +250,10 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
     return { ok: false, error: 'Не удалось найти данные для записи.' }
   }
 
+  if (!school.isActive) {
+    return { ok: false, error: 'Автошкола недоступна для записи.' }
+  }
+
   if (!branch.isActive || !instructor.isActive) {
     return { ok: false, error: 'Это время больше недоступно для записи.' }
   }
