@@ -96,7 +96,7 @@ Done or partially done:
 - Category-based booking and category settings.
 - Instructor profile photos.
 - Supabase-backed booking and profile RPCs.
-- Cloudflare Pages deployment through the `vroom` project for `vroom.today`.
+- Cloudflare Pages deployment publishes to `vroom.today`.
 
 Still transitional:
 
