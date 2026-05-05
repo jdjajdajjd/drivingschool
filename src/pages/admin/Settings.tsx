@@ -17,7 +17,7 @@ const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 const Settings2 = createHugeIcon(Settings02Icon)
 import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
-import { resetProductData, updateSchoolConfirmed, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
+import { resetProductData, updateSchoolConfirmed, validatePrimaryColor } from '../../services/schoolService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
@@ -63,7 +63,7 @@ export function AdminSettings() {
     })
   }, [school])
 
-  const publicUrl = useMemo(() => `${window.location.origin}/school/${form.slug}`, [form.slug])
+  const publicUrl = useMemo(() => `${window.location.origin}/school/${school?.slug ?? form.slug}`, [form.slug, school?.slug])
   const selectedCategories = DRIVING_CATEGORIES.filter((category) => form.enabledCategoryCodes.includes(category.code))
 
   async function copyPublicLink(): Promise<void> {
@@ -93,11 +93,6 @@ export function AdminSettings() {
       return
     }
 
-    if (!validateSchoolSlug(form.slug.trim())) {
-      showToast('Slug должен содержать только латиницу, цифры и дефис.', 'error')
-      return
-    }
-
     if (form.primaryColor && !validatePrimaryColor(form.primaryColor)) {
       showToast('Цвет должен быть в формате #RRGGBB.', 'error')
       return
@@ -118,11 +113,15 @@ export function AdminSettings() {
       return
     }
 
+    if (form.enabledCategoryCodes.length === 0) {
+      showToast('Выберите хотя бы одну категорию обучения.', 'error')
+      return
+    }
+
     try {
       setSaving(true)
       const result = await updateSchoolConfirmed(school.id, {
         name: form.name,
-        slug: form.slug,
         description: form.description,
         primaryColor: form.primaryColor,
         logoUrl: form.logoUrl,
@@ -183,7 +182,7 @@ export function AdminSettings() {
         <Section title="Основное" description="Название, slug, описание и фирменные акценты школы.">
           <div className="grid gap-4 md:grid-cols-2">
             <Input label="Название автошколы" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-            <Input label="Slug" helperText="Только латиница, цифры и дефис" value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.trim().toLowerCase() }))} />
+            <Input label="Slug" helperText="Slug управляется перед запуском и сейчас недоступен для изменения" value={school.slug} readOnly disabled />
             <Input label="Основной цвет" placeholder="#1f5b43" value={form.primaryColor} onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))} />
             <Input label="Logo URL" placeholder="https://..." value={form.logoUrl} onChange={(event) => setForm((current) => ({ ...current, logoUrl: event.target.value }))} />
           </div>
