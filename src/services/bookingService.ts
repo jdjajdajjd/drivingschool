@@ -254,6 +254,10 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
     return { ok: false, error: 'Автошкола недоступна для записи.' }
   }
 
+  if (slot.schoolId !== params.schoolId || branch.schoolId !== params.schoolId || instructor.schoolId !== params.schoolId) {
+    return { ok: false, error: 'Выбранные ресурсы не относятся к этой автошколе.' }
+  }
+
   if (!branch.isActive || !instructor.isActive) {
     return { ok: false, error: 'Это время больше недоступно для записи.' }
   }
@@ -425,6 +429,10 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
 
   if (!school?.isActive || !nextBranch?.isActive || !nextInstructor?.isActive) {
     return { ok: false, error: 'Новое время больше недоступно для записи.' }
+  }
+
+  if (nextSlot.schoolId !== booking.schoolId || nextBranch.schoolId !== booking.schoolId || nextInstructor.schoolId !== booking.schoolId) {
+    return { ok: false, error: 'Новое время не относится к автошколе этой записи.' }
   }
 
   if (school && !params.ignoreLimits && school.bookingLimitEnabled && school.maxActiveBookingsPerStudent) {
