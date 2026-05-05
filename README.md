@@ -1,10 +1,10 @@
-# DriveDesk
+# Vroom
 
-DriveDesk is a React + Supabase demo product for driving schools. The current focus is not a marketing landing page, but a working product panel: student booking, school admin panel, super-admin panel, schedule, profiles, and launch settings.
+Vroom is a React + Supabase product for driving schools. The current focus is not a marketing landing page, but a working product panel: student booking, school admin panel, operator panel, schedule, profiles, and launch settings.
 
 ## Current Entrances
 
-- Demo hub: `/`
+- Product hub: `/`
 - Student cabinet: `/student`
 - Student registration: `/student/register`
 - Student booking flow: `/student/book`
@@ -16,9 +16,9 @@ DriveDesk is a React + Supabase demo product for driving schools. The current fo
 - School admin panel after login: `/virazh-office-73q`
 - Super-admin login: `/root-entrance-91x`
 - Super-admin panel after login: `/drivedesk-root-91x`
-- Instructor demo cabinet: `/instructor/tok-petrov-2024`
+- Instructor public schedule: `/instructor/tok-petrov-2024`
 
-Default demo credentials are defined in `src/services/accessControl.ts` and can be overridden with Vite environment variables.
+Default access credentials are defined in `src/services/accessControl.ts` and can be overridden with Vite environment variables.
 
 ## Stack
 
@@ -96,12 +96,12 @@ Done or partially done:
 - Category-based booking and category settings.
 - Instructor profile photos.
 - Supabase-backed booking and profile RPCs.
-- Cloudflare Pages deployment through the `drivingschool` project.
+- Cloudflare Pages deployment through the `vroom` project for `vroom.today`.
 
 Still transitional:
 
-- The app still syncs Supabase data into localStorage on startup. This keeps the demo fast, but it is not the final architecture.
-- Admin authentication is still a demo gate, not production-grade role-based auth.
+- The app still syncs Supabase data into an in-memory compatibility layer on startup. This keeps existing admin screens working while the data layer is being completed.
+- Admin authentication is still a temporary access gate, not production-grade role-based auth.
 - Some admin screens write locally first and then persist to Supabase through RPCs.
 
 ## Next Product Priorities
