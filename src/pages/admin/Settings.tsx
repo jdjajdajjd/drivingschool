@@ -65,6 +65,7 @@ export function AdminSettings() {
 
   const publicUrl = useMemo(() => `${window.location.origin}/school/${school?.slug ?? form.slug}`, [form.slug, school?.slug])
   const selectedCategories = DRIVING_CATEGORIES.filter((category) => form.enabledCategoryCodes.includes(category.code))
+  const previewColor = validatePrimaryColor(form.primaryColor) ? form.primaryColor : '#1f5b43'
 
   async function copyPublicLink(): Promise<void> {
     await navigator.clipboard.writeText(publicUrl)
@@ -99,17 +100,27 @@ export function AdminSettings() {
     }
 
     if (form.maxActiveBookingsPerStudent < 1 || form.maxActiveBookingsPerStudent > 10) {
-      showToast('Лимит записей должен быть от 1 до 10.', 'error')
+      showToast('Лимит записей должен быть целым числом от 1 до 10.', 'error')
       return
     }
 
     if (form.maxSlotsPerBooking < 1 || form.maxSlotsPerBooking > 6) {
-      showToast('Лимит занятий за одну запись должен быть от 1 до 6.', 'error')
+      showToast('Лимит занятий за одну запись должен быть целым числом от 1 до 6.', 'error')
       return
     }
 
-    if (form.defaultLessonDuration < 30 || form.defaultLessonDuration > 240) {
-      showToast('Длительность занятия должна быть от 30 минут до 4 часов.', 'error')
+    if (!Number.isInteger(form.maxActiveBookingsPerStudent) || !Number.isInteger(form.maxSlotsPerBooking)) {
+      showToast('Числовые лимиты должны быть целыми числами.', 'error')
+      return
+    }
+
+    if (
+      !Number.isInteger(form.defaultLessonDuration) ||
+      form.defaultLessonDuration < 30 ||
+      form.defaultLessonDuration > 240 ||
+      form.defaultLessonDuration % 15 !== 0
+    ) {
+      showToast('Длительность занятия должна быть целым числом от 30 до 240 минут с шагом 15 минут.', 'error')
       return
     }
 
@@ -213,12 +224,12 @@ export function AdminSettings() {
             <div
               className="rounded-[2rem] border rgba(0,0,0,0.06) bg-white p-5 "
               style={{
-                boxShadow: `0 18px 48px ${hexToRgba(form.primaryColor || '#1f5b43', 0.08)}`,
+                boxShadow: `0 18px 48px ${hexToRgba(previewColor, 0.08)}`,
               }}
             >
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
-                style={{ backgroundColor: form.primaryColor || '#1f5b43' }}
+                style={{ backgroundColor: previewColor }}
               >
                 {form.logoUrl ? (
                   <img src={form.logoUrl} alt={form.name} className="h-full w-full rounded-2xl object-cover" />
@@ -247,7 +258,7 @@ export function AdminSettings() {
                   <p className="text-xs #9EA3A8">инструкторов</p>
                 </div>
               </div>
-              <div className="mt-4 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: form.primaryColor || '#1f5b43' }}>
+              <div className="mt-4 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: previewColor }}>
                 Записаться
               </div>
             </div>

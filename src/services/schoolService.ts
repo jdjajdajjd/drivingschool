@@ -127,18 +127,24 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
   }
 
   const maxActive = patch.maxActiveBookingsPerStudent ?? school.maxActiveBookingsPerStudent ?? 2
-  if (maxActive < 1 || maxActive > 10) {
-    return { ok: false, error: 'Лимит записей должен быть от 1 до 10.' }
+  if (!Number.isFinite(maxActive) || !Number.isInteger(maxActive) || maxActive < 1 || maxActive > 10) {
+    return { ok: false, error: 'Лимит записей должен быть целым числом от 1 до 10.' }
   }
 
   const maxSlotsPerBooking = patch.maxSlotsPerBooking ?? school.maxSlotsPerBooking ?? 1
-  if (maxSlotsPerBooking < 1 || maxSlotsPerBooking > 6) {
-    return { ok: false, error: 'Лимит занятий за одну запись должен быть от 1 до 6.' }
+  if (!Number.isFinite(maxSlotsPerBooking) || !Number.isInteger(maxSlotsPerBooking) || maxSlotsPerBooking < 1 || maxSlotsPerBooking > 6) {
+    return { ok: false, error: 'Лимит занятий за одну запись должен быть целым числом от 1 до 6.' }
   }
 
   const defaultLessonDuration = patch.defaultLessonDuration ?? school.defaultLessonDuration ?? 90
-  if (defaultLessonDuration < 30 || defaultLessonDuration > 240) {
-    return { ok: false, error: 'Длительность занятия должна быть от 30 минут до 4 часов.' }
+  if (
+    !Number.isFinite(defaultLessonDuration) ||
+    !Number.isInteger(defaultLessonDuration) ||
+    defaultLessonDuration < 30 ||
+    defaultLessonDuration > 240 ||
+    defaultLessonDuration % 15 !== 0
+  ) {
+    return { ok: false, error: 'Длительность занятия должна быть целым числом от 30 до 240 минут с шагом 15 минут.' }
   }
 
   const enabledCategoryCodes =
