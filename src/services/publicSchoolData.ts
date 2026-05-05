@@ -44,8 +44,8 @@ export async function loadPublicSchoolData(slug: string): Promise<PublicSchoolDa
         bundle.branches.forEach((branch) => db.branches.upsert(branch))
         bundle.instructors.forEach((instructor) => db.instructors.upsert(instructor))
         bundle.slots.forEach((slot) => db.slots.upsert(slot))
-        bundle.students.forEach((student) => db.students.upsert(student))
-        bundle.bookings.forEach((booking) => db.bookings.upsert(booking))
+        bundle.students?.forEach((student) => db.students.upsert(student))
+        bundle.bookings?.forEach((booking) => db.bookings.upsert(booking))
         return {
           school: bundle.school,
           branches: bundle.branches.filter((branch) => branch.isActive),

@@ -1,6 +1,6 @@
 import { db } from './storage'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { getPublicSchoolBundle } from './supabasePublicService'
+import { getAdminSchoolBundle } from './supabasePublicService'
 
 const SYNC_TIMEOUT_MS = 3500
 
@@ -23,7 +23,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 export async function syncSupabaseSchoolToLocalDb(slug: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return false
 
-  const bundle = await withTimeout(getPublicSchoolBundle(slug), SYNC_TIMEOUT_MS)
+  const bundle = await withTimeout(getAdminSchoolBundle(slug), SYNC_TIMEOUT_MS)
   if (!bundle) return false
 
   const schoolId = bundle.school.id
