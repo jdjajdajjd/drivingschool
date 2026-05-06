@@ -8,7 +8,7 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
-import { db } from '../services/storage'
+import { db, setDataNamespace } from '../services/storage'
 import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabase, type StudentProfile } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
 import type { School } from '../types'
@@ -65,6 +65,7 @@ export default function StudentRegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  if (slug === 'virazh') setDataNamespace('demo')
 
   const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
   const currentIndex = stepIndex(step)
@@ -183,7 +184,10 @@ export default function StudentRegisterPage() {
 
     setSubmitting(true)
     try {
-      if (isSupabaseConfigured()) {
+      if (slug === 'virazh') {
+        saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
+        saveStudentCredentials(phone, password, school.id)
+      } else if (isSupabaseConfigured()) {
         await saveStudentProfileToSupabase(school.id, { name: fullName, phone, password }, { passwordSet: true })
       } else {
         saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })

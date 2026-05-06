@@ -20,7 +20,7 @@ import {
 } from '../components/product/CompactCards'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { getFutureAvailableSlots, loadPublicSchoolData, refreshPublicSlots } from '../services/publicSchoolData'
-import { db } from '../services/storage'
+import { db, setDataNamespace } from '../services/storage'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
   acquireSlotLock,
@@ -355,6 +355,7 @@ export function BookingFlowPage() {
   const [lastSlotsRefreshAt, setLastSlotsRefreshAt] = useState<Date | null>(null)
 
   useEffect(() => {
+    if (isDemo) setDataNamespace('demo')
     setLoading(true)
     void loadPublicSchoolData(slug, { preferLocal: isDemo })
       .then((data) => {

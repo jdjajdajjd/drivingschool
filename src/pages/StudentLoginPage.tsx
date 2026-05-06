@@ -9,7 +9,7 @@ import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { db } from '../services/storage'
+import { db, setDataNamespace } from '../services/storage'
 import type { School } from '../types'
 
 void React
@@ -36,6 +36,7 @@ export default function StudentLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  if (slug === 'virazh') setDataNamespace('demo')
   const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
 
   async function submit() {
@@ -51,9 +52,11 @@ export default function StudentLoginPage() {
 
     setSubmitting(true)
     try {
-      const result = isSupabaseConfigured()
-        ? await loginStudentProfileFromSupabase(school.id, phone, password)
-        : verifyStudentCredentials(phone, password)
+      const result = slug === 'virazh'
+        ? verifyStudentCredentials(phone, password)
+        : isSupabaseConfigured()
+          ? await loginStudentProfileFromSupabase(school.id, phone, password)
+          : verifyStudentCredentials(phone, password)
       setSubmitting(false)
       if (!result) {
         setError('Телефон или пароль не совпадают. Если кабинета ещё нет, зарегистрируйтесь.')

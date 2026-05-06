@@ -30,7 +30,7 @@ import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
-import { db } from '../services/storage'
+import { db, setDataNamespace } from '../services/storage'
 import { createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { useToast } from '../components/ui/Toast'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
@@ -407,6 +407,7 @@ export function StudentPage() {
   const { showToast } = useToast()
 
   useEffect(() => {
+    setDataNamespace('demo')
     const found = findAnyStudentProfile()
     const nextSchool = found ? db.schools.byId(found.schoolId) ?? (found.schoolId === fallbackSchool.id ? fallbackSchool : null) : db.schools.bySlug('virazh') ?? fallbackSchool
     const nextProfile = found?.profile ?? (nextSchool ? loadStudentProfile(nextSchool.id) : null)
@@ -482,6 +483,7 @@ export function StudentPage() {
 
     let bookingId = ''
     try {
+      if (school.id === 'school-virazh') throw new Error('Demo uses local booking')
       const remote = await createSupabaseBooking({
         schoolId: school.id,
         studentName: profile.name,

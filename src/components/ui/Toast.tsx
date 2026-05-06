@@ -48,7 +48,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-2"
+        className="pointer-events-none fixed left-4 right-4 top-4 z-[100] flex flex-col items-stretch gap-2 sm:left-auto sm:right-6 sm:top-6 sm:items-end"
         aria-live="polite"
         aria-label="Уведомления"
       >
@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               exit={{ opacity: 0, scale: 0.94, y: 8 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                'pointer-events-auto flex min-w-[260px] max-w-[380px] items-center gap-3 rounded-2xl border px-4 py-3 text-[14px] font-medium shadow-[0_8px_24px_rgba(15,20,25,0.12)]',
+                'pointer-events-auto flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-[14px] font-medium shadow-[0_8px_24px_rgba(15,20,25,0.12)] sm:min-w-[260px] sm:max-w-[380px]',
                 toast.type === 'success' && 'rgba(0,0,0,0.06) bg-warm-main text-white',
                 toast.type === 'error' && 'rgba(229,83,75,0.15) bg-error text-white',
                 toast.type === 'info' && 'border-info-border bg-info text-white',

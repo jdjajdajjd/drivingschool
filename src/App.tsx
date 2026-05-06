@@ -44,12 +44,12 @@ function App() {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    import('./services/storage').then(({ setDataNamespace }) => {
-      setDataNamespace('demo')
-      import('./services/seed').then((m) => m.seedIfNeeded({ mode: 'demo' }))
-      setDataNamespace('workspace')
-      import('./services/seed').then((m) => m.seedIfNeeded({ mode: 'workspace' }))
-      setDataNamespace(window.location.pathname.startsWith(ADMIN_BASE_PATH) || window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH || window.location.pathname === '/admin' ? 'workspace' : 'demo')
+    Promise.all([import('./services/storage'), import('./services/seed')]).then(([storage, seed]) => {
+      storage.setDataNamespace('demo')
+      seed.seedIfNeeded({ mode: 'demo' })
+      storage.setDataNamespace('workspace')
+      seed.seedIfNeeded({ mode: 'workspace' })
+      storage.setDataNamespace(window.location.pathname.startsWith(ADMIN_BASE_PATH) || window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH || window.location.pathname === '/admin' ? 'workspace' : 'demo')
       setIsReady(true)
     })
 

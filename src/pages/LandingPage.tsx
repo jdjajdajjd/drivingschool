@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight01Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import type { School } from '../types'
-import { db } from '../services/storage'
+import { db, setDataNamespace } from '../services/storage'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
 
@@ -43,6 +43,7 @@ export function LandingPage() {
   const [schools, setSchools] = useState<School[]>([])
 
   useEffect(() => {
+    setDataNamespace('demo')
     setSchools(db.schools.all().filter((s) => s.isActive))
   }, [])
 

@@ -10,6 +10,7 @@ import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { loadPublicSchoolData } from '../services/publicSchoolData'
+import { setDataNamespace } from '../services/storage'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import type { School } from '../types'
 
@@ -30,6 +31,7 @@ export function SchoolPage() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
+    if (slug === 'virazh') setDataNamespace('demo')
     setLoading(true)
     void loadPublicSchoolData(slug, { preferLocal: slug === 'virazh' })
       .then((data) => setSchool(data?.school ?? null))
