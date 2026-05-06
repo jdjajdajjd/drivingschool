@@ -387,6 +387,13 @@ export interface Database {
           student_id: string
         }>
       }
+      public_admin_list_students: {
+        Args: {
+          p_school_id: string
+          p_staff_password: string
+        }
+        Returns: Array<Database['public']['Tables']['students']['Row']>
+      }
       public_upsert_student_progress: {
         Args: {
           p_progress_id: string
@@ -506,6 +513,13 @@ export interface Database {
           p_email: string
           p_password: string
           p_avatar_url: string
+          p_category_codes: string[] | null
+          p_training_stage: 'theory' | 'practice_ground' | 'city' | 'exam_prep' | 'exam' | 'completed' | null
+          p_group_name: string | null
+          p_training_start_date: string | null
+          p_driving_start_date: string | null
+          p_training_end_date: string | null
+          p_driving_end_date: string | null
         }
         Returns: Array<{
           student_id: string

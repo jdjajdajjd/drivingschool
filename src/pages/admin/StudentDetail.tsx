@@ -23,8 +23,8 @@ import { cancelBooking, completeBooking, getBookingsByStudent } from '../../serv
 import { getStudentById, getStudentStats, updateStudentAdminConfirmed } from '../../services/studentService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import type { StudentDocumentStatus, StudentDocumentType, StudentRequest, StudentRequestStatus, TrainingStage } from '../../types'
-import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, refreshStudentRequestsFromSupabase, saveStudentProgressAdminConfirmed, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocumentAdminConfirmed, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
+import type { StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress, StudentRequest, StudentRequestStatus, TrainingStage } from '../../types'
+import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, refreshStudentDocumentsFromSupabase, refreshStudentProgressFromSupabase, refreshStudentRequestsFromSupabase, saveStudentProgressAdminConfirmed, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocumentAdminConfirmed, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { trainingStageLabels } from '../student/studentUtils'
 
@@ -40,15 +40,18 @@ export function AdminStudentDetail() {
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null)
   const [completeBookingId, setCompleteBookingId] = useState<string | null>(null)
   const [requestRows, setRequestRows] = useState<StudentRequest[]>([])
+  const [documentRows, setDocumentRows] = useState<StudentDocument[]>([])
+  const [progressRow, setProgressRow] = useState<StudentProgress | null>(null)
   const [requestsLoading, setRequestsLoading] = useState(false)
+  const [profileDataLoading, setProfileDataLoading] = useState(false)
   const [, setVersion] = useState(0)
 
   const student = studentId ? getStudentById(studentId) : null
   const school = student ? db.schools.byId(student.schoolId) : null
   const stats = student ? getStudentStats(student.id) : null
   const history = useMemo(() => (student ? getBookingsByStudent(student.id) : []), [student])
-  const documents = student ? loadStudentDocuments(student.id) : []
-  const progress = student ? loadStudentProgress(student.id) : null
+  const documents = student ? documentRows : []
+  const progress = student ? progressRow : null
   const requests = student ? requestRows.filter((request) => request.studentId === student.id) : []
   const instructors = student ? db.instructors.bySchool(student.schoolId).filter((instructor) => instructor.isActive) : []
   const branches = student ? db.branches.bySchool(student.schoolId).filter((branch) => branch.isActive) : []
@@ -56,13 +59,28 @@ export function AdminStudentDetail() {
   useEffect(() => {
     if (!student) {
       setRequestRows([])
+      setDocumentRows([])
+      setProgressRow(null)
       return
     }
 
     setRequestRows(loadStudentRequests(student.schoolId))
+    setDocumentRows(loadStudentDocuments(student.id))
+    setProgressRow(loadStudentProgress(student.id))
     if (!isSupabaseConfigured()) return
 
     setRequestsLoading(true)
+    setProfileDataLoading(true)
+    void Promise.all([
+      refreshStudentProgressFromSupabase(student.id),
+      refreshStudentDocumentsFromSupabase(student.id),
+    ])
+      .then(([progress, documents]) => {
+        setProgressRow(progress)
+        setDocumentRows(documents.length > 0 ? documents : loadStudentDocuments(student.id))
+      })
+      .catch((error) => showToast(error instanceof Error ? error.message : 'Не удалось загрузить прогресс и документы ученика.', 'error'))
+      .finally(() => setProfileDataLoading(false))
     void refreshStudentRequestsFromSupabase(student.schoolId)
       .then((requests) => setRequestRows(requests))
       .catch((error) => showToast(error instanceof Error ? error.message : 'Не удалось загрузить запросы ученика.', 'error'))
@@ -103,6 +121,7 @@ export function AdminStudentDetail() {
       showToast(result.error ?? 'Не удалось обновить прогресс ученика.', 'error')
       return
     }
+    setProgressRow(result.progress ?? loadStudentProgress(student.id))
     setVersion((value) => value + 1)
     showToast('Прогресс ученика обновлён.', 'success')
   }
@@ -126,6 +145,7 @@ export function AdminStudentDetail() {
       showToast(result.error ?? 'Не удалось обновить статус документа.', 'error')
       return
     }
+    setDocumentRows(result.documents ?? loadStudentDocuments(student.id))
     setVersion((value) => value + 1)
     showToast('Статус документа обновлён.', 'success')
   }
@@ -239,6 +259,7 @@ export function AdminStudentDetail() {
         </Section>
 
         <Section title="Прогресс" description="Минимальные учебные показатели без фейковых процентов готовности.">
+          {profileDataLoading ? <p className="mb-4 text-sm font-semibold text-[#6F747A]">Загружаем актуальные данные из Supabase...</p> : null}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Input label="Тем теории всего" type="number" value={String(progress?.theoryTopicsTotal ?? 0)} onChange={(event) => void updateProgressPatch({ theoryTopicsTotal: Number(event.target.value) || 0 })} />
             <Input label="Тем теории закрыто" type="number" value={String(progress?.theoryTopicsCompleted ?? 0)} onChange={(event) => void updateProgressPatch({ theoryTopicsCompleted: Number(event.target.value) || 0 })} />

@@ -138,6 +138,21 @@ begin
 end;
 $$;
 
+create or replace function public.public_admin_list_students(
+  p_school_id text,
+  p_staff_password text
+)
+returns setof public.students
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+  return query select * from public.students where school_id = p_school_id order by created_at desc;
+end;
+$$;
+
 create or replace function public.public_get_student_progress(
   p_student_id text,
   p_staff_password text
@@ -379,7 +394,7 @@ returns table (
   instructor_id text, instructor_school_id text, instructor_branch_id text, instructor_name text, instructor_phone text, instructor_bio text, instructor_experience integer, instructor_is_active boolean, instructor_categories text[], instructor_avatar_initials text, instructor_avatar_color text, instructor_car text, instructor_transmission text,
   branch_id text, branch_school_id text, branch_name text, branch_address text, branch_phone text, branch_is_active boolean,
   slot_id text, slot_school_id text, slot_instructor_id text, slot_branch_id text, slot_date date, slot_time time, slot_duration integer, slot_lesson_type text, slot_status text, slot_booking_id text, slot_created_at timestamptz,
-  booking_id text, booking_group_id text, booking_school_id text, booking_slot_id text, booking_instructor_id text, booking_branch_id text, booking_student_id text, booking_student_name text, booking_status text, booking_created_at timestamptz, booking_updated_at timestamptz, booking_rescheduled_at timestamptz
+  booking_id text, booking_group_id text, booking_school_id text, booking_slot_id text, booking_instructor_id text, booking_branch_id text, booking_student_id text, booking_student_label text, booking_status text, booking_created_at timestamptz, booking_updated_at timestamptz, booking_rescheduled_at timestamptz
 )
 language sql
 security definer
@@ -388,7 +403,7 @@ as $$
   select i.id, i.school_id, i.branch_id, i.name, i.phone, i.bio, i.experience, i.is_active, i.categories, i.avatar_initials, i.avatar_color, i.car, i.transmission,
     br.id, br.school_id, br.name, br.address, br.phone, br.is_active,
     sl.id, sl.school_id, sl.instructor_id, sl.branch_id, sl.date, sl.time, sl.duration, sl.lesson_type, sl.status, sl.booking_id, sl.created_at,
-    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, b.student_name, b.status, b.created_at, b.updated_at, b.rescheduled_at
+    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, left(trim(b.student_name), 1) || '.', b.status, b.created_at, b.updated_at, b.rescheduled_at
   from public.instructors i
   left join public.branches br on br.id = i.branch_id
   left join public.slots sl on sl.instructor_id = i.id
@@ -406,6 +421,103 @@ as $$
 begin
   perform public.private_assert_admin_password(p_staff_password);
   return query select * from public.bookings where school_id = p_school_id order by created_at desc;
+end;
+$$;
+
+drop function if exists public.public_update_student_profile(text, text, text, text, text, text);
+create or replace function public.public_update_student_profile(
+  p_school_id text,
+  p_phone text,
+  p_name text,
+  p_email text,
+  p_password text,
+  p_avatar_url text,
+  p_category_codes text[] default null,
+  p_training_stage text default null,
+  p_group_name text default null,
+  p_training_start_date date default null,
+  p_driving_start_date date default null,
+  p_training_end_date date default null,
+  p_driving_end_date date default null
+)
+returns table (
+  student_id text,
+  student_phone text,
+  profile_ready boolean
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_normalized_phone text;
+  v_student_id text;
+begin
+  v_normalized_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(v_normalized_phone) = 11 and left(v_normalized_phone, 1) = '8' then
+    v_normalized_phone := '7' || substring(v_normalized_phone from 2);
+  elsif length(v_normalized_phone) = 10 and left(v_normalized_phone, 1) = '9' then
+    v_normalized_phone := '7' || v_normalized_phone;
+  end if;
+
+  if v_normalized_phone !~ '^7[0-9]{10}$' then
+    raise exception 'Phone is invalid.';
+  end if;
+
+  if p_name is null or length(trim(p_name)) < 2 then
+    raise exception 'Student name is required.';
+  end if;
+
+  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+    raise exception 'Student training stage is invalid.';
+  end if;
+
+  if not exists (
+    select 1 from public.students
+    where school_id = p_school_id
+      and normalized_phone = v_normalized_phone
+      and password_hash is not null
+  ) and (p_password is null or length(p_password) < 6) then
+    raise exception 'Password is too short.';
+  end if;
+
+  insert into public.students (
+    id, school_id, name, phone, normalized_phone, email, password_hash, avatar_url,
+    category_codes, training_stage, group_name, training_start_date, driving_start_date,
+    training_end_date, driving_end_date
+  ) values (
+    'stu-' || replace(gen_random_uuid()::text, '-', ''),
+    p_school_id,
+    trim(p_name),
+    v_normalized_phone,
+    v_normalized_phone,
+    coalesce(trim(p_email), ''),
+    case when p_password is not null and length(p_password) >= 6 then extensions.crypt(p_password, extensions.gen_salt('bf')) else null end,
+    nullif(trim(coalesce(p_avatar_url, '')), ''),
+    nullif(p_category_codes, '{}'), p_training_stage, p_group_name, p_training_start_date, p_driving_start_date,
+    p_training_end_date, p_driving_end_date
+  )
+  on conflict (school_id, normalized_phone)
+  do update set
+    name = excluded.name,
+    phone = excluded.phone,
+    email = excluded.email,
+    password_hash = coalesce(excluded.password_hash, public.students.password_hash),
+    avatar_url = excluded.avatar_url,
+    category_codes = coalesce(excluded.category_codes, public.students.category_codes),
+    training_stage = coalesce(excluded.training_stage, public.students.training_stage),
+    group_name = coalesce(excluded.group_name, public.students.group_name),
+    training_start_date = coalesce(excluded.training_start_date, public.students.training_start_date),
+    driving_start_date = coalesce(excluded.driving_start_date, public.students.driving_start_date),
+    training_end_date = coalesce(excluded.training_end_date, public.students.training_end_date),
+    driving_end_date = coalesce(excluded.driving_end_date, public.students.driving_end_date),
+    updated_at = now()
+  returning public.students.id into v_student_id;
+
+  student_id := v_student_id;
+  student_phone := v_normalized_phone;
+  profile_ready := true;
+  return next;
 end;
 $$;
 
@@ -442,6 +554,7 @@ end;
 $$;
 
 grant execute on function public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text) to anon, authenticated;
+grant execute on function public.public_admin_list_students(text, text) to anon, authenticated;
 grant execute on function public.public_get_student_progress(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text) to anon, authenticated;
 grant execute on function public.public_get_student_documents(text, text) to anon, authenticated;
@@ -452,3 +565,4 @@ grant execute on function public.public_update_student_request_status(text, text
 grant execute on function public.public_get_booking_group(text) to anon, authenticated;
 grant execute on function public.public_get_instructor_schedule(text) to anon, authenticated;
 grant execute on function public.public_admin_list_bookings(text, text) to anon, authenticated;
+grant execute on function public.public_update_student_profile(text, text, text, text, text, text, text[], text, text, date, date, date, date) to anon, authenticated;

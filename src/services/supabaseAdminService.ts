@@ -42,6 +42,29 @@ type StudentRequestRow = {
   updated_at: string
 }
 
+type StudentRow = {
+  id: string
+  school_id: string
+  name: string
+  phone: string
+  normalized_phone: string
+  email: string
+  password_hash: string | null
+  avatar_url: string | null
+  assigned_branch_id: string | null
+  assigned_instructor_id: string | null
+  category_codes: string[] | null
+  training_stage: Student['trainingStage'] | null
+  group_name: string | null
+  training_start_date: string | null
+  driving_start_date: string | null
+  training_end_date: string | null
+  driving_end_date: string | null
+  branch_change_requested_at: string | null
+  branch_change_note: string | null
+  created_at: string
+}
+
 function getAdminPassword(): string {
   const password = getAccessPassword('admin')
   if (!password) {
@@ -151,6 +174,37 @@ export async function updateSupabaseStudentAdmin(student: Student): Promise<void
       p_staff_password: getAdminPassword(),
     }),
   )
+}
+
+export async function getSupabaseStudentsAdmin(schoolId: string): Promise<Student[]> {
+  const data = await runAdminMutation<StudentRow[]>(
+    supabase.rpc('public_admin_list_students', {
+      p_school_id: schoolId,
+      p_staff_password: getAdminPassword(),
+    }),
+  )
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    schoolId: row.school_id,
+    name: row.name,
+    phone: row.phone,
+    normalizedPhone: row.normalized_phone,
+    email: row.email,
+    avatarUrl: row.avatar_url ?? undefined,
+    assignedBranchId: row.assigned_branch_id ?? undefined,
+    assignedInstructorId: row.assigned_instructor_id ?? undefined,
+    categoryCodes: row.category_codes?.length ? row.category_codes : undefined,
+    trainingStage: row.training_stage ?? undefined,
+    groupName: row.group_name ?? undefined,
+    trainingStartDate: row.training_start_date ?? undefined,
+    drivingStartDate: row.driving_start_date ?? undefined,
+    trainingEndDate: row.training_end_date ?? undefined,
+    drivingEndDate: row.driving_end_date ?? undefined,
+    branchChangeRequestedAt: row.branch_change_requested_at ?? undefined,
+    branchChangeNote: row.branch_change_note ?? undefined,
+    hasPassword: Boolean(row.password_hash),
+    createdAt: row.created_at,
+  }))
 }
 
 export async function upsertSupabaseStudentProgressAdmin(progress: StudentProgress): Promise<void> {

@@ -62,6 +62,7 @@ drop function if exists public.public_upsert_instructor(text, text, text, text, 
 drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text);
 drop function if exists public.public_update_instructor_active(text, boolean, text);
 drop function if exists public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text);
+drop function if exists public.public_admin_list_students(text, text);
 drop function if exists public.public_get_student_progress(text, text);
 drop function if exists public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text);
 drop function if exists public.public_get_student_documents(text, text);
@@ -734,6 +735,21 @@ begin
 end;
 $$;
 
+create or replace function public.public_admin_list_students(
+  p_school_id text,
+  p_staff_password text
+)
+returns setof public.students
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+  return query select * from public.students where school_id = p_school_id order by created_at desc;
+end;
+$$;
+
 create or replace function public.public_get_student_progress(
   p_student_id text,
   p_staff_password text
@@ -981,6 +997,7 @@ grant execute on function public.public_delete_branch(text, text) to anon, authe
 grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text) to anon, authenticated;
 grant execute on function public.public_update_instructor_active(text, boolean, text) to anon, authenticated;
 grant execute on function public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text) to anon, authenticated;
+grant execute on function public.public_admin_list_students(text, text) to anon, authenticated;
 grant execute on function public.public_get_student_progress(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text) to anon, authenticated;
 grant execute on function public.public_get_student_documents(text, text) to anon, authenticated;
@@ -1026,6 +1043,7 @@ drop function if exists public.public_upsert_instructor(text, text, text, text, 
 drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text);
 drop function if exists public.public_update_instructor_active(text, boolean, text);
 drop function if exists public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text);
+drop function if exists public.public_admin_list_students(text, text);
 drop function if exists public.public_get_student_progress(text, text);
 drop function if exists public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text);
 drop function if exists public.public_get_student_documents(text, text);
@@ -1034,6 +1052,7 @@ drop function if exists public.public_admin_list_student_requests(text, text);
 drop function if exists public.public_create_student_request(text, text, text, text, text, text, text, text, timestamptz, timestamptz);
 drop function if exists public.public_update_student_request_status(text, text, text, timestamptz, text);
 drop function if exists public.public_update_student_profile(text, text, text, text, text, text);
+drop function if exists public.public_update_student_profile(text, text, text, text, text, text, text[], text, text, date, date, date, date);
 drop function if exists public.public_login_student(text, text, text);
 drop function if exists public.public_request_branch_change(text, text, text);
 drop function if exists public.private_assert_admin_password(text);
@@ -2093,7 +2112,14 @@ create or replace function public.public_update_student_profile(
   p_name text,
   p_email text,
   p_password text,
-  p_avatar_url text
+  p_avatar_url text,
+  p_category_codes text[] default null,
+  p_training_stage text default null,
+  p_group_name text default null,
+  p_training_start_date date default null,
+  p_driving_start_date date default null,
+  p_training_end_date date default null,
+  p_driving_end_date date default null
 )
 returns table (
   student_id text,
@@ -2121,6 +2147,10 @@ begin
 
   if p_name is null or length(trim(p_name)) < 2 then
     raise exception 'Student name is required.';
+  end if;
+
+  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+    raise exception 'Student training stage is invalid.';
   end if;
 
   if not exists (
@@ -2151,6 +2181,13 @@ begin
     email = excluded.email,
     password_hash = coalesce(excluded.password_hash, public.students.password_hash),
     avatar_url = excluded.avatar_url,
+    category_codes = coalesce(nullif(p_category_codes, '{}'), public.students.category_codes),
+    training_stage = coalesce(p_training_stage, public.students.training_stage),
+    group_name = coalesce(p_group_name, public.students.group_name),
+    training_start_date = coalesce(p_training_start_date, public.students.training_start_date),
+    driving_start_date = coalesce(p_driving_start_date, public.students.driving_start_date),
+    training_end_date = coalesce(p_training_end_date, public.students.training_end_date),
+    driving_end_date = coalesce(p_driving_end_date, public.students.driving_end_date),
     updated_at = now()
   returning public.students.id into v_student_id;
 
@@ -2342,6 +2379,15 @@ set search_path = public
 as $$
 begin
   perform public.private_assert_admin_password(p_staff_password);
+  if exists (
+    select 1
+    from jsonb_array_elements(coalesce(p_documents, '[]'::jsonb)) as document
+    where document->>'type' not in ('passport', 'medical_certificate', 'snils', 'contract', 'photo', 'state_fee')
+       or document->>'status' not in ('missing', 'pending', 'provided', 'approved', 'rejected')
+       or not exists (select 1 from public.students where id = document->>'student_id')
+  ) then
+    raise exception 'Student document payload is invalid.';
+  end if;
   insert into public.student_documents (student_id, type, status, updated_at)
   select
     document->>'student_id',
@@ -2597,7 +2643,7 @@ returns table (
   instructor_id text, instructor_school_id text, instructor_branch_id text, instructor_name text, instructor_phone text, instructor_bio text, instructor_experience integer, instructor_is_active boolean, instructor_categories text[], instructor_avatar_initials text, instructor_avatar_color text, instructor_car text, instructor_transmission text,
   branch_id text, branch_school_id text, branch_name text, branch_address text, branch_phone text, branch_is_active boolean,
   slot_id text, slot_school_id text, slot_instructor_id text, slot_branch_id text, slot_date date, slot_time time, slot_duration integer, slot_lesson_type text, slot_status text, slot_booking_id text, slot_created_at timestamptz,
-  booking_id text, booking_group_id text, booking_school_id text, booking_slot_id text, booking_instructor_id text, booking_branch_id text, booking_student_id text, booking_student_name text, booking_status text, booking_created_at timestamptz, booking_updated_at timestamptz, booking_rescheduled_at timestamptz
+  booking_id text, booking_group_id text, booking_school_id text, booking_slot_id text, booking_instructor_id text, booking_branch_id text, booking_student_id text, booking_student_label text, booking_status text, booking_created_at timestamptz, booking_updated_at timestamptz, booking_rescheduled_at timestamptz
 )
 language sql
 security definer
@@ -2606,7 +2652,7 @@ as $$
   select i.id, i.school_id, i.branch_id, i.name, i.phone, i.bio, i.experience, i.is_active, i.categories, i.avatar_initials, i.avatar_color, i.car, i.transmission,
     br.id, br.school_id, br.name, br.address, br.phone, br.is_active,
     sl.id, sl.school_id, sl.instructor_id, sl.branch_id, sl.date, sl.time, sl.duration, sl.lesson_type, sl.status, sl.booking_id, sl.created_at,
-    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, b.student_name, b.status, b.created_at, b.updated_at, b.rescheduled_at
+    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, left(trim(b.student_name), 1) || '.', b.status, b.created_at, b.updated_at, b.rescheduled_at
   from public.instructors i
   left join public.branches br on br.id = i.branch_id
   left join public.slots sl on sl.instructor_id = i.id
@@ -2645,6 +2691,7 @@ grant execute on function public.public_delete_branch(text, text) to anon, authe
 grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text) to anon, authenticated;
 grant execute on function public.public_update_instructor_active(text, boolean, text) to anon, authenticated;
 grant execute on function public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text) to anon, authenticated;
+grant execute on function public.public_admin_list_students(text, text) to anon, authenticated;
 grant execute on function public.public_get_student_progress(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text) to anon, authenticated;
 grant execute on function public.public_get_student_documents(text, text) to anon, authenticated;
@@ -2655,6 +2702,6 @@ grant execute on function public.public_update_student_request_status(text, text
 grant execute on function public.public_get_booking_group(text) to anon, authenticated;
 grant execute on function public.public_get_instructor_schedule(text) to anon, authenticated;
 grant execute on function public.public_admin_list_bookings(text, text) to anon, authenticated;
-grant execute on function public.public_update_student_profile(text, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.public_update_student_profile(text, text, text, text, text, text, text[], text, text, date, date, date, date) to anon, authenticated;
 grant execute on function public.public_login_student(text, text, text) to anon, authenticated;
 grant execute on function public.public_request_branch_change(text, text, text) to anon, authenticated;

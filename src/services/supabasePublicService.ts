@@ -2,12 +2,12 @@ import type { Booking, Branch, Instructor, School, Slot, Student, StudentRequest
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Database } from '../lib/supabaseTypes'
 import { getAccessPassword } from './accessControl'
+import { getSupabaseStudentsAdmin } from './supabaseAdminService'
 
 type SchoolRow = Database['public']['Tables']['schools']['Row']
 type BranchRow = Database['public']['Tables']['branches']['Row']
 type InstructorRow = Database['public']['Tables']['instructors']['Row']
 type SlotRow = Database['public']['Tables']['slots']['Row']
-type StudentRow = Database['public']['Tables']['students']['Row']
 type UntypedSupabase = {
   from: (table: string) => any
   rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: any; error: unknown }>
@@ -120,31 +120,6 @@ export interface SupabaseBookingBundle {
   student: Student | null
 }
 
-function mapStudent(row: StudentRow): Student {
-  return {
-    id: row.id,
-    schoolId: row.school_id,
-    name: row.name,
-    phone: row.phone,
-    normalizedPhone: row.normalized_phone,
-    email: row.email,
-    avatarUrl: row.avatar_url ?? undefined,
-    assignedBranchId: row.assigned_branch_id ?? undefined,
-    assignedInstructorId: row.assigned_instructor_id ?? undefined,
-    categoryCodes: row.category_codes?.length ? row.category_codes : undefined,
-    trainingStage: row.training_stage ?? undefined,
-    groupName: row.group_name ?? undefined,
-    trainingStartDate: row.training_start_date ?? undefined,
-    drivingStartDate: row.driving_start_date ?? undefined,
-    trainingEndDate: row.training_end_date ?? undefined,
-    drivingEndDate: row.driving_end_date ?? undefined,
-    branchChangeRequestedAt: row.branch_change_requested_at ?? undefined,
-    branchChangeNote: row.branch_change_note ?? undefined,
-    hasPassword: Boolean(row.password_hash),
-    createdAt: row.created_at,
-  }
-}
-
 export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolBundle | null> {
   const { data: schoolRow, error: schoolError } = await supabase
     .from('schools')
@@ -206,17 +181,16 @@ export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBun
   const adminPassword = getAccessPassword('admin')
   if (!adminPassword) throw new Error('Войдите в админку заново.')
 
-  const [studentsResult, bookingsResult] = await Promise.all([
-    supabase.from('students').select('*').eq('school_id', publicBundle.school.id).order('created_at', { ascending: false }),
+  const [students, bookingsResult] = await Promise.all([
+    getSupabaseStudentsAdmin(publicBundle.school.id),
     untypedSupabase.rpc('public_admin_list_bookings', { p_school_id: publicBundle.school.id, p_staff_password: adminPassword }),
   ])
 
-  if (studentsResult.error) throw studentsResult.error
   if (bookingsResult.error) throw bookingsResult.error
 
   return {
     ...publicBundle,
-    students: studentsResult.data.map(mapStudent),
+    students,
     bookings: (bookingsResult.data ?? []).map(mapBookingLike),
   }
 }
@@ -258,7 +232,7 @@ export async function getPublicInstructorBundle(token: string): Promise<PublicIn
     instructor_id: row.booking_instructor_id,
     branch_id: row.booking_branch_id,
     student_id: row.booking_student_id,
-    student_name: row.booking_student_name,
+    student_name: row.booking_student_label ?? 'Ученик',
     student_phone: '',
     student_email: '',
     status: row.booking_status,
@@ -349,7 +323,7 @@ function mapBookingBundleRow(row: any): SupabaseBookingBundle {
     branch: row.branch_id ? mapBranch({ id: row.branch_id, school_id: row.branch_school_id, name: row.branch_name, address: row.branch_address, phone: row.branch_phone, is_active: row.branch_is_active, created_at: '', updated_at: '' }) : null,
     instructor: row.instructor_id ? mapInstructor({ id: row.instructor_id, school_id: row.instructor_school_id, branch_id: row.instructor_branch_id, name: row.instructor_name, phone: row.instructor_phone, email: row.instructor_email, token: '', bio: row.instructor_bio, experience: row.instructor_experience, is_active: row.instructor_is_active, categories: row.instructor_categories, avatar_initials: row.instructor_avatar_initials, avatar_color: row.instructor_avatar_color, car: row.instructor_car, transmission: row.instructor_transmission, created_at: '', updated_at: '' }) : null,
     slot: row.slot_id ? mapSlot({ id: row.slot_id, school_id: row.slot_school_id, instructor_id: row.slot_instructor_id, branch_id: row.slot_branch_id, date: row.slot_date, time: row.slot_time, duration: row.slot_duration, lesson_type: row.slot_lesson_type, status: row.slot_status, booking_id: row.slot_booking_id, created_at: row.slot_created_at, updated_at: '' }) : null,
-    student: row.student_id ? mapStudent({ id: row.student_id, school_id: row.student_school_id, name: row.student_name, phone: row.student_phone, normalized_phone: row.student_phone, email: row.student_email, password_hash: null, avatar_url: null, assigned_branch_id: null, assigned_instructor_id: null, category_codes: null, training_stage: null, group_name: null, training_start_date: null, driving_start_date: null, training_end_date: null, driving_end_date: null, branch_change_requested_at: null, branch_change_note: null, created_at: row.created_at, updated_at: row.updated_at }) : null,
+    student: row.student_id ? { id: row.student_id, schoolId: row.student_school_id, name: row.student_name, phone: row.student_phone, normalizedPhone: row.student_phone, email: row.student_email, createdAt: row.created_at } : null,
   }
 }
 
@@ -395,25 +369,18 @@ export async function updateStudentProfileInSupabase(params: {
     p_email: params.email,
     p_password: params.password,
     p_avatar_url: params.avatarUrl,
+    p_category_codes: params.categoryCodes?.length ? params.categoryCodes : null,
+    p_training_stage: params.trainingStage ?? null,
+    p_group_name: params.groupName ?? null,
+    p_training_start_date: params.trainingStartDate ?? null,
+    p_driving_start_date: params.drivingStartDate ?? null,
+    p_training_end_date: params.trainingEndDate ?? null,
+    p_driving_end_date: params.drivingEndDate ?? null,
   })
 
   if (error) throw error
   const row = data?.[0]
   if (!row) throw new Error('Student profile was not saved.')
-
-  const studentPatch = {
-    category_codes: params.categoryCodes?.length ? params.categoryCodes : null,
-    training_stage: params.trainingStage ?? null,
-    group_name: params.groupName ?? null,
-    training_start_date: params.trainingStartDate ?? null,
-    driving_start_date: params.drivingStartDate ?? null,
-    training_end_date: params.trainingEndDate ?? null,
-    driving_end_date: params.drivingEndDate ?? null,
-  }
-  if (Object.values(studentPatch).some((value) => value !== null)) {
-    const { error: updateError } = await untypedSupabase.from('students').update(studentPatch).eq('id', row.student_id)
-    if (updateError) throw updateError
-  }
 
   return {
     studentId: row.student_id,
