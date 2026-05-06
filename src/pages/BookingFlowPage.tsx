@@ -596,7 +596,7 @@ export function BookingFlowPage() {
           kind="error"
           title="Автошкола не найдена"
           action={
-            <Button onClick={() => navigate('/student/register')}>Вернуться в кабинет</Button>
+            <Button onClick={() => navigate('/login')}>Вернуться ко входу</Button>
           }
         />
       </div>

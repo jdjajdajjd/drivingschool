@@ -67,6 +67,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<StudentLoginPage />} />
+          <Route path="/student/login" element={<Navigate to="/login" replace />} />
           <Route path="/register" element={<Navigate to="/student/register" replace />} />
           <Route path="/dashboard" element={<Navigate to="/student" replace />} />
           <Route path="/product" element={<Navigate to="/school/virazh" replace />} />

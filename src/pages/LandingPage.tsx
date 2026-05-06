@@ -13,17 +13,17 @@ const UserCog = createHugeIcon(UserSettings01Icon)
 
 const entryPoints = [
   {
-    title: 'Записаться',
-    description: 'Выберите инструктора, дату и время. Занятие уже сегодня.',
-    icon: Car,
-    path: '/school/virazh',
+    title: 'Войти в кабинет',
+    description: 'Расписание, занятия, документы и сообщения автошколы.',
+    icon: ShieldCheck,
+    path: '/login',
     accent: true,
   },
   {
-    title: 'Кабинет ученика',
-    description: 'Ваши записи, пройденные занятия, напоминания.',
-    icon: ShieldCheck,
-    path: '/student',
+    title: 'Зарегистрироваться',
+    description: 'Создайте кабинет ученика по телефону за пару минут.',
+    icon: Car,
+    path: '/student/register',
     accent: false,
   },
   {
@@ -109,14 +109,14 @@ export function LandingPage() {
           transition={{ duration: 0.3, delay: 0.05 }}
         >
           <h1 className="t-hero" style={{ maxWidth: 480 }}>
-            Выберите<br />автошколу
+            Кабинет<br />ученика
           </h1>
           <p className="t-body mt-4" style={{ maxWidth: 420 }}>
-            Запишитесь на практическое занятие за пару минут. Без звонков, без ожиданий.
+            Войдите или зарегистрируйтесь, чтобы видеть расписание, занятия и документы своей автошколы.
           </p>
         </motion.section>
 
-        {/* School entry cards */}
+        {/* Entry cards */}
         <section className="space-y-3 mb-8">
           {entryPoints.map((item, i) => {
             const Icon = item.icon
@@ -170,7 +170,7 @@ export function LandingPage() {
             className="btn btn-primary btn-lg w-full"
             onClick={() => navigate(`/school/${defaultSchool.slug}`)}
           >
-            Открыть
+            Войти как ученик
             <ArrowRight size={17} />
           </button>
         </motion.div>
@@ -182,7 +182,7 @@ export function LandingPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          Выберите школу на её странице, чтобы записаться
+          Запись на занятия доступна внутри кабинета ученика
         </motion.p>
 
       </main>

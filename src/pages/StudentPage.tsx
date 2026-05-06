@@ -383,7 +383,7 @@ export function StudentPage() {
       setPendingAvatarUrl('')
       setEditingFields({ name: false, phone: false, email: false })
     } else {
-      navigate('/student/register', { replace: true })
+      navigate('/login', { replace: true })
     }
   }, [navigate])
 
@@ -503,7 +503,7 @@ export function StudentPage() {
     if (!school) return
     removeStudentProfile(school.id)
     setProfile(null)
-    navigate('/student/register', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   function submitRescheduleRequest() {
