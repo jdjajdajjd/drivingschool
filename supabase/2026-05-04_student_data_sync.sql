@@ -71,6 +71,73 @@ revoke select, insert, update, delete on public.student_progress from anon, auth
 revoke select, insert, update, delete on public.student_documents from anon, authenticated;
 revoke select, insert, update, delete on public.student_requests from anon, authenticated;
 
+create or replace function public.public_admin_update_student(
+  p_student_id text,
+  p_school_id text,
+  p_name text,
+  p_phone text,
+  p_normalized_phone text,
+  p_email text,
+  p_avatar_url text,
+  p_assigned_branch_id text,
+  p_assigned_instructor_id text,
+  p_category_codes text[],
+  p_training_stage text,
+  p_group_name text,
+  p_training_start_date date,
+  p_driving_start_date date,
+  p_training_end_date date,
+  p_driving_end_date date,
+  p_branch_change_requested_at timestamptz,
+  p_branch_change_note text,
+  p_staff_password text
+)
+returns table (student_id text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+
+  if p_name is null or length(trim(p_name)) = 0 then
+    raise exception 'Student name is required.';
+  end if;
+
+  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+    raise exception 'Student training stage is invalid.';
+  end if;
+
+  update public.students
+    set name = trim(p_name),
+        phone = coalesce(p_phone, ''),
+        normalized_phone = coalesce(p_normalized_phone, ''),
+        email = coalesce(p_email, ''),
+        avatar_url = p_avatar_url,
+        assigned_branch_id = p_assigned_branch_id,
+        assigned_instructor_id = p_assigned_instructor_id,
+        category_codes = coalesce(nullif(p_category_codes, '{}'), array['B']),
+        training_stage = p_training_stage,
+        group_name = p_group_name,
+        training_start_date = p_training_start_date,
+        driving_start_date = p_driving_start_date,
+        training_end_date = p_training_end_date,
+        driving_end_date = p_driving_end_date,
+        branch_change_requested_at = p_branch_change_requested_at,
+        branch_change_note = p_branch_change_note,
+        updated_at = now()
+    where id = p_student_id
+      and school_id = p_school_id;
+
+  if not found then
+    raise exception 'Student not found.';
+  end if;
+
+  student_id := p_student_id;
+  return next;
+end;
+$$;
+
 create or replace function public.public_get_student_progress(
   p_student_id text,
   p_staff_password text
@@ -110,6 +177,16 @@ set search_path = public
 as $$
 begin
   perform public.private_assert_admin_password(p_staff_password);
+
+  if not exists (
+    select 1
+    from public.students
+    where id = p_student_id
+      and school_id = p_school_id
+  ) then
+    raise exception 'Student not found.';
+  end if;
+
   insert into public.student_progress (
     id, student_id, school_id, theory_topics_total, theory_topics_completed,
     driving_hours_total, driving_hours_completed, internal_exam_passed,
@@ -178,6 +255,21 @@ begin
 end;
 $$;
 
+create or replace function public.public_admin_list_student_requests(
+  p_school_id text,
+  p_staff_password text
+)
+returns setof public.student_requests
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+  return query select * from public.student_requests where school_id = p_school_id order by created_at desc;
+end;
+$$;
+
 create or replace function public.public_create_student_request(
   p_request_id text,
   p_school_id text,
@@ -241,6 +333,11 @@ set search_path = public
 as $$
 begin
   perform public.private_assert_admin_password(p_staff_password);
+
+  if p_status not in ('new', 'reviewing', 'resolved', 'rejected') then
+    raise exception 'Student request status is invalid.';
+  end if;
+
   update public.student_requests
     set status = p_status,
         updated_at = coalesce(p_updated_at, now())
@@ -254,9 +351,11 @@ begin
 end;
 $$;
 
+grant execute on function public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text) to anon, authenticated;
 grant execute on function public.public_get_student_progress(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text) to anon, authenticated;
 grant execute on function public.public_get_student_documents(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_student_documents(jsonb, text) to anon, authenticated;
+grant execute on function public.public_admin_list_student_requests(text, text) to anon, authenticated;
 grant execute on function public.public_create_student_request(text, text, text, text, text, text, text, text, timestamptz, timestamptz) to anon, authenticated;
 grant execute on function public.public_update_student_request_status(text, text, text, timestamptz, text) to anon, authenticated;

@@ -28,6 +28,20 @@ type StudentDocumentRow = {
   updated_at: string
 }
 
+type StudentRequestRow = {
+  id: string
+  school_id: string
+  student_id: string
+  booking_id: string | null
+  type: StudentRequest['type']
+  status: StudentRequest['status']
+  reason: string
+  preferred_time: string | null
+  comment: string | null
+  created_at: string
+  updated_at: string
+}
+
 function getAdminPassword(): string {
   const password = getAccessPassword('admin')
   if (!password) {
@@ -115,26 +129,27 @@ export async function updateSupabaseSchoolSettings(
 
 export async function updateSupabaseStudentAdmin(student: Student): Promise<void> {
   await runAdminMutation(
-    supabase.from('students').upsert({
-      id: student.id,
-      school_id: student.schoolId,
-      name: student.name,
-      phone: student.phone,
-      normalized_phone: student.normalizedPhone,
-      email: student.email,
-      avatar_url: student.avatarUrl ?? null,
-      assigned_branch_id: student.assignedBranchId ?? null,
-      assigned_instructor_id: student.assignedInstructorId ?? null,
-      category_codes: student.categoryCodes ?? ['B'],
-      training_stage: student.trainingStage ?? null,
-      group_name: student.groupName ?? null,
-      training_start_date: student.trainingStartDate ?? null,
-      driving_start_date: student.drivingStartDate ?? null,
-      training_end_date: student.trainingEndDate ?? null,
-      driving_end_date: student.drivingEndDate ?? null,
-      branch_change_requested_at: student.branchChangeRequestedAt ?? null,
-      branch_change_note: student.branchChangeNote ?? null,
-    } as never),
+    supabase.rpc('public_admin_update_student', {
+      p_student_id: student.id,
+      p_school_id: student.schoolId,
+      p_name: student.name,
+      p_phone: student.phone,
+      p_normalized_phone: student.normalizedPhone,
+      p_email: student.email,
+      p_avatar_url: student.avatarUrl ?? null,
+      p_assigned_branch_id: student.assignedBranchId ?? null,
+      p_assigned_instructor_id: student.assignedInstructorId ?? null,
+      p_category_codes: student.categoryCodes ?? ['B'],
+      p_training_stage: student.trainingStage ?? null,
+      p_group_name: student.groupName ?? null,
+      p_training_start_date: student.trainingStartDate ?? null,
+      p_driving_start_date: student.drivingStartDate ?? null,
+      p_training_end_date: student.trainingEndDate ?? null,
+      p_driving_end_date: student.drivingEndDate ?? null,
+      p_branch_change_requested_at: student.branchChangeRequestedAt ?? null,
+      p_branch_change_note: student.branchChangeNote ?? null,
+      p_staff_password: getAdminPassword(),
+    }),
   )
 }
 
@@ -235,8 +250,12 @@ export async function updateSupabaseStudentRequestStatusAdmin(
 }
 
 export async function getSupabaseStudentRequestsAdmin(schoolId: string): Promise<StudentRequest[]> {
-  const { data, error } = await supabase.from('student_requests').select('*').eq('school_id', schoolId).order('created_at', { ascending: false })
-  if (error) throw error
+  const data = await runAdminMutation<StudentRequestRow[]>(
+    supabase.rpc('public_admin_list_student_requests', {
+      p_school_id: schoolId,
+      p_staff_password: getAdminPassword(),
+    }),
+  )
   return (data ?? []).map((row) => ({
     id: row.id,
     schoolId: row.school_id,

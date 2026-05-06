@@ -361,6 +361,32 @@ export interface Database {
           instructor_id: string
         }>
       }
+      public_admin_update_student: {
+        Args: {
+          p_student_id: string
+          p_school_id: string
+          p_name: string
+          p_phone: string
+          p_normalized_phone: string
+          p_email: string
+          p_avatar_url: string | null
+          p_assigned_branch_id: string | null
+          p_assigned_instructor_id: string | null
+          p_category_codes: string[]
+          p_training_stage: 'theory' | 'practice_ground' | 'city' | 'exam_prep' | 'exam' | 'completed' | null
+          p_group_name: string | null
+          p_training_start_date: string | null
+          p_driving_start_date: string | null
+          p_training_end_date: string | null
+          p_driving_end_date: string | null
+          p_branch_change_requested_at: string | null
+          p_branch_change_note: string | null
+          p_staff_password: string
+        }
+        Returns: Array<{
+          student_id: string
+        }>
+      }
       public_upsert_student_progress: {
         Args: {
           p_progress_id: string
@@ -421,6 +447,25 @@ export interface Database {
           student_id: string
           type: 'passport' | 'medical_certificate' | 'snils' | 'contract' | 'photo' | 'state_fee'
           status: 'missing' | 'pending' | 'provided' | 'approved' | 'rejected'
+          updated_at: string
+        }>
+      }
+      public_admin_list_student_requests: {
+        Args: {
+          p_school_id: string
+          p_staff_password: string
+        }
+        Returns: Array<{
+          id: string
+          school_id: string
+          student_id: string
+          booking_id: string | null
+          type: 'reschedule' | 'cancel'
+          status: 'new' | 'reviewing' | 'resolved' | 'rejected'
+          reason: string
+          preferred_time: string | null
+          comment: string | null
+          created_at: string
           updated_at: string
         }>
       }
