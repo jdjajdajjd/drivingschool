@@ -42,13 +42,11 @@ function getCredentialKey(phone: string): string {
 }
 
 export function saveStudentCredentials(phone: string, password: string, schoolId: string): void {
-  if (isSupabaseConfigured()) return
   const normalizedPhone = normalizePhone(phone)
   localStorage.setItem(getCredentialKey(normalizedPhone), JSON.stringify({ schoolId, phone: normalizedPhone, password }))
 }
 
 export function verifyStudentCredentials(phone: string, password: string): { schoolId: string } | null {
-  if (isSupabaseConfigured()) return null
   try {
     const raw = localStorage.getItem(getCredentialKey(phone))
     if (!raw) return null
@@ -80,7 +78,10 @@ export function clearStudentSessionProfile(): void {
 }
 
 export function loadStudentProfile(schoolId: string): StudentProfile | null {
-  if (isSupabaseConfigured()) return loadStudentSessionProfile()?.profile ?? null
+  if (isSupabaseConfigured()) {
+    const sessionProfile = loadStudentSessionProfile()
+    if (sessionProfile?.schoolId === schoolId) return sessionProfile.profile
+  }
   try {
     const raw = localStorage.getItem(getProfileKey(schoolId))
     if (!raw) return null
@@ -98,7 +99,10 @@ export function loadStudentProfile(schoolId: string): StudentProfile | null {
 }
 
 export function findAnyStudentProfile(): { schoolId: string; profile: StudentProfile } | null {
-  if (isSupabaseConfigured()) return loadStudentSessionProfile()
+  if (isSupabaseConfigured()) {
+    const sessionProfile = loadStudentSessionProfile()
+    if (sessionProfile) return sessionProfile
+  }
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index)
     if (!key?.startsWith('dd:student_profile:')) continue
@@ -126,7 +130,6 @@ export function saveStudentProfile(
   }
   if (isSupabaseConfigured()) {
     saveStudentSessionProfile(schoolId, profile)
-    return profile
   }
   localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
   return profile
@@ -161,22 +164,44 @@ export function loadStudentProgress(studentId: string): StudentProgress | null {
   }
 }
 
+function isMissingStudentProfileRpcError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { code?: unknown; status?: unknown; message?: unknown; details?: unknown }
+  const code = typeof candidate.code === 'string' ? candidate.code : ''
+  const status = typeof candidate.status === 'number' ? candidate.status : undefined
+  const message = typeof candidate.message === 'string' ? candidate.message : ''
+  const details = typeof candidate.details === 'string' ? candidate.details : ''
+  const text = `${message} ${details}`.toLowerCase()
+
+  return status === 404 || code === 'PGRST202' || text.includes('public_update_student_profile') || text.includes('public_login_student')
+}
+
 export async function saveStudentProfileToSupabase(schoolId: string, form: StudentProfileForm, extra?: Partial<StudentProfile>): Promise<StudentProfile> {
-  const result = await updateStudentProfileInSupabase({
-    schoolId,
-    name: form.name,
-    phone: form.phone,
-    email: form.email ?? '',
-    password: form.password ?? '',
-    avatarUrl: form.avatarUrl ?? '',
-    categoryCodes: extra?.categoryCodes,
-    trainingStage: extra?.trainingStage,
-    groupName: extra?.groupName,
-    trainingStartDate: extra?.trainingStartDate,
-    drivingStartDate: extra?.drivingStartDate,
-    trainingEndDate: extra?.trainingEndDate,
-    drivingEndDate: extra?.drivingEndDate,
-  })
+  let result: Awaited<ReturnType<typeof updateStudentProfileInSupabase>> | null = null
+  try {
+    result = await updateStudentProfileInSupabase({
+      schoolId,
+      name: form.name,
+      phone: form.phone,
+      email: form.email ?? '',
+      password: form.password ?? '',
+      avatarUrl: form.avatarUrl ?? '',
+      categoryCodes: extra?.categoryCodes,
+      trainingStage: extra?.trainingStage,
+      groupName: extra?.groupName,
+      trainingStartDate: extra?.trainingStartDate,
+      drivingStartDate: extra?.drivingStartDate,
+      trainingEndDate: extra?.trainingEndDate,
+      drivingEndDate: extra?.drivingEndDate,
+    })
+  } catch (error) {
+    if (!isMissingStudentProfileRpcError(error)) throw error
+
+    const fallbackProfile = saveStudentProfile(schoolId, form, extra)
+    if (form.password?.trim()) saveStudentCredentials(form.phone, form.password, schoolId)
+    return fallbackProfile
+  }
+
   const profile: StudentProfile = {
     name: form.name.trim(),
     phone: result.normalizedPhone,
@@ -188,11 +213,21 @@ export async function saveStudentProfileToSupabase(schoolId: string, form: Stude
     ...extra,
   }
   saveStudentSessionProfile(schoolId, profile)
+  localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
+  if (form.password?.trim()) saveStudentCredentials(form.phone, form.password, schoolId)
   return profile
 }
 
 export async function loginStudentProfileFromSupabase(schoolId: string, phone: string, password: string): Promise<StudentProfile | null> {
-  const result = await loginStudentInSupabase({ schoolId, phone, password })
+  let result: Awaited<ReturnType<typeof loginStudentInSupabase>>
+  try {
+    result = await loginStudentInSupabase({ schoolId, phone, password })
+  } catch (error) {
+    if (!isMissingStudentProfileRpcError(error)) throw error
+    const localCredentials = verifyStudentCredentials(phone, password)
+    if (!localCredentials || localCredentials.schoolId !== schoolId) return null
+    return loadStudentProfile(schoolId)
+  }
   if (!result) return null
   const profile: StudentProfile = {
     name: result.name,
