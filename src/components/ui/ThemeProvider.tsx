@@ -27,7 +27,6 @@ function getInitialTheme(): ThemeMode {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
-  const [transitioning, setTransitioning] = useState(false)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -36,17 +35,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme])
 
   function toggleTheme() {
-    setTransitioning(true)
     setTheme((current) => current === 'light' ? 'dark' : 'light')
-    window.setTimeout(() => setTransitioning(false), 760)
   }
 
-  const value = useMemo(() => ({ theme, toggleTheme, transitioning }), [theme, transitioning])
+  const value = useMemo(() => ({ theme, toggleTheme, transitioning: false }), [theme])
 
   return (
     <ThemeContext.Provider value={value}>
       {children}
-      <div className={cn('theme-ripple', transitioning && 'active')} aria-hidden="true" />
     </ThemeContext.Provider>
   )
 }

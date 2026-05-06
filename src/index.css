@@ -188,7 +188,7 @@
     border-radius: 999px;
     background: rgba(255,255,255,0.82);
     color: #1F2BD8;
-    box-shadow: 0 10px 28px rgba(15,20,25,0.10);
+    box-shadow: none;
     backdrop-filter: blur(14px);
   }
 
@@ -201,7 +201,7 @@
     height: 28px;
     border-radius: 999px;
     background: linear-gradient(135deg, #FFFFFF, #EEF2FF);
-    box-shadow: 0 7px 18px rgba(31,43,216,0.16);
+    box-shadow: none;
     transition: transform 420ms var(--ease), background 420ms var(--ease), box-shadow 420ms var(--ease);
   }
 
@@ -218,13 +218,13 @@
     border-color: rgba(255,255,255,0.12);
     background: rgba(20,26,36,0.82);
     color: #DDE5FF;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.34);
+    box-shadow: none;
   }
 
   :root[data-theme='dark'] .theme-toggle-thumb {
     transform: translateX(20px);
     background: linear-gradient(135deg, #27324A, #111827);
-    box-shadow: 0 7px 18px rgba(0,0,0,0.38);
+    box-shadow: none;
   }
 
   :root[data-theme='dark'] .theme-toggle-sun { opacity: 0.5; }
@@ -885,4 +885,14 @@
   /* ─── Scrollbar ──────────────────────────────────── */
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { width: 0; height: 0; display: none; }
+}
+
+@keyframes booking-banner-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@keyframes booking-banner-hide {
+  0%, 82% { opacity: 1; transform: translateY(0); max-height: 220px; margin-bottom: 0; }
+  100% { opacity: 0; transform: translateY(-8px); max-height: 0; margin-bottom: -24px; padding-top: 0; padding-bottom: 0; border-width: 0; }
 }

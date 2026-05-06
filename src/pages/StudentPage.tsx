@@ -368,7 +368,7 @@ function RoadmapStep({ title, text, done, active }: { title: string; text: strin
 
 function JustBookedBanner({ item }: { item: ResolvedStudentBooking }) {
   return (
-    <section className="rounded-[24px] border border-[rgba(21,128,61,0.18)] bg-[var(--green-soft)] p-4">
+    <section className="animate-[booking-banner-hide_5s_ease-in-out_forwards] overflow-hidden rounded-[24px] border border-[rgba(21,128,61,0.18)] bg-[var(--green-soft)] p-4">
       <div className="flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[18px] bg-[var(--green)] text-white"><CheckCircle size={22} /></span>
         <div className="min-w-0 flex-1">
@@ -376,6 +376,9 @@ function JustBookedBanner({ item }: { item: ResolvedStudentBooking }) {
           <p className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text)]">{lessonTime(item.slot)}</p>
           <p className="mt-1 truncate text-[14px] font-medium text-[var(--text-muted)]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'} · {item.branch?.name ?? 'Филиал'}</p>
         </div>
+      </div>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/60">
+        <div className="h-full w-full origin-left animate-[booking-banner-timer_5s_linear_forwards] rounded-full bg-[var(--green)]" />
       </div>
     </section>
   )
@@ -432,6 +435,12 @@ export function StudentPage() {
     if (!justBooked) return active
     return [justBooked, ...active.filter((item) => item.booking.id !== justBooked.booking.id)]
   }, [bookings, justBooked])
+  useEffect(() => {
+    if (!justBooked) return undefined
+    const timer = window.setTimeout(() => setJustBooked(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [justBooked?.booking.id])
+
   const completedLessons = bookings.filter((item) => item.booking.status === 'completed' && item.slot).slice(-3).reverse()
   const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school, bookings.length, bookingSlotId])
   const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
@@ -534,7 +543,6 @@ export function StudentPage() {
       branch: db.branches.byId(slot.branchId),
     })
     setView('home')
-    showToast('Вы записаны. Занятие появилось в «Моих записях».', 'success')
     setBookingSlotId('')
   }
 
@@ -637,7 +645,7 @@ export function StudentPage() {
 
   return (
     <div className="student-animated min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
-      <main className="mx-auto w-full max-w-[430px] px-4 pb-32 pt-5">
+      <main className="mx-auto w-full max-w-[430px] px-4 pb-[180px] pt-5">
         {view === 'home' ? (
           <section className="space-y-6">
             <header className="flex items-center justify-between gap-3 pt-1">
