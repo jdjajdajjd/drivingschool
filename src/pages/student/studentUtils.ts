@@ -18,7 +18,7 @@ export function compactStudentName(name: string) {
   return [lastName, initialsText].filter(Boolean).join(' ') || name
 }
 
-const weekdayShortLabels = ['VS', 'PN', 'VT', 'SR', 'CT', 'PT', 'SB']
+const weekdayShortLabels = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']
 
 export function weekdayShort(date: Date) {
   return weekdayShortLabels[date.getDay()] ?? ''

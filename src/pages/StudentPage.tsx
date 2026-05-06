@@ -276,7 +276,7 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
     start: startOfWeek(monthStart, { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 1 }),
   })
-  const weekdays = ['PN', 'VT', 'SR', 'CT', 'PT', 'SB', 'VS']
+  const weekdays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
 
   return (
     <section className="space-y-3">

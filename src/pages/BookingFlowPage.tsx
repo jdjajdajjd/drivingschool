@@ -227,7 +227,7 @@ function VroomSchedulerPicker({
             const key = isoDate(day)
             const active = selectedDateKey === key
             const count = slotsByDate[key]?.filter((item) => item.slot.status === 'available' || item.mine).length ?? 0
-            const weekday = ['VS', 'PN', 'VT', 'SR', 'CT', 'PT', 'SB'][day.getDay()] ?? ''
+            const weekday = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'][day.getDay()] ?? ''
             const disabled = count === 0 && !active
             return (
               <motion.button
