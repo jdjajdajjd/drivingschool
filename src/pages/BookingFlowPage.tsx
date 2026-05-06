@@ -227,6 +227,7 @@ function VroomSchedulerPicker({
             const key = isoDate(day)
             const active = selectedDateKey === key
             const count = slotsByDate[key]?.filter((item) => item.slot.status === 'available' || item.mine).length ?? 0
+            const weekday = ['VS', 'PN', 'VT', 'SR', 'CT', 'PT', 'SB'][day.getDay()] ?? ''
             const disabled = count === 0 && !active
             return (
               <motion.button
@@ -248,7 +249,7 @@ function VroomSchedulerPicker({
                 aria-label={format(day, 'EEEE, d MMMM', { locale: ru })}
               >
                 <span className="text-[11px] font-semibold uppercase" style={{ color: active ? ui.surface : ui.textSoft, opacity: active ? 0.74 : 1 }}>
-                  {format(day, 'EE', { locale: ru }).slice(0, 2)}
+                  {weekday}
                 </span>
                 <span className="text-[21px] font-bold leading-6 tracking-[-0.02em]">{format(day, 'd')}</span>
                 <span
@@ -384,7 +385,7 @@ export function BookingFlowPage() {
             setSelectedSlotId(slot.id)
             setSelectedInstructorId(slot.instructorId)
             setSelectedDate(parseISO(slot.date))
-            setStep('time')
+            setStep('contacts')
           }
         }
       })

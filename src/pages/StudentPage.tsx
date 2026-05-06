@@ -30,8 +30,9 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { db } from '../services/storage'
-import { isValidRussianPhone, normalizePhone } from '../services/bookingService'
-import { updateStudentProfileInSupabase } from '../services/supabasePublicService'
+import { createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
+import { useToast } from '../components/ui/Toast'
+import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
   findAnyStudentProfile,
   loadStudentDocuments,
@@ -275,7 +276,7 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
     start: startOfWeek(monthStart, { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 1 }),
   })
-  const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+  const weekdays = ['PN', 'VT', 'SR', 'CT', 'PT', 'SB', 'VS']
 
   return (
     <section className="space-y-3">
@@ -383,6 +384,8 @@ export function StudentPage() {
   const [requestPreferredTime, setRequestPreferredTime] = useState('')
   const [requestComment, setRequestComment] = useState('')
   const [requestMessage, setRequestMessage] = useState('')
+  const [bookingSlotId, setBookingSlotId] = useState('')
+  const { showToast } = useToast()
 
   useEffect(() => {
     const found = findAnyStudentProfile()
@@ -406,18 +409,25 @@ export function StudentPage() {
   const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile])
   const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
   const completedLessons = bookings.filter((item) => item.booking.status === 'completed' && item.slot).slice(-3).reverse()
-  const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school])
+  const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school, bookings.length, bookingSlotId])
   const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
   const assignedInstructorId = [student?.assignedInstructorId, profile?.assignedInstructorId].find((id) => id && instructors.some((instructor) => instructor.id === id)) ?? ''
-  const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? instructors[0] ?? null
+  const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? null
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
   const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
+  const firstAvailableDate = futureSlots[0]?.date ?? ''
   const profileDirty = Boolean(profile && (form.name.trim() !== profile.name || normalizePhone(form.phone) !== normalizePhone(profile.phone) || form.email.trim() !== (profile.email ?? '') || pendingAvatarUrl))
   const drivingTotal = progress?.drivingHoursTotal ?? 0
   const drivingCompleted = progress?.drivingHoursCompleted ?? 0
   const drivingRemaining = Math.max(0, drivingTotal - drivingCompleted)
   const drivingPercent = safePercent(drivingCompleted, drivingTotal)
   const nextLesson = upcoming[0] ?? null
+
+  useEffect(() => {
+    if (firstAvailableDate && !isSameDay(parseISO(firstAvailableDate), selectedDate) && slotsForDate.length === 0) {
+      setSelectedDate(parseISO(firstAvailableDate))
+    }
+  }, [firstAvailableDate, selectedDate, slotsForDate.length])
 
   useEffect(() => {
     if (!school || selectedInstructorId) return
@@ -442,6 +452,36 @@ export function StudentPage() {
   }, [school, selectedInstructorId])
 
   if (!school || !profile) return <div className="min-h-dvh bg-[#F5F6F8]" />
+
+  async function bookSlotNow(slot: Slot) {
+    if (!school || !profile || bookingSlotId) return
+    setBookingSlotId(slot.id)
+    try {
+      await createSupabaseBooking({
+        schoolId: school.id,
+        studentName: profile.name,
+        studentPhone: profile.phone,
+        slotIds: [slot.id],
+      })
+    } catch {
+      const result = createBooking({
+        schoolId: school.id,
+        branchId: slot.branchId,
+        instructorId: slot.instructorId,
+        slotId: slot.id,
+        studentName: profile.name,
+        studentPhone: profile.phone,
+        sessionId: `student-${profile.phone}`,
+      })
+      if (!result.ok) {
+        showToast(result.error ?? 'Не удалось записаться на это время.', 'error')
+        setBookingSlotId('')
+        return
+      }
+    }
+    showToast('Готово, вы записаны.', 'success')
+    setBookingSlotId('')
+  }
 
   async function saveProfileData() {
     if (!school || !profile) return
@@ -568,12 +608,12 @@ export function StudentPage() {
               </div>
               <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={312}>
                 <div className="flex gap-3">
-                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => navigate('/student/book')} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => navigate('/student/book')} /></div>}
+                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => setView('schedule')} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => setView('schedule')} /></div>}
                 </div>
               </HorizontalScroller>
             </section>
 
-            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => navigate(`/student/book?slot=${slot.id}`)} />
+            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => void bookSlotNow(slot)} />
           </section>
         ) : null}
 
@@ -604,7 +644,7 @@ export function StudentPage() {
             <div>
               <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">{selectedDayTitle(selectedDate)}</h2>
               <div className="mt-4 space-y-3">
-                {availableSlotsForDate.slice(0, 8).map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={db.instructors.byId(slot.instructorId)} onBook={() => navigate(`/student/book?slot=${slot.id}`)} />)}
+                {availableSlotsForDate.slice(0, 8).map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={db.instructors.byId(slot.instructorId)} onBook={() => void bookSlotNow(slot)} />)}
                 {availableSlotsForDate.length === 0 ? <ScheduleEmptyState onShowAll={() => setLessonFilter('all')} onChangeInstructor={() => setInstructorSheetOpen(true)} /> : null}
               </div>
             </div>

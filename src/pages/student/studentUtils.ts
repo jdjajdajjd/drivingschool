@@ -18,9 +18,10 @@ export function compactStudentName(name: string) {
   return [lastName, initialsText].filter(Boolean).join(' ') || name
 }
 
+const weekdayShortLabels = ['VS', 'PN', 'VT', 'SR', 'CT', 'PT', 'SB']
+
 export function weekdayShort(date: Date) {
-  if (date.getDay() === 6) return 'СБ'
-  return format(date, 'EE', { locale: ru }).slice(0, 2).toUpperCase()
+  return weekdayShortLabels[date.getDay()] ?? ''
 }
 
 export function lessonType(slot: Slot): LessonFilter {
@@ -77,14 +78,14 @@ export function slotTimeRange(slot: Slot | null) {
 export function lessonTime(slot: Slot | null) {
   if (!slot) return 'Время не выбрано'
   const date = parseISO(slot.date)
-  const day = isToday(date) ? 'Сегодня' : isTomorrow(date) ? 'Завтра' : format(date, 'EEE d', { locale: ru })
+  const day = isToday(date) ? 'Сегодня' : isTomorrow(date) ? 'Завтра' : format(date, 'EEEE, d MMMM', { locale: ru })
   return `${day}, ${slotTimeRange(slot)}`
 }
 
 export function selectedDayTitle(date: Date) {
   if (isToday(date)) return `Сегодня, ${format(date, 'd MMMM', { locale: ru })}`
   if (isTomorrow(date)) return `Завтра, ${format(date, 'd MMMM', { locale: ru })}`
-  return format(date, 'd MMMM', { locale: ru })
+  return format(date, 'EEEE, d MMMM', { locale: ru })
 }
 
 export function safePercent(completed = 0, total = 0) {
