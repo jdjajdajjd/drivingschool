@@ -4,8 +4,7 @@ import { Car03Icon, Menu01Icon } from '@hugeicons/core-free-icons'
 import { AdminSidebar } from './AdminSidebar'
 import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
-import { db } from '../../services/storage'
+import { setDataNamespace } from '../../services/storage'
 import { seedIfNeeded } from '../../services/seed'
 
 const Menu = createHugeIcon(Menu01Icon)
@@ -18,19 +17,10 @@ export function AdminLayout() {
 
   useEffect(() => {
     let disposed = false
-    seedIfNeeded()
-    syncSupabaseSchoolToLocalDb('virazh')
-      .then(() => {
-        const school = db.schools.bySlug('virazh')
-        if (school && (db.students.bySchool(school.id).length === 0 || db.slots.bySchool(school.id).length === 0)) {
-          seedIfNeeded({ force: true })
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!disposed) setReady(true)
-      })
-    const fallback = window.setTimeout(() => setReady(true), 4000)
+    setDataNamespace('workspace')
+    seedIfNeeded({ mode: 'workspace', force: true })
+    if (!disposed) setReady(true)
+    const fallback = window.setTimeout(() => setReady(true), 500)
     return () => {
       disposed = true
       window.clearTimeout(fallback)

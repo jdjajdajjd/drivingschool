@@ -28,7 +28,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 }
 
-export async function loadPublicSchoolData(slug: string): Promise<PublicSchoolData | null> {
+export async function loadPublicSchoolData(slug: string, options: { preferLocal?: boolean } = {}): Promise<PublicSchoolData | null> {
   const applyLocal = (school: School): PublicSchoolData => ({
     school,
     branches: db.branches.bySchool(school.id).filter((branch) => branch.isActive),
@@ -36,7 +36,7 @@ export async function loadPublicSchoolData(slug: string): Promise<PublicSchoolDa
     slots: db.slots.bySchool(school.id),
   })
 
-  if (isSupabaseConfigured()) {
+  if (!options.preferLocal && isSupabaseConfigured()) {
     try {
       const bundle = await withTimeout(getPublicSchoolBundle(slug), PUBLIC_DATA_TIMEOUT_MS)
       if (bundle) {
@@ -72,8 +72,8 @@ export function getFutureAvailableSlots(schoolId: string): Slot[] {
     .sort((left, right) => new Date(`${left.date}T${left.time}:00`).getTime() - new Date(`${right.date}T${right.time}:00`).getTime())
 }
 
-export async function refreshPublicSlots(schoolId: string): Promise<Slot[]> {
-  if (!isSupabaseConfigured()) {
+export async function refreshPublicSlots(schoolId: string, options: { preferLocal?: boolean } = {}): Promise<Slot[]> {
+  if (options.preferLocal || !isSupabaseConfigured()) {
     return db.slots.bySchool(schoolId)
   }
 

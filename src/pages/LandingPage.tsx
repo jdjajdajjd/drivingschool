@@ -15,14 +15,14 @@ const UserCog = createHugeIcon(UserSettings01Icon)
 const entryPoints = [
   {
     title: 'Войти в кабинет',
-    description: 'Расписание, занятия, документы и сообщения автошколы.',
+    description: 'Пустой кабинет автошколы для настройки через админку.',
     icon: ShieldCheck,
-    path: '/school/virazh/login',
+    path: '/workspace-admin',
     accent: true,
   },
   {
     title: 'Зарегистрироваться',
-    description: 'Создайте кабинет ученика по телефону за пару минут.',
+    description: 'Ученический вход демо-автошколы.',
     icon: Car,
     path: '/school/virazh/register',
     accent: false,
@@ -171,7 +171,7 @@ export function LandingPage() {
           </div>
           <button
             className="btn btn-primary btn-lg w-full"
-            onClick={() => navigate(`/school/${defaultSchool.slug}`)}
+            onClick={() => navigate('/demo')}
           >
             Открыть демо автошколы
             <ArrowRight size={17} />
@@ -185,7 +185,7 @@ export function LandingPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          Для теста админки: кнопка «Для персонала» открывает вход автошколы.
+          «Войти в кабинет» — пустая настройка. «Демо автошколы» — заполненный пример.
         </motion.p>
 
       </main>

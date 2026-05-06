@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { AccessRole, getAccessConfig, grantAccess, isAccessGranted } from '../services/accessControl'
+import { setDataNamespace } from '../services/storage'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
 const LockKeyhole = createHugeIcon(LockKeyIcon)
@@ -12,6 +13,7 @@ const ShieldCheck = createHugeIcon(Shield01Icon)
 
 interface StaffLoginPageProps {
   role: AccessRole
+  mode?: 'demo' | 'workspace'
 }
 
 const copy = {
@@ -27,12 +29,14 @@ const copy = {
   },
 }
 
-export function StaffLoginPage({ role }: StaffLoginPageProps) {
+export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
   const navigate = useNavigate()
   const config = getAccessConfig(role)
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+
+  setDataNamespace(mode)
 
   if (isAccessGranted(role)) {
     return <Navigate to={config.redirect} replace />
@@ -44,6 +48,7 @@ export function StaffLoginPage({ role }: StaffLoginPageProps) {
       setError('Логин или пароль не подошли')
       return
     }
+    setDataNamespace(mode)
     grantAccess(role, password)
     navigate(config.redirect, { replace: true })
   }

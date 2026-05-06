@@ -4,6 +4,7 @@ import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule, 
 import { saveStudentProgress, saveLessonDescription } from './studentProfile'
 
 const SCHOOL_ID = 'school-virazh'
+export const WORKSPACE_SCHOOL_ID = 'school-workspace'
 
 const SCHOOL: School = {
   id: SCHOOL_ID,
@@ -238,11 +239,28 @@ const ACTIVE_MODULES: SchoolModule[] = [
   },
 ]
 
-export function seedIfNeeded(options: { force?: boolean } = {}): void {
+export function seedIfNeeded(options: { force?: boolean; mode?: 'demo' | 'workspace' } = {}): void {
   clearLocalDbWhenSupabaseConfigured()
   if (!options.force && db.isSeeded()) return
 
   db.reset()
+
+  if (options.mode === 'workspace') {
+    db.schools.upsert({
+      ...SCHOOL,
+      id: WORKSPACE_SCHOOL_ID,
+      name: 'Новая автошкола',
+      slug: 'workspace',
+      description: '',
+      phone: '',
+      email: '',
+      address: '',
+      logoUrl: undefined,
+      enabledCategoryCodes: ['B'],
+    })
+    db.markSeeded()
+    return
+  }
 
   db.schools.upsert(SCHOOL)
   BRANCHES.forEach((b) => db.branches.upsert(b))

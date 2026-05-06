@@ -24,7 +24,7 @@ import { ADMIN_BASE_PATH } from '../../services/accessControl'
 export function AdminSettings() {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const school = db.schools.bySlug('virazh')
+  const school = db.schools.all()[0] ?? null
   const [resetOpen, setResetOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({

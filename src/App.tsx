@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { ProtectedAccess } from './components/layout/ProtectedAccess'
-import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
+import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, WORKSPACE_ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
 
 void React
 
@@ -43,20 +43,16 @@ function App() {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    // Seed first — local data must be ready immediately
-    import('./services/seed').then((m) => m.seedIfNeeded({ force: true }))
+    import('./services/storage').then(({ setDataNamespace }) => {
+      setDataNamespace('demo')
+      import('./services/seed').then((m) => m.seedIfNeeded({ mode: 'demo' }))
+      setDataNamespace('workspace')
+      import('./services/seed').then((m) => m.seedIfNeeded({ mode: 'workspace' }))
+      setDataNamespace(window.location.pathname.startsWith(ADMIN_BASE_PATH) || window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH || window.location.pathname === '/admin' ? 'workspace' : 'demo')
+      setIsReady(true)
+    })
 
-    // Sync in background — don't block the UI
-    import('./services/supabaseSync')
-      .then((m) => { m.syncSupabaseSchoolToLocalDb('virazh').catch(() => undefined) })
-      .catch(() => undefined)
-      .finally(() => {
-        import('./services/seed').then((m) => m.seedIfNeeded())
-        setIsReady(true)
-      })
-
-    // Keep first render behind the short sync window so admin pages do not mount with an empty data bridge.
-    const fallback = setTimeout(() => setIsReady(true), 4000)
+    const fallback = setTimeout(() => setIsReady(true), 1200)
     return () => clearTimeout(fallback)
   }, [])
 
@@ -71,7 +67,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<StudentLoginPage />} />
           <Route path="/auth" element={<Navigate to="/login" replace />} />
-          <Route path="/admin" element={<Navigate to={ADMIN_LOGIN_PATH} replace />} />
+          <Route path="/admin" element={<Navigate to={WORKSPACE_ADMIN_LOGIN_PATH} replace />} />
           <Route path="/staff/login" element={<Navigate to={ADMIN_LOGIN_PATH} replace />} />
           <Route path="/student/login" element={<Navigate to="/login" replace />} />
           <Route path="/register" element={<Navigate to="/student/register" replace />} />
@@ -89,9 +85,10 @@ function App() {
           <Route path="/student/book" element={<BookingFlowPage />} />
           <Route path="/student" element={<StudentPage />} />
           <Route path="/booking/:bookingId" element={<BookingConfirmation />} />
-          <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" />} />
+          <Route path={WORKSPACE_ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" mode="workspace" />} />
+          <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" mode="demo" />} />
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
-          <Route element={<ProtectedAccess role="admin" />}>
+          <Route element={<ProtectedAccess role="admin" mode="workspace" />}>
             <Route path={ADMIN_BASE_PATH} element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="bookings" element={<AdminBookings />} />

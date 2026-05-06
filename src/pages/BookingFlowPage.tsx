@@ -332,6 +332,7 @@ function VroomSchedulerPicker({
 
 export function BookingFlowPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
+  const isDemo = slug === 'virazh'
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -355,7 +356,7 @@ export function BookingFlowPage() {
 
   useEffect(() => {
     setLoading(true)
-    void loadPublicSchoolData(slug)
+    void loadPublicSchoolData(slug, { preferLocal: isDemo })
       .then((data) => {
         if (!data) return
         setSchool(data.school)
@@ -401,7 +402,7 @@ export function BookingFlowPage() {
     async function refresh() {
       if (!school || disposed) return
       setRefreshingSlots(true)
-      await refreshPublicSlots(school.id)
+      await refreshPublicSlots(school.id, { preferLocal: isDemo })
       if (!disposed) {
         setSlotsVersion((current) => current + 1)
         setLastSlotsRefreshAt(new Date())
@@ -486,7 +487,7 @@ export function BookingFlowPage() {
   function handleRefreshSlots() {
     if (!school) return
     setRefreshingSlots(true)
-    void refreshPublicSlots(school.id).then(() => {
+    void refreshPublicSlots(school.id, { preferLocal: isDemo }).then(() => {
       setSlotsVersion((current) => current + 1)
       setLastSlotsRefreshAt(new Date())
       setRefreshingSlots(false)
@@ -552,7 +553,7 @@ export function BookingFlowPage() {
     setSelectedDate(parseISO(bookingSlot.date))
     setSubmitting(true)
     try {
-      await refreshPublicSlots(school.id)
+      await refreshPublicSlots(school.id, { preferLocal: isDemo })
       const freshSlot = db.slots.byId(bookingSlot.id)
       if (
         !freshSlot ||
@@ -568,6 +569,7 @@ export function BookingFlowPage() {
       let bookingGroupId = ''
 
       try {
+        if (isDemo) throw new Error('Demo uses local booking')
         const result = await createSupabaseBooking({
           schoolId: school.id,
           studentName: form.name,
@@ -577,7 +579,7 @@ export function BookingFlowPage() {
         bookingId = result.bookingIds[0] ?? ''
         bookingGroupId = result.bookingGroupId
       } catch {
-        const freshData = await loadPublicSchoolData(slug)
+        const freshData = await loadPublicSchoolData(slug, { preferLocal: isDemo })
         const freshLocalSlot = db.slots.byId(bookingSlot.id)
         const freshBranchActive = freshLocalSlot
           ? freshData?.branches.some((branch) => branch.id === freshLocalSlot.branchId && branch.isActive)

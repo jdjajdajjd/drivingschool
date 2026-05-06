@@ -26,7 +26,7 @@ const Location = createHugeIcon(Location01Icon)
 const Users = createHugeIcon(UserMultipleIcon)
 
 function getSchool() {
-  return db.schools.bySlug('virazh')
+  return db.schools.all()[0] ?? null
 }
 
 export function AdminDashboard() {

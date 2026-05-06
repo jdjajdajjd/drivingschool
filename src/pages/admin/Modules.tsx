@@ -65,7 +65,7 @@ function getPriceLabel(module: Module): string {
 export function AdminModules() {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const school = db.schools.bySlug('virazh')
+  const school = db.schools.all()[0] ?? null
   const [filter, setFilter] = useState<'all' | ModuleCategory>('all')
   const [showBaseFeatures, setShowBaseFeatures] = useState(false)
   const [, forceUpdate] = useState(0)

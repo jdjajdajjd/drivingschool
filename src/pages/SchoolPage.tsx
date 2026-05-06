@@ -31,7 +31,7 @@ export function SchoolPage() {
 
   useEffect(() => {
     setLoading(true)
-    void loadPublicSchoolData(slug)
+    void loadPublicSchoolData(slug, { preferLocal: slug === 'virazh' })
       .then((data) => setSchool(data?.school ?? null))
       .finally(() => setLoading(false))
   }, [slug])
@@ -98,7 +98,7 @@ export function SchoolPage() {
           </button>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate('/student/register')}>
+            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}/register`)}>
               Регистрация
             </button>
           </div>
@@ -132,7 +132,7 @@ export function SchoolPage() {
               <ArrowRight size={18} />
             </Button>
 
-            <button type="button" className="mt-3 w-full rounded-[16px] bg-[var(--surface-muted)] px-4 py-3 text-[13px] font-extrabold text-[var(--accent)]" onClick={() => navigate('/student/register')}>
+            <button type="button" className="mt-3 w-full rounded-[16px] bg-[var(--surface-muted)] px-4 py-3 text-[13px] font-extrabold text-[var(--accent)]" onClick={() => navigate(`/school/${school.slug}/register`)}>
               Зарегистрироваться
             </button>
           </div>

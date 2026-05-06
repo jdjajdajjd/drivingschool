@@ -27,7 +27,7 @@ const initialForm = {
 }
 
 export function AdminBranches() {
-  const school = db.schools.bySlug('virazh')
+  const school = db.schools.all()[0] ?? null
   const { showToast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)

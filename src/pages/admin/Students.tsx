@@ -24,7 +24,7 @@ function selectClassName() {
 }
 
 export function AdminStudents() {
-  const school = db.schools.bySlug('virazh')
+  const school = db.schools.all()[0] ?? null
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<StudentFilter>('all')
 

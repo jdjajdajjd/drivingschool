@@ -81,7 +81,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
         <div className="border-b rgba(0,0,0,0.06) px-5 py-4">
           <p className="caption">Автошкола</p>
-          <p className="mt-1 text-sm font-bold #111418">Вираж</p>
+          <p className="mt-1 text-sm font-bold #111418">Новая автошкола</p>
           <p className="mt-1 text-sm #6F747A">Рабочая панель</p>
         </div>
 
@@ -114,7 +114,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         <div className="space-y-2 border-t rgba(0,0,0,0.06) px-3 py-4">
           <button
             onClick={() => {
-              navigate('/school/virazh')
+              navigate('/demo')
               onClose()
             }}
             className="flex w-full min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-[15px] font-semibold #6F747A transition hover:#F4F5F6 hover:#111418"

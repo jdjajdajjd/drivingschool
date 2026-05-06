@@ -44,7 +44,7 @@ export function AdminModuleDetail() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const { moduleId } = useParams<{ moduleId: string }>()
-  const school = db.schools.bySlug('virazh')
+  const school = db.schools.all()[0] ?? null
   const module = moduleId ? getModuleById(moduleId) : null
 
   if (!school || !module) {

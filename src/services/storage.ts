@@ -12,40 +12,53 @@ import { isSupabaseConfigured } from '../lib/supabase'
 
 export const SEED_VERSION = '6'
 
+const KEY_PREFIX = 'dd:'
+let activeNamespace = 'demo'
+
 const K = {
-  SCHOOLS: 'dd:schools',
-  BRANCHES: 'dd:branches',
-  INSTRUCTORS: 'dd:instructors',
-  SLOTS: 'dd:slots',
-  BOOKINGS: 'dd:bookings',
-  STUDENTS: 'dd:students',
-  SCHOOL_MODULES: 'dd:school_modules',
-  SLOT_LOCKS: 'dd:slot_locks',
-  SEEDED: 'dd:seeded',
-  SEED_VERSION: 'dd:seed_version',
+  SCHOOLS: 'schools',
+  BRANCHES: 'branches',
+  INSTRUCTORS: 'instructors',
+  SLOTS: 'slots',
+  BOOKINGS: 'bookings',
+  STUDENTS: 'students',
+  SCHOOL_MODULES: 'school_modules',
+  SLOT_LOCKS: 'slot_locks',
+  SEEDED: 'seeded',
+  SEED_VERSION: 'seed_version',
 } as const
 
-let clearedLocalDbForSupabase = false
+function namespacedKey(key: string): string {
+  return `${KEY_PREFIX}${activeNamespace}:${key}`
+}
+
+export type DataNamespace = 'demo' | 'workspace'
+
+export function setDataNamespace(namespace: DataNamespace): void {
+  activeNamespace = namespace
+  if (typeof window !== 'undefined') {
+    ;(window as Window & { __VROOM_DATA_NAMESPACE?: DataNamespace }).__VROOM_DATA_NAMESPACE = namespace
+    window.sessionStorage.setItem('dd:data_namespace', namespace)
+  }
+}
+
+export function getDataNamespace(): DataNamespace {
+  return activeNamespace as DataNamespace
+}
+
 const memoryStore = new Map<string, unknown[]>()
 
 export function clearLocalDbWhenSupabaseConfigured(): void {
-  if (!isSupabaseConfigured() || clearedLocalDbForSupabase || typeof localStorage === 'undefined') return
-  clearedLocalDbForSupabase = true
-  const keysToRemove: string[] = []
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index)
-    if (key?.startsWith('dd:')) keysToRemove.push(key)
-  }
-  keysToRemove.forEach((key) => localStorage.removeItem(key))
+  // Data is split by namespace now; Supabase should not wipe local demo/workspace state.
 }
 
 function readAll<T>(key: string): T[] {
   if (isSupabaseConfigured()) {
     clearLocalDbWhenSupabaseConfigured()
-    return [...((memoryStore.get(key) as T[] | undefined) ?? [])]
+    return [...((memoryStore.get(`${activeNamespace}:${key}`) as T[] | undefined) ?? [])]
   }
   try {
-    const raw = localStorage.getItem(key)
+    const raw = localStorage.getItem(namespacedKey(key))
     return raw ? (JSON.parse(raw) as T[]) : []
   } catch {
     return []
@@ -55,10 +68,10 @@ function readAll<T>(key: string): T[] {
 function writeAll<T>(key: string, data: T[]): void {
   if (isSupabaseConfigured()) {
     clearLocalDbWhenSupabaseConfigured()
-    memoryStore.set(key, data)
+    memoryStore.set(`${activeNamespace}:${key}`, data)
     return
   }
-  localStorage.setItem(key, JSON.stringify(data))
+  localStorage.setItem(namespacedKey(key), JSON.stringify(data))
 }
 
 function upsert<T extends { id: string }>(key: string, item: T): T {
@@ -230,13 +243,13 @@ export const db = {
 
   isSeeded: () =>
     isSupabaseConfigured() ||
-    localStorage.getItem(K.SEEDED) === 'true' &&
-    localStorage.getItem(K.SEED_VERSION) === SEED_VERSION,
+    localStorage.getItem(namespacedKey(K.SEEDED)) === 'true' &&
+    localStorage.getItem(namespacedKey(K.SEED_VERSION)) === SEED_VERSION,
 
   markSeeded: () => {
     if (isSupabaseConfigured()) return
-    localStorage.setItem(K.SEEDED, 'true')
-    localStorage.setItem(K.SEED_VERSION, SEED_VERSION)
+    localStorage.setItem(namespacedKey(K.SEEDED), 'true')
+    localStorage.setItem(namespacedKey(K.SEED_VERSION), SEED_VERSION)
   },
 
   reset: () => {
@@ -244,6 +257,6 @@ export const db = {
       memoryStore.clear()
       return
     }
-    Object.values(K).forEach((key) => localStorage.removeItem(key))
+    Object.values(K).forEach((key) => localStorage.removeItem(namespacedKey(key)))
   },
 }

@@ -50,7 +50,7 @@ function selectClassName() {
 }
 
 export function AdminSlots() {
-  const school = db.schools.bySlug('virazh')
+  const school = db.schools.all()[0] ?? null
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [mode, setMode] = useState<CreateMode>('bulk')

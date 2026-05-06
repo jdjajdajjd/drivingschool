@@ -3,6 +3,7 @@ export type AccessRole = 'admin' | 'superadmin'
 export const ADMIN_BASE_PATH = '/virazh-office-73q'
 export const SUPERADMIN_BASE_PATH = '/drivedesk-root-91x'
 export const ADMIN_LOGIN_PATH = '/staff-entrance-73q'
+export const WORKSPACE_ADMIN_LOGIN_PATH = '/workspace-admin'
 export const SUPERADMIN_LOGIN_PATH = '/root-entrance-91x'
 
 const ACCESS_KEYS: Record<AccessRole, string> = {
@@ -33,21 +34,34 @@ export function getAccessConfig(role: AccessRole) {
 }
 
 export function isAccessGranted(role: AccessRole): boolean {
-  return sessionStorage.getItem(ACCESS_KEYS[role]) === 'granted'
+  return sessionStorage.getItem(accessKey(role)) === 'granted'
+}
+
+function currentNamespace(): string {
+  if (typeof window === 'undefined') return 'demo'
+  return (window as Window & { __VROOM_DATA_NAMESPACE?: string }).__VROOM_DATA_NAMESPACE ?? window.sessionStorage.getItem('dd:data_namespace') ?? 'demo'
+}
+
+function accessKey(role: AccessRole): string {
+  return role === 'admin' ? `${ACCESS_KEYS[role]}:${currentNamespace()}` : ACCESS_KEYS[role]
+}
+
+function accessPasswordKey(role: AccessRole): string {
+  return role === 'admin' ? `${ACCESS_PASSWORD_KEYS[role]}:${currentNamespace()}` : ACCESS_PASSWORD_KEYS[role]
 }
 
 export function grantAccess(role: AccessRole, password: string): void {
-  sessionStorage.setItem(ACCESS_KEYS[role], 'granted')
-  sessionStorage.setItem(ACCESS_PASSWORD_KEYS[role], password)
-  localStorage.removeItem(ACCESS_KEYS[role])
+  sessionStorage.setItem(accessKey(role), 'granted')
+  sessionStorage.setItem(accessPasswordKey(role), password)
+  localStorage.removeItem(accessKey(role))
 }
 
 export function clearAccess(role: AccessRole): void {
-  sessionStorage.removeItem(ACCESS_KEYS[role])
-  sessionStorage.removeItem(ACCESS_PASSWORD_KEYS[role])
-  localStorage.removeItem(ACCESS_KEYS[role])
+  sessionStorage.removeItem(accessKey(role))
+  sessionStorage.removeItem(accessPasswordKey(role))
+  localStorage.removeItem(accessKey(role))
 }
 
 export function getAccessPassword(role: AccessRole): string {
-  return sessionStorage.getItem(ACCESS_PASSWORD_KEYS[role]) ?? ''
+  return sessionStorage.getItem(accessPasswordKey(role)) ?? ''
 }
