@@ -106,7 +106,7 @@ Still transitional:
 
 ## Next Product Priorities
 
-1. Move admin reads fully to Supabase and keep localStorage only for local session convenience.
+1. Move admin reads fully to Supabase. In Supabase mode, admin screens still use an in-memory compatibility bridge; session/local storage remains for UI/session state and some student fallback/cache paths while admin persistence is being completed.
 2. Replace temporary staff passwords with real Supabase Auth roles.
 3. Add admin-visible student profile completeness, branch-change requests, and assigned instructor/branch flows.
 4. Add a practical launch checklist for a new school: school data, branches, instructors, categories, slots, booking rules, public link.

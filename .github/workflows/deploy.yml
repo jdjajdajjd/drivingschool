@@ -37,6 +37,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Infrastructure-only legacy Cloudflare Pages project; vroom.today is attached to it.
           projectName: drivingschool
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
