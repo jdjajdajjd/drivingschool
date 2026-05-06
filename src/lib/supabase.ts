@@ -25,5 +25,6 @@ export const supabase = createClient(
 )
 
 export function isSupabaseConfigured(): boolean {
+  if (typeof window !== 'undefined' && window.sessionStorage.getItem('dd:data_namespace') === 'workspace') return false
   return configured
 }

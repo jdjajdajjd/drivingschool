@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight01Icon, Car03Icon, Shield01Icon, UserSettings01Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, Shield01Icon, UserSettings01Icon } from '@hugeicons/core-free-icons'
 import type { School } from '../types'
 import { db } from '../services/storage'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const Car = createHugeIcon(Car03Icon)
 const ShieldCheck = createHugeIcon(Shield01Icon)
 const UserCog = createHugeIcon(UserSettings01Icon)
 
@@ -19,13 +18,6 @@ const entryPoints = [
     icon: ShieldCheck,
     path: '/workspace-admin',
     accent: true,
-  },
-  {
-    title: 'Зарегистрироваться',
-    description: 'Ученический вход демо-автошколы.',
-    icon: Car,
-    path: '/school/virazh/register',
-    accent: false,
   },
   {
     title: 'Для персонала',

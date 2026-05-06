@@ -42,6 +42,13 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
     return <Navigate to={config.redirect} replace />
   }
 
+  function enterWithoutPassword(): void {
+    if (role !== 'admin') return
+    setDataNamespace(mode)
+    grantAccess(role, config.password)
+    navigate(config.redirect, { replace: true })
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (login.trim() !== config.login || password !== config.password) {
@@ -63,11 +70,11 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">{copy[role].badge}</p>
-              <h1 className="mt-1 text-2xl font-semibold">{copy[role].title}</h1>
+              <h1 className="mt-1 text-2xl font-semibold">{role === 'admin' && mode === 'workspace' ? 'Кабинет автошколы' : copy[role].title}</h1>
             </div>
           </div>
 
-          <p className="mt-4 text-base leading-relaxed text-stone-500">{copy[role].subtitle}</p>
+          <p className="mt-4 text-base leading-relaxed text-stone-500">{role === 'admin' && mode === 'workspace' ? 'Пока можно открыть кабинет без логина и пароля, чтобы спокойно настроить автошколу.' : copy[role].subtitle}</p>
 
           <div className="mt-7 space-y-4">
             <Input
@@ -92,8 +99,15 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
             />
           </div>
 
-          <Button type="submit" size="lg" className="mt-7 w-full min-h-14 text-lg">
-            Войти
+          {role === 'admin' ? (
+            <Button type="button" size="lg" className="mt-7 w-full min-h-14 text-lg" onClick={enterWithoutPassword}>
+              Войти без пароля
+              <ArrowRight size={20} />
+            </Button>
+          ) : null}
+
+          <Button type="submit" size="lg" variant={role === 'admin' ? 'secondary' : 'primary'} className="mt-3 w-full min-h-14 text-lg">
+            Войти по логину
             <ArrowRight size={20} />
           </Button>
         </form>

@@ -18,7 +18,7 @@ export function AdminLayout() {
   useEffect(() => {
     let disposed = false
     setDataNamespace('workspace')
-    seedIfNeeded({ mode: 'workspace', force: true })
+    seedIfNeeded({ mode: 'workspace' })
     if (!disposed) setReady(true)
     const fallback = window.setTimeout(() => setReady(true), 500)
     return () => {

@@ -8,8 +8,6 @@ import type {
   Student,
   SchoolModule,
 } from '../types'
-import { isSupabaseConfigured } from '../lib/supabase'
-
 export const SEED_VERSION = '6'
 
 const KEY_PREFIX = 'dd:'
@@ -53,25 +51,20 @@ export function clearLocalDbWhenSupabaseConfigured(): void {
 }
 
 function readAll<T>(key: string): T[] {
-  if (isSupabaseConfigured()) {
-    clearLocalDbWhenSupabaseConfigured()
-    return [...((memoryStore.get(`${activeNamespace}:${key}`) as T[] | undefined) ?? [])]
-  }
   try {
     const raw = localStorage.getItem(namespacedKey(key))
     return raw ? (JSON.parse(raw) as T[]) : []
   } catch {
-    return []
+    return [...((memoryStore.get(`${activeNamespace}:${key}`) as T[] | undefined) ?? [])]
   }
 }
 
 function writeAll<T>(key: string, data: T[]): void {
-  if (isSupabaseConfigured()) {
-    clearLocalDbWhenSupabaseConfigured()
+  try {
+    localStorage.setItem(namespacedKey(key), JSON.stringify(data))
+  } catch {
     memoryStore.set(`${activeNamespace}:${key}`, data)
-    return
   }
-  localStorage.setItem(namespacedKey(key), JSON.stringify(data))
 }
 
 function upsert<T extends { id: string }>(key: string, item: T): T {
@@ -242,21 +235,16 @@ export const db = {
   },
 
   isSeeded: () =>
-    isSupabaseConfigured() ||
     localStorage.getItem(namespacedKey(K.SEEDED)) === 'true' &&
     localStorage.getItem(namespacedKey(K.SEED_VERSION)) === SEED_VERSION,
 
   markSeeded: () => {
-    if (isSupabaseConfigured()) return
     localStorage.setItem(namespacedKey(K.SEEDED), 'true')
     localStorage.setItem(namespacedKey(K.SEED_VERSION), SEED_VERSION)
   },
 
   reset: () => {
-    if (isSupabaseConfigured()) {
-      memoryStore.clear()
-      return
-    }
     Object.values(K).forEach((key) => localStorage.removeItem(namespacedKey(key)))
+    memoryStore.delete(activeNamespace)
   },
 }
