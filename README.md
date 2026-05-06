@@ -41,7 +41,10 @@ Before shipping:
 ```bash
 npm run typecheck
 npm run build
+npm run smoke:vroom
 ```
+
+The smoke command checks production by default. To smoke another deployment, set `SMOKE_BASE_URL`, for example `SMOKE_BASE_URL=http://localhost:4173 npm run smoke:vroom`.
 
 ## Environment
 
