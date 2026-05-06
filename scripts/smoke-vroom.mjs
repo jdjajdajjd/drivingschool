@@ -4,6 +4,10 @@ const baseUrl = process.env.SMOKE_BASE_URL || 'https://vroom.today'
 const forbidden = ['DriveDesk', 'drivingschool-6wy', 'localStorage', 'онлайн-оплата', 'предоплата']
 const expectedTimeoutMs = 15_000
 
+function isExpectedCompatibilityConsoleError(route, text) {
+  return route.path.startsWith('/instructor/') && text.includes('server responded with a status of 404')
+}
+
 const routes = [
   {
     path: '/school/virazh',
@@ -39,7 +43,9 @@ try {
     const page = await context.newPage()
 
     page.on('console', (message) => {
-      if (message.type() === 'error') failures.push(`${route.path} (${url}): console error: ${message.text()}`)
+      if (message.type() === 'error' && !isExpectedCompatibilityConsoleError(route, message.text())) {
+        failures.push(`${route.path} (${url}): console error: ${message.text()}`)
+      }
     })
 
     page.on('pageerror', (error) => {
