@@ -2,6 +2,7 @@ import { chromium } from 'playwright'
 
 const baseUrl = process.env.SMOKE_BASE_URL || 'https://vroom.today'
 const forbidden = ['DriveDesk', 'drivingschool-6wy', 'localStorage', 'онлайн-оплата', 'предоплата']
+const expectedTimeoutMs = 15_000
 
 const routes = [
   {
@@ -26,32 +27,54 @@ const routes = [
   },
 ]
 
-const browser = await chromium.launch({ headless: true })
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
 const failures = []
+let browser
 
-page.on('console', (message) => {
-  if (message.type() === 'error') failures.push(`console error: ${message.text()}`)
-})
+try {
+  browser = await chromium.launch({ headless: true })
 
-for (const route of routes) {
-  const url = new URL(route.path, baseUrl).toString()
-  await page.goto(url, { waitUntil: 'networkidle' })
-  const text = await page.locator('body').innerText()
-  const ddKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('dd:')))
+  for (const route of routes) {
+    const url = new URL(route.path, baseUrl).toString()
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
 
-  for (const expected of route.checks) {
-    if (!text.includes(expected)) failures.push(`${route.path}: missing "${expected}"`)
+    page.on('console', (message) => {
+      if (message.type() === 'error') failures.push(`${route.path} (${url}): console error: ${message.text()}`)
+    })
+
+    page.on('pageerror', (error) => {
+      failures.push(`${route.path} (${url}): page error: ${error.message}`)
+    })
+
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded' })
+
+      for (const expected of route.checks) {
+        try {
+          await page.locator('body', { hasText: expected }).waitFor({ timeout: expectedTimeoutMs })
+        } catch {
+          failures.push(`${route.path} (${url}): missing expected text "${expected}" after ${expectedTimeoutMs}ms`)
+        }
+      }
+
+      const text = await page.locator('body').innerText()
+      const ddKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('dd:')))
+
+      for (const rejected of [...route.rejects, ...forbidden]) {
+        if (text.includes(rejected)) failures.push(`${route.path} (${url}): contains forbidden text "${rejected}"`)
+      }
+
+      if (ddKeys.length > 0) failures.push(`${route.path} (${url}): business localStorage keys present ${ddKeys.join(', ')}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      failures.push(`${route.path} (${url}): route smoke failed: ${message}`)
+    } finally {
+      await context.close()
+    }
   }
-
-  for (const rejected of [...route.rejects, ...forbidden]) {
-    if (text.includes(rejected)) failures.push(`${route.path}: contains forbidden "${rejected}"`)
-  }
-
-  if (ddKeys.length > 0) failures.push(`${route.path}: business localStorage keys present ${ddKeys.join(', ')}`)
+} finally {
+  if (browser) await browser.close()
 }
-
-await browser.close()
 
 if (failures.length > 0) {
   console.error(failures.join('\n'))

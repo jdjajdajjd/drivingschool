@@ -32,6 +32,27 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Install Chromium for smoke checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke built app before deploy
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 &
+          PREVIEW_PID=$!
+          trap 'kill "$PREVIEW_PID"' EXIT
+
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              SMOKE_BASE_URL=http://127.0.0.1:4173 npm run smoke:vroom
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Local preview did not become ready for smoke checks." >&2
+          exit 1
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
