@@ -69,6 +69,7 @@ function App() {
           <Route path="/login" element={<StudentLoginPage />} />
           <Route path="/register" element={<Navigate to="/student/register" replace />} />
           <Route path="/dashboard" element={<Navigate to="/student" replace />} />
+          <Route path="/product" element={<Navigate to="/school/virazh" replace />} />
           <Route path="/demo" element={<Navigate to="/school/virazh" replace />} />
           <Route path="/terms" element={<LegalPage />} />
           <Route path="/privacy" element={<LegalPage />} />

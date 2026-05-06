@@ -63,7 +63,7 @@ SUPABASE_DATABASE_URL=postgresql://...
 npm run supabase:apply
 ```
 
-If direct database DNS is unavailable on the machine, open `supabase/DRIVEDESK_FULL_SETUP.sql`, copy only the safe patch block between `-- BEGIN DRIVEDESK_SAFE_PATCH` and `-- END DRIVEDESK_SAFE_PATCH`, paste it into Supabase SQL Editor, and run it there.
+If direct database DNS is unavailable on the machine, open `supabase/DRIVEDESK_FULL_SETUP.sql` (historical filename), copy only the safe patch block between `-- BEGIN DRIVEDESK_SAFE_PATCH` and `-- END DRIVEDESK_SAFE_PATCH`, paste it into Supabase SQL Editor, and run it there.
 
 ## Supabase
 
@@ -80,7 +80,7 @@ The default script applies only the safe patch section between:
 -- END DRIVEDESK_SAFE_PATCH
 ```
 
-The safe patch must not drop production data. Do not paste the full SQL file into a live database: the full reset part is only for rebuilding a disposable demo database.
+The SQL file keeps its historical filename. The safe patch must not drop production data. Do not paste the full SQL file into a live database: the full reset part is only for rebuilding a disposable development database.
 
 ## Product State
 
@@ -102,12 +102,12 @@ Still transitional:
 
 - The app still syncs Supabase data into an in-memory compatibility layer on startup. This keeps existing admin screens working while the data layer is being completed.
 - Admin authentication is still a temporary access gate, not production-grade role-based auth.
-- Some admin screens write locally first and then persist to Supabase through RPCs.
+- Admin screens still render through an in-memory compatibility layer while Supabase-backed admin reads are being completed.
 
 ## Next Product Priorities
 
-1. Move admin reads/writes fully to Supabase and keep localStorage only for local session convenience.
-2. Replace demo staff passwords with real Supabase Auth roles.
+1. Move admin reads fully to Supabase and keep localStorage only for local session convenience.
+2. Replace temporary staff passwords with real Supabase Auth roles.
 3. Add admin-visible student profile completeness, branch-change requests, and assigned instructor/branch flows.
 4. Add a practical launch checklist for a new school: school data, branches, instructors, categories, slots, booking rules, public link.
 5. Add browser smoke tests for student booking, profile creation, returning login, admin booking management, and settings persistence.

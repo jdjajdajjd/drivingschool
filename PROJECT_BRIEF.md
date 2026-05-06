@@ -1,12 +1,12 @@
-# DriveDesk Project Brief
+# Vroom Project Brief
 
 ## Product Goal
 
-DriveDesk is a SaaS-style operating panel for driving schools. The demo should show the actual product, not a marketing site:
+Vroom is a SaaS-style operating panel for driving schools. The product should show the actual product, not a marketing site:
 
 - student booking and personal cabinet;
 - school administrator panel;
-- super-admin panel for DriveDesk;
+- super-admin panel for Vroom;
 - schedule, branches, instructors, students, bookings, and school settings.
 
 The target user for the public booking flow is often 40+, so the interface must stay simple, readable, and low-noise.
@@ -18,11 +18,11 @@ The target user for the public booking flow is often 40+, so the interface must 
 - No decorative clutter in booking.
 - Student profile shows only real, useful information.
 - Admin pages are practical and dense enough for daily work.
-- Demo hub at `/` gives direct entrances into product roles.
+- Product hub at `/` gives direct entrances into product roles.
 
 ## Current Important URLs
 
-- `/` product demo hub
+- `/` product hub
 - `/school/virazh` student flow
 - `/staff-entrance-73q` school admin login
 - `/virazh-office-73q` school admin panel
@@ -42,7 +42,7 @@ Supabase contains the production-shaped data:
 - bookings
 - staff access credentials
 
-The app still has a compatibility layer that loads Supabase data and writes it into localStorage. This is temporary and should be reduced as the product moves toward sale.
+When Supabase is configured, the app loads Supabase data into an in-memory compatibility layer for admin rendering. This bridge is temporary and should be reduced as the product moves toward sale.
 
 ## What Was Recently Added
 
@@ -59,8 +59,8 @@ The app still has a compatibility layer that loads Supabase data and writes it i
 
 ## Biggest Remaining Risks
 
-- Staff auth is still demo-level and should be replaced by real roles.
-- Some settings may feel saved locally before Supabase confirms them.
+- Staff auth still uses temporary access credentials and should be replaced by real roles.
+- Some admin reads still depend on the in-memory compatibility bridge before direct Supabase reads are completed.
 - Direct database patching may fail on machines without Supabase DB DNS; SQL Editor remains the fallback.
 - There are no automated browser smoke tests yet.
 
