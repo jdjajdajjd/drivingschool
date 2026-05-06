@@ -62,7 +62,6 @@ drop function if exists public.public_upsert_instructor(text, text, text, text, 
 drop function if exists public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text);
 drop function if exists public.public_update_instructor_active(text, boolean, text);
 drop function if exists public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text);
-drop function if exists public.public_admin_list_students(text, text);
 drop function if exists public.public_get_student_progress(text, text);
 drop function if exists public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text);
 drop function if exists public.public_get_student_documents(text, text);
@@ -735,21 +734,6 @@ begin
 end;
 $$;
 
-create or replace function public.public_admin_list_students(
-  p_school_id text,
-  p_staff_password text
-)
-returns setof public.students
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  perform public.private_assert_admin_password(p_staff_password);
-  return query select * from public.students where school_id = p_school_id order by created_at desc;
-end;
-$$;
-
 create or replace function public.public_get_student_progress(
   p_student_id text,
   p_staff_password text
@@ -997,7 +981,6 @@ grant execute on function public.public_delete_branch(text, text) to anon, authe
 grant execute on function public.public_upsert_instructor(text, text, text, text, text, text, text, text, boolean, text, text, text[], text) to anon, authenticated;
 grant execute on function public.public_update_instructor_active(text, boolean, text) to anon, authenticated;
 grant execute on function public.public_admin_update_student(text, text, text, text, text, text, text, text, text, text[], text, text, date, date, date, date, timestamptz, text, text) to anon, authenticated;
-grant execute on function public.public_admin_list_students(text, text) to anon, authenticated;
 grant execute on function public.public_get_student_progress(text, text) to anon, authenticated;
 grant execute on function public.public_upsert_student_progress(text, text, text, integer, integer, integer, integer, boolean, date, text, date, text, text, timestamptz, text) to anon, authenticated;
 grant execute on function public.public_get_student_documents(text, text) to anon, authenticated;
@@ -2163,7 +2146,9 @@ begin
   end if;
 
   insert into public.students (
-    id, school_id, name, phone, normalized_phone, email, password_hash, avatar_url
+    id, school_id, name, phone, normalized_phone, email, password_hash, avatar_url,
+    category_codes, training_stage, group_name, training_start_date, driving_start_date,
+    training_end_date, driving_end_date
   ) values (
     'stu-' || replace(gen_random_uuid()::text, '-', ''),
     p_school_id,
@@ -2172,7 +2157,9 @@ begin
     v_normalized_phone,
     coalesce(trim(p_email), ''),
     case when p_password is not null and length(p_password) >= 6 then extensions.crypt(p_password, extensions.gen_salt('bf')) else null end,
-    nullif(trim(coalesce(p_avatar_url, '')), '')
+    nullif(trim(coalesce(p_avatar_url, '')), ''),
+    nullif(p_category_codes, '{}'), p_training_stage, p_group_name, p_training_start_date, p_driving_start_date,
+    p_training_end_date, p_driving_end_date
   )
   on conflict (school_id, normalized_phone)
   do update set
@@ -2621,7 +2608,7 @@ as $$
     select b.booking_group_id from public.bookings b where b.id = p_booking_id
   )
   select b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id,
-    b.student_name, b.student_phone, b.student_email, b.status, b.notes, b.comment, b.rescheduled_at, b.created_at, b.updated_at,
+    b.student_name, case when length(regexp_replace(coalesce(b.student_phone, ''), '\D', '', 'g')) >= 4 then '••••' || right(regexp_replace(b.student_phone, '\D', '', 'g'), 4) else '' end, '', b.status, b.notes, b.comment, b.rescheduled_at, b.created_at, b.updated_at,
     s.name, s.slug, s.description, s.phone, s.email, s.address, s.logo_url, s.primary_color,
     s.booking_limit_enabled, s.max_active_bookings_per_student, s.branch_selection_mode, s.max_slots_per_booking, s.default_lesson_duration, s.enabled_category_codes, s.is_active, s.created_at, s.updated_at,
     br.school_id, br.name, br.address, br.phone, br.is_active,
@@ -2652,7 +2639,7 @@ as $$
   select i.id, i.school_id, i.branch_id, i.name, i.phone, i.bio, i.experience, i.is_active, i.categories, i.avatar_initials, i.avatar_color, i.car, i.transmission,
     br.id, br.school_id, br.name, br.address, br.phone, br.is_active,
     sl.id, sl.school_id, sl.instructor_id, sl.branch_id, sl.date, sl.time, sl.duration, sl.lesson_type, sl.status, sl.booking_id, sl.created_at,
-    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, left(trim(b.student_name), 1) || '.', b.status, b.created_at, b.updated_at, b.rescheduled_at
+    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, case when length(trim(coalesce(b.student_name, ''))) > 0 then left(trim(b.student_name), 1) || '.' else 'Ученик' end, b.status, b.created_at, b.updated_at, b.rescheduled_at
   from public.instructors i
   left join public.branches br on br.id = i.branch_id
   left join public.slots sl on sl.instructor_id = i.id
@@ -2670,6 +2657,21 @@ as $$
 begin
   perform public.private_assert_admin_password(p_staff_password);
   return query select * from public.bookings where school_id = p_school_id order by created_at desc;
+end;
+$$;
+
+create or replace function public.public_admin_list_students(
+  p_school_id text,
+  p_staff_password text
+)
+returns setof public.students
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+  return query select * from public.students where school_id = p_school_id order by created_at desc;
 end;
 $$;
 

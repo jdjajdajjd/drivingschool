@@ -97,6 +97,14 @@ function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//vroom//Booking Flow//RU', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
 }
 
+function getDisplayStudent(bundle: BookingBundle): { name: string; phone: string; email?: string } {
+  return {
+    name: bundle.booking.studentName,
+    phone: bundle.booking.studentPhone || 'Скрыт',
+    email: bundle.booking.studentEmail || undefined,
+  }
+}
+
 export function BookingConfirmation() {
   const { bookingId } = useParams<{ bookingId: string }>()
   const navigate = useNavigate()
@@ -140,7 +148,7 @@ export function BookingConfirmation() {
     if (!first?.school) return
     saveStudentProfile(
       first.school.id,
-      { name: first.booking.studentName, phone: first.booking.studentPhone, email: first.booking.studentEmail },
+      { name: first.booking.studentName, phone: '', email: '' },
       { passwordSet: false, assignedBranchId: first.branch?.id, assignedInstructorId: first.instructor?.id },
     )
     navigate('/student')
@@ -172,7 +180,7 @@ export function BookingConfirmation() {
                 slot={item.slot}
                 instructor={item.instructor}
                 branch={item.branch}
-                student={{ name: item.booking.studentName, phone: item.booking.studentPhone, email: item.booking.studentEmail }}
+                student={getDisplayStudent(item)}
               />
             </motion.div>
           ))}
