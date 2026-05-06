@@ -174,6 +174,23 @@ function mapBookingLike(row: any): Booking {
   }
 }
 
+function isMissingRpcError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { code?: unknown; status?: unknown; message?: unknown; details?: unknown }
+  const status = typeof candidate.status === 'number' ? candidate.status : undefined
+  const code = typeof candidate.code === 'string' ? candidate.code : ''
+  const message = typeof candidate.message === 'string' ? candidate.message : ''
+  const details = typeof candidate.details === 'string' ? candidate.details : ''
+  const text = `${message} ${details}`.toLowerCase()
+
+  return status === 404 || code.startsWith('PGRST') || text.includes('function') || text.includes('rpc')
+}
+
+function getPublicBookingLabel(name: string | null | undefined): string {
+  const trimmed = name?.trim()
+  return trimmed ? `${trimmed.slice(0, 1)}.` : 'Ученик'
+}
+
 export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBundle | null> {
   const publicBundle = await getPublicSchoolBundle(slug)
   if (!publicBundle) return null
@@ -197,7 +214,10 @@ export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBun
 
 export async function getPublicInstructorBundle(token: string): Promise<PublicInstructorBundle | null> {
   const { data, error } = await untypedSupabase.rpc('public_get_instructor_schedule', { p_token: token })
-  if (error) throw error
+  if (error) {
+    if (isMissingRpcError(error)) return getPublicInstructorBundleFallback(token)
+    throw error
+  }
   const rows = data ?? []
   const first = rows[0]
   if (!first) return null
@@ -248,6 +268,47 @@ export async function getPublicInstructorBundle(token: string): Promise<PublicIn
     branch,
     slots,
     bookings,
+  }
+}
+
+async function getPublicInstructorBundleFallback(token: string): Promise<PublicInstructorBundle | null> {
+  const { data: instructorRow, error: instructorError } = await supabase
+    .from('instructors')
+    .select('*')
+    .eq('token', token)
+    .single()
+
+  if (instructorError) {
+    if (instructorError.code === 'PGRST116') return null
+    throw instructorError
+  }
+
+  const instructor = mapInstructor({ ...instructorRow, email: '' })
+
+  const [branchResult, slotsResult, bookingsResult] = await Promise.all([
+    instructor.branchId
+      ? supabase.from('branches').select('*').eq('id', instructor.branchId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    supabase.from('slots').select('*').eq('instructor_id', instructor.id).order('date').order('time'),
+    supabase.from('bookings').select('*').eq('instructor_id', instructor.id).order('created_at', { ascending: false }),
+  ])
+
+  if (branchResult.error) throw branchResult.error
+  if (slotsResult.error) throw slotsResult.error
+  if (bookingsResult.error) throw bookingsResult.error
+
+  return {
+    instructor,
+    branch: branchResult.data ? mapBranch(branchResult.data) : null,
+    slots: (slotsResult.data ?? []).map(mapSlot),
+    bookings: (bookingsResult.data ?? []).map((row: any) => mapBookingLike({
+      ...row,
+      student_name: getPublicBookingLabel(row.student_name),
+      student_phone: '',
+      student_email: '',
+      notes: null,
+      comment: null,
+    })),
   }
 }
 
