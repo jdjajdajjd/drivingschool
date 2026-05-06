@@ -1,15 +1,16 @@
 import type { Booking, Branch, Instructor, School, Slot, Student, StudentRequest } from '../types'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Database } from '../lib/supabaseTypes'
+import { getAccessPassword } from './accessControl'
 
 type SchoolRow = Database['public']['Tables']['schools']['Row']
 type BranchRow = Database['public']['Tables']['branches']['Row']
 type InstructorRow = Database['public']['Tables']['instructors']['Row']
 type SlotRow = Database['public']['Tables']['slots']['Row']
-type BookingRow = Database['public']['Tables']['bookings']['Row']
 type StudentRow = Database['public']['Tables']['students']['Row']
 type UntypedSupabase = {
   from: (table: string) => any
+  rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: any; error: unknown }>
 }
 
 const untypedSupabase = supabase as unknown as UntypedSupabase
@@ -110,27 +111,6 @@ function mapSlot(row: SlotRow): Slot {
   }
 }
 
-function mapBooking(row: BookingRow): Booking {
-  return {
-    id: row.id,
-    bookingGroupId: row.booking_group_id ?? undefined,
-    schoolId: row.school_id,
-    slotId: row.slot_id,
-    instructorId: row.instructor_id,
-    branchId: row.branch_id,
-    studentId: row.student_id,
-    studentName: row.student_name,
-    studentPhone: row.student_phone,
-    studentEmail: row.student_email,
-    status: row.status,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    rescheduledAt: row.rescheduled_at ?? undefined,
-    notes: row.notes ?? undefined,
-    comment: row.comment ?? undefined,
-  }
-}
-
 export interface SupabaseBookingBundle {
   booking: Booking
   school: School | null
@@ -198,13 +178,37 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
   }
 }
 
+function mapBookingLike(row: any): Booking {
+  return {
+    id: row.id,
+    bookingGroupId: row.booking_group_id ?? undefined,
+    schoolId: row.school_id,
+    slotId: row.slot_id,
+    instructorId: row.instructor_id,
+    branchId: row.branch_id,
+    studentId: row.student_id,
+    studentName: row.student_name,
+    studentPhone: row.student_phone ?? '',
+    studentEmail: row.student_email ?? '',
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    rescheduledAt: row.rescheduled_at ?? undefined,
+    notes: row.notes ?? undefined,
+    comment: row.comment ?? undefined,
+  }
+}
+
 export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBundle | null> {
   const publicBundle = await getPublicSchoolBundle(slug)
   if (!publicBundle) return null
 
+  const adminPassword = getAccessPassword('admin')
+  if (!adminPassword) throw new Error('Войдите в админку заново.')
+
   const [studentsResult, bookingsResult] = await Promise.all([
     supabase.from('students').select('*').eq('school_id', publicBundle.school.id).order('created_at', { ascending: false }),
-    supabase.from('bookings').select('*').eq('school_id', publicBundle.school.id).order('created_at', { ascending: false }),
+    untypedSupabase.rpc('public_admin_list_bookings', { p_school_id: publicBundle.school.id, p_staff_password: adminPassword }),
   ])
 
   if (studentsResult.error) throw studentsResult.error
@@ -213,37 +217,63 @@ export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBun
   return {
     ...publicBundle,
     students: studentsResult.data.map(mapStudent),
-    bookings: bookingsResult.data.map(mapBooking),
+    bookings: (bookingsResult.data ?? []).map(mapBookingLike),
   }
 }
 
 export async function getPublicInstructorBundle(token: string): Promise<PublicInstructorBundle | null> {
-  const { data: instructorRow, error: instructorError } = await supabase
-    .from('instructors')
-    .select('*')
-    .eq('token', token)
-    .maybeSingle()
+  const { data, error } = await untypedSupabase.rpc('public_get_instructor_schedule', { p_token: token })
+  if (error) throw error
+  const rows = data ?? []
+  const first = rows[0]
+  if (!first) return null
 
-  if (instructorError) throw instructorError
-  if (!instructorRow) return null
+  const instructor = mapInstructor({
+    id: first.instructor_id,
+    school_id: first.instructor_school_id,
+    branch_id: first.instructor_branch_id,
+    name: first.instructor_name,
+    phone: first.instructor_phone,
+    email: '',
+    token,
+    bio: first.instructor_bio,
+    experience: first.instructor_experience,
+    is_active: first.instructor_is_active,
+    categories: first.instructor_categories,
+    avatar_initials: first.instructor_avatar_initials,
+    avatar_color: first.instructor_avatar_color,
+    car: first.instructor_car,
+    transmission: first.instructor_transmission,
+    created_at: '',
+    updated_at: '',
+  })
 
-  const instructor = mapInstructor(instructorRow)
-
-  const [branchResult, slotsResult, bookingsResult] = await Promise.all([
-    supabase.from('branches').select('*').eq('id', instructor.branchId).maybeSingle(),
-    supabase.from('slots').select('*').eq('instructor_id', instructor.id).order('date').order('time'),
-    supabase.from('bookings').select('*').eq('instructor_id', instructor.id).order('created_at', { ascending: false }),
-  ])
-
-  if (branchResult.error) throw branchResult.error
-  if (slotsResult.error) throw slotsResult.error
-  if (bookingsResult.error) throw bookingsResult.error
+  const branch = first.branch_id ? mapBranch({ id: first.branch_id, school_id: first.branch_school_id, name: first.branch_name, address: first.branch_address, phone: first.branch_phone, is_active: first.branch_is_active, created_at: '', updated_at: '' }) : null
+  const slots = rows.filter((row: any) => row.slot_id).map((row: any) => mapSlot({ id: row.slot_id, school_id: row.slot_school_id, instructor_id: row.slot_instructor_id, branch_id: row.slot_branch_id, date: row.slot_date, time: row.slot_time, duration: row.slot_duration, lesson_type: row.slot_lesson_type, status: row.slot_status, booking_id: row.slot_booking_id, created_at: row.slot_created_at, updated_at: '' }))
+  const bookings = rows.filter((row: any) => row.booking_id).map((row: any) => mapBookingLike({
+    id: row.booking_id,
+    booking_group_id: row.booking_group_id,
+    school_id: row.booking_school_id,
+    slot_id: row.booking_slot_id,
+    instructor_id: row.booking_instructor_id,
+    branch_id: row.booking_branch_id,
+    student_id: row.booking_student_id,
+    student_name: row.booking_student_name,
+    student_phone: '',
+    student_email: '',
+    status: row.booking_status,
+    created_at: row.booking_created_at,
+    updated_at: row.booking_updated_at,
+    rescheduled_at: row.booking_rescheduled_at,
+    notes: null,
+    comment: null,
+  }))
 
   return {
     instructor,
-    branch: branchResult.data ? mapBranch(branchResult.data) : null,
-    slots: (slotsResult.data ?? []).map(mapSlot),
-    bookings: (bookingsResult.data ?? []).map(mapBooking),
+    branch,
+    slots,
+    bookings,
   }
 }
 
@@ -308,32 +338,18 @@ export async function getBookingByIdFromSupabase(bookingId: string): Promise<Sup
     return null
   }
 
-  const { data: bookingRow, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('id', bookingId)
-    .single()
+  const group = await getBookingGroupFromSupabase(bookingId)
+  return group[0] ?? null
+}
 
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    throw error
-  }
-
-  const [schoolResult, branchResult, instructorResult, slotResult, studentResult] = await Promise.all([
-    supabase.from('schools').select('*').eq('id', bookingRow.school_id).single(),
-    supabase.from('branches').select('*').eq('id', bookingRow.branch_id).single(),
-    supabase.from('instructors').select('*').eq('id', bookingRow.instructor_id).single(),
-    supabase.from('slots').select('*').eq('id', bookingRow.slot_id).single(),
-    supabase.from('students').select('*').eq('id', bookingRow.student_id).single(),
-  ])
-
+function mapBookingBundleRow(row: any): SupabaseBookingBundle {
   return {
-    booking: mapBooking(bookingRow),
-    school: schoolResult.data ? mapSchool(schoolResult.data) : null,
-    branch: branchResult.data ? mapBranch(branchResult.data) : null,
-    instructor: instructorResult.data ? mapInstructor(instructorResult.data) : null,
-    slot: slotResult.data ? mapSlot(slotResult.data) : null,
-    student: studentResult.data ? mapStudent(studentResult.data) : null,
+    booking: mapBookingLike(row),
+    school: row.school_id ? mapSchool({ id: row.school_id, name: row.school_name, slug: row.school_slug, description: row.school_description, phone: row.school_phone, email: row.school_email, address: row.school_address, logo_url: row.school_logo_url, primary_color: row.school_primary_color, booking_limit_enabled: row.school_booking_limit_enabled, max_active_bookings_per_student: row.school_max_active_bookings_per_student, branch_selection_mode: row.school_branch_selection_mode, max_slots_per_booking: row.school_max_slots_per_booking, default_lesson_duration: row.school_default_lesson_duration, enabled_category_codes: row.school_enabled_category_codes, is_active: row.school_is_active, created_at: row.school_created_at, updated_at: row.school_updated_at }) : null,
+    branch: row.branch_id ? mapBranch({ id: row.branch_id, school_id: row.branch_school_id, name: row.branch_name, address: row.branch_address, phone: row.branch_phone, is_active: row.branch_is_active, created_at: '', updated_at: '' }) : null,
+    instructor: row.instructor_id ? mapInstructor({ id: row.instructor_id, school_id: row.instructor_school_id, branch_id: row.instructor_branch_id, name: row.instructor_name, phone: row.instructor_phone, email: row.instructor_email, token: '', bio: row.instructor_bio, experience: row.instructor_experience, is_active: row.instructor_is_active, categories: row.instructor_categories, avatar_initials: row.instructor_avatar_initials, avatar_color: row.instructor_avatar_color, car: row.instructor_car, transmission: row.instructor_transmission, created_at: '', updated_at: '' }) : null,
+    slot: row.slot_id ? mapSlot({ id: row.slot_id, school_id: row.slot_school_id, instructor_id: row.slot_instructor_id, branch_id: row.slot_branch_id, date: row.slot_date, time: row.slot_time, duration: row.slot_duration, lesson_type: row.slot_lesson_type, status: row.slot_status, booking_id: row.slot_booking_id, created_at: row.slot_created_at, updated_at: '' }) : null,
+    student: row.student_id ? mapStudent({ id: row.student_id, school_id: row.student_school_id, name: row.student_name, phone: row.student_phone, normalized_phone: row.student_phone, email: row.student_email, password_hash: null, avatar_url: null, assigned_branch_id: null, assigned_instructor_id: null, category_codes: null, training_stage: null, group_name: null, training_start_date: null, driving_start_date: null, training_end_date: null, driving_end_date: null, branch_change_requested_at: null, branch_change_note: null, created_at: row.created_at, updated_at: row.updated_at }) : null,
   }
 }
 
@@ -342,54 +358,11 @@ export async function getBookingGroupFromSupabase(bookingId: string): Promise<Su
     return []
   }
 
-  const first = await getBookingByIdFromSupabase(bookingId)
-  if (!first) return []
-
-  const groupId = first.booking.bookingGroupId
-  if (!groupId) return [first]
-
-  const { data: bookingRows, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('booking_group_id', groupId)
-    .order('created_at', { ascending: true })
-
+  const { data, error } = await untypedSupabase.rpc('public_get_booking_group', { p_booking_id: bookingId })
   if (error) throw error
-  if (!bookingRows || bookingRows.length <= 1) return [first]
-
-  const schoolId = first.booking.schoolId
-  const branchIds = [...new Set(bookingRows.map((row) => row.branch_id))]
-  const instructorIds = [...new Set(bookingRows.map((row) => row.instructor_id))]
-  const slotIds = [...new Set(bookingRows.map((row) => row.slot_id))]
-  const studentIds = [...new Set(bookingRows.map((row) => row.student_id))]
-
-  const [schoolResult, branchesResult, instructorsResult, slotsResult, studentsResult] = await Promise.all([
-    supabase.from('schools').select('*').eq('id', schoolId).single(),
-    supabase.from('branches').select('*').in('id', branchIds),
-    supabase.from('instructors').select('*').in('id', instructorIds),
-    supabase.from('slots').select('*').in('id', slotIds),
-    supabase.from('students').select('*').in('id', studentIds),
-  ])
-
-  const school = schoolResult.data ? mapSchool(schoolResult.data) : first.school
-  const branches = new Map((branchesResult.data ?? []).map((row) => [row.id, mapBranch(row)]))
-  const instructors = new Map((instructorsResult.data ?? []).map((row) => [row.id, mapInstructor(row)]))
-  const slots = new Map((slotsResult.data ?? []).map((row) => [row.id, mapSlot(row)]))
-  const students = new Map((studentsResult.data ?? []).map((row) => [row.id, mapStudent(row)]))
-
-  return bookingRows
-    .map((row) => {
-      const booking = mapBooking(row)
-      return {
-        booking,
-        school,
-        branch: branches.get(booking.branchId) ?? null,
-        instructor: instructors.get(booking.instructorId) ?? null,
-        slot: slots.get(booking.slotId) ?? null,
-        student: students.get(booking.studentId ?? '') ?? null,
-      }
-    })
-    .sort((left, right) => {
+  return (data ?? [])
+    .map(mapBookingBundleRow)
+    .sort((left: SupabaseBookingBundle, right: SupabaseBookingBundle) => {
       const leftTime = left.slot ? new Date(`${left.slot.date}T${left.slot.time}:00`).getTime() : 0
       const rightTime = right.slot ? new Date(`${right.slot.date}T${right.slot.time}:00`).getTime() : 0
       return leftTime - rightTime

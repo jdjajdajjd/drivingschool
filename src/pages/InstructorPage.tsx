@@ -59,7 +59,7 @@ function Section({
             <div key={booking.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-stone-900">{booking.studentName}</p>
-                <p className="text-sm text-stone-500">{formatPhone(booking.studentPhone)}</p>
+                {booking.studentPhone ? <p className="text-sm text-stone-500">{formatPhone(booking.studentPhone)}</p> : null}
               </div>
 
               <div className="space-y-1 text-sm text-stone-500 md:text-right">

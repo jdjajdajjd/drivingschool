@@ -295,7 +295,7 @@ function seedDemoProgress(): void {
       schoolId: SCHOOL_ID,
       theoryTopicsTotal: THEORY_TOPICS.length,
       theoryTopicsCompleted: theoryCompleted,
-      drivingHoursTotal: 56,
+      drivingHoursTotal: 0,
       drivingHoursCompleted: hoursCompleted,
       internalExamPassed: idx % 3 !== 0,
       internalExamDate: idx % 3 !== 0 ? format(addDays(new Date(), -7 + idx), 'yyyy-MM-dd') : null,

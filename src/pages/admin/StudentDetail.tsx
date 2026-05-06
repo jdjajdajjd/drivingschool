@@ -1,5 +1,5 @@
 import { ArrowLeft01Icon, Calendar03Icon, CancelCircleIcon, Refresh03Icon } from '@hugeicons/core-free-icons'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -23,8 +23,9 @@ import { cancelBooking, completeBooking, getBookingsByStudent } from '../../serv
 import { getStudentById, getStudentStats, updateStudentAdminConfirmed } from '../../services/studentService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import type { StudentDocumentStatus, StudentDocumentType, StudentRequestStatus, TrainingStage } from '../../types'
-import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, saveStudentProgressAdminConfirmed, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocumentAdminConfirmed, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
+import type { StudentDocumentStatus, StudentDocumentType, StudentRequest, StudentRequestStatus, TrainingStage } from '../../types'
+import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, refreshStudentRequestsFromSupabase, saveStudentProgressAdminConfirmed, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocumentAdminConfirmed, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
+import { isSupabaseConfigured } from '../../lib/supabase'
 import { trainingStageLabels } from '../student/studentUtils'
 
 const trainingStageOptions: TrainingStage[] = ['theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed']
@@ -38,6 +39,8 @@ export function AdminStudentDetail() {
   const { showToast } = useToast()
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null)
   const [completeBookingId, setCompleteBookingId] = useState<string | null>(null)
+  const [requestRows, setRequestRows] = useState<StudentRequest[]>([])
+  const [requestsLoading, setRequestsLoading] = useState(false)
   const [, setVersion] = useState(0)
 
   const student = studentId ? getStudentById(studentId) : null
@@ -46,9 +49,25 @@ export function AdminStudentDetail() {
   const history = useMemo(() => (student ? getBookingsByStudent(student.id) : []), [student])
   const documents = student ? loadStudentDocuments(student.id) : []
   const progress = student ? loadStudentProgress(student.id) : null
-  const requests = student ? loadStudentRequests(student.schoolId).filter((request) => request.studentId === student.id) : []
+  const requests = student ? requestRows.filter((request) => request.studentId === student.id) : []
   const instructors = student ? db.instructors.bySchool(student.schoolId).filter((instructor) => instructor.isActive) : []
   const branches = student ? db.branches.bySchool(student.schoolId).filter((branch) => branch.isActive) : []
+
+  useEffect(() => {
+    if (!student) {
+      setRequestRows([])
+      return
+    }
+
+    setRequestRows(loadStudentRequests(student.schoolId))
+    if (!isSupabaseConfigured()) return
+
+    setRequestsLoading(true)
+    void refreshStudentRequestsFromSupabase(student.schoolId)
+      .then((requests) => setRequestRows(requests))
+      .catch((error) => showToast(error instanceof Error ? error.message : 'Не удалось загрузить запросы ученика.', 'error'))
+      .finally(() => setRequestsLoading(false))
+  }, [student?.id, student?.schoolId])
 
   async function updateStudentPatch(patch: Partial<NonNullable<typeof student>>): Promise<void> {
     if (!student) return
@@ -95,6 +114,7 @@ export function AdminStudentDetail() {
       showToast(result.error ?? 'Не удалось обновить статус запроса.', 'error')
       return
     }
+    setRequestRows(result.requests ?? loadStudentRequests(student.schoolId))
     setVersion((value) => value + 1)
     showToast('Статус запроса обновлён.', 'success')
   }
@@ -243,7 +263,9 @@ export function AdminStudentDetail() {
         </Section>
 
         <Section title="Запросы ученика" description="Запросы переноса/отмены без автоматического изменения записи.">
-          {requests.length === 0 ? (
+          {requestsLoading ? (
+            <EmptyState title="Загружаем запросы" description="Проверяем актуальные данные в Supabase." />
+          ) : requests.length === 0 ? (
             <EmptyState title="Запросов нет" description="Когда ученик попросит перенос или отмену, запрос появится здесь." />
           ) : (
             <div className="space-y-3">

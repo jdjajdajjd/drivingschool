@@ -839,6 +839,15 @@ set search_path = public
 as $$
 begin
   perform public.private_assert_admin_password(p_staff_password);
+  if exists (
+    select 1
+    from jsonb_array_elements(coalesce(p_documents, '[]'::jsonb)) as document
+    where document->>'type' not in ('passport', 'medical_certificate', 'snils', 'contract', 'photo', 'state_fee')
+       or document->>'status' not in ('missing', 'pending', 'provided', 'approved', 'rejected')
+       or not exists (select 1 from public.students where id = document->>'student_id')
+  ) then
+    raise exception 'Student document payload is invalid.';
+  end if;
   insert into public.student_documents (student_id, type, status, updated_at)
   select
     document->>'student_id',
@@ -899,6 +908,16 @@ begin
       and school_id = p_school_id
   ) then
     raise exception 'Student not found.';
+  end if;
+
+  if p_booking_id is not null and not exists (
+    select 1
+    from public.bookings
+    where id = p_booking_id
+      and student_id = p_student_id
+      and school_id = p_school_id
+  ) then
+    raise exception 'Booking not found.';
   end if;
 
   insert into public.student_requests (
@@ -2396,10 +2415,6 @@ create policy "Public can read slots"
   on public.slots for select
   using (true);
 
-create policy "Public can read bookings"
-  on public.bookings for select
-  using (true);
-
 create or replace function public.public_admin_update_student(
   p_student_id text,
   p_school_id text,
@@ -2517,6 +2532,16 @@ begin
     raise exception 'Student not found.';
   end if;
 
+  if p_booking_id is not null and not exists (
+    select 1
+    from public.bookings
+    where id = p_booking_id
+      and student_id = p_student_id
+      and school_id = p_school_id
+  ) then
+    raise exception 'Booking not found.';
+  end if;
+
   insert into public.student_requests (
     id, school_id, student_id, booking_id, type, status, reason,
     preferred_time, comment, created_at, updated_at
@@ -2531,12 +2556,82 @@ begin
 end;
 $$;
 
+create or replace function public.public_get_booking_group(p_booking_id text)
+returns table (
+  id text, booking_group_id text, school_id text, slot_id text, instructor_id text, branch_id text, student_id text,
+  student_name text, student_phone text, student_email text, status text, notes text, comment text, rescheduled_at timestamptz, created_at timestamptz, updated_at timestamptz,
+  school_name text, school_slug text, school_description text, school_phone text, school_email text, school_address text, school_logo_url text, school_primary_color text,
+  school_booking_limit_enabled boolean, school_max_active_bookings_per_student integer, school_branch_selection_mode text, school_max_slots_per_booking integer, school_default_lesson_duration integer, school_enabled_category_codes text[], school_is_active boolean, school_created_at timestamptz, school_updated_at timestamptz,
+  branch_school_id text, branch_name text, branch_address text, branch_phone text, branch_is_active boolean,
+  instructor_school_id text, instructor_branch_id text, instructor_name text, instructor_phone text, instructor_email text, instructor_bio text, instructor_experience integer, instructor_is_active boolean, instructor_categories text[], instructor_avatar_initials text, instructor_avatar_color text, instructor_car text, instructor_transmission text,
+  slot_school_id text, slot_instructor_id text, slot_branch_id text, slot_date date, slot_time time, slot_duration integer, slot_lesson_type text, slot_status text, slot_booking_id text, slot_created_at timestamptz,
+  student_school_id text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  with first_booking as (
+    select b.booking_group_id from public.bookings b where b.id = p_booking_id
+  )
+  select b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id,
+    b.student_name, b.student_phone, b.student_email, b.status, b.notes, b.comment, b.rescheduled_at, b.created_at, b.updated_at,
+    s.name, s.slug, s.description, s.phone, s.email, s.address, s.logo_url, s.primary_color,
+    s.booking_limit_enabled, s.max_active_bookings_per_student, s.branch_selection_mode, s.max_slots_per_booking, s.default_lesson_duration, s.enabled_category_codes, s.is_active, s.created_at, s.updated_at,
+    br.school_id, br.name, br.address, br.phone, br.is_active,
+    i.school_id, i.branch_id, i.name, i.phone, i.email, i.bio, i.experience, i.is_active, i.categories, i.avatar_initials, i.avatar_color, i.car, i.transmission,
+    sl.school_id, sl.instructor_id, sl.branch_id, sl.date, sl.time, sl.duration, sl.lesson_type, sl.status, sl.booking_id, sl.created_at,
+    st.school_id
+  from public.bookings b
+  join first_booking fb on (b.id = p_booking_id or (fb.booking_group_id is not null and b.booking_group_id = fb.booking_group_id))
+  join public.schools s on s.id = b.school_id
+  join public.branches br on br.id = b.branch_id
+  join public.instructors i on i.id = b.instructor_id
+  join public.slots sl on sl.id = b.slot_id
+  join public.students st on st.id = b.student_id
+  order by sl.date, sl.time;
+$$;
+
+create or replace function public.public_get_instructor_schedule(p_token text)
+returns table (
+  instructor_id text, instructor_school_id text, instructor_branch_id text, instructor_name text, instructor_phone text, instructor_bio text, instructor_experience integer, instructor_is_active boolean, instructor_categories text[], instructor_avatar_initials text, instructor_avatar_color text, instructor_car text, instructor_transmission text,
+  branch_id text, branch_school_id text, branch_name text, branch_address text, branch_phone text, branch_is_active boolean,
+  slot_id text, slot_school_id text, slot_instructor_id text, slot_branch_id text, slot_date date, slot_time time, slot_duration integer, slot_lesson_type text, slot_status text, slot_booking_id text, slot_created_at timestamptz,
+  booking_id text, booking_group_id text, booking_school_id text, booking_slot_id text, booking_instructor_id text, booking_branch_id text, booking_student_id text, booking_student_name text, booking_status text, booking_created_at timestamptz, booking_updated_at timestamptz, booking_rescheduled_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select i.id, i.school_id, i.branch_id, i.name, i.phone, i.bio, i.experience, i.is_active, i.categories, i.avatar_initials, i.avatar_color, i.car, i.transmission,
+    br.id, br.school_id, br.name, br.address, br.phone, br.is_active,
+    sl.id, sl.school_id, sl.instructor_id, sl.branch_id, sl.date, sl.time, sl.duration, sl.lesson_type, sl.status, sl.booking_id, sl.created_at,
+    b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id, b.student_name, b.status, b.created_at, b.updated_at, b.rescheduled_at
+  from public.instructors i
+  left join public.branches br on br.id = i.branch_id
+  left join public.slots sl on sl.instructor_id = i.id
+  left join public.bookings b on b.slot_id = sl.id and b.instructor_id = i.id
+  where i.token = p_token
+  order by sl.date, sl.time, b.created_at desc;
+$$;
+
+create or replace function public.public_admin_list_bookings(p_school_id text, p_staff_password text)
+returns setof public.bookings
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+  return query select * from public.bookings where school_id = p_school_id order by created_at desc;
+end;
+$$;
+
 grant usage on schema public to anon, authenticated;
 grant select on public.schools to anon, authenticated;
 grant select on public.branches to anon, authenticated;
 grant select on public.instructors to anon, authenticated;
 grant select on public.slots to anon, authenticated;
-grant select on public.bookings to anon, authenticated;
 grant execute on function public.public_create_booking(text, text, text, text[]) to anon, authenticated;
 grant execute on function public.public_cancel_booking(text, text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
@@ -2557,6 +2652,9 @@ grant execute on function public.public_upsert_student_documents(jsonb, text) to
 grant execute on function public.public_admin_list_student_requests(text, text) to anon, authenticated;
 grant execute on function public.public_create_student_request(text, text, text, text, text, text, text, text, timestamptz, timestamptz) to anon, authenticated;
 grant execute on function public.public_update_student_request_status(text, text, text, timestamptz, text) to anon, authenticated;
+grant execute on function public.public_get_booking_group(text) to anon, authenticated;
+grant execute on function public.public_get_instructor_schedule(text) to anon, authenticated;
+grant execute on function public.public_admin_list_bookings(text, text) to anon, authenticated;
 grant execute on function public.public_update_student_profile(text, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.public_login_student(text, text, text) to anon, authenticated;
 grant execute on function public.public_request_branch_change(text, text, text) to anon, authenticated;
