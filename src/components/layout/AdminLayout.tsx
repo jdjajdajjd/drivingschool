@@ -5,6 +5,8 @@ import { AdminSidebar } from './AdminSidebar'
 import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
+import { db } from '../../services/storage'
+import { seedIfNeeded } from '../../services/seed'
 
 const Menu = createHugeIcon(Menu01Icon)
 const Car = createHugeIcon(Car03Icon)
@@ -16,7 +18,14 @@ export function AdminLayout() {
 
   useEffect(() => {
     let disposed = false
+    seedIfNeeded()
     syncSupabaseSchoolToLocalDb('virazh')
+      .then(() => {
+        const school = db.schools.bySlug('virazh')
+        if (school && (db.students.bySchool(school.id).length === 0 || db.slots.bySchool(school.id).length === 0)) {
+          seedIfNeeded({ force: true })
+        }
+      })
       .catch(() => undefined)
       .finally(() => {
         if (!disposed) setReady(true)

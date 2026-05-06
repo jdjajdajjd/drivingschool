@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft01Icon, ArrowRight01Icon, Car03Icon, CheckmarkCircle02Icon, Login03Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, ArrowRight01Icon, Building05Icon, CheckmarkCircle02Icon, Login03Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
@@ -17,7 +17,7 @@ void React
 
 const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const CarFront = createHugeIcon(Car03Icon)
+const Building = createHugeIcon(Building05Icon)
 const Check = createHugeIcon(CheckmarkCircle02Icon)
 const Login = createHugeIcon(Login03Icon)
 const UserRound = createHugeIcon(User03Icon)
@@ -52,6 +52,7 @@ function cleanNamePart(value: string) {
 
 export default function StudentRegisterPage() {
   const navigate = useNavigate()
+  const { slug = 'virazh' } = useParams<{ slug?: string }>()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [existingProfile, setExistingProfile] = useState<StudentProfile | null>(null)
   const [step, setStep] = useState<RegisterStep>('lastName')
@@ -65,7 +66,7 @@ export default function StudentRegisterPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const school = useMemo(() => db.schools.bySlug('virazh') ?? db.schools.all()[0] ?? fallbackSchool, [])
+  const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
   const currentIndex = stepIndex(step)
   const progress = step === 'success' ? 100 : Math.round(((currentIndex + 1) / steps.length) * 100)
   const fullName = [lastName, first, middleName].map((part) => part.trim()).filter(Boolean).join(' ')
@@ -209,15 +210,15 @@ export default function StudentRegisterPage() {
     <div className="min-h-dvh overflow-hidden bg-[var(--page-bg)] text-[var(--text)]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-5 pb-6 pt-5">
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="grid h-11 w-11 place-items-center rounded-[18px] bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
-              <CarFront size={22} />
+          <button className="flex items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
+              {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={22} />}
             </div>
-            <div>
-              <p className="text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">vroom</p>
+            <div className="min-w-0">
+              <p className="max-w-[150px] truncate text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">{school.name}</p>
               <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">кабинет ученика</p>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
             {existingProfile ? (
@@ -245,9 +246,9 @@ export default function StudentRegisterPage() {
                 {step === 'success' ? 'Готово' : `${progress}% заполнено`}
               </div>
               {step !== 'success' ? (
-                <button className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-muted)] px-3.5 text-[12px] font-extrabold text-[var(--text-muted)]" style={{ minHeight: 40 }} onClick={step === 'lastName' ? () => navigate('/') : goBack}>
+                <button className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-muted)] px-3.5 text-[12px] font-extrabold text-[var(--text-muted)]" style={{ minHeight: 40 }} onClick={step === 'lastName' ? () => navigate(`/school/${school.slug}/login`) : goBack}>
                   <ArrowLeft size={14} />
-                  {step === 'lastName' ? 'Главная' : 'Назад'}
+                  {step === 'lastName' ? 'Вход' : 'Назад'}
                 </button>
               ) : null}
             </div>

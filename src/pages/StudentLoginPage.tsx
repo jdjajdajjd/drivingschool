@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowRight01Icon, Car03Icon } from '@hugeicons/core-free-icons'
+import React, { useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowRight01Icon, Building05Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
@@ -9,18 +9,34 @@ import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { db } from '../services/storage'
+import type { School } from '../types'
 
 void React
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const CarFront = createHugeIcon(Car03Icon)
+const Building = createHugeIcon(Building05Icon)
+
+const fallbackSchool: School = {
+  id: 'school-virazh',
+  name: 'Автошкола «Вираж»',
+  slug: 'virazh',
+  description: '',
+  phone: '',
+  email: '',
+  address: '',
+  createdAt: '',
+  isActive: true,
+}
 
 export default function StudentLoginPage() {
   const navigate = useNavigate()
+  const { slug = 'virazh' } = useParams<{ slug?: string }>()
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
 
   async function submit() {
     setError('')
@@ -36,7 +52,7 @@ export default function StudentLoginPage() {
     setSubmitting(true)
     try {
       const result = isSupabaseConfigured()
-        ? await loginStudentProfileFromSupabase('school-virazh', phone, password)
+        ? await loginStudentProfileFromSupabase(school.id, phone, password)
         : verifyStudentCredentials(phone, password)
       setSubmitting(false)
       if (!result) {
@@ -60,18 +76,18 @@ export default function StudentLoginPage() {
     <div className="min-h-dvh bg-[var(--page-bg)] text-[var(--text)]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-5 pb-6 pt-5">
         <header className="flex items-center justify-between">
-          <button className="flex items-center gap-2.5 text-left" onClick={() => navigate('/')}>
-            <div className="grid h-11 w-11 place-items-center rounded-[18px] bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
-              <CarFront size={22} />
+          <button className="flex items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
+              {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={22} />}
             </div>
-            <div>
-              <p className="text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">vroom</p>
-              <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">вход ученика</p>
+            <div className="min-w-0">
+              <p className="max-w-[150px] truncate text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">{school.name}</p>
+              <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">кабинет ученика</p>
             </div>
           </button>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate('/student/register')}>
+            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}/register`)}>
               Регистрация
             </button>
           </div>
@@ -80,11 +96,11 @@ export default function StudentLoginPage() {
         <section className="flex flex-1 flex-col justify-center py-8">
           <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]" onKeyDown={handleKeyDown}>
             <div className="mb-5 inline-flex rounded-full bg-[var(--accent-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--accent)]">
-              Телефон + пароль
+              Вход ученика
             </div>
             <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Войдите в кабинет</h1>
             <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">
-              Используйте телефон и пароль, который задали при регистрации.
+              Здесь будут расписание, занятия, документы и сообщения автошколы.
             </p>
 
             <div className="mt-6 space-y-4">

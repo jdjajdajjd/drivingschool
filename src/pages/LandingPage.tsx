@@ -17,14 +17,14 @@ const entryPoints = [
     title: 'Войти в кабинет',
     description: 'Расписание, занятия, документы и сообщения автошколы.',
     icon: ShieldCheck,
-    path: '/login',
+    path: '/school/virazh/login',
     accent: true,
   },
   {
     title: 'Зарегистрироваться',
     description: 'Создайте кабинет ученика по телефону за пару минут.',
     icon: Car,
-    path: '/student/register',
+    path: '/school/virazh/register',
     accent: false,
   },
   {
@@ -110,11 +110,11 @@ export function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
         >
-          <h1 className="t-hero" style={{ maxWidth: 480 }}>
-            Кабинет<br />ученика
+          <h1 className="t-hero" style={{ maxWidth: 520 }}>
+            Онлайн-запись<br />для автошкол
           </h1>
-          <p className="t-body mt-4" style={{ maxWidth: 420 }}>
-            Войдите или зарегистрируйтесь, чтобы видеть расписание, занятия и документы своей автошколы.
+          <p className="t-body mt-4" style={{ maxWidth: 470 }}>
+            Ученики выбирают свободное время сами. Администратор видит расписание, инструкторов, записи и учеников в кабинете автошколы.
           </p>
         </motion.section>
 
@@ -154,7 +154,7 @@ export function LandingPage() {
           })}
         </section>
 
-        {/* Default school quick card */}
+        {/* Demo school quick card */}
         <motion.div
           className="card-section p-5"
           initial={{ opacity: 0, y: 12 }}
@@ -164,6 +164,7 @@ export function LandingPage() {
           <div className="flex items-center gap-4 mb-5">
             <SchoolLogo school={defaultSchool} />
             <div className="flex-1 min-w-0">
+              <p className="t-micro mb-1">Демо-автошкола</p>
               <p className="t-subheading">{defaultSchool.name}</p>
               <p className="t-small mt-0.5">{defaultSchool.description}</p>
             </div>
@@ -172,7 +173,7 @@ export function LandingPage() {
             className="btn btn-primary btn-lg w-full"
             onClick={() => navigate(`/school/${defaultSchool.slug}`)}
           >
-            Войти как ученик
+            Открыть демо автошколы
             <ArrowRight size={17} />
           </button>
         </motion.div>
@@ -184,7 +185,7 @@ export function LandingPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          Запись на занятия доступна внутри кабинета ученика
+          Для теста админки: кнопка «Для персонала» открывает вход автошколы.
         </motion.p>
 
       </main>

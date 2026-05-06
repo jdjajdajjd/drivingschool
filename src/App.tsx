@@ -67,6 +67,9 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<StudentLoginPage />} />
+          <Route path="/auth" element={<Navigate to="/login" replace />} />
+          <Route path="/admin" element={<Navigate to={ADMIN_LOGIN_PATH} replace />} />
+          <Route path="/staff/login" element={<Navigate to={ADMIN_LOGIN_PATH} replace />} />
           <Route path="/student/login" element={<Navigate to="/login" replace />} />
           <Route path="/register" element={<Navigate to="/student/register" replace />} />
           <Route path="/dashboard" element={<Navigate to="/student" replace />} />
@@ -77,6 +80,8 @@ function App() {
           <Route path="/school" element={<Navigate to="/school/virazh" replace />} />
           <Route path="/school/:slug" element={<SchoolPage />} />
           <Route path="/school/:slug/book" element={<BookingFlowPage />} />
+          <Route path="/school/:slug/login" element={<StudentLoginPage />} />
+          <Route path="/school/:slug/register" element={<StudentRegisterPage />} />
           <Route path="/student/register" element={<StudentRegisterPage />} />
           <Route path="/student/book" element={<BookingFlowPage />} />
           <Route path="/student" element={<StudentPage />} />

@@ -238,9 +238,9 @@ const ACTIVE_MODULES: SchoolModule[] = [
   },
 ]
 
-export function seedIfNeeded(): void {
+export function seedIfNeeded(options: { force?: boolean } = {}): void {
   clearLocalDbWhenSupabaseConfigured()
-  if (db.isSeeded()) return
+  if (!options.force && db.isSeeded()) return
 
   db.reset()
 
