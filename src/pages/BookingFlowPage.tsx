@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Location01Icon, Refresh03Icon, Shield01Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Refresh03Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
@@ -13,7 +13,6 @@ import { StickyActionBar } from '../components/ui/StickyActionBar'
 import { Avatar } from '../components/ui/Avatar'
 import {
   BookingDetailsCard,
-  DayChipsScroller,
   InstructorCompactCard,
   SuccessHeader,
   SummaryCard,
@@ -39,7 +38,7 @@ import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { lessonTypeLabel } from './student/studentUtils'
 import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
-import { format, isSameDay, parseISO } from 'date-fns'
+import { addDays, format, isSameDay, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
 void React
@@ -49,9 +48,7 @@ const CalendarPlus = createHugeIcon(CalendarAdd01Icon)
 const Car = createHugeIcon(Car03Icon)
 const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
 const Clock3 = createHugeIcon(Clock01Icon)
-const Location = createHugeIcon(Location01Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
-const ShieldCheck = createHugeIcon(Shield01Icon)
 
 const ui = {
   surface: 'var(--surface)',
@@ -167,78 +164,170 @@ function BookingMiniSummary({
   )
 }
 
-function SlotStatusBadge({ mine, busy }: { mine: boolean; busy: boolean }) {
-  const baseStyle = { borderRadius: 999, padding: '4px 10px', fontSize: 11, lineHeight: '14px', fontWeight: 700 } as const
-  if (mine) return <span style={{ ...baseStyle, background: ui.blueSoft, color: ui.accent }}>Вы записаны</span>
-  if (busy) return <span style={{ ...baseStyle, background: ui.surfaceMuted, color: ui.textSoft }}>Занято</span>
-  return <span style={{ ...baseStyle, background: ui.greenSoft, color: ui.green }}>Свободно</span>
-}
 
-function slotInitials(name?: string): string {
-  return (name ?? 'Инструктор').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'И'
-}
-
-function FastSlotCard({
-  item,
-  selected,
-  submitting,
-  onSelect,
+function VroomSchedulerPicker({
+  days,
+  selectedDate,
+  selectedSlotId,
+  slotsByDate,
+  refreshing,
+  lastRefreshAt,
+  onSelectDate,
+  onSelectSlot,
+  onRefresh,
 }: {
-  item: SlotCardItem
-  selected: boolean
-  submitting: boolean
-  onSelect: (slot: Slot) => void
+  days: string[]
+  selectedDate: Date | null
+  selectedSlotId: string
+  slotsByDate: Record<string, SlotCardItem[]>
+  refreshing: boolean
+  lastRefreshAt: Date | null
+  onSelectDate: (date: Date) => void
+  onSelectSlot: (slot: Slot) => void
+  onRefresh: () => void
 }) {
-  const busy = item.slot.status !== 'available' && !item.mine
-  const disabled = busy || submitting
+  const baseDate = selectedDate ?? (days[0] ? parseISO(days[0]) : new Date())
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(baseDate, index))
+  const selectedDateKey = selectedDate ? isoDate(selectedDate) : ''
+  const selectedItems = selectedDateKey ? slotsByDate[selectedDateKey] ?? [] : []
+  const freeCount = selectedItems.filter((item) => item.slot.status === 'available' || item.mine).length
 
   return (
-    <motion.button
-      type="button"
-      disabled={disabled}
-      onClick={() => onSelect(item.slot)}
-      whileTap={disabled ? undefined : { scale: 0.98 }}
-      className="w-full overflow-hidden rounded-[22px] p-4 text-left transition disabled:opacity-70"
+    <div
+      className="overflow-hidden rounded-[28px] p-4"
       style={{
-        width: '100%',
-        maxWidth: '100%',
-        minHeight: 124,
-        boxSizing: 'border-box',
-        padding: 16,
-        borderRadius: 22,
         background: ui.surface,
-        border: `2px solid ${selected || item.mine ? ui.accent : ui.border}`,
+        border: `1px solid ${ui.border}`,
         boxShadow: ui.shadowCard,
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 20, lineHeight: '26px', fontWeight: 700, letterSpacing: '-0.02em', color: ui.text }}>{formatTimeRange(item.slot)}</p>
-          <p style={{ margin: 0, marginTop: 4, fontSize: 12, lineHeight: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: ui.textSoft }}>{lessonTypeLabel(item.slot)} · {item.slot.duration} минут</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[13px] font-semibold" style={{ color: ui.textSoft }}>Выберите дату и время</p>
+          <h3 className="mt-1 text-[24px] font-bold capitalize tracking-[-0.03em]" style={{ color: ui.text }}>
+            {format(baseDate, 'LLLL yyyy', { locale: ru })}
+          </h3>
         </div>
-        <SlotStatusBadge mine={item.mine} busy={busy} />
+        <button
+          type="button"
+          className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-[12px] font-semibold active:scale-[0.97]"
+          style={{ background: ui.surfaceSoft, color: ui.textMuted, border: `1px solid ${ui.border}` }}
+          onClick={onRefresh}
+        >
+          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+          Обновить
+        </button>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-        <div className="grid shrink-0 place-items-center overflow-hidden rounded-full text-[12px] font-bold" style={{ width: 34, height: 34, background: ui.blueSoft, color: ui.accent }}>
-          {item.instructor ? <img src={getInstructorPhoto(item.instructor)} alt={item.instructor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : slotInitials()}
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <p className="truncate" style={{ margin: 0, fontSize: 14, lineHeight: '18px', fontWeight: 700, color: ui.text }}>{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
-          <p className="truncate" style={{ margin: 0, marginTop: 2, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: ui.textMuted }}>{item.instructor?.car ?? 'Учебный автомобиль'}</p>
+
+      <div className="no-scrollbar -mx-4 mt-4 overflow-x-auto px-4">
+        <div className="flex min-w-max gap-2">
+          {weekDays.map((day) => {
+            const key = isoDate(day)
+            const active = selectedDateKey === key
+            const count = slotsByDate[key]?.filter((item) => item.slot.status === 'available' || item.mine).length ?? 0
+            const disabled = count === 0 && !active
+            return (
+              <motion.button
+                key={key}
+                type="button"
+                disabled={disabled}
+                whileTap={disabled ? undefined : { scale: 0.97 }}
+                onClick={() => onSelectDate(day)}
+                className="grid shrink-0 place-items-center text-center transition disabled:opacity-35"
+                style={{
+                  width: 54,
+                  minHeight: 78,
+                  borderRadius: 20,
+                  background: active ? ui.text : ui.surface,
+                  color: active ? ui.surface : ui.text,
+                  border: `1px solid ${active ? ui.text : ui.border}`,
+                  boxShadow: active ? '0 14px 30px rgba(0,0,0,0.18)' : 'none',
+                }}
+                aria-label={format(day, 'EEEE, d MMMM', { locale: ru })}
+              >
+                <span className="text-[11px] font-semibold uppercase" style={{ color: active ? ui.surface : ui.textSoft, opacity: active ? 0.74 : 1 }}>
+                  {format(day, 'EE', { locale: ru }).slice(0, 2)}
+                </span>
+                <span className="text-[21px] font-bold leading-6 tracking-[-0.02em]">{format(day, 'd')}</span>
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ background: count > 0 ? (active ? '#FFFFFF' : ui.green) : 'transparent' }}
+                />
+              </motion.button>
+            )
+          })}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, lineHeight: '16px', fontWeight: 500, color: ui.textSoft }}>
-        <Location size={14} className="shrink-0" style={{ color: ui.accent }} />
-        <span className="truncate">{item.branch?.name ?? 'Филиал'}</span>
-      </div>
-      {!busy ? (
-        <div className="grid place-items-center rounded-[15px] bg-[#2436D9] text-white" style={{ marginTop: 12, minHeight: 42, fontSize: 13, lineHeight: '16px', fontWeight: 700 }}>
-          {submitting && selected ? 'Записываем...' : selected ? 'Подтвердить запись' : 'Записаться'}
+
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] px-3 py-2" style={{ background: ui.surfaceSoft }}>
+        <div>
+          <p className="text-[15px] font-bold" style={{ color: ui.text }}>
+            {selectedDate ? format(selectedDate, 'd MMMM', { locale: ru }) : 'День не выбран'}
+          </p>
+          <p className="mt-0.5 text-[12px] font-medium" style={{ color: ui.textMuted }}>
+            {selectedDate ? `${freeCount} свободных окон` : 'Выберите день выше'}
+          </p>
         </div>
+        <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: ui.greenSoft, color: ui.green }}>
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: ui.green }} />
+          Онлайн
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
+        {selectedItems.length === 0 ? (
+          <div className="col-span-2 rounded-[20px] p-5 text-center" style={{ background: ui.surfaceSoft }}>
+            <p className="text-[15px] font-semibold" style={{ color: ui.text }}>На этот день окон нет</p>
+            <p className="mt-1 text-[13px] font-semibold" style={{ color: ui.textMuted }}>Сдвиньте дни выше или обновите расписание.</p>
+          </div>
+        ) : selectedItems.map((item) => {
+          const busy = item.slot.status !== 'available' && !item.mine
+          const active = selectedSlotId === item.slot.id
+          return (
+            <motion.button
+              key={item.slot.id}
+              type="button"
+              disabled={busy}
+              whileTap={busy ? undefined : { scale: 0.97 }}
+              onClick={() => onSelectSlot(item.slot)}
+              className="min-h-[112px] rounded-[20px] p-3 text-left transition disabled:opacity-45"
+              style={{
+                background: active ? ui.text : ui.surface,
+                border: `1px solid ${active ? ui.text : ui.border}`,
+                boxShadow: active ? '0 14px 30px rgba(0,0,0,0.16)' : 'none',
+              }}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[18px] font-bold tracking-[-0.02em]" style={{ color: active ? ui.surface : ui.text }}>
+                  {formatTimeRange(item.slot)}
+                </span>
+                {active ? <CheckCircle2 size={16} style={{ color: ui.surface }} /> : null}
+              </div>
+              <p className="mt-1 truncate text-[12px] font-semibold" style={{ color: active ? ui.surface : ui.textMuted, opacity: active ? 0.7 : 1 }}>
+                {lessonTypeLabel(item.slot)} · {item.slot.duration} мин
+              </p>
+              <p className="mt-3 truncate text-[13px] font-bold" style={{ color: active ? ui.surface : ui.text }}>
+                {item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}
+              </p>
+              <p className="mt-0.5 truncate text-[11px] font-medium" style={{ color: active ? ui.surface : ui.textSoft, opacity: active ? 0.62 : 1 }}>
+                {item.branch?.name ?? 'Филиал'}
+              </p>
+            </motion.button>
+          )
+        })}
+      </div>
+
+      {lastRefreshAt ? (
+        <p className="mt-3 flex items-center gap-1.5 text-[11px] font-bold" style={{ color: ui.textSoft }}>
+          <Clock3 size={12} /> Обновлено {format(lastRefreshAt, 'HH:mm:ss')}
+        </p>
       ) : null}
-    </motion.button>
+    </div>
   )
 }
+
 
 export function BookingFlowPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
@@ -349,7 +438,6 @@ export function BookingFlowPage() {
     return Array.from(new Set(futureSlots.map((slot) => slot.date))).slice(0, 7)
   }, [futureSlots])
 
-  const selectedDateKey = selectedDate ? isoDate(selectedDate) : ''
   const normalizedStudentPhone = normalizePhone(form.phone)
 
   // Instructors filtered by selected date
@@ -372,25 +460,37 @@ export function BookingFlowPage() {
       .filter((slot) => db.instructors.byId(slot.instructorId)?.isActive === true)
   }, [selectedDate, selectedInstructorId])
 
-  const slotsForSelectedDate = useMemo<SlotCardItem[]>(() => {
-    if (!school || !selectedDateKey) return []
+
+
+  const slotsByDate = useMemo<Record<string, SlotCardItem[]>>(() => {
+    if (!school) return {}
     const allBookings = db.bookings.bySchool(school.id)
     return db.slots.bySchool(school.id)
-      .filter((slot) => slot.date === selectedDateKey)
       .filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now())
       .filter((slot) => db.branches.byId(slot.branchId)?.isActive === true)
       .filter((slot) => db.instructors.byId(slot.instructorId)?.isActive === true)
-      .map((slot) => {
+      .reduce<Record<string, SlotCardItem[]>>((acc, slot) => {
         const booking = slot.bookingId ? allBookings.find((item) => item.id === slot.bookingId) ?? null : null
-        return {
+        const item: SlotCardItem = {
           slot,
           instructor: db.instructors.byId(slot.instructorId),
           branch: db.branches.byId(slot.branchId),
           mine: Boolean(booking && normalizedStudentPhone && booking.studentPhone === normalizedStudentPhone),
         }
-      })
-      .sort((left, right) => left.slot.time.localeCompare(right.slot.time))
-  }, [school, selectedDateKey, normalizedStudentPhone, slotsVersion])
+        acc[slot.date] = [...(acc[slot.date] ?? []), item].sort((left, right) => left.slot.time.localeCompare(right.slot.time))
+        return acc
+      }, {})
+  }, [school, normalizedStudentPhone, slotsVersion])
+
+  function handleRefreshSlots() {
+    if (!school) return
+    setRefreshingSlots(true)
+    void refreshPublicSlots(school.id).then(() => {
+      setSlotsVersion((current) => current + 1)
+      setLastSlotsRefreshAt(new Date())
+      setRefreshingSlots(false)
+    })
+  }
 
   function goBack() {
     if (step === 'date') navigate('/student')
@@ -631,72 +731,21 @@ export function BookingFlowPage() {
                 <p className="mt-2 text-[15px] font-medium leading-5" style={{ color: ui.textSoft }}>Нажмите свободный слот, чтобы записаться</p>
 
                 <div className="mt-5 space-y-4">
-                  <DayChipsScroller
+                  <VroomSchedulerPicker
                     days={availableDays}
-                    selectedDate={selectedDateKey}
-                    getCount={(date) => futureSlots.filter((slot) => slot.date === date).length}
-                    onSelect={(date) => {
-                      setSelectedDate(parseISO(date))
+                    selectedDate={selectedDate}
+                    selectedSlotId={selectedSlotId}
+                    slotsByDate={slotsByDate}
+                    refreshing={refreshingSlots}
+                    lastRefreshAt={lastSlotsRefreshAt}
+                    onSelectDate={(date) => {
+                      setSelectedDate(date)
                       setSelectedInstructorId('')
                       setSelectedSlotId('')
                     }}
+                    onSelectSlot={(slot) => void quickBook(slot)}
+                    onRefresh={handleRefreshSlots}
                   />
-
-                  <div className="rounded-[24px] p-4" style={{ background: ui.surface, border: `1px solid ${ui.border}` }}>
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[22px] font-bold tracking-[-0.02em]" style={{ color: ui.text }}>
-                          {selectedDate ? format(selectedDate, 'd MMMM', { locale: ru }) : 'Выберите день'}
-                        </p>
-                        <p className="mt-1 text-[14px] font-medium" style={{ color: ui.textSoft }}>
-                          {selectedDateKey
-                            ? `${slotsForSelectedDate.filter((item) => item.slot.status === 'available').length} свободных из ${slotsForSelectedDate.length}`
-                            : 'Покажем только актуальные окна'}
-                        </p>
-                      </div>
-                      <button
-                        className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-[12px] font-semibold active:scale-[0.97]"
-                        style={{ minHeight: 40, background: ui.blueSoft, color: ui.accent }}
-                        onClick={() => {
-                          if (!school) return
-                          setRefreshingSlots(true)
-                          void refreshPublicSlots(school.id).then(() => {
-                            setSlotsVersion((current) => current + 1)
-                            setLastSlotsRefreshAt(new Date())
-                            setRefreshingSlots(false)
-                          })
-                        }}
-                      >
-                        <RefreshCw size={13} className={refreshingSlots ? 'animate-spin' : ''} />
-                        Обновить
-                      </button>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 rounded-[16px] px-3 py-2 text-[13px] font-medium" style={{ background: ui.accentSoft, color: ui.accent }}>
-                      <ShieldCheck size={15} />
-                      Обновляем свободные места автоматически
-                    </div>
-                    <div className="mt-4 space-y-3">
-                      {slotsForSelectedDate.length === 0 ? (
-                        <div className="rounded-[20px] p-5 text-center" style={{ background: ui.surfaceSoft }}>
-                          <p className="text-[15px] font-semibold" style={{ color: ui.text }}>На этот день окон нет</p>
-                          <p className="mt-1 text-[13px] font-semibold" style={{ color: ui.textMuted }}>Выберите другой день выше.</p>
-                        </div>
-                      ) : slotsForSelectedDate.map((item) => (
-                        <FastSlotCard
-                          key={item.slot.id}
-                          item={item}
-                          selected={selectedSlotId === item.slot.id}
-                          submitting={submitting}
-                          onSelect={(slot) => void quickBook(slot)}
-                        />
-                      ))}
-                    </div>
-                    {lastSlotsRefreshAt ? (
-                      <p className="mt-3 flex items-center gap-1.5 text-[11px] font-bold" style={{ color: ui.textSoft }}>
-                        <Clock3 size={12} /> Обновлено {format(lastSlotsRefreshAt, 'HH:mm:ss')}
-                      </p>
-                    ) : null}
-                  </div>
                 </div>
 
                 <button className="mt-4 w-full rounded-[18px] px-5 py-3.5 text-[16px] font-semibold active:scale-[0.98]" style={{ background: ui.surface, border: `1px solid ${ui.border}`, color: ui.accent }} onClick={() => setStep('instructor')}>
