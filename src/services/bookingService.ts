@@ -579,7 +579,7 @@ export function generateIcsFile(bookingId: string): string | null {
   const description = [
     `Автошкола: ${school.name}`,
     `Инструктор: ${instructor.name}`,
-    `Ученик: ${booking.studentName}`,
+    'Ученик: Ученик',
     instructor.car ? `Автомобиль: ${instructor.car}${transmission ? ` (${transmission})` : ''}` : '',
   ]
     .filter(Boolean)

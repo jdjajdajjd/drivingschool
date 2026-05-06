@@ -7,7 +7,7 @@ import { createHugeIcon } from '../components/ui/HugeIcon'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
 import { BookingDetailsCard, SuccessHeader } from '../components/product/CompactCards'
-import { generateIcs, getSlotDateTime } from '../services/bookingService'
+import { getSlotDateTime } from '../services/bookingService'
 import { db } from '../services/storage'
 import { saveStudentProfile } from '../services/studentProfile'
 import { getBookingGroupFromSupabase } from '../services/supabasePublicService'
@@ -75,7 +75,7 @@ function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
       const description = [
         `Автошкола: ${bundle.school.name}`,
         `Инструктор: ${bundle.instructor.name}`,
-        `Ученик: ${bundle.booking.studentName}`,
+        'Ученик: Ученик',
         bundle.instructor.car ? `Автомобиль: ${bundle.instructor.car}` : '',
       ].filter(Boolean).join('\n')
 
@@ -97,11 +97,20 @@ function generateIcsFromBundles(bundles: BookingBundle[]): string | null {
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//vroom//Booking Flow//RU', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
 }
 
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  return digits.length >= 4 ? `••••${digits.slice(-4)}` : ''
+}
+
+function maskStudentName(name: string): string {
+  const first = name.trim().split(/\s+/).filter(Boolean)[0]
+  return first ? `${first[0]?.toUpperCase()}.` : 'Ученик'
+}
+
 function getDisplayStudent(bundle: BookingBundle): { name: string; phone: string; email?: string } {
   return {
-    name: bundle.booking.studentName,
-    phone: bundle.booking.studentPhone || 'Скрыт',
-    email: bundle.booking.studentEmail || undefined,
+    name: maskStudentName(bundle.booking.studentName),
+    phone: maskPhone(bundle.booking.studentPhone) || 'Скрыт',
   }
 }
 
@@ -126,7 +135,7 @@ export function BookingConfirmation() {
   function handleDownloadIcs(): void {
     if (bundles.length === 0) return
     const first = bundles[0]
-    const content = bundles.length > 1 ? generateIcsFromBundles(bundles) : generateIcs(first.booking.id) ?? generateIcsFromBundles(bundles)
+    const content = generateIcsFromBundles(bundles)
     if (!content) {
       showToast('Не удалось подготовить файл календаря.', 'error')
       return
@@ -148,7 +157,7 @@ export function BookingConfirmation() {
     if (!first?.school) return
     saveStudentProfile(
       first.school.id,
-      { name: first.booking.studentName, phone: '', email: '' },
+      { name: 'Ученик', phone: '', email: '' },
       { passwordSet: false, assignedBranchId: first.branch?.id, assignedInstructorId: first.instructor?.id },
     )
     navigate('/student')

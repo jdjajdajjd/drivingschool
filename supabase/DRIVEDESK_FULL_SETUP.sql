@@ -2608,7 +2608,7 @@ as $$
     select b.booking_group_id from public.bookings b where b.id = p_booking_id
   )
   select b.id, b.booking_group_id, b.school_id, b.slot_id, b.instructor_id, b.branch_id, b.student_id,
-    b.student_name, case when length(regexp_replace(coalesce(b.student_phone, ''), '\D', '', 'g')) >= 4 then '••••' || right(regexp_replace(b.student_phone, '\D', '', 'g'), 4) else '' end, '', b.status, b.notes, b.comment, b.rescheduled_at, b.created_at, b.updated_at,
+    case when length(trim(coalesce(b.student_name, ''))) > 0 then left(trim(b.student_name), 1) || '.' else 'Ученик' end, case when length(regexp_replace(coalesce(b.student_phone, ''), '\D', '', 'g')) >= 4 then '••••' || right(regexp_replace(b.student_phone, '\D', '', 'g'), 4) else '' end, '', b.status, b.notes, b.comment, b.rescheduled_at, b.created_at, b.updated_at,
     s.name, s.slug, s.description, s.phone, s.email, s.address, s.logo_url, s.primary_color,
     s.booking_limit_enabled, s.max_active_bookings_per_student, s.branch_selection_mode, s.max_slots_per_booking, s.default_lesson_duration, s.enabled_category_codes, s.is_active, s.created_at, s.updated_at,
     br.school_id, br.name, br.address, br.phone, br.is_active,
