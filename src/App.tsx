@@ -14,6 +14,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({
 const LegalPage = lazy(() => import('./pages/LegalPage').then((module) => ({ default: module.LegalPage })))
 const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation').then((module) => ({ default: module.BookingConfirmation })))
 const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage').then((module) => ({ default: module.StaffLoginPage })))
+const AutoAdminAccess = lazy(() => import('./components/layout/AutoAdminAccess').then((module) => ({ default: module.AutoAdminAccess })))
 const InstructorPage = lazy(() => import('./pages/InstructorPage').then((module) => ({ default: module.InstructorPage })))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
@@ -85,7 +86,7 @@ function App() {
           <Route path="/student/book" element={<BookingFlowPage />} />
           <Route path="/student" element={<StudentPage />} />
           <Route path="/booking/:bookingId" element={<BookingConfirmation />} />
-          <Route path={WORKSPACE_ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" mode="workspace" />} />
+          <Route path={WORKSPACE_ADMIN_LOGIN_PATH} element={<AutoAdminAccess />} />
           <Route path={ADMIN_LOGIN_PATH} element={<StaffLoginPage role="admin" mode="demo" />} />
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
           <Route element={<ProtectedAccess role="admin" mode="workspace" />}>
