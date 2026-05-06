@@ -167,7 +167,7 @@ function InstructorChips({ instructors, selectedId, assignedId, onChange }: { in
         const assigned = instructor.id === assignedId
         return (
           <button key={instructor.id} className={cn('inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold active:scale-[0.98]', active ? 'border-[#1F2BD8] bg-[#EEF0FA] text-[#1F2BD8]' : 'border-[#E1E3EB] bg-white text-[#050609]')} onClick={() => onChange(instructor.id)}>
-            <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={24} />
+            <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={24} fallback="male" />
             {formatInstructorName(instructor.name)}
             {assigned ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold text-[#1F2BD8]">Ваш</span> : null}
           </button>
@@ -207,7 +207,7 @@ function InstructorSheet({ open, instructors, selectedId, assignedId, onSelect, 
             const assigned = instructor.id === assignedId
             return (
               <button key={instructor.id} className={cn('flex min-h-[58px] w-full items-center gap-3 rounded-[18px] px-3 text-left active:scale-[0.99]', active ? 'bg-[#EEF0FA]' : 'bg-[#F7F8FA]')} onClick={() => { onSelect(instructor.id); onClose() }}>
-                <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={38} />
+                <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={38} fallback="male" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[16px] font-bold text-[#050609]">{formatInstructorName(instructor.name)}</span>
                   <span className="mt-0.5 block truncate text-[13px] font-medium text-[#8B8D94]">{assigned ? 'Закреплен за вами' : instructor.car ?? 'Учебный автомобиль'}</span>
@@ -233,7 +233,7 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
       </div>
       <div className="mb-3 flex items-center justify-between gap-2">
         <button className="inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full bg-[#EEF0FA] px-3 text-[13px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={onInstructorClick}>
-          <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={24} />
+          <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={24} fallback="male" />
           <span className="truncate">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выбрать инструктора'}</span>
         </button>
         <button className="shrink-0 text-[13px] font-semibold text-[#8B8D94]" onClick={onInstructorClick}>Сменить</button>
@@ -683,7 +683,7 @@ export function StudentPage() {
             </div>
             <section className={cn(card, 'p-4')}>
               <div className="flex items-center gap-3">
-                <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={44} />
+                <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={44} fallback="male" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[17px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
                   <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{selectedInstructor?.id === assignedInstructorId ? 'Закреплен за вами' : selectedInstructor?.car ?? 'Выбранный инструктор сохранится'}</p>
@@ -822,7 +822,7 @@ export function StudentPage() {
               <h2 className={sectionTitle}>Ваш инструктор</h2>
               <article className={cn(card, 'mt-3 p-4')}>
                 <div className="flex items-center gap-3">
-                  <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={52} />
+                  <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={52} fallback="male" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[18px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
                     <p className="mt-1 truncate text-[14px] font-semibold text-[#8B8D94]">Закреплён для расписания</p>

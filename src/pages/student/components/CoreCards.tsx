@@ -1,5 +1,5 @@
 import React from 'react'
-import { ListViewIcon, School01Icon } from '@hugeicons/core-free-icons'
+import { ListViewIcon, Male02Icon, School01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../../../components/ui/Button'
 import { createHugeIcon } from '../../../components/ui/HugeIcon'
 import { cn, formatInstructorName } from '../../../lib/utils'
@@ -13,13 +13,14 @@ void React
 
 const Building2 = createHugeIcon(School01Icon)
 const ListChecks = createHugeIcon(ListViewIcon)
+const Male = createHugeIcon(Male02Icon)
 
 const card = 'rounded-[24px] border border-[var(--border)] bg-[var(--surface)]'
 
-export function StudentAvatar({ name, src, size = 48 }: { name: string; src?: string; size?: number }) {
+export function StudentAvatar({ name, src, size = 48, fallback = 'initials' }: { name: string; src?: string; size?: number; fallback?: 'initials' | 'male' }) {
   return (
     <div className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--surface)] text-[15px] font-bold text-[var(--accent)]" style={{ width: size, height: size, border: '1px solid var(--border)' }}>
-      {src ? <img src={src} alt={name} className="h-full w-full object-cover" style={{ width: '100%', height: '100%', maxWidth: '100%', objectFit: 'cover' }} /> : initials(name)}
+      {src ? <img src={src} alt={name} className="h-full w-full object-cover" style={{ width: '100%', height: '100%', maxWidth: '100%', objectFit: 'cover' }} /> : fallback === 'male' ? <Male size={Math.max(18, Math.round(size * 0.54))} /> : initials(name)}
     </div>
   )
 }
@@ -62,7 +63,7 @@ export function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooki
           <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[var(--text)]">{lessonTime(item.slot)}</p>
           <p className="mt-1 text-[17px] font-semibold leading-6 text-[var(--text)]">{lessonTypeLabel(item.slot)}</p>
           <div className="mt-3 flex items-center gap-3">
-            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} />
+            <StudentAvatar name={item.instructor?.name ?? 'Инструктор'} src={item.instructor ? getInstructorPhoto(item.instructor) : undefined} size={38} fallback="male" />
             <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[var(--text)]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}</p>
           </div>
         </div>
@@ -85,7 +86,7 @@ export function AvailableSlotCard({ slot, instructor, onBook, compact = false }:
             <StatusPill>Свободно</StatusPill>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <StudentAvatar name={instructor?.name ?? 'Инструктор'} src={instructor ? getInstructorPhoto(instructor) : undefined} size={34} />
+            <StudentAvatar name={instructor?.name ?? 'Инструктор'} src={instructor ? getInstructorPhoto(instructor) : undefined} size={34} fallback="male" />
             <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[var(--text)]">{instructor ? formatInstructorName(instructor.name) : 'Инструктор'}</p>
             <Button size="sm" className="rounded-full px-3 text-[13px]" onClick={onBook}>Записаться</Button>
           </div>
