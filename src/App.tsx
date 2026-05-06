@@ -44,13 +44,16 @@ function App() {
 
   useEffect(() => {
     // Seed first — local data must be ready immediately
-    import('./services/seed').then((m) => m.seedIfNeeded())
+    import('./services/seed').then((m) => m.seedIfNeeded({ force: true }))
 
     // Sync in background — don't block the UI
     import('./services/supabaseSync')
       .then((m) => { m.syncSupabaseSchoolToLocalDb('virazh').catch(() => undefined) })
       .catch(() => undefined)
-      .finally(() => setIsReady(true))
+      .finally(() => {
+        import('./services/seed').then((m) => m.seedIfNeeded())
+        setIsReady(true)
+      })
 
     // Keep first render behind the short sync window so admin pages do not mount with an empty data bridge.
     const fallback = setTimeout(() => setIsReady(true), 4000)

@@ -4,6 +4,7 @@ import {
   BellDotIcon,
   Calendar03Icon,
   Camera02Icon,
+  CheckmarkCircle02Icon,
   Car04Icon,
   Comment01Icon,
   File02Icon,
@@ -47,9 +48,9 @@ import {
   type StudentProfile,
 } from '../services/studentProfile'
 import { getInstructorPhoto } from '../services/instructorPhotos'
-import type { Instructor, School, Slot } from '../types'
+import type { Booking, Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
-import type { InfoSheet, LessonFilter, ProfileField, StudentView } from './student/studentTypes'
+import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, StudentView } from './student/studentTypes'
 import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, lessonTime, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, weekdayShort } from './student/studentUtils'
 import { AvailableSlotCard, BookingLessonCard, LessonDetailsCard, SchoolLogo, StatusPill, StudentAvatar } from './student/components/CoreCards'
 import { InfoSheetPanel } from './student/components/InfoSheetPanel'
@@ -61,6 +62,7 @@ const Building2 = createHugeIcon(School01Icon)
 const CalendarDays = createHugeIcon(Calendar03Icon)
 const Camera = createHugeIcon(Camera02Icon)
 const CarFront = createHugeIcon(Car04Icon)
+const CheckCircle = createHugeIcon(CheckmarkCircle02Icon)
 const ChevronLeft = createHugeIcon(ArrowLeft01Icon)
 const ChevronRight = createHugeIcon(ArrowRight01Icon)
 const FileText = createHugeIcon(File02Icon)
@@ -363,6 +365,22 @@ function RoadmapStep({ title, text, done, active }: { title: string; text: strin
   )
 }
 
+
+function JustBookedBanner({ item }: { item: ResolvedStudentBooking }) {
+  return (
+    <section className="rounded-[24px] border border-[rgba(21,128,61,0.18)] bg-[var(--green-soft)] p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[18px] bg-[var(--green)] text-white"><CheckCircle size={22} /></span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--text)]">Вы записаны</h3>
+          <p className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text)]">{lessonTime(item.slot)}</p>
+          <p className="mt-1 truncate text-[14px] font-medium text-[var(--text-muted)]">{item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'} · {item.branch?.name ?? 'Филиал'}</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function StudentPage() {
   const navigate = useNavigate()
   const photoInputRef = useRef<HTMLInputElement | null>(null)
@@ -385,6 +403,7 @@ export function StudentPage() {
   const [requestComment, setRequestComment] = useState('')
   const [requestMessage, setRequestMessage] = useState('')
   const [bookingSlotId, setBookingSlotId] = useState('')
+  const [justBooked, setJustBooked] = useState<ResolvedStudentBooking | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -406,8 +425,12 @@ export function StudentPage() {
   const student = school && normalizedPhone ? db.students.byNormalizedPhone(school.id, normalizedPhone) : null
   const progress = student ? loadStudentProgress(student.id) : null
   const documents = student ? loadStudentDocuments(student.id) : []
-  const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile])
-  const upcoming = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
+  const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile, justBooked?.booking.id])
+  const upcoming = useMemo(() => {
+    const active = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
+    if (!justBooked) return active
+    return [justBooked, ...active.filter((item) => item.booking.id !== justBooked.booking.id)]
+  }, [bookings, justBooked])
   const completedLessons = bookings.filter((item) => item.booking.status === 'completed' && item.slot).slice(-3).reverse()
   const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school, bookings.length, bookingSlotId])
   const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
@@ -456,13 +479,16 @@ export function StudentPage() {
   async function bookSlotNow(slot: Slot) {
     if (!school || !profile || bookingSlotId) return
     setBookingSlotId(slot.id)
+
+    let bookingId = ''
     try {
-      await createSupabaseBooking({
+      const remote = await createSupabaseBooking({
         schoolId: school.id,
         studentName: profile.name,
         studentPhone: profile.phone,
         slotIds: [slot.id],
       })
+      bookingId = remote.bookingIds[0] ?? ''
     } catch {
       const result = createBooking({
         schoolId: school.id,
@@ -478,8 +504,35 @@ export function StudentPage() {
         setBookingSlotId('')
         return
       }
+      bookingId = result.booking?.id ?? ''
     }
-    showToast('Готово, вы записаны.', 'success')
+
+    const normalized = normalizePhone(profile.phone)
+    const student = db.students.byNormalizedPhone(school.id, normalized)
+    const booking: Booking = {
+      id: bookingId || `booking-${Date.now()}`,
+      schoolId: school.id,
+      slotId: slot.id,
+      branchId: slot.branchId,
+      instructorId: slot.instructorId,
+      studentId: student?.id,
+      studentName: profile.name,
+      studentPhone: normalized,
+      studentEmail: profile.email ?? '',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    db.bookings.upsert(booking)
+    db.slots.upsert({ ...slot, status: 'booked', bookingId: booking.id })
+    setJustBooked({
+      booking,
+      slot: { ...slot, status: 'booked', bookingId: booking.id },
+      instructor: db.instructors.byId(slot.instructorId),
+      branch: db.branches.byId(slot.branchId),
+    })
+    setView('home')
+    showToast('Вы записаны. Занятие появилось в «Моих записях».', 'success')
     setBookingSlotId('')
   }
 
@@ -600,6 +653,8 @@ export function StudentPage() {
                 </button>
               </div>
             </header>
+
+            {justBooked ? <JustBookedBanner item={justBooked} /> : null}
 
             <section>
               <div className="mb-4 flex items-center justify-between">

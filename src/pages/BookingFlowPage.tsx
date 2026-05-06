@@ -1012,7 +1012,7 @@ export function BookingFlowPage() {
             {/* ── Step 6: Success ── */}
             {step === 'success' && (
               <section className="space-y-3">
-                <SuccessHeader subtitle="Мы сохранили запись. Если нужно, автошкола свяжется с вами." />
+                <SuccessHeader subtitle="Вы записаны. Занятие уже сохранено в расписании автошколы." />
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1032,7 +1032,7 @@ export function BookingFlowPage() {
                   transition={{ duration: 0.2, delay: 0.08 }}
                 >
                   <Button onClick={() => navigate('/student')}>
-                    В кабинет
+                    Посмотреть мои записи
                   </Button>
                   <Button variant="secondary" onClick={downloadCalendar}>
                     <CalendarPlus size={16} />
