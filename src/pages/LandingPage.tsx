@@ -5,6 +5,7 @@ import { ArrowRight01Icon, Car03Icon, Shield01Icon, UserSettings01Icon } from '@
 import type { School } from '../types'
 import { db } from '../services/storage'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { ThemeToggle } from '../components/ui/ThemeProvider'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
 const Car = createHugeIcon(Car03Icon)
@@ -99,6 +100,7 @@ export function LandingPage() {
               <p className="font-semibold" style={{ fontSize: 12, color: '#9EA3A8' }}>Онлайн-запись на вождение</p>
             </div>
           </div>
+          <ThemeToggle compact />
         </motion.header>
 
         {/* Hero */}

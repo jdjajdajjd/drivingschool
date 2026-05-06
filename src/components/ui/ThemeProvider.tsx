@@ -14,7 +14,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
-const storageKey = 'vroom:theme'
+const storageKey = 'vroom:theme:v2'
 const Moon = createHugeIcon(Moon02Icon)
 const Sun = createHugeIcon(Sun03Icon)
 
@@ -46,9 +46,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={value}>
       {children}
-      <div className="global-theme-toggle">
-        <ThemeToggle compact />
-      </div>
       <div className={cn('theme-ripple', transitioning && 'active')} aria-hidden="true" />
     </ThemeContext.Provider>
   )

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Location01Icon, Refresh03Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
@@ -615,7 +616,7 @@ export function BookingFlowPage() {
               <ArrowLeft size={16} />
               Назад
             </button>
-
+            <ThemeToggle compact />
           </div>
           {step !== 'date' ? <Progress step={step} /> : null}
         </header>
@@ -930,7 +931,7 @@ export function BookingFlowPage() {
                   Проверьте запись
                 </h2>
                 <p className="t-body mt-2" style={{ color: ui.textMuted }}>
-                  Если всё верно — подтвердите.
+                  Если всё верно - подтвердите.
                 </p>
 
                 <div className="mt-5">

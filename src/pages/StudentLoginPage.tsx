@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -68,9 +69,12 @@ export default function StudentLoginPage() {
               <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">вход ученика</p>
             </div>
           </button>
-          <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate('/student/register')}>
-            Регистрация
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle compact />
+            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate('/student/register')}>
+              Регистрация
+            </button>
+          </div>
         </header>
 
         <section className="flex flex-1 flex-col justify-center py-8">

@@ -162,20 +162,6 @@
     100% { opacity: 0; transform: scale(3.4); }
   }
 
-  .global-theme-toggle {
-    position: fixed;
-    right: max(14px, env(safe-area-inset-right));
-    bottom: max(112px, calc(22px + env(safe-area-inset-bottom)));
-    z-index: 80;
-  }
-
-  @media (min-width: 768px) {
-    .global-theme-toggle {
-      right: 22px;
-      bottom: 22px;
-    }
-  }
-
   .theme-toggle {
     display: inline-grid;
     min-height: 44px;
