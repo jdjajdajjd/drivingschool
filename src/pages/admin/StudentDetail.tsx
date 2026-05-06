@@ -20,11 +20,11 @@ const RotateCcw = createHugeIcon(Refresh03Icon)
 const XCircle = createHugeIcon(CancelCircleIcon)
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { cancelBooking, completeBooking, getBookingsByStudent } from '../../services/bookingService'
-import { getStudentById, getStudentStats } from '../../services/studentService'
+import { getStudentById, getStudentStats, updateStudentAdminConfirmed } from '../../services/studentService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import type { StudentDocumentStatus, StudentDocumentType, StudentRequestStatus, TrainingStage } from '../../types'
-import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, saveStudentProgress, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocument, updateStudentRequestStatus } from '../../services/studentProfile'
+import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, saveStudentProgressAdminConfirmed, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocumentAdminConfirmed, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 import { trainingStageLabels } from '../student/studentUtils'
 
 const trainingStageOptions: TrainingStage[] = ['theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed']
@@ -50,22 +50,26 @@ export function AdminStudentDetail() {
   const instructors = student ? db.instructors.bySchool(student.schoolId).filter((instructor) => instructor.isActive) : []
   const branches = student ? db.branches.bySchool(student.schoolId).filter((branch) => branch.isActive) : []
 
-  function updateStudentPatch(patch: Partial<typeof student>): void {
+  async function updateStudentPatch(patch: Partial<NonNullable<typeof student>>): Promise<void> {
     if (!student) return
-    db.students.upsert({ ...student, ...patch })
+    const result = await updateStudentAdminConfirmed(student.id, patch)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось обновить данные ученика.', 'error')
+      return
+    }
     setVersion((value) => value + 1)
     showToast('Данные ученика обновлены.', 'success')
   }
 
-  function updateProgressPatch(patch: Partial<NonNullable<typeof progress>>): void {
+  async function updateProgressPatch(patch: Partial<NonNullable<typeof progress>>): Promise<void> {
     if (!student) return
-    saveStudentProgress({
+    const result = await saveStudentProgressAdminConfirmed({
       id: progress?.id ?? `progress-${student.id}`,
       studentId: student.id,
       schoolId: student.schoolId,
       theoryTopicsTotal: progress?.theoryTopicsTotal ?? 0,
       theoryTopicsCompleted: progress?.theoryTopicsCompleted ?? 0,
-      drivingHoursTotal: progress?.drivingHoursTotal ?? 56,
+      drivingHoursTotal: progress?.drivingHoursTotal ?? 0,
       drivingHoursCompleted: progress?.drivingHoursCompleted ?? 0,
       internalExamPassed: progress?.internalExamPassed ?? false,
       internalExamDate: progress?.internalExamDate ?? null,
@@ -76,8 +80,34 @@ export function AdminStudentDetail() {
       updatedAt: new Date().toISOString(),
       ...patch,
     })
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось обновить прогресс ученика.', 'error')
+      return
+    }
     setVersion((value) => value + 1)
     showToast('Прогресс ученика обновлён.', 'success')
+  }
+
+  async function updateRequestStatus(requestId: string, status: StudentRequestStatus): Promise<void> {
+    if (!student) return
+    const result = await updateStudentRequestStatusAdminConfirmed(student.schoolId, requestId, status)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось обновить статус запроса.', 'error')
+      return
+    }
+    setVersion((value) => value + 1)
+    showToast('Статус запроса обновлён.', 'success')
+  }
+
+  async function updateDocumentStatus(type: StudentDocumentType, status: StudentDocumentStatus): Promise<void> {
+    if (!student) return
+    const result = await updateStudentDocumentAdminConfirmed(student.id, type, status)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось обновить статус документа.', 'error')
+      return
+    }
+    setVersion((value) => value + 1)
+    showToast('Статус документа обновлён.', 'success')
   }
 
   function handleCancel(): void {
@@ -163,51 +193,51 @@ export function AdminStudentDetail() {
 
         <Section title="Обучение" description="Назначения и этап обучения видны ученику в кабинете.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input label="Группа" value={student.groupName ?? ''} placeholder="Пока не назначено" onChange={(event) => updateStudentPatch({ groupName: event.target.value.trim() || undefined })} />
-            <Input label="Категории" value={student.categoryCodes?.join(', ') ?? ''} placeholder="B" onChange={(event) => updateStudentPatch({ categoryCodes: event.target.value.split(',').map((item) => item.trim().toUpperCase()).filter(Boolean) })} />
+            <Input label="Группа" value={student.groupName ?? ''} placeholder="Пока не назначено" onChange={(event) => void updateStudentPatch({ groupName: event.target.value.trim() || undefined })} />
+            <Input label="Категории" value={student.categoryCodes?.join(', ') ?? ''} placeholder="B" onChange={(event) => void updateStudentPatch({ categoryCodes: event.target.value.split(',').map((item) => item.trim().toUpperCase()).filter(Boolean) })} />
             <FormField label="Этап обучения">
-              <select value={student.trainingStage ?? ''} onChange={(event) => updateStudentPatch({ trainingStage: (event.target.value || undefined) as TrainingStage | undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={student.trainingStage ?? ''} onChange={(event) => void updateStudentPatch({ trainingStage: (event.target.value || undefined) as TrainingStage | undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                 <option value="">Пока не назначено</option>
                 {trainingStageOptions.map((stage) => <option key={stage} value={stage}>{trainingStageLabels[stage]}</option>)}
               </select>
             </FormField>
             <FormField label="Инструктор">
-              <select value={student.assignedInstructorId ?? ''} onChange={(event) => updateStudentPatch({ assignedInstructorId: event.target.value || undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={student.assignedInstructorId ?? ''} onChange={(event) => void updateStudentPatch({ assignedInstructorId: event.target.value || undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                 <option value="">Пока не назначен</option>
                 {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{formatInstructorName(instructor.name)}</option>)}
               </select>
             </FormField>
             <FormField label="Филиал">
-              <select value={student.assignedBranchId ?? ''} onChange={(event) => updateStudentPatch({ assignedBranchId: event.target.value || undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={student.assignedBranchId ?? ''} onChange={(event) => void updateStudentPatch({ assignedBranchId: event.target.value || undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                 <option value="">Пока не назначен</option>
                 {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
               </select>
             </FormField>
-            <Input label="Начало обучения" type="date" value={student.trainingStartDate ?? ''} onChange={(event) => updateStudentPatch({ trainingStartDate: event.target.value || undefined })} />
-            <Input label="Начало вождения" type="date" value={student.drivingStartDate ?? ''} onChange={(event) => updateStudentPatch({ drivingStartDate: event.target.value || undefined })} />
+            <Input label="Начало обучения" type="date" value={student.trainingStartDate ?? ''} onChange={(event) => void updateStudentPatch({ trainingStartDate: event.target.value || undefined })} />
+            <Input label="Начало вождения" type="date" value={student.drivingStartDate ?? ''} onChange={(event) => void updateStudentPatch({ drivingStartDate: event.target.value || undefined })} />
           </div>
         </Section>
 
         <Section title="Прогресс" description="Минимальные учебные показатели без фейковых процентов готовности.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input label="Тем теории всего" type="number" value={String(progress?.theoryTopicsTotal ?? 0)} onChange={(event) => updateProgressPatch({ theoryTopicsTotal: Number(event.target.value) || 0 })} />
-            <Input label="Тем теории закрыто" type="number" value={String(progress?.theoryTopicsCompleted ?? 0)} onChange={(event) => updateProgressPatch({ theoryTopicsCompleted: Number(event.target.value) || 0 })} />
-            <Input label="Часов вождения всего" type="number" value={String(progress?.drivingHoursTotal ?? 56)} onChange={(event) => updateProgressPatch({ drivingHoursTotal: Number(event.target.value) || 0 })} />
-            <Input label="Часов вождения пройдено" type="number" value={String(progress?.drivingHoursCompleted ?? 0)} onChange={(event) => updateProgressPatch({ drivingHoursCompleted: Number(event.target.value) || 0 })} />
+            <Input label="Тем теории всего" type="number" value={String(progress?.theoryTopicsTotal ?? 0)} onChange={(event) => void updateProgressPatch({ theoryTopicsTotal: Number(event.target.value) || 0 })} />
+            <Input label="Тем теории закрыто" type="number" value={String(progress?.theoryTopicsCompleted ?? 0)} onChange={(event) => void updateProgressPatch({ theoryTopicsCompleted: Number(event.target.value) || 0 })} />
+            <Input label="Часов вождения всего" type="number" value={String(progress?.drivingHoursTotal ?? 0)} onChange={(event) => void updateProgressPatch({ drivingHoursTotal: Number(event.target.value) || 0 })} />
+            <Input label="Часов вождения пройдено" type="number" value={String(progress?.drivingHoursCompleted ?? 0)} onChange={(event) => void updateProgressPatch({ drivingHoursCompleted: Number(event.target.value) || 0 })} />
             <FormField label="Внутренний экзамен">
-              <select value={progress?.internalExamStatus ?? (progress?.internalExamPassed ? 'passed' : 'not_scheduled')} onChange={(event) => updateProgressPatch({ internalExamStatus: event.target.value as NonNullable<typeof progress>['internalExamStatus'], internalExamPassed: event.target.value === 'passed' })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={progress?.internalExamStatus ?? (progress?.internalExamPassed ? 'passed' : 'not_scheduled')} onChange={(event) => void updateProgressPatch({ internalExamStatus: event.target.value as NonNullable<typeof progress>['internalExamStatus'], internalExamPassed: event.target.value === 'passed' })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                 {Object.entries(examStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </FormField>
-            <Input label="Дата внутреннего экзамена" type="date" value={progress?.internalExamDate ?? ''} onChange={(event) => updateProgressPatch({ internalExamDate: event.target.value || null })} />
+            <Input label="Дата внутреннего экзамена" type="date" value={progress?.internalExamDate ?? ''} onChange={(event) => void updateProgressPatch({ internalExamDate: event.target.value || null })} />
             <FormField label="Экзамен ГИБДД">
-              <select value={progress?.gibddExamStatus ?? 'not_scheduled'} onChange={(event) => updateProgressPatch({ gibddExamStatus: event.target.value as NonNullable<typeof progress>['gibddExamStatus'] })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={progress?.gibddExamStatus ?? 'not_scheduled'} onChange={(event) => void updateProgressPatch({ gibddExamStatus: event.target.value as NonNullable<typeof progress>['gibddExamStatus'] })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                 {Object.entries(examStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </FormField>
-            <Input label="Дата экзамена ГИБДД" type="date" value={progress?.gaidExamDate ?? ''} onChange={(event) => updateProgressPatch({ gaidExamDate: event.target.value || null })} />
+            <Input label="Дата экзамена ГИБДД" type="date" value={progress?.gaidExamDate ?? ''} onChange={(event) => void updateProgressPatch({ gaidExamDate: event.target.value || null })} />
             <div className="md:col-span-2 xl:col-span-4">
-              <Input label="Заметки администратора" value={progress?.notes ?? ''} onChange={(event) => updateProgressPatch({ notes: event.target.value })} placeholder="Необязательно" />
+              <Input label="Заметки администратора" value={progress?.notes ?? ''} onChange={(event) => void updateProgressPatch({ notes: event.target.value })} placeholder="Необязательно" />
             </div>
           </div>
         </Section>
@@ -227,7 +257,7 @@ export function AdminStudentDetail() {
                       {request.comment ? <p className="mt-1 text-sm text-[#6F747A]">Комментарий: {request.comment}</p> : null}
                     </div>
                     <FormField label="Статус">
-                      <select value={request.status} onChange={(event) => { updateStudentRequestStatus(student.schoolId, request.id, event.target.value as StudentRequestStatus); setVersion((value) => value + 1); showToast('Статус запроса обновлён.', 'success') }} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                      <select value={request.status} onChange={(event) => void updateRequestStatus(request.id, event.target.value as StudentRequestStatus)} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                         {requestStatusOptions.map((status) => <option key={status} value={status}>{studentRequestStatusLabels[status]}</option>)}
                       </select>
                     </FormField>
@@ -242,7 +272,7 @@ export function AdminStudentDetail() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {documents.map((document) => (
               <FormField key={document.type} label={studentDocumentLabels[document.type]}>
-                <select value={document.status} onChange={(event) => { updateStudentDocument(student.id, document.type as StudentDocumentType, event.target.value as StudentDocumentStatus); setVersion((value) => value + 1); showToast('Статус документа обновлён.', 'success') }} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                <select value={document.status} onChange={(event) => void updateDocumentStatus(document.type as StudentDocumentType, event.target.value as StudentDocumentStatus)} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
                   {documentStatusOptions.map((status) => <option key={status} value={status}>{studentDocumentStatusLabels[status]}</option>)}
                 </select>
               </FormField>

@@ -401,7 +401,7 @@ export function StudentPage() {
   const slotsForDate = futureSlots.filter((slot) => isSameDay(parseISO(slot.date), selectedDate))
   const availableSlotsForDate = filterSlots(slotsForDate.filter((slot) => slot.status === 'available'), selectedInstructor?.id ?? '', lessonFilter)
   const profileDirty = Boolean(profile && (form.name.trim() !== profile.name || normalizePhone(form.phone) !== normalizePhone(profile.phone) || form.email.trim() !== (profile.email ?? '') || pendingAvatarUrl))
-  const drivingTotal = progress?.drivingHoursTotal ?? 56
+  const drivingTotal = progress?.drivingHoursTotal ?? 0
   const drivingCompleted = progress?.drivingHoursCompleted ?? 0
   const drivingRemaining = Math.max(0, drivingTotal - drivingCompleted)
   const drivingPercent = safePercent(drivingCompleted, drivingTotal)

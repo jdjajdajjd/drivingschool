@@ -361,6 +361,98 @@ export interface Database {
           instructor_id: string
         }>
       }
+      public_upsert_student_progress: {
+        Args: {
+          p_progress_id: string
+          p_student_id: string
+          p_school_id: string
+          p_theory_topics_total: number
+          p_theory_topics_completed: number
+          p_driving_hours_total: number
+          p_driving_hours_completed: number
+          p_internal_exam_passed: boolean
+          p_internal_exam_date: string | null
+          p_internal_exam_status: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
+          p_gaid_exam_date: string | null
+          p_gibdd_exam_status: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
+          p_notes: string
+          p_updated_at: string
+          p_staff_password: string
+        }
+        Returns: Array<{
+          progress_id: string
+        }>
+      }
+      public_get_student_progress: {
+        Args: {
+          p_student_id: string
+          p_staff_password: string
+        }
+        Returns: Array<{
+          id: string
+          student_id: string
+          school_id: string
+          theory_topics_total: number
+          theory_topics_completed: number
+          driving_hours_total: number
+          driving_hours_completed: number
+          internal_exam_passed: boolean
+          internal_exam_date: string | null
+          internal_exam_status: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
+          gaid_exam_date: string | null
+          gibdd_exam_status: 'not_scheduled' | 'scheduled' | 'passed' | 'failed'
+          notes: string
+          updated_at: string
+        }>
+      }
+      public_upsert_student_documents: {
+        Args: {
+          p_documents: Json
+          p_staff_password: string
+        }
+        Returns: undefined
+      }
+      public_get_student_documents: {
+        Args: {
+          p_student_id: string
+          p_staff_password: string
+        }
+        Returns: Array<{
+          student_id: string
+          type: 'passport' | 'medical_certificate' | 'snils' | 'contract' | 'photo' | 'state_fee'
+          status: 'missing' | 'pending' | 'provided' | 'approved' | 'rejected'
+          updated_at: string
+        }>
+      }
+      public_update_student_request_status: {
+        Args: {
+          p_school_id: string
+          p_request_id: string
+          p_status: 'new' | 'reviewing' | 'resolved' | 'rejected'
+          p_updated_at: string
+          p_staff_password: string
+        }
+        Returns: Array<{
+          request_id: string
+        }>
+      }
+      public_create_student_request: {
+        Args: {
+          p_request_id: string
+          p_school_id: string
+          p_student_id: string
+          p_booking_id: string | null
+          p_type: 'reschedule' | 'cancel'
+          p_reason: string
+          p_preferred_time: string | null
+          p_comment: string | null
+          p_created_at: string
+          p_updated_at: string
+        }
+        Returns: Array<{
+          request_id: string
+        }>
+      }
       public_update_student_profile: {
         Args: {
           p_school_id: string

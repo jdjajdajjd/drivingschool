@@ -1,7 +1,8 @@
 import { normalizePhone } from './bookingService'
 import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
-import { createStudentRequestInSupabase, getStudentDocumentsFromSupabase, getStudentProgressFromSupabase, getStudentRequestsFromSupabase, loginStudentInSupabase, updateStudentProfileInSupabase, updateStudentRequestStatusInSupabase, upsertStudentDocumentsInSupabase, upsertStudentProgressInSupabase } from './supabasePublicService'
+import { createStudentRequestInSupabase, loginStudentInSupabase, updateStudentProfileInSupabase } from './supabasePublicService'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { getSupabaseStudentDocumentsAdmin, getSupabaseStudentProgressAdmin, getSupabaseStudentRequestsAdmin, updateSupabaseStudentRequestStatusAdmin, upsertSupabaseStudentDocumentsAdmin, upsertSupabaseStudentProgressAdmin } from './supabaseAdminService'
 
 export interface StudentProfile {
   name: string
@@ -208,14 +209,26 @@ export async function loginStudentProfileFromSupabase(schoolId: string, phone: s
 }
 
 export async function refreshStudentProgressFromSupabase(studentId: string): Promise<StudentProgress | null> {
-  const progress = await getStudentProgressFromSupabase(studentId)
+  const progress = await getSupabaseStudentProgressAdmin(studentId)
   if (progress) saveStudentProgress(progress)
   return progress
 }
 
 export function saveStudentProgress(progress: StudentProgress): void {
   localStorage.setItem(getProgressKey(progress.studentId), JSON.stringify(progress))
-  void upsertStudentProgressInSupabase(progress).catch((error) => console.error('Supabase student progress sync failed', error))
+}
+
+export async function saveStudentProgressAdminConfirmed(progress: StudentProgress): Promise<{ ok: boolean; progress?: StudentProgress; error?: string }> {
+  if (isSupabaseConfigured()) {
+    try {
+      await upsertSupabaseStudentProgressAdmin(progress)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить прогресс ученика.' }
+    }
+  }
+
+  localStorage.setItem(getProgressKey(progress.studentId), JSON.stringify(progress))
+  return { ok: true, progress }
 }
 
 export function findAnyStudentProgress(): { studentId: string; progress: StudentProgress } | null {
@@ -284,20 +297,38 @@ export function loadStudentDocuments(studentId: string): StudentDocument[] {
 }
 
 export async function refreshStudentDocumentsFromSupabase(studentId: string): Promise<StudentDocument[]> {
-  const documents = await getStudentDocumentsFromSupabase(studentId)
+  const documents = await getSupabaseStudentDocumentsAdmin(studentId)
   if (documents.length > 0) saveStudentDocuments(studentId, documents)
   return documents
 }
 
 export function saveStudentDocuments(studentId: string, documents: StudentDocument[]): void {
   localStorage.setItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
-  void upsertStudentDocumentsInSupabase(documents).catch((error) => console.error('Supabase student documents sync failed', error))
 }
 
 export function updateStudentDocument(studentId: string, type: StudentDocumentType, status: StudentDocumentStatus): StudentDocument[] {
   const documents = loadStudentDocuments(studentId).map((document) => document.type === type ? { ...document, status, updatedAt: new Date().toISOString() } : document)
   saveStudentDocuments(studentId, documents)
   return documents
+}
+
+export async function updateStudentDocumentAdminConfirmed(
+  studentId: string,
+  type: StudentDocumentType,
+  status: StudentDocumentStatus,
+): Promise<{ ok: boolean; documents?: StudentDocument[]; error?: string }> {
+  const documents = loadStudentDocuments(studentId).map((document) => document.type === type ? { ...document, status, updatedAt: new Date().toISOString() } : document)
+
+  if (isSupabaseConfigured()) {
+    try {
+      await upsertSupabaseStudentDocumentsAdmin(documents)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить статус документа.' }
+    }
+  }
+
+  localStorage.setItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
+  return { ok: true, documents }
 }
 
 export const studentRequestStatusLabels: Record<StudentRequestStatus, string> = {
@@ -321,7 +352,7 @@ export function loadStudentRequests(schoolId: string): StudentRequest[] {
 }
 
 export async function refreshStudentRequestsFromSupabase(schoolId: string): Promise<StudentRequest[]> {
-  const requests = await getStudentRequestsFromSupabase(schoolId)
+  const requests = await getSupabaseStudentRequestsAdmin(schoolId)
   saveStudentRequests(schoolId, requests)
   return requests
 }
@@ -347,6 +378,25 @@ export function createStudentRequest(request: Omit<StudentRequest, 'id' | 'statu
 export function updateStudentRequestStatus(schoolId: string, requestId: string, status: StudentRequestStatus): StudentRequest[] {
   const requests = loadStudentRequests(schoolId).map((request) => request.id === requestId ? { ...request, status, updatedAt: new Date().toISOString() } : request)
   saveStudentRequests(schoolId, requests)
-  void updateStudentRequestStatusInSupabase(schoolId, requestId, status).catch((error) => console.error('Supabase student request status sync failed', error))
   return requests
+}
+
+export async function updateStudentRequestStatusAdminConfirmed(
+  schoolId: string,
+  requestId: string,
+  status: StudentRequestStatus,
+): Promise<{ ok: boolean; requests?: StudentRequest[]; error?: string }> {
+  const updatedAt = new Date().toISOString()
+  const requests = loadStudentRequests(schoolId).map((request) => request.id === requestId ? { ...request, status, updatedAt } : request)
+
+  if (isSupabaseConfigured()) {
+    try {
+      await updateSupabaseStudentRequestStatusAdmin(schoolId, requestId, status, updatedAt)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить статус запроса.' }
+    }
+  }
+
+  saveStudentRequests(schoolId, requests)
+  return { ok: true, requests }
 }

@@ -1,7 +1,9 @@
 import { isAfter } from 'date-fns'
 import type { ResolvedBooking, Student, StudentStats } from '../types'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { db } from './storage'
 import { getBookingById, getBookingsByStudent, getSlotDateTime, normalizePhone } from './bookingService'
+import { updateSupabaseStudentAdmin } from './supabaseAdminService'
 
 export function getStudentById(studentId: string): Student | null {
   return db.students.byId(studentId)
@@ -68,6 +70,28 @@ export function getStudentHistory(studentId: string): ResolvedBooking[] {
 
 export function getStudentByPhone(schoolId: string, phone: string): Student | null {
   return getStudentByNormalizedPhone(schoolId, normalizePhone(phone))
+}
+
+export async function updateStudentAdminConfirmed(
+  studentId: string,
+  patch: Partial<Student>,
+): Promise<{ ok: boolean; student?: Student; error?: string }> {
+  const current = db.students.byId(studentId)
+  if (!current) return { ok: false, error: 'Ученик не найден.' }
+
+  const nextStudent: Student = { ...current, ...patch }
+  if (!nextStudent.name.trim()) return { ok: false, error: 'Укажите имя ученика.' }
+
+  if (isSupabaseConfigured()) {
+    try {
+      await updateSupabaseStudentAdmin(nextStudent)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить ученика.' }
+    }
+  }
+
+  db.students.upsert(nextStudent)
+  return { ok: true, student: nextStudent }
 }
 
 export function getResolvedStudentBooking(bookingId: string): ResolvedBooking | null {
