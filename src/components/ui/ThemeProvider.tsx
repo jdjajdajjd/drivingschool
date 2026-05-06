@@ -22,7 +22,7 @@ function getInitialTheme(): ThemeMode {
   if (typeof window === 'undefined') return 'light'
   const saved = localStorage.getItem(storageKey)
   if (saved === 'light' || saved === 'dark') return saved
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'light'
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -46,6 +46,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={value}>
       {children}
+      <div className="global-theme-toggle">
+        <ThemeToggle compact />
+      </div>
       <div className={cn('theme-ripple', transitioning && 'active')} aria-hidden="true" />
     </ThemeContext.Provider>
   )
