@@ -74,6 +74,18 @@ const Settings = createHugeIcon(Settings02Icon)
 const UserRound = createHugeIcon(User03Icon)
 const Zap = createHugeIcon(ZapIcon)
 
+const fallbackSchool: School = {
+  id: 'school-virazh',
+  name: 'Автошкола «Вираж»',
+  slug: 'virazh',
+  description: '',
+  phone: '',
+  email: '',
+  address: '',
+  createdAt: '',
+  isActive: true,
+}
+
 const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
 const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
 const sectionTitle = 'text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
@@ -374,7 +386,7 @@ export function StudentPage() {
 
   useEffect(() => {
     const found = findAnyStudentProfile()
-    const nextSchool = found ? db.schools.byId(found.schoolId) : db.schools.bySlug('virazh')
+    const nextSchool = found ? db.schools.byId(found.schoolId) ?? (found.schoolId === fallbackSchool.id ? fallbackSchool : null) : db.schools.bySlug('virazh') ?? fallbackSchool
     const nextProfile = found?.profile ?? (nextSchool ? loadStudentProfile(nextSchool.id) : null)
     setSchool(nextSchool)
     setProfile(nextProfile)
