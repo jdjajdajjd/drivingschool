@@ -11,6 +11,7 @@ import { isValidRussianPhone } from '../services/bookingService'
 import { db } from '../services/storage'
 import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabase, type StudentProfile } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
+import type { School } from '../types'
 
 void React
 
@@ -25,6 +26,17 @@ type RegisterStep = 'lastName' | 'firstName' | 'middleName' | 'phone' | 'passwor
 
 const steps: RegisterStep[] = ['lastName', 'firstName', 'middleName', 'phone', 'password']
 const draftKey = 'vroom:student_register_draft'
+const fallbackSchool: School = {
+  id: 'school-virazh',
+  name: 'Автошкола «Вираж»',
+  slug: 'virazh',
+  description: '',
+  phone: '',
+  email: '',
+  address: '',
+  createdAt: '',
+  isActive: true,
+}
 
 function stepIndex(step: RegisterStep) {
   return Math.max(0, steps.indexOf(step))
@@ -53,7 +65,7 @@ export default function StudentRegisterPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const school = useMemo(() => db.schools.bySlug('virazh') ?? db.schools.all()[0] ?? null, [])
+  const school = useMemo(() => db.schools.bySlug('virazh') ?? db.schools.all()[0] ?? fallbackSchool, [])
   const currentIndex = stepIndex(step)
   const progress = step === 'success' ? 100 : Math.round(((currentIndex + 1) / steps.length) * 100)
   const fullName = [lastName, first, middleName].map((part) => part.trim()).filter(Boolean).join(' ')
@@ -144,7 +156,7 @@ export default function StudentRegisterPage() {
   }
 
   async function submit() {
-    if (!school || submitting) return
+    if (submitting) return
     if (!isNamePartValid(lastName) || !isNamePartValid(first)) {
       setError('Введите фамилию и имя.')
       setStep(!isNamePartValid(lastName) ? 'lastName' : 'firstName')
