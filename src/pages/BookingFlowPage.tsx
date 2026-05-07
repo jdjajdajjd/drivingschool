@@ -333,6 +333,8 @@ function VroomSchedulerPicker({
 export function BookingFlowPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
   const isDemo = slug === 'virazh'
+  const isWorkspace = slug === 'workspace'
+  const isLocalSchool = isDemo || isWorkspace
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -356,8 +358,9 @@ export function BookingFlowPage() {
 
   useEffect(() => {
     if (isDemo) setDataNamespace('demo')
+    if (isWorkspace) setDataNamespace('workspace')
     setLoading(true)
-    void loadPublicSchoolData(slug, { preferLocal: isDemo })
+    void loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
       .then((data) => {
         if (!data) return
         setSchool(data.school)
@@ -403,7 +406,7 @@ export function BookingFlowPage() {
     async function refresh() {
       if (!school || disposed) return
       setRefreshingSlots(true)
-      await refreshPublicSlots(school.id, { preferLocal: isDemo })
+      await refreshPublicSlots(school.id, { preferLocal: isLocalSchool })
       if (!disposed) {
         setSlotsVersion((current) => current + 1)
         setLastSlotsRefreshAt(new Date())
@@ -488,7 +491,7 @@ export function BookingFlowPage() {
   function handleRefreshSlots() {
     if (!school) return
     setRefreshingSlots(true)
-    void refreshPublicSlots(school.id, { preferLocal: isDemo }).then(() => {
+    void refreshPublicSlots(school.id, { preferLocal: isLocalSchool }).then(() => {
       setSlotsVersion((current) => current + 1)
       setLastSlotsRefreshAt(new Date())
       setRefreshingSlots(false)
@@ -496,7 +499,7 @@ export function BookingFlowPage() {
   }
 
   function goBack() {
-    if (step === 'date') navigate('/student')
+    if (step === 'date') navigate(`/school/${slug}`)
     else if (step === 'instructor') setStep('date')
     else if (step === 'time') setStep('instructor')
     else if (step === 'contacts') setStep('time')
@@ -554,7 +557,7 @@ export function BookingFlowPage() {
     setSelectedDate(parseISO(bookingSlot.date))
     setSubmitting(true)
     try {
-      await refreshPublicSlots(school.id, { preferLocal: isDemo })
+      await refreshPublicSlots(school.id, { preferLocal: isLocalSchool })
       const freshSlot = db.slots.byId(bookingSlot.id)
       if (
         !freshSlot ||
@@ -570,7 +573,7 @@ export function BookingFlowPage() {
       let bookingGroupId = ''
 
       try {
-        if (isDemo) throw new Error('Demo uses local booking')
+        if (isLocalSchool) throw new Error('Local school uses local booking')
         const result = await createSupabaseBooking({
           schoolId: school.id,
           studentName: form.name,
@@ -580,7 +583,7 @@ export function BookingFlowPage() {
         bookingId = result.bookingIds[0] ?? ''
         bookingGroupId = result.bookingGroupId
       } catch {
-        const freshData = await loadPublicSchoolData(slug, { preferLocal: isDemo })
+        const freshData = await loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
         const freshLocalSlot = db.slots.byId(bookingSlot.id)
         const freshBranchActive = freshLocalSlot
           ? freshData?.branches.some((branch) => branch.id === freshLocalSlot.branchId && branch.isActive)
@@ -732,7 +735,7 @@ export function BookingFlowPage() {
             {step === 'date' && (
               <section>
                 <h2 className="text-[30px] font-bold leading-tight tracking-[-0.02em]" style={{ color: ui.text }}>Расписание</h2>
-                <p className="mt-2 text-[15px] font-medium leading-5" style={{ color: ui.textSoft }}>Нажмите свободный слот, чтобы записаться</p>
+                <p className="mt-2 text-[15px] font-medium leading-5" style={{ color: ui.textSoft }}>Нажмите свободное время, чтобы записаться</p>
 
                 <div className="mt-5 space-y-4">
                   <VroomSchedulerPicker
@@ -948,13 +951,13 @@ export function BookingFlowPage() {
                     type="email"
                     value={form.email}
                     error={errors.email}
-                    placeholder="name@example.ru"
+                    placeholder="Необязательно"
                     onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
                   />
 
                   <div className="rounded-2xl p-4" style={{ background: ui.blueSoft }}>
                     <p className="text-[13px] font-semibold leading-5" style={{ color: ui.accent }}>
-                      На следующем шаге покажем итог записи. После подтверждения ещё раз проверим, что слот свободен.
+                      На следующем шаге покажем итог записи. После подтверждения ещё раз проверим, что время свободно.
                     </p>
                   </div>
                 </div>
@@ -984,7 +987,7 @@ export function BookingFlowPage() {
                   Проверьте запись
                 </h2>
                 <p className="t-body mt-2" style={{ color: ui.textMuted }}>
-                  Если всё верно - подтвердите.
+                  Если всё верно — подтвердите.
                 </p>
 
                 <div className="mt-5">
@@ -1034,14 +1037,14 @@ export function BookingFlowPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: 0.08 }}
                 >
-                  <Button onClick={() => navigate('/student')}>
-                    Посмотреть мои записи
+                  <Button onClick={() => setStep('account')}>
+                    Создать кабинет и видеть свои записи
                   </Button>
                   <Button variant="secondary" onClick={downloadCalendar}>
                     <CalendarPlus size={16} />
                     Добавить в календарь
                   </Button>
-                  <Button variant="ghost" onClick={() => navigate('/student/book')}>
+                  <Button variant="ghost" onClick={() => navigate(`/school/${slug}/book`)}>
                     Записаться ещё
                   </Button>
                 </motion.div>

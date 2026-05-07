@@ -45,11 +45,9 @@ function App() {
 
   useEffect(() => {
     Promise.all([import('./services/storage'), import('./services/seed')]).then(([storage, seed]) => {
-      storage.setDataNamespace('demo')
-      seed.seedIfNeeded({ mode: 'demo' })
-      storage.setDataNamespace('workspace')
-      seed.seedIfNeeded({ mode: 'workspace' })
-      storage.setDataNamespace(window.location.pathname.startsWith(ADMIN_BASE_PATH) || window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH || window.location.pathname === '/admin' ? 'workspace' : 'demo')
+      const shouldUseWorkspace = window.location.pathname.startsWith(ADMIN_BASE_PATH) || window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH || window.location.pathname === '/admin' || window.location.pathname.startsWith('/school/workspace')
+      storage.setDataNamespace(shouldUseWorkspace ? 'workspace' : 'demo')
+      seed.seedIfNeeded({ mode: shouldUseWorkspace ? 'workspace' : 'demo' })
       setIsReady(true)
     })
 

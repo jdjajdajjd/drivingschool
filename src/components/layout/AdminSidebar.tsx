@@ -14,6 +14,7 @@ import {
 import { cn } from '../../lib/utils'
 import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
+import { db } from '../../services/storage'
 
 const CalendarDays = createHugeIcon(Calendar03Icon)
 const Car = createHugeIcon(Car03Icon)
@@ -43,6 +44,9 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const navigate = useNavigate()
+  const school = db.schools.all()[0] ?? null
+  const schoolName = school?.name || 'Новая автошкола'
+  const publicPath = `/school/${school?.slug ?? 'workspace'}`
 
   return (
     <>
@@ -81,7 +85,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
         <div className="border-b rgba(0,0,0,0.06) px-5 py-4">
           <p className="caption">Автошкола</p>
-          <p className="mt-1 text-sm font-bold #111418">Новая автошкола</p>
+          <p className="mt-1 text-sm font-bold #111418">{schoolName}</p>
           <p className="mt-1 text-sm #6F747A">Рабочая панель</p>
         </div>
 
@@ -114,7 +118,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         <div className="space-y-2 border-t rgba(0,0,0,0.06) px-3 py-4">
           <button
             onClick={() => {
-              navigate('/demo')
+              navigate(publicPath)
               onClose()
             }}
             className="flex w-full min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-[15px] font-semibold #6F747A transition hover:#F4F5F6 hover:#111418"

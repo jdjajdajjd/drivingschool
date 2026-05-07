@@ -1,24 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight01Icon, Shield01Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import type { School } from '../types'
 import { db, setDataNamespace } from '../services/storage'
 import { createHugeIcon } from '../components/ui/HugeIcon'
-import { ThemeToggle } from '../components/ui/ThemeProvider'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const ShieldCheck = createHugeIcon(Shield01Icon)
-
-const entryPoints = [
-  {
-    title: 'Войти в кабинет',
-    description: 'Пустой кабинет автошколы для настройки через админку.',
-    icon: ShieldCheck,
-    path: '/workspace-admin',
-    accent: true,
-  },
-]
 
 function SchoolLogo({ school }: { school: School }) {
   return (
@@ -85,7 +73,12 @@ export function LandingPage() {
               <p className="font-semibold" style={{ fontSize: 12, color: '#9EA3A8' }}>Онлайн-запись на вождение</p>
             </div>
           </div>
-          <ThemeToggle compact />
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => navigate('/workspace-admin')}
+          >
+            Войти в кабинет
+          </button>
         </motion.header>
 
         {/* Hero */}
@@ -102,42 +95,6 @@ export function LandingPage() {
             Ученики выбирают свободное время сами. Администратор видит расписание, инструкторов, записи и учеников в кабинете автошколы.
           </p>
         </motion.section>
-
-        {/* Entry cards */}
-        <section className="space-y-3 mb-8">
-          {entryPoints.map((item, i) => {
-            const Icon = item.icon
-            return (
-              <motion.button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="w-full text-left card"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: 0.08 + i * 0.07 }}
-                whileHover={{ y: -3, transition: { duration: 0.18 } }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="card-body flex items-center gap-5">
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-                    style={{
-                      background: item.accent ? '#050607' : '#F4F5F6',
-                      boxShadow: item.accent ? '0 12px 28px rgba(0,0,0,0.16)' : 'none',
-                    }}
-                  >
-                    <Icon size={20} strokeWidth={2.2} style={{ color: item.accent ? 'white' : '#6F747A' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="t-subheading">{item.title}</p>
-                    <p className="t-small mt-0.5">{item.description}</p>
-                  </div>
-                  <ArrowRight size={18} style={{ color: '#C4C9CF', flexShrink: 0 }} />
-                </div>
-              </motion.button>
-            )
-          })}
-        </section>
 
         {/* Demo school quick card */}
         <motion.div
@@ -162,16 +119,6 @@ export function LandingPage() {
             <ArrowRight size={17} />
           </button>
         </motion.div>
-
-        {/* Footer note */}
-        <motion.p
-          className="text-center mt-8 t-micro"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-        >
-          «Войти в кабинет» — пустая настройка. «Демо автошколы» — заполненный пример.
-        </motion.p>
 
       </main>
     </div>

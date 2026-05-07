@@ -37,6 +37,7 @@ export default function StudentLoginPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   if (slug === 'virazh') setDataNamespace('demo')
+  if (slug === 'workspace') setDataNamespace('workspace')
   const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
 
   async function submit() {
@@ -103,7 +104,7 @@ export default function StudentLoginPage() {
             </div>
             <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Войдите в кабинет</h1>
             <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">
-              Здесь будут расписание, занятия, документы и сообщения автошколы.
+              Здесь хранятся ваши записи, занятия, документы и сообщения автошколы.
             </p>
 
             <div className="mt-6 space-y-4">
@@ -115,7 +116,7 @@ export default function StudentLoginPage() {
               {submitting ? 'Входим...' : 'Войти'}
               <ArrowRight size={18} />
             </Button>
-            <button type="button" className="mt-3 w-full rounded-[16px] bg-[var(--surface-muted)] px-4 py-3 text-[13px] font-extrabold text-[var(--text-muted)]" onClick={() => setError('Восстановление пароля скоро появится. Пока обратитесь в автошколу.')}>Забыли пароль?</button>
+            <button type="button" className="mt-3 w-full rounded-[16px] bg-[var(--surface-muted)] px-4 py-3 text-[13px] font-extrabold text-[var(--text-muted)]" onClick={() => setError('Для восстановления доступа обратитесь в автошколу.')}>Забыли пароль?</button>
             <p className="mt-4 text-center text-[12px] font-semibold leading-5 text-[var(--text-soft)]">
               Продолжая, вы принимаете <a className="font-extrabold text-[var(--accent)]" href="/terms">условия сервиса</a> и <a className="font-extrabold text-[var(--accent)]" href="/privacy">политику конфиденциальности</a>.
             </p>

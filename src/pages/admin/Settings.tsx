@@ -61,7 +61,7 @@ export function AdminSettings() {
       defaultLessonDuration: school.defaultLessonDuration ?? 90,
       enabledCategoryCodes: school.enabledCategoryCodes?.length ? school.enabledCategoryCodes : instructorCategoryCodes,
     })
-  }, [school])
+  }, [school?.id])
 
   const publicUrl = useMemo(() => `${window.location.origin}/school/${school?.slug ?? form.slug}`, [form.slug, school?.slug])
   const selectedCategories = DRIVING_CATEGORIES.filter((category) => form.enabledCategoryCodes.includes(category.code))
@@ -132,10 +132,10 @@ export function AdminSettings() {
     try {
       setSaving(true)
       const result = await updateSchoolConfirmed(school.id, {
-        name: form.name,
-        description: form.description,
-        primaryColor: form.primaryColor,
-        logoUrl: form.logoUrl,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        primaryColor: form.primaryColor.trim(),
+        logoUrl: form.logoUrl.trim(),
         bookingLimitEnabled: form.bookingLimitEnabled,
         maxActiveBookingsPerStudent: form.maxActiveBookingsPerStudent,
         branchSelectionMode: form.branchSelectionMode,

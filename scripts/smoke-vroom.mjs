@@ -64,7 +64,7 @@ try {
       }
 
       const text = await page.locator('body').innerText()
-      const ddKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('dd:')))
+      const ddKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('dd:workspace:')))
 
       for (const rejected of [...route.rejects, ...forbidden]) {
         if (text.includes(rejected)) failures.push(`${route.path} (${url}): contains forbidden text "${rejected}"`)

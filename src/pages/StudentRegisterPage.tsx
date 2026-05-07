@@ -66,6 +66,7 @@ export default function StudentRegisterPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   if (slug === 'virazh') setDataNamespace('demo')
+  if (slug === 'workspace') setDataNamespace('workspace')
 
   const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
   const currentIndex = stepIndex(step)
