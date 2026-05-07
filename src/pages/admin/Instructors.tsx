@@ -39,7 +39,7 @@ const initialForm = {
 }
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none transition focus:border-accent focus:ring-3 focus:ring-accent/10'
+  return 'h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none transition focus:border-accent focus:ring-3 focus:ring-accent/10'
 }
 
 export function AdminInstructors() {
@@ -165,14 +165,14 @@ export function AdminInstructors() {
 
   if (!school) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Инструкторы"
@@ -201,16 +201,16 @@ export function AdminInstructors() {
                       src={getInstructorPhoto(instructor)}
                       alt={instructor.name}
                       size="xl"
-                      className="rounded-2xl"
+                      className="rounded-[16px]"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-lg font-bold #111418">{instructor.name}</p>
+                        <p className="text-lg font-bold text-[#111827]">{instructor.name}</p>
                         <Badge variant={instructor.isActive ? 'success' : 'default'}>
                           {instructor.isActive ? 'Активен' : 'Выключен'}
                         </Badge>
                       </div>
-                      <p className="mt-2 text-sm #6F747A">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
+                      <p className="mt-2 text-sm text-[#4B5A70]">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {(instructor.categories?.length ? instructor.categories : ['B']).map((code) => (
                           <Badge key={code} variant="default">
@@ -222,31 +222,31 @@ export function AdminInstructors() {
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-2xl #F4F5F6 px-3 py-3">
+                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
                       <p className="caption">Филиал</p>
-                      <p className="mt-1 text-sm font-bold #111418">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
+                      <p className="mt-1 text-sm font-bold text-[#111827]">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
                     </div>
-                    <div className="rounded-2xl #F4F5F6 px-3 py-3">
+                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
                       <p className="caption">Телефон</p>
-                      <p className="mt-1 text-sm font-bold #111418">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
+                      <p className="mt-1 text-sm font-bold text-[#111827]">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
                     </div>
-                    <div className="rounded-2xl #F4F5F6 px-3 py-3">
+                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
                       <p className="caption">Машина</p>
-                      <p className="mt-1 text-sm font-bold #111418">
+                      <p className="mt-1 text-sm font-bold text-[#111827]">
                         {instructor.car ?? 'Не указана'}
                         {instructor.transmission ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}
                       </p>
                     </div>
-                    <div className="rounded-2xl #F4F5F6 px-3 py-3">
+                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
                       <p className="caption">Записи / свободное занятия</p>
                       <p className="mt-1 text-sm font-bold #C97F10">{futureLessons} / {freeSlots7d}</p>
                     </div>
                   </div>
 
                   <div>
-                  <div className="rounded-2xl #F4F5F6 px-4 py-4">
+                  <div className="rounded-[16px] bg-[#F8FAFE] px-4 py-4">
                     <p className="caption">Личная ссылка</p>
-                    <p className="mt-2 break-all text-sm font-medium #6F747A">
+                    <p className="mt-2 break-all text-sm font-medium text-[#4B5A70]">
                       {window.location.origin}/instructor/{instructor.token}
                     </p>
                   </div>
@@ -313,21 +313,21 @@ export function AdminInstructors() {
                     key={category.code}
                     type="button"
                     onClick={() => toggleCategory(category.code)}
-                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    className={`rounded-[16px] border px-3 py-2.5 text-left transition ${
                       active
-                        ? 'border-accent rgba(246,184,77,0.12) #111418'
-                        : 'rgba(0,0,0,0.06) bg-white #6F747A hover:rgba(246,184,77,0.20)'
+                        ? 'border-accent rgba(246,184,77,0.12) text-[#111827]'
+                        : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20)'
                     }`}
                   >
                     <span className="text-sm font-semibold">{category.title}</span>
-                    <span className="mt-1 block text-xs #9EA3A8">{category.description}</span>
+                    <span className="mt-1 block text-xs text-[#667085]">{category.description}</span>
                   </button>
                 )
               })}
             </div>
           </FormField>
 
-          <label className="flex items-center gap-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-3 text-sm #6F747A">
+          <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
             <input
               type="checkbox"
               checked={form.isActive}
@@ -336,7 +336,7 @@ export function AdminInstructors() {
             Инструктор активен и доступен в публичной записи
           </label>
 
-          <p className="rounded-2xl bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-[#8A5A00]">
+          <p className="rounded-[16px] bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-[#8A5A00]">
             При выключении инструктора будущее свободное время будут скрыты из публичной записи. Занятые занятия сохраняются.
           </p>
 

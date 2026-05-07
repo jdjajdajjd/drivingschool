@@ -38,7 +38,7 @@ type StatusFilter = 'all' | 'active' | 'cancelled' | 'completed'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
 
 function selectClassName() {
-  return 'field h-11 rounded-2xl'
+  return 'field h-11 rounded-[16px]'
 }
 
 export function AdminBookings() {
@@ -205,33 +205,33 @@ export function AdminBookings() {
 
   if (!school) {
     return (
-      <div className="max-w-7xl p-6 md:p-8">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Записи"
         description="Поиск, фильтры, отмена, проведение и перенос занятий без выхода из панели."
       />
 
-      <div className="mt-6 space-y-5">
+      <div className="mt-3 space-y-3">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Всего</p>
-            <p className="mt-1 text-2xl font-bold text-[#111418]">{allBookings.length}</p>
+          <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(35,47,78,0.08)]">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Всего</p>
+            <p className="mt-1 text-2xl font-bold text-[text-[#111827]]">{allBookings.length}</p>
           </div>
-          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Активные</p>
-            <p className="mt-1 text-2xl font-bold text-[#111418]">{activeCount}</p>
+          <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(35,47,78,0.08)]">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Активные</p>
+            <p className="mt-1 text-2xl font-bold text-[text-[#111827]]">{activeCount}</p>
           </div>
-          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Сегодня</p>
-            <p className="mt-1 text-2xl font-bold text-[#111418]">{todayCount}</p>
+          <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(35,47,78,0.08)]">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Сегодня</p>
+            <p className="mt-1 text-2xl font-bold text-[text-[#111827]]">{todayCount}</p>
           </div>
         </div>
 
@@ -240,12 +240,12 @@ export function AdminBookings() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 #9EA3A8" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Ученик или телефон"
-                  className="field h-11 rounded-2xl pl-10"
+                  className="field h-11 rounded-[16px] pl-10"
                 />
               </div>
             </FormField>
@@ -309,8 +309,8 @@ export function AdminBookings() {
             <>
               <TableShell className="hidden xl:block">
                 <table className="min-w-full divide-y divide-warm-border">
-                  <thead className="#F4F5F6">
-                    <tr className="text-left text-xs font-bold uppercase tracking-[0.08em] #9EA3A8">
+                  <thead className="bg-[#F8FAFE]">
+                    <tr className="text-left text-xs font-bold uppercase tracking-[0.08em] text-[#667085]">
                       <th className="px-4 py-3">Дата</th>
                       <th className="px-4 py-3">Ученик</th>
                       <th className="px-4 py-3">Филиал</th>
@@ -322,29 +322,29 @@ export function AdminBookings() {
                   </thead>
                   <tbody className="divide-y divide-warm-border bg-white">
                     {filteredBookings.map((entry) => (
-                      <tr key={entry.booking.id} className="align-top text-sm #6F747A transition hover:rgba(246,184,77,0.12)/45">
+                      <tr key={entry.booking.id} className="align-top text-sm text-[#4B5A70] transition hover:rgba(246,184,77,0.12)/45">
                         <td className="px-4 py-4">
-                          <p className="font-bold #111418">
+                          <p className="font-bold text-[#111827]">
                             {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                           </p>
                         </td>
                         <td className="px-4 py-4">
                           {entry.student ? (
-                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-bold #111418 hover:#C97F10">
+                            <Link to={`${ADMIN_BASE_PATH}/students/${entry.student.id}`} className="font-bold text-[#111827] hover:#C97F10">
                               {entry.booking.studentName}
                             </Link>
                           ) : (
-                            <p className="font-bold #111418">{entry.booking.studentName}</p>
+                            <p className="font-bold text-[#111827]">{entry.booking.studentName}</p>
                           )}
-                          <p className="#9EA3A8">{formatPhone(entry.booking.studentPhone)}</p>
+                          <p className="text-[#667085]">{formatPhone(entry.booking.studentPhone)}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="font-bold #111418">{entry.branch?.name ?? 'Не найдено'}</p>
-                          <p className="#9EA3A8">{entry.branch?.address ?? 'Без адреса'}</p>
+                          <p className="font-bold text-[#111827]">{entry.branch?.name ?? 'Не найдено'}</p>
+                          <p className="text-[#667085]">{entry.branch?.address ?? 'Без адреса'}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="font-bold #111418">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
-                          <p className="#9EA3A8">
+                          <p className="font-bold text-[#111827]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
+                          <p className="text-[#667085]">
                             {entry.instructor?.car ?? 'Машина не указана'}
                             {entry.instructor?.transmission
                               ? ` · ${entry.instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}`
@@ -354,7 +354,7 @@ export function AdminBookings() {
                         <td className="px-4 py-4">
                           <StatusBadge status={entry.booking.status} />
                         </td>
-                        <td className="px-4 py-4 #9EA3A8">
+                        <td className="px-4 py-4 text-[#667085]">
                           {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
                         </td>
                         <td className="px-4 py-4">
@@ -402,29 +402,29 @@ export function AdminBookings() {
                   <DataRow key={entry.booking.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-base font-bold #111418">{entry.booking.studentName}</p>
-                        <p className="text-sm font-medium #6F747A">{formatPhone(entry.booking.studentPhone)}</p>
+                        <p className="text-base font-bold text-[#111827]">{entry.booking.studentName}</p>
+                        <p className="text-sm font-medium text-[#4B5A70]">{formatPhone(entry.booking.studentPhone)}</p>
                       </div>
                       <StatusBadge status={entry.booking.status} />
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-medium #9EA3A8">Занятие</p>
-                        <p className="mt-1 text-sm font-medium #111418">
+                        <p className="text-xs font-medium text-[#667085]">Занятие</p>
+                        <p className="mt-1 text-sm font-medium text-[#111827]">
                           {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium #9EA3A8">Инструктор</p>
-                        <p className="mt-1 text-sm font-medium #111418">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
+                        <p className="text-xs font-medium text-[#667085]">Инструктор</p>
+                        <p className="mt-1 text-sm font-medium text-[#111827]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium #9EA3A8">Филиал</p>
-                        <p className="mt-1 text-sm font-medium #111418">{entry.branch?.name ?? 'Не найдено'}</p>
+                        <p className="text-xs font-medium text-[#667085]">Филиал</p>
+                        <p className="mt-1 text-sm font-medium text-[#111827]">{entry.branch?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium #9EA3A8">Создана</p>
-                        <p className="mt-1 text-sm font-medium #111418">
+                        <p className="text-xs font-medium text-[#667085]">Создана</p>
+                        <p className="mt-1 text-sm font-medium text-[#111827]">
                           {new Date(entry.booking.createdAt).toLocaleString('ru-RU')}
                         </p>
                       </div>
@@ -487,7 +487,7 @@ export function AdminBookings() {
 
       <Modal open={Boolean(rescheduleBookingId)} onClose={() => setRescheduleBookingId(null)} title="Перенести запись" size="lg">
         <div className="space-y-6 px-6 pb-6">
-          <div className="rounded-2xl border border-warning-soft #FFFBEB px-4 py-4 text-sm #B45309">
+          <div className="rounded-[16px] border border-warning-soft #FFFBEB px-4 py-4 text-sm #B45309">
             Администратор может перенести запись даже при лимите будущих записей у ученика. Если лимит превышен, это будет отмечено в уведомлении.
           </div>
 
@@ -530,17 +530,17 @@ export function AdminBookings() {
                   <button
                     key={slot.id}
                     onClick={() => setSelectedNewSlotId(slot.id)}
-                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                    className={`rounded-[16px] border px-4 py-4 text-left transition ${
                       selected
                         ? 'ui-selected'
-                        : 'rgba(0,0,0,0.06) bg-white hover:rgba(246,184,77,0.20) hover:rgba(246,184,77,0.12)/45'
+                        : 'border-[#D8E0EC] bg-white hover:rgba(246,184,77,0.20) hover:rgba(246,184,77,0.12)/45'
                     }`}
                   >
-                    <p className="text-sm font-semibold #111418">
+                    <p className="text-sm font-semibold text-[#111827]">
                       {formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}
                     </p>
-                    <p className="mt-1 text-sm #9EA3A8">{branch?.name ?? 'Филиал не найден'}</p>
-                    <p className="mt-1 text-sm #9EA3A8">{instructor ? formatInstructorName(instructor.name) : 'Инструктор не найден'}</p>
+                    <p className="mt-1 text-sm text-[#667085]">{branch?.name ?? 'Филиал не найден'}</p>
+                    <p className="mt-1 text-sm text-[#667085]">{instructor ? formatInstructorName(instructor.name) : 'Инструктор не найден'}</p>
                   </button>
                 )
               })}

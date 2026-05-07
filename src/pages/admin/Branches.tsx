@@ -114,14 +114,14 @@ export function AdminBranches() {
 
   if (!school) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Филиалы"
@@ -144,32 +144,32 @@ export function AdminBranches() {
                 <DataRow key={branch.id} className="p-4">
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px_220px] xl:items-center">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl rgba(246,184,77,0.12) #C97F10">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[16px] rgba(246,184,77,0.12) #C97F10">
                         <Location size={18} />
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-lg font-bold #111418">{branch.name}</p>
+                          <p className="text-lg font-bold text-[#111827]">{branch.name}</p>
                           <Badge variant={branch.isActive ? 'success' : 'default'}>
                             {branch.isActive ? 'Активен' : 'Выключен'}
                           </Badge>
                         </div>
-                        <p className="mt-1 text-sm #6F747A">{branch.address || 'Адрес не указан'}</p>
-                        {branch.phone ? <p className="mt-1 text-sm font-semibold #9EA3A8">{branch.phone}</p> : null}
+                        <p className="mt-1 text-sm text-[#4B5A70]">{branch.address || 'Адрес не указан'}</p>
+                        {branch.phone ? <p className="mt-1 text-sm font-semibold text-[#667085]">{branch.phone}</p> : null}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                        <p className="text-xs font-bold #9EA3A8">Инструкторы</p>
-                        <p className="mt-1 text-lg font-bold #111418">{instructorCount}</p>
+                      <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
+                        <p className="text-xs font-bold text-[#667085]">Инструкторы</p>
+                        <p className="mt-1 text-lg font-bold text-[#111827]">{instructorCount}</p>
                       </div>
-                      <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                        <p className="text-xs font-bold #9EA3A8">Записи</p>
-                        <p className="mt-1 text-lg font-bold #111418">{futureBookings}</p>
+                      <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
+                        <p className="text-xs font-bold text-[#667085]">Записи</p>
+                        <p className="mt-1 text-lg font-bold text-[#111827]">{futureBookings}</p>
                       </div>
-                      <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                        <p className="text-xs font-bold #9EA3A8">Времяы 7д</p>
+                      <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
+                        <p className="text-xs font-bold text-[#667085]">Времяы 7д</p>
                         <p className="mt-1 text-lg font-bold #C97F10">{freeSlots7d}</p>
                       </div>
                     </div>
@@ -197,7 +197,7 @@ export function AdminBranches() {
           <Input label="Название" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
           <Input label="Адрес" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />
           <Input label="Телефон" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-          <label className="flex items-center gap-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-3 text-sm #6F747A">
+          <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
             <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />
             Филиал активен
           </label>

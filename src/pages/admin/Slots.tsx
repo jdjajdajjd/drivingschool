@@ -46,7 +46,7 @@ function lessonTypeLabel(type: LessonType | undefined) {
 }
 
 function selectClassName() {
-  return 'h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft'
+  return 'h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft'
 }
 
 export function AdminSlots() {
@@ -237,21 +237,21 @@ export function AdminSlots() {
 
   if (!school) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <StateView kind="error" title="Школа не найдена" description="Проверьте данные школы." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Расписание"
         description="Создавайте свободные занятия для учеников. Это расписание видно на странице автошколы."
       />
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-3 space-y-3">
         <Section title="Добавить занятия" description="Для запуска обычно удобнее создать серию занятий на неделю или две вперед.">
           <div className="mb-5 grid gap-2 sm:grid-cols-3">
             {[
@@ -259,10 +259,10 @@ export function AdminSlots() {
               { step: 2, title: 'Когда', text: 'Даты и дни недели' },
               { step: 3, title: 'Как долго', text: 'Время, тип, перерыв' },
             ].map((item) => (
-              <div key={item.step} className={`rounded-2xl border px-4 py-3 ${scheduleStep === item.step ? 'border-accent bg-[#F6B84D]/10' : 'border-black/10 bg-white'}`}>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#9EA3A8]">Шаг {item.step}</p>
-                <p className="mt-1 text-sm font-bold text-[#111418]">{item.title}</p>
-                <p className="text-xs font-semibold text-[#6F747A]">{item.text}</p>
+              <div key={item.step} className={`rounded-[16px] border px-3 py-2.5 ${scheduleStep === item.step ? 'border-accent bg-[#F6B84D]/10' : 'border-[#D8E0EC] bg-white'}`}>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Шаг {item.step}</p>
+                <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{item.title}</p>
+                <p className="text-xs font-semibold text-[text-[#4B5A70]]">{item.text}</p>
               </div>
             ))}
           </div>
@@ -326,7 +326,7 @@ export function AdminSlots() {
                           }))
                         }
                         className={`rounded-full border px-4 py-2 text-base transition ${
-                          active ? 'border-accent bg-[#F6B84D]/10 text-[#C97F10]' : 'border-black/10 bg-white text-[#6F747A]'
+                          active ? 'border-accent bg-[#F6B84D]/10 text-[#C97F10]' : 'border-[#D8E0EC] bg-white text-[text-[#4B5A70]]'
                         }`}
                       >
                         {day.label}
@@ -336,7 +336,7 @@ export function AdminSlots() {
                 </div>
               </FormField>
 
-              <div className="rounded-2xl border border-[#F6B84D]/20 bg-[#F6B84D]/10 px-4 py-4 text-base text-[#111418]">
+              <div className="rounded-[16px] border border-[#F6B84D]/20 bg-[#F6B84D]/10 px-4 py-4 text-base text-[text-[#111827]]">
                 Проверьте: {branches.find((branch) => branch.id === bulkForm.branchId)?.name ?? 'филиал не выбран'}, {instructors.find((instructor) => instructor.id === bulkForm.instructorId)?.name ?? 'инструктор не выбран'}, период {bulkForm.dateFrom || 'дата от'} - {bulkForm.dateTo || 'дата до'}, время {bulkForm.windowStart}-{bulkForm.windowEnd}. Дубли и занятия в прошлом будут пропущены.
               </div>
 
@@ -382,12 +382,12 @@ export function AdminSlots() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <FormField label="Поиск">
               <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" />
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Инструктор, филиал, ученик"
-                  className="h-11 w-full rounded-2xl border border-black/10 bg-white pl-10 pr-3.5 text-[15px] text-[#111418] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft"
+                  className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white pl-10 pr-3.5 text-[15px] text-[text-[#111827]] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft"
                 />
               </div>
             </FormField>
@@ -435,18 +435,18 @@ export function AdminSlots() {
                       <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <div>
                           <p className="caption">Дата и время</p>
-                          <p className="mt-1 text-base font-bold text-[#111418]">{formatHumanDate(entry.slot.date, false)}</p>
+                          <p className="mt-1 text-base font-bold text-[text-[#111827]]">{formatHumanDate(entry.slot.date, false)}</p>
                           <p className="text-sm font-semibold text-[#C97F10]">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
-                          <p className="text-xs font-semibold text-[#6F747A]">{lessonTypeLabel(entry.slot.lessonType)}</p>
+                          <p className="text-xs font-semibold text-[text-[#4B5A70]]">{lessonTypeLabel(entry.slot.lessonType)}</p>
                         </div>
                         <div>
                           <p className="caption">Филиал</p>
-                          <p className="mt-1 text-sm font-bold text-[#111418]">{entry.branch?.name ?? 'Не найден'}</p>
+                          <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{entry.branch?.name ?? 'Не найден'}</p>
                         </div>
                         <div>
                           <p className="caption">Инструктор</p>
-                          <p className="mt-1 text-sm font-bold text-[#111418]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
-                          <p className="text-sm text-[#9EA3A8]">{entry.instructor?.car ?? 'Без машины'}</p>
+                          <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
+                          <p className="text-sm text-[#667085]">{entry.instructor?.car ?? 'Без машины'}</p>
                         </div>
                         <div>
                           <p className="caption">Статус</p>
@@ -454,7 +454,7 @@ export function AdminSlots() {
                         </div>
                         <div>
                           <p className="caption">Ученик</p>
-                          <p className="mt-1 text-sm font-bold text-[#111418]">{entry.student?.name ?? 'Нет записи'}</p>
+                          <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{entry.student?.name ?? 'Нет записи'}</p>
                         </div>
                       </div>
 

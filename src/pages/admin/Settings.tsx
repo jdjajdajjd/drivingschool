@@ -169,14 +169,14 @@ export function AdminSettings() {
 
   if (!school) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <StateView kind="error" title="Школа не найдена" description="Проверьте подключение данных школы." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Настройки"
@@ -189,7 +189,7 @@ export function AdminSettings() {
         }
       />
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-3 space-y-3">
         <Section title="Основное" description="Название, описание и внешний вид страницы школы.">
           <div className="grid gap-4 md:grid-cols-2">
             <Input label="Название автошколы" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
@@ -205,9 +205,9 @@ export function AdminSettings() {
         <Section title="Публичная страница" description="Ссылка, preview и быстрые действия по странице записи.">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-4">
-              <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+              <div className="rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-4">
                 <p className="caption">Ссылка</p>
-                <p className="mt-2 break-all text-sm font-bold #111418">{publicUrl}</p>
+                <p className="mt-2 break-all text-sm font-bold text-[#111827]">{publicUrl}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button variant="secondary" onClick={() => void copyPublicLink()}>
@@ -222,43 +222,43 @@ export function AdminSettings() {
             </div>
 
             <div
-              className="rounded-[2rem] border rgba(0,0,0,0.06) bg-white p-5 "
+              className="rounded-[2rem] border border-[#D8E0EC] bg-white p-5 "
               style={{
                 boxShadow: `0 18px 48px ${hexToRgba(previewColor, 0.08)}`,
               }}
             >
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
+                className="flex h-12 w-12 items-center justify-center rounded-[16px] text-sm font-semibold text-white"
                 style={{ backgroundColor: previewColor }}
               >
                 {form.logoUrl ? (
-                  <img src={form.logoUrl} alt={form.name} className="h-full w-full rounded-2xl object-cover" />
+                  <img src={form.logoUrl} alt={form.name} className="h-full w-full rounded-[16px] object-cover" />
                 ) : (
                   form.name.slice(0, 2).toUpperCase()
                 )}
               </div>
-              <p className="mt-4 text-lg font-bold #111418">{form.name || 'Автошкола'}</p>
-              <p className="mt-2 text-sm leading-relaxed #6F747A">
+              <p className="mt-4 text-lg font-bold text-[#111827]">{form.name || 'Автошкола'}</p>
+              <p className="mt-2 text-sm leading-relaxed text-[#4B5A70]">
                 {form.description || 'Описание школы будет показано на публичной странице записи.'}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(selectedCategories.length ? selectedCategories : DRIVING_CATEGORIES.slice(0, 1)).slice(0, 5).map((category) => (
-                  <span key={category.code} className="rounded-2xl #F4F5F6 px-3 py-1 text-xs font-bold #6F747A">
+                  <span key={category.code} className="rounded-[16px] bg-[#F8FAFE] px-3 py-1 text-xs font-bold text-[#4B5A70]">
                     {category.code}
                   </span>
                 ))}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                  <p className="text-lg font-bold #111418">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
-                  <p className="text-xs #9EA3A8">филиала</p>
+                <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
+                  <p className="text-lg font-bold text-[#111827]">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
+                  <p className="text-xs text-[#667085]">филиала</p>
                 </div>
-                <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                  <p className="text-lg font-bold #111418">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
-                  <p className="text-xs #9EA3A8">инструкторов</p>
+                <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
+                  <p className="text-lg font-bold text-[#111827]">{db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive).length}</p>
+                  <p className="text-xs text-[#667085]">инструкторов</p>
                 </div>
               </div>
-              <div className="mt-4 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: previewColor }}>
+              <div className="mt-4 rounded-[16px] px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: previewColor }}>
                 Записаться
               </div>
             </div>
@@ -274,10 +274,10 @@ export function AdminSettings() {
                   key={category.code}
                   type="button"
                   onClick={() => toggleCategory(category.code)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition ${
+                  className={`rounded-[16px] border px-4 py-4 text-left transition ${
                     enabled
-                      ? 'rgba(246,184,77,0.20) rgba(246,184,77,0.12) #111418'
-                      : 'rgba(0,0,0,0.06) bg-white #6F747A hover:rgba(246,184,77,0.20)'
+                      ? 'rgba(246,184,77,0.20) rgba(246,184,77,0.12) text-[#111827]'
+                      : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20)'
                   }`}
                 >
                   <span className="flex items-center justify-between gap-3">
@@ -285,13 +285,13 @@ export function AdminSettings() {
                     <span className={`h-3 w-3 rounded-full ${enabled ? 'bg-accent' : 'bg-warm-border'}`} />
                   </span>
                   <span className="mt-1 block text-sm font-medium">{category.title}</span>
-                  <span className="mt-1 block text-xs leading-relaxed #9EA3A8">{category.description}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-[#667085]">{category.description}</span>
                 </button>
               )
             })}
           </div>
           {selectedCategories.length === 0 ? (
-            <div className="mt-4 rounded-2xl border border-warning-soft #FFFBEB px-4 py-3 text-sm text-amber-900">
+            <div className="mt-4 rounded-[16px] border border-warning-soft #FFFBEB px-4 py-3 text-sm text-amber-900">
               Выберите хотя бы одну категорию, иначе ученики не увидят варианты записи.
             </div>
           ) : null}
@@ -299,7 +299,7 @@ export function AdminSettings() {
 
         <Section title="Ограничения записи" description="Действуют только на публичную запись. Администратор может управлять записями вручную.">
           <div className="grid gap-4 md:grid-cols-[260px_220px]">
-            <label className="flex items-center gap-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-3 text-sm #6F747A">
+            <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
               <input
                 type="checkbox"
                 checked={form.bookingLimitEnabled}
@@ -324,7 +324,7 @@ export function AdminSettings() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
             <div>
-              <p className="text-sm font-medium #6F747A">Выбор филиала учеником</p>
+              <p className="text-sm font-medium text-[#4B5A70]">Выбор филиала учеником</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {[
                   { value: 'student_choice' as const, title: 'Ученик выбирает филиал', text: 'Подходит, если школа работает в разных районах.' },
@@ -334,14 +334,14 @@ export function AdminSettings() {
                     key={option.value}
                     type="button"
                     onClick={() => setForm((current) => ({ ...current, branchSelectionMode: option.value }))}
-                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    className={`rounded-[16px] border px-3 py-2.5 text-left transition ${
                       form.branchSelectionMode === option.value
-                        ? 'border-accent rgba(246,184,77,0.12) #111418'
-                        : 'rgba(0,0,0,0.06) bg-white #6F747A hover:rgba(246,184,77,0.20)'
+                        ? 'border-accent rgba(246,184,77,0.12) text-[#111827]'
+                        : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20)'
                     }`}
                   >
                     <span className="block text-sm font-semibold">{option.title}</span>
-                    <span className="mt-1 block text-xs leading-relaxed #9EA3A8">{option.text}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#667085]">{option.text}</span>
                   </button>
                 ))}
               </div>
@@ -379,16 +379,16 @@ export function AdminSettings() {
         </Section>
 
         <Section title="Базовый тариф" description="Без Start/Plus/Pro. Одна честная база и подключаемые дополнения.">
-          <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-5 py-5">
-            <p className="text-sm #9EA3A8">База</p>
-            <p className="mt-2 text-3xl font-semibold #111418">
-              {BASE_MONTHLY_PRICE.toLocaleString('ru-RU')} ₽<span className="ml-1 text-sm #9EA3A8">/мес</span>
+          <div className="rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-5 py-5">
+            <p className="text-sm text-[#667085]">База</p>
+            <p className="mt-2 text-3xl font-semibold text-[#111827]">
+              {BASE_MONTHLY_PRICE.toLocaleString('ru-RU')} ₽<span className="ml-1 text-sm text-[#667085]">/мес</span>
             </p>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {BASE_FEATURES.map((feature) => (
-              <div key={feature} className="rounded-2xl border rgba(0,0,0,0.06) bg-white px-4 py-3 text-sm #6F747A">
-                <span className="font-semibold #6F747A">{feature}</span>
+              <div key={feature} className="rounded-[16px] border border-[#D8E0EC] bg-white px-4 py-3 text-sm text-[#4B5A70]">
+                <span className="font-semibold text-[#4B5A70]">{feature}</span>
               </div>
             ))}
           </div>
@@ -400,7 +400,7 @@ export function AdminSettings() {
         </Section>
 
         <Section title="Служебное обновление" description="Используйте только при настройке стенда или восстановлении тестового состояния.">
-          <div className="rounded-2xl border border-warning-soft #FFFBEB px-5 py-5 text-sm text-amber-900">
+          <div className="rounded-[16px] border border-warning-soft #FFFBEB px-5 py-5 text-sm text-amber-900">
             Это действие очищает локальный рабочий снимок и заново загружает стартовые данные школы. Не используйте во время реальной работы с учениками.
           </div>
           <div className="mt-4">

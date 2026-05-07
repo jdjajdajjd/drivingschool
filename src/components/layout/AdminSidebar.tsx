@@ -34,7 +34,7 @@ const NAV = [
   { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound, color: 'bg-[#FFF0D8] text-[#C26A00]' },
   { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users, color: 'bg-[#EAF7EE] text-[#188447]' },
   { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: Location, color: 'bg-[#FFECEA] text-[#D94A38]' },
-  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2, color: 'bg-[#F0ECE6] text-[#6F655C]' },
+  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2, color: 'bg-[#F0ECE6] text-[#334155]' },
 ]
 
 interface AdminSidebarProps {
@@ -52,7 +52,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
     <>
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-warm-main/20 backdrop-blur-sm transition-opacity md:hidden',
+          'fixed inset-0 z-30 bg-[#0F172A]/45 backdrop-blur-sm transition-opacity md:hidden',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={onClose}
@@ -60,33 +60,33 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[300px] flex-col border-r border-black/[0.06] bg-[#F7F1E7]/92 backdrop-blur-2xl transition-transform duration-200 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-[312px] flex-col border-r border-[#CBD5E1] bg-[#F3F6FB] transition-transform duration-200 md:w-[300px] md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between border-b border-[rgba(55,38,20,0.08)] px-4 py-4 md:px-5 md:py-5">
+        <div className="flex items-center justify-between border-b border-[#D8E0EC] px-4 py-4 md:px-5 md:py-5">
           <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-3">
             <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-[20px] bg-[#10231C] shadow-[0_16px_34px_rgba(16,35,28,0.18)]">
               <Car size={19} className="text-white" />
             </div>
             <div className="text-left">
               <p className="text-base font-black text-[#15120E]">vroom</p>
-              <p className="text-xs font-bold text-[#A09488]">Панель автошколы</p>
+              <p className="text-xs font-bold text-[#667085]">Панель автошколы</p>
             </div>
           </button>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-2xl #9EA3A8 transition hover:#F4F5F6 hover:#111418 md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl #9EA3A8 transition hover:bg-white hover:text-[#1026D8] md:hidden"
             aria-label="Закрыть меню"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="mx-3 mt-3 rounded-[20px] border border-[rgba(55,38,20,0.08)] bg-white/70 px-3.5 py-3 md:rounded-[24px] md:px-4 md:py-4">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#A09488]">Автошкола</p>
+        <div className="mx-3 mt-3 rounded-[20px] border border-[#D8E0EC] bg-white px-3.5 py-3 md:rounded-[24px] md:px-4 md:py-4">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#667085]">Автошкола</p>
           <p className="mt-1 text-[15px] font-black leading-5 text-[#15120E]">{schoolName}</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F655C]">Управление школой</p>
+          <p className="mt-1 text-sm font-semibold text-[#334155]">Управление школой</p>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -98,16 +98,16 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-10 items-center gap-3 rounded-[18px] px-3 py-2.5 text-[14px] font-bold transition-colors md:min-h-12 md:rounded-[22px] md:py-3 md:text-[15px]',
+                  'flex min-h-10 items-center gap-3 rounded-[18px] px-3 py-2.5 text-[15px] font-black transition-colors md:min-h-12 md:rounded-[22px] md:py-3 md:text-[15px]',
                   isActive
-                    ? 'bg-white text-[#15120E] shadow-[0_14px_34px_rgba(41,34,26,0.10)]'
-                    : 'text-[#6F655C] hover:bg-[#F2ECE2] hover:text-[#15120E]',
+                    ? 'bg-[#1026D8] text-white shadow-[0_14px_34px_rgba(16,38,216,0.22)]'
+                    : 'text-[#1F2937] hover:bg-white hover:text-[#1026D8]',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <span className={`grid h-8 w-8 place-items-center rounded-[14px] ${isActive ? color : 'bg-white/70 text-[#A09488]'}`}><Icon size={17} /></span>
+                  <span className={`grid h-8 w-8 place-items-center rounded-[14px] ${isActive ? color : 'bg-white text-[#667085]'}`}><Icon size={17} /></span>
                   <span>{label}</span>
                 </>
               )}
@@ -115,15 +115,15 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           ))}
         </nav>
 
-        <div className="space-y-1.5 border-t border-[rgba(55,38,20,0.08)] px-3 py-3 md:space-y-2 md:py-4">
+        <div className="space-y-1.5 border-t border-[#D8E0EC] px-3 py-3 md:space-y-2 md:py-4">
           <button
             onClick={() => {
               navigate(publicPath)
               onClose()
             }}
-            className="flex w-full min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-[15px] font-semibold #6F747A transition hover:#F4F5F6 hover:#111418"
+            className="flex w-full min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-[15px] font-black text-[#1F2937] transition hover:bg-white hover:text-[#1026D8]"
           >
-            <ExternalLink size={17} className="#9EA3A8" />
+            <ExternalLink size={17} className="text-[#667085]" />
             Страница школы
           </button>
           <button
@@ -132,7 +132,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               navigate('/')
               onClose()
             }}
-            className="flex w-full min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-base #E5534B transition hover:#FEF2F2"
+            className="flex w-full min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-base font-black text-[#D94A38] transition hover:bg-[#FFECEA]"
           >
             <X size={17} />
             Выйти

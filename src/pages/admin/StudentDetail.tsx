@@ -174,7 +174,7 @@ export function AdminStudentDetail() {
 
   if (!student || !stats) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <EmptyState
           title="Ученик не найден"
           description="Данные по этому ученику не найдены или ссылка устарела."
@@ -187,10 +187,10 @@ export function AdminStudentDetail() {
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <button
         onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)}
-        className="mb-4 inline-flex items-center gap-2 text-sm text-[#9EA3A8] transition hover:text-[#111418]"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-[#667085] transition hover:text-[text-[#111827]]"
       >
         <ArrowLeft size={16} />
         Назад к ученикам
@@ -209,24 +209,24 @@ export function AdminStudentDetail() {
         <StatCard label="Отменено" value={stats.cancelledBookings} icon={<XCircle size={18} />} />
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-3 space-y-3">
         <Section title="Профиль ученика" description="Основные данные и лимиты по записям.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-black/10 bg-[#F4F5F6] px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Телефон</p>
-              <p className="mt-1 text-sm font-semibold text-[#111418]">{formatPhone(student.normalizedPhone)}</p>
+            <div className="rounded-[16px] border border-[#D8E0EC] bg-[bg-[#F8FAFE]] px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Телефон</p>
+              <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">{formatPhone(student.normalizedPhone)}</p>
             </div>
-            <div className="rounded-2xl border border-black/10 bg-[#F4F5F6] px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Normalized phone</p>
-              <p className="mt-1 text-sm font-semibold text-[#111418]">{student.normalizedPhone}</p>
+            <div className="rounded-[16px] border border-[#D8E0EC] bg-[bg-[#F8FAFE]] px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Normalized phone</p>
+              <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">{student.normalizedPhone}</p>
             </div>
-            <div className="rounded-2xl border border-black/10 bg-[#F4F5F6] px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Будущих активных</p>
-              <p className="mt-1 text-sm font-semibold text-[#111418]">{stats.activeFutureBookings}</p>
+            <div className="rounded-[16px] border border-[#D8E0EC] bg-[bg-[#F8FAFE]] px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Будущих активных</p>
+              <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">{stats.activeFutureBookings}</p>
             </div>
-            <div className="rounded-2xl border border-black/10 bg-[#F4F5F6] px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Отменял</p>
-              <p className="mt-1 text-sm font-semibold text-[#111418]">{stats.cancellationsCount} раз</p>
+            <div className="rounded-[16px] border border-[#D8E0EC] bg-[bg-[#F8FAFE]] px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Отменял</p>
+              <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">{stats.cancellationsCount} раз</p>
             </div>
           </div>
         </Section>
@@ -236,19 +236,19 @@ export function AdminStudentDetail() {
             <Input label="Группа" value={student.groupName ?? ''} placeholder="Пока не назначено" onChange={(event) => void updateStudentPatch({ groupName: event.target.value.trim() || undefined })} />
             <Input label="Категории" value={student.categoryCodes?.join(', ') ?? ''} placeholder="B" onChange={(event) => void updateStudentPatch({ categoryCodes: event.target.value.split(',').map((item) => item.trim().toUpperCase()).filter(Boolean) })} />
             <FormField label="Этап обучения">
-              <select value={student.trainingStage ?? ''} onChange={(event) => void updateStudentPatch({ trainingStage: (event.target.value || undefined) as TrainingStage | undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={student.trainingStage ?? ''} onChange={(event) => void updateStudentPatch({ trainingStage: (event.target.value || undefined) as TrainingStage | undefined })} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                 <option value="">Пока не назначено</option>
                 {trainingStageOptions.map((stage) => <option key={stage} value={stage}>{trainingStageLabels[stage]}</option>)}
               </select>
             </FormField>
             <FormField label="Инструктор">
-              <select value={student.assignedInstructorId ?? ''} onChange={(event) => void updateStudentPatch({ assignedInstructorId: event.target.value || undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={student.assignedInstructorId ?? ''} onChange={(event) => void updateStudentPatch({ assignedInstructorId: event.target.value || undefined })} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                 <option value="">Пока не назначен</option>
                 {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{formatInstructorName(instructor.name)}</option>)}
               </select>
             </FormField>
             <FormField label="Филиал">
-              <select value={student.assignedBranchId ?? ''} onChange={(event) => void updateStudentPatch({ assignedBranchId: event.target.value || undefined })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={student.assignedBranchId ?? ''} onChange={(event) => void updateStudentPatch({ assignedBranchId: event.target.value || undefined })} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                 <option value="">Пока не назначен</option>
                 {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
               </select>
@@ -259,20 +259,20 @@ export function AdminStudentDetail() {
         </Section>
 
         <Section title="Прогресс" description="Минимальные учебные показатели без фейковых процентов готовности.">
-          {profileDataLoading ? <p className="mb-4 text-sm font-semibold text-[#6F747A]">Загружаем актуальные данные из Supabase...</p> : null}
+          {profileDataLoading ? <p className="mb-4 text-sm font-semibold text-[text-[#4B5A70]]">Загружаем актуальные данные из Supabase...</p> : null}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Input label="Тем теории всего" type="number" value={String(progress?.theoryTopicsTotal ?? 0)} onChange={(event) => void updateProgressPatch({ theoryTopicsTotal: Number(event.target.value) || 0 })} />
             <Input label="Тем теории закрыто" type="number" value={String(progress?.theoryTopicsCompleted ?? 0)} onChange={(event) => void updateProgressPatch({ theoryTopicsCompleted: Number(event.target.value) || 0 })} />
             <Input label="Часов вождения всего" type="number" value={String(progress?.drivingHoursTotal ?? 0)} onChange={(event) => void updateProgressPatch({ drivingHoursTotal: Number(event.target.value) || 0 })} />
             <Input label="Часов вождения пройдено" type="number" value={String(progress?.drivingHoursCompleted ?? 0)} onChange={(event) => void updateProgressPatch({ drivingHoursCompleted: Number(event.target.value) || 0 })} />
             <FormField label="Внутренний экзамен">
-              <select value={progress?.internalExamStatus ?? (progress?.internalExamPassed ? 'passed' : 'not_scheduled')} onChange={(event) => void updateProgressPatch({ internalExamStatus: event.target.value as NonNullable<typeof progress>['internalExamStatus'], internalExamPassed: event.target.value === 'passed' })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={progress?.internalExamStatus ?? (progress?.internalExamPassed ? 'passed' : 'not_scheduled')} onChange={(event) => void updateProgressPatch({ internalExamStatus: event.target.value as NonNullable<typeof progress>['internalExamStatus'], internalExamPassed: event.target.value === 'passed' })} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                 {Object.entries(examStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </FormField>
             <Input label="Дата внутреннего экзамена" type="date" value={progress?.internalExamDate ?? ''} onChange={(event) => void updateProgressPatch({ internalExamDate: event.target.value || null })} />
             <FormField label="Экзамен ГИБДД">
-              <select value={progress?.gibddExamStatus ?? 'not_scheduled'} onChange={(event) => void updateProgressPatch({ gibddExamStatus: event.target.value as NonNullable<typeof progress>['gibddExamStatus'] })} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+              <select value={progress?.gibddExamStatus ?? 'not_scheduled'} onChange={(event) => void updateProgressPatch({ gibddExamStatus: event.target.value as NonNullable<typeof progress>['gibddExamStatus'] })} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                 {Object.entries(examStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </FormField>
@@ -291,16 +291,16 @@ export function AdminStudentDetail() {
           ) : (
             <div className="space-y-3">
               {requests.map((request) => (
-                <article key={request.id} className="rounded-2xl border border-black/10 bg-white p-4">
+                <article key={request.id} className="rounded-[16px] border border-[#D8E0EC] bg-white p-4">
                   <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
                     <div>
-                      <p className="text-sm font-bold text-[#111418]">{request.type === 'reschedule' ? 'Запрос переноса' : 'Запрос отмены'}</p>
-                      <p className="mt-1 text-sm font-semibold text-[#6F747A]">Причина: {request.reason}</p>
-                      {request.preferredTime ? <p className="mt-1 text-sm text-[#6F747A]">Желаемое время: {request.preferredTime}</p> : null}
-                      {request.comment ? <p className="mt-1 text-sm text-[#6F747A]">Комментарий: {request.comment}</p> : null}
+                      <p className="text-sm font-bold text-[text-[#111827]]">{request.type === 'reschedule' ? 'Запрос переноса' : 'Запрос отмены'}</p>
+                      <p className="mt-1 text-sm font-semibold text-[text-[#4B5A70]]">Причина: {request.reason}</p>
+                      {request.preferredTime ? <p className="mt-1 text-sm text-[text-[#4B5A70]]">Желаемое время: {request.preferredTime}</p> : null}
+                      {request.comment ? <p className="mt-1 text-sm text-[text-[#4B5A70]]">Комментарий: {request.comment}</p> : null}
                     </div>
                     <FormField label="Статус">
-                      <select value={request.status} onChange={(event) => void updateRequestStatus(request.id, event.target.value as StudentRequestStatus)} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                      <select value={request.status} onChange={(event) => void updateRequestStatus(request.id, event.target.value as StudentRequestStatus)} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                         {requestStatusOptions.map((status) => <option key={status} value={status}>{studentRequestStatusLabels[status]}</option>)}
                       </select>
                     </FormField>
@@ -315,7 +315,7 @@ export function AdminStudentDetail() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {documents.map((document) => (
               <FormField key={document.type} label={studentDocumentLabels[document.type]}>
-                <select value={document.status} onChange={(event) => void updateDocumentStatus(document.type as StudentDocumentType, event.target.value as StudentDocumentStatus)} className="h-11 w-full rounded-2xl border border-black/10 bg-white px-3.5 text-[15px] text-[#111418] outline-none">
+                <select value={document.status} onChange={(event) => void updateDocumentStatus(document.type as StudentDocumentType, event.target.value as StudentDocumentStatus)} className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none">
                   {documentStatusOptions.map((status) => <option key={status} value={status}>{studentDocumentStatusLabels[status]}</option>)}
                 </select>
               </FormField>
@@ -329,26 +329,26 @@ export function AdminStudentDetail() {
           ) : (
             <div className="space-y-4">
               {history.map((entry) => (
-                <div key={entry.booking.id} className="rounded-2xl border border-black/10 bg-white p-4 shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
+                <div key={entry.booking.id} className="rounded-[16px] border border-[#D8E0EC] bg-white p-4 shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Дата и время</p>
-                        <p className="mt-1 text-sm font-semibold text-[#111418]">
+                        <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Дата и время</p>
+                        <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">
                           {entry.slot ? `${formatHumanDate(entry.slot.date, false)} · ${formatTimeRange(entry.slot)}` : 'Не найдено'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Филиал</p>
-                        <p className="mt-1 text-sm font-semibold text-[#111418]">{entry.branch?.name ?? 'Не найдено'}</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Филиал</p>
+                        <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">{entry.branch?.name ?? 'Не найдено'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Инструктор</p>
-                        <p className="mt-1 text-sm font-semibold text-[#111418]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
-                        <p className="text-sm text-[#9EA3A8]">{entry.instructor?.car ?? 'Без машины'}</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Инструктор</p>
+                        <p className="mt-1 text-sm font-semibold text-[text-[#111827]]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найдено'}</p>
+                        <p className="text-sm text-[#667085]">{entry.instructor?.car ?? 'Без машины'}</p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Статус</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-[#667085]">Статус</p>
                         <div className="mt-1">
                           <StatusBadge status={entry.booking.status} />
                         </div>

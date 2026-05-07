@@ -23,26 +23,26 @@ export function Card({
   const hoverStyles = hover ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(15,20,25,0.12)]' : ''
 
   const variantStyles = {
-    surface: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
-    hero: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_22px_54px_rgba(63,46,28,0.10)] backdrop-blur-xl',
-    content: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
-    selectable: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
-    list: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_14px_34px_rgba(63,46,28,0.07)] backdrop-blur-xl',
-    stat: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
-    schedule: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
+    surface: 'bg-white border border-[#D8E0EC] shadow-[0_14px_34px_rgba(35,47,78,0.10)]',
+    hero: 'bg-white border border-[#D8E0EC] shadow-[0_16px_38px_rgba(35,47,78,0.12)]',
+    content: 'bg-white border border-[#D8E0EC] shadow-[0_14px_34px_rgba(35,47,78,0.10)]',
+    selectable: 'bg-white border border-[#D8E0EC] shadow-[0_14px_34px_rgba(35,47,78,0.10)]',
+    list: 'bg-white border border-[#D8E0EC] shadow-[0_12px_28px_rgba(35,47,78,0.09)]',
+    stat: 'bg-white border border-[#D8E0EC] shadow-[0_14px_34px_rgba(35,47,78,0.10)]',
+    schedule: 'bg-white border border-[#D8E0EC] shadow-[0_14px_34px_rgba(35,47,78,0.10)]',
     summary: 'bg-[#FFF7E8] border border-[rgba(174,118,35,0.18)] shadow-[0_18px_42px_rgba(63,46,28,0.08)]',
   }[variant]
 
   const paddingStyles = {
     none: '',
-    sm: 'p-3.5',
-    md: 'p-5',
-    lg: 'p-6',
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-5',
   }[padding]
 
   return (
     <div
-      className={cn(baseStyles, 'rounded-[22px] md:rounded-[28px]', variantStyles, selectedStyles, hoverStyles, paddingStyles, className)}
+      className={cn(baseStyles, 'rounded-[18px] md:rounded-[22px]', variantStyles, selectedStyles, hoverStyles, paddingStyles, className)}
 
       {...props}
     >

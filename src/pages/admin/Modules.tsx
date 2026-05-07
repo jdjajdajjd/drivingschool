@@ -103,39 +103,39 @@ export function AdminModules() {
 
   if (!school || !billing) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
         <EmptyState title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Дополнения"
         description="База остаётся простой: 4 990 ₽ в месяц. Дополнительные возможности подключаются отдельно, только когда они действительно нужны."
       />
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-3 space-y-3">
         <Section title="Стоимость" description="Короткая сводка по текущей конфигурации школы.">
           <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
-            <div className="rounded-2xl #F4F5F6 px-4 py-4">
-              <p className="text-sm font-medium #6F747A">База</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight #111418">{formatPrice(billing.baseMonthlyPrice)}</p>
+            <div className="rounded-[16px] bg-[#F8FAFE] px-4 py-4">
+              <p className="text-sm font-medium text-[#4B5A70]">База</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-[#111827]">{formatPrice(billing.baseMonthlyPrice)}</p>
             </div>
-            <div className="rounded-2xl #F4F5F6 px-4 py-4">
-              <p className="text-sm font-medium #6F747A">Дополнения</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight #111418">{formatPrice(billing.modulesMonthlyTotal)}</p>
-              {billing.oneTimeTotal > 0 ? <p className="mt-1 text-sm #9EA3A8">Разово: {formatPrice(billing.oneTimeTotal)}</p> : null}
+            <div className="rounded-[16px] bg-[#F8FAFE] px-4 py-4">
+              <p className="text-sm font-medium text-[#4B5A70]">Дополнения</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-[#111827]">{formatPrice(billing.modulesMonthlyTotal)}</p>
+              {billing.oneTimeTotal > 0 ? <p className="mt-1 text-sm text-[#667085]">Разово: {formatPrice(billing.oneTimeTotal)}</p> : null}
             </div>
-            <div className="rounded-2xl border rgba(0,0,0,0.06) bg-white px-4 py-4">
-              <p className="text-sm font-medium #6F747A">Итого</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight #111418">
+            <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-4 py-4">
+              <p className="text-sm font-medium text-[#4B5A70]">Итого</p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-[#111827]">
                 {formatPrice(billing.totalMonthlyPrice)}
-                <span className="ml-1 text-base font-medium #9EA3A8">/мес</span>
+                <span className="ml-1 text-base font-medium text-[#667085]">/мес</span>
               </p>
-              <p className="mt-1 text-sm #9EA3A8">Подключено дополнений: {billing.enabledModulesCount}</p>
+              <p className="mt-1 text-sm text-[#667085]">Подключено дополнений: {billing.enabledModulesCount}</p>
             </div>
           </div>
         </Section>
@@ -144,11 +144,11 @@ export function AdminModules() {
           <Section title="Подключено сейчас" description="Текущие расширения этой школы.">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {enabled.map((item) => (
-                <div key={item.id} className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
+                <div key={item.id} className="rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold #111418">{item.module.name}</p>
-                      <p className="mt-1 text-sm #6F747A">{getPriceLabel(item.module)}</p>
+                      <p className="text-sm font-semibold text-[#111827]">{item.module.name}</p>
+                      <p className="mt-1 text-sm text-[#4B5A70]">{getPriceLabel(item.module)}</p>
                     </div>
                     <Badge variant="success">Подключено</Badge>
                   </div>
@@ -170,13 +170,13 @@ export function AdminModules() {
           {showBaseFeatures ? (
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {BASE_FEATURES.map((feature) => (
-                <div key={feature} className="rounded-2xl #F4F5F6 px-4 py-3 text-sm #6F747A">
+                <div key={feature} className="rounded-[16px] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
                   {feature}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm #6F747A">
+            <p className="text-sm text-[#4B5A70]">
               Базовый пакет уже закрывает публичную запись, список записей, работу с учениками, инструкторами,
               филиалами, времяами и личной ссылкой инструктора.
             </p>
@@ -192,7 +192,7 @@ export function AdminModules() {
                 className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                   filter === item
                     ? 'border-accent bg-accent text-white'
-                    : 'rgba(0,0,0,0.06) bg-white #6F747A hover:rgba(246,184,77,0.20) hover:#111418'
+                    : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20) hover:text-[#111827]'
                 }`}
               >
                 {item === 'all' ? 'Все' : MODULE_CATEGORY_LABELS[item]}
@@ -209,15 +209,15 @@ export function AdminModules() {
                 const enabledState = isModuleEnabled(school.id, module.id)
 
                 return (
-                  <div key={module.id} className="rounded-2xl border rgba(0,0,0,0.06) bg-white p-4">
+                  <div key={module.id} className="rounded-[16px] border border-[#D8E0EC] bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="#9EA3A8">
+                        <div className="text-[#667085]">
                           <Icon size={18} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium #9EA3A8">{MODULE_CATEGORY_LABELS[module.category]}</p>
-                          <h3 className="mt-1 text-base font-semibold #111418">{module.name}</h3>
+                          <p className="text-sm font-medium text-[#667085]">{MODULE_CATEGORY_LABELS[module.category]}</p>
+                          <h3 className="mt-1 text-base font-semibold text-[#111827]">{module.name}</h3>
                         </div>
                       </div>
                       <Badge variant={enabledState ? 'success' : 'default'}>
@@ -225,16 +225,16 @@ export function AdminModules() {
                       </Badge>
                     </div>
 
-                    <p className="mt-3 text-sm leading-relaxed #6F747A">{module.description}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-[#4B5A70]">{module.description}</p>
 
                     <div className="mt-4">
-                      <p className="text-xl font-semibold tracking-tight #111418">{getPriceLabel(module)}</p>
+                      <p className="text-xl font-semibold tracking-tight text-[#111827]">{getPriceLabel(module)}</p>
                       {module.priceType === 'usage' && module.usageNote ? (
-                        <p className="mt-1 text-sm #9EA3A8">{module.usageNote}</p>
+                        <p className="mt-1 text-sm text-[#667085]">{module.usageNote}</p>
                       ) : null}
                     </div>
 
-                    <div className="mt-5 flex gap-2 border-t rgba(0,0,0,0.06) pt-4">
+                    <div className="mt-5 flex gap-2 border-t border-[#D8E0EC] pt-4">
                       <Button
                         variant={enabledState ? 'secondary' : 'primary'}
                         size="sm"
