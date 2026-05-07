@@ -31,7 +31,7 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { db, setDataNamespace } from '../services/storage'
-import { createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
+import { cancelBooking, createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { useToast } from '../components/ui/Toast'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
@@ -486,6 +486,18 @@ export function StudentPage() {
 
   if (!school || !profile) return <div className="min-h-dvh bg-[#F5F6F8]" />
 
+
+  function cancelStudentBooking(item: ResolvedStudentBooking) {
+    if (!item.booking.id) return
+    const result = cancelBooking(item.booking.id, { skipRemote: school?.id === 'school-virazh' })
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось отменить занятие.', 'error')
+      return
+    }
+    setJustBooked((current) => current?.booking.id === item.booking.id ? null : current)
+    setBookingSlotId('')
+  }
+
   async function bookSlotNow(slot: Slot) {
     if (!school || !profile || bookingSlotId) return
     setBookingSlotId(slot.id)
@@ -673,7 +685,7 @@ export function StudentPage() {
               </div>
               <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={312}>
                 <div className="flex gap-3">
-                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => setView('schedule')} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => setView('schedule')} /></div>}
+                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => setView('schedule')} onCancel={() => cancelStudentBooking(item)} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => setView('schedule')} /></div>}
                 </div>
               </HorizontalScroller>
             </section>

@@ -1,5 +1,5 @@
 import React from 'react'
-import { ListViewIcon, Male02Icon, School01Icon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon, ListViewIcon, Male02Icon, School01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../../../components/ui/Button'
 import { createHugeIcon } from '../../../components/ui/HugeIcon'
 import { cn, formatInstructorName } from '../../../lib/utils'
@@ -11,6 +11,7 @@ import { initials, lessonTime, lessonTypeLabel, slotTimeRange } from '../student
 
 void React
 
+const X = createHugeIcon(Cancel01Icon)
 const Building2 = createHugeIcon(School01Icon)
 const ListChecks = createHugeIcon(ListViewIcon)
 const Male = createHugeIcon(Male02Icon)
@@ -43,7 +44,7 @@ export function StatusPill({ children, tone = 'green' }: { children: string; ton
   return <span className={cn('inline-flex min-h-7 items-center rounded-[14px] px-3 text-[12px] font-semibold', styles[tone])}>{children}</span>
 }
 
-export function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooking | null; onBook: () => void }) {
+export function BookingLessonCard({ item, onBook, onCancel }: { item: ResolvedStudentBooking | null; onBook: () => void; onCancel?: () => void }) {
   if (!item?.slot) {
     return (
       <section className={cn(card, 'p-4')}>
@@ -56,8 +57,18 @@ export function BookingLessonCard({ item, onBook }: { item: ResolvedStudentBooki
   }
 
   return (
-    <article className={cn(card, 'min-w-[300px] p-4')}>
-      <div className="flex gap-3">
+    <article className={cn(card, 'relative min-w-[300px] p-4')}>
+      {onCancel ? (
+        <button
+          type="button"
+          className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-[#FFEDEF] text-[#E5534B] active:scale-[0.94]"
+          onClick={(event) => { event.stopPropagation(); onCancel() }}
+          aria-label="Отменить занятие"
+        >
+          <X size={14} strokeWidth={2.2} />
+        </button>
+      ) : null}
+      <div className="flex gap-3 pr-7">
         <div className="w-1 self-stretch rounded-full bg-[#35C45A]" />
         <div className="min-w-0 flex-1">
           <p className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-[var(--text)]">{lessonTime(item.slot)}</p>
