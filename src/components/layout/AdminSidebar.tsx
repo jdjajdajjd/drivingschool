@@ -64,9 +64,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between border-b border-[rgba(55,38,20,0.08)] px-5 py-5">
+        <div className="flex items-center justify-between border-b border-[rgba(55,38,20,0.08)] px-4 py-4 md:px-5 md:py-5">
           <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-[20px] bg-[#15120E] shadow-[0_16px_34px_rgba(63,46,28,0.14)]">
+            <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-[20px] bg-[#15120E] shadow-[0_16px_34px_rgba(63,46,28,0.14)]">
               <Car size={19} className="text-white" />
             </div>
             <div className="text-left">
@@ -83,7 +83,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           </button>
         </div>
 
-        <div className="mx-3 mt-3 rounded-[24px] border border-[rgba(55,38,20,0.08)] bg-[#F8F3EA] px-4 py-4">
+        <div className="mx-3 mt-3 rounded-[20px] border border-[rgba(55,38,20,0.08)] bg-[#F8F3EA] px-3.5 py-3 md:rounded-[24px] md:px-4 md:py-4">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#A09488]">Автошкола</p>
           <p className="mt-1 text-[15px] font-black leading-5 text-[#15120E]">{schoolName}</p>
           <p className="mt-1 text-sm font-semibold text-[#6F655C]">Рабочая панель директора</p>
@@ -98,7 +98,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-12 items-center gap-3 rounded-[20px] px-3.5 py-3 text-[15px] font-bold transition-colors',
+                  'flex min-h-10 items-center gap-3 rounded-[16px] px-3.5 py-2.5 text-[14px] font-bold transition-colors md:min-h-12 md:rounded-[20px] md:py-3 md:text-[15px]',
                   isActive
                     ? 'bg-[#15120E] text-white shadow-[0_14px_34px_rgba(63,46,28,0.16)]'
                     : 'text-[#6F655C] hover:bg-[#F2ECE2] hover:text-[#15120E]',
@@ -115,7 +115,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           ))}
         </nav>
 
-        <div className="space-y-2 border-t border-[rgba(55,38,20,0.08)] px-3 py-4">
+        <div className="space-y-1.5 border-t border-[rgba(55,38,20,0.08)] px-3 py-3 md:space-y-2 md:py-4">
           <button
             onClick={() => {
               navigate(publicPath)
