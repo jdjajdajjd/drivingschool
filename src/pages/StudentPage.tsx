@@ -406,6 +406,7 @@ export function StudentPage() {
   const [requestComment, setRequestComment] = useState('')
   const [requestMessage, setRequestMessage] = useState('')
   const [bookingSlotId, setBookingSlotId] = useState('')
+  const [bookingsVersion, setBookingsVersion] = useState(0)
   const [justBooked, setJustBooked] = useState<ResolvedStudentBooking | null>(null)
   const { showToast } = useToast()
 
@@ -429,7 +430,7 @@ export function StudentPage() {
   const student = school && normalizedPhone ? db.students.byNormalizedPhone(school.id, normalizedPhone) : null
   const progress = student ? loadStudentProgress(student.id) : null
   const documents = student ? loadStudentDocuments(student.id) : []
-  const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile, justBooked?.booking.id])
+  const bookings = useMemo(() => school && profile ? resolveBookings(school.id, profile) : [], [school, profile, justBooked?.booking.id, bookingsVersion])
   const upcoming = useMemo(() => {
     const active = bookings.filter((item) => item.booking.status === 'active' && item.slot && new Date(`${item.slot.date}T${item.slot.time}:00`).getTime() >= Date.now())
     if (!justBooked) return active
@@ -442,7 +443,7 @@ export function StudentPage() {
   }, [justBooked?.booking.id])
 
   const completedLessons = bookings.filter((item) => item.booking.status === 'completed' && item.slot).slice(-3).reverse()
-  const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school, bookings.length, bookingSlotId])
+  const futureSlots = useMemo(() => school ? db.slots.bySchool(school.id).filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now()) : [], [school, bookings.length, bookingSlotId, bookingsVersion])
   const instructors = useMemo(() => school ? db.instructors.bySchool(school.id).filter((instructor) => instructor.isActive) : [], [school])
   const assignedInstructorId = [student?.assignedInstructorId, profile?.assignedInstructorId].find((id) => id && instructors.some((instructor) => instructor.id === id)) ?? ''
   const selectedInstructor = instructors.find((instructor) => instructor.id === selectedInstructorId) ?? null
@@ -489,12 +490,21 @@ export function StudentPage() {
 
   function cancelStudentBooking(item: ResolvedStudentBooking) {
     if (!item.booking.id) return
+
+    const latest = db.bookings.byId(item.booking.id)
+    if (latest?.status === 'cancelled') {
+      setJustBooked((current) => current?.booking.id === item.booking.id ? null : current)
+      setBookingsVersion((current) => current + 1)
+      return
+    }
+
     const result = cancelBooking(item.booking.id, { skipRemote: school?.id === 'school-virazh' })
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось отменить занятие.', 'error')
       return
     }
     setJustBooked((current) => current?.booking.id === item.booking.id ? null : current)
+    setBookingsVersion((current) => current + 1)
     setBookingSlotId('')
   }
 
@@ -548,6 +558,7 @@ export function StudentPage() {
     }
     db.bookings.upsert(booking)
     db.slots.upsert({ ...slot, status: 'booked', bookingId: booking.id })
+    setBookingsVersion((current) => current + 1)
     setJustBooked({
       booking,
       slot: { ...slot, status: 'booked', bookingId: booking.id },
@@ -685,7 +696,7 @@ export function StudentPage() {
               </div>
               <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={312}>
                 <div className="flex gap-3">
-                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => setView('schedule')} onCancel={() => cancelStudentBooking(item)} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => setView('schedule')} /></div>}
+                  {upcoming.length > 0 ? upcoming.map((item) => <BookingLessonCard key={item.booking.id} item={item} onBook={() => setView('schedule')} onCancel={item.booking.status === 'active' ? () => cancelStudentBooking(item) : undefined} />) : <div className="w-full min-w-[300px] shrink-0"><BookingLessonCard item={null} onBook={() => setView('schedule')} /></div>}
                 </div>
               </HorizontalScroller>
             </section>
