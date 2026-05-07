@@ -105,18 +105,15 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F3F6FB] px-2.5 py-2.5 md:px-5 md:py-5">
+    <div className="min-h-screen bg-[#E9EEF7] px-2.5 py-2.5 md:px-5 md:py-5">
       <div className="mx-auto grid max-w-[1220px] gap-2.5 md:gap-3 lg:grid-cols-[minmax(0,1fr)_76px]">
         <main className="space-y-2.5 md:space-y-3">
-          <section className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#5DA2FF] via-[#1F67F2] to-[#4539F5] p-3 text-white shadow-[0_14px_34px_rgba(31,103,242,0.22)] md:rounded-[24px] md:p-4">
+          <section className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#5DA2FF] via-[#1F67F2] to-[#4539F5] p-3 text-white shadow-[0_18px_44px_rgba(31,103,242,0.30)] md:rounded-[24px] md:p-4">
             <div className="absolute -right-12 -top-16 h-36 w-36 rounded-full bg-white/20 blur-2xl" />
             <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch">
               <div className="min-w-0">
                 <p className="truncate text-[12px] font-bold text-white/70">{school.name}</p>
                 <h1 className="mt-1 text-[23px] font-black leading-none tracking-[-0.045em] text-white md:text-[34px]">Панель школы</h1>
-                <p className="mt-1.5 max-w-xl text-[12px] font-semibold leading-4 text-white/72 md:text-[14px] md:leading-5">
-                  Записи, расписание, ученики и инструкторы в одном месте.
-                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[13px] bg-white px-3 py-2 text-[13px] font-black text-[#1F67F2]">Добавить время</button>
                   <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[13px] bg-white/16 px-3 py-2 text-[13px] font-black text-white">Открыть записи</button>
@@ -124,32 +121,32 @@ export function AdminDashboard() {
               </div>
 
               <div className="grid grid-cols-4 gap-2 lg:grid-cols-2">
-                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[15px] bg-white/16 p-2.5 text-left backdrop-blur-md">
-                  <Calendar size={16} className="text-white/85" />
-                  <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em] text-white">{data.todayBookings.length}</p>
-                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/70">сегодня</p>
+                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[15px] bg-white p-2.5 text-left text-[#111827] shadow-[0_10px_22px_rgba(10,28,80,0.12)]">
+                  <Calendar size={16} className="text-[#3156D4]" />
+                  <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em] text-[#111827]">{data.todayBookings.length}</p>
+                  <p className="mt-0.5 text-[10px] font-black leading-3 text-[#4B5A70]">занятий сегодня</p>
                 </button>
                 <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[15px] bg-white p-2.5 text-left text-[#111827]">
                   <Calendar size={16} className="text-[#3156D4]" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em]">{data.tomorrowBookings.length}</p>
-                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-[#7C8799]">завтра</p>
+                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-[#4B5A70]">занятий завтра</p>
                 </button>
                 <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[15px] bg-[#59BAB9] p-2.5 text-left text-white">
                   <Check size={16} className="text-white/90" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em]">{data.freeSlots7d.length}</p>
-                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/76">свободно</p>
+                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/76">свободных окон</p>
                 </button>
-                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-[15px] bg-white/16 p-2.5 text-left text-white backdrop-blur-md">
+                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-[15px] bg-[#243B78] p-2.5 text-left text-white shadow-[0_10px_22px_rgba(10,28,80,0.16)]">
                   <Users size={16} className="text-white/85" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em]">{activeInstructors}</p>
-                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/70">инстр.</p>
+                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/70">активных инструкторов</p>
                 </button>
               </div>
             </div>
           </section>
 
           <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]">
-            <div className="rounded-[18px] bg-white p-3 shadow-[0_12px_30px_rgba(35,47,78,0.07)] md:rounded-[22px] md:p-4">
+            <div className="rounded-[18px] border border-[#D8E0EC] bg-white p-3 shadow-[0_14px_34px_rgba(35,47,78,0.12)] md:rounded-[22px] md:p-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <h2 className="text-[17px] font-black tracking-[-0.035em] text-[#111827] md:text-[20px]">Ближайшие занятия</h2>
@@ -163,9 +160,9 @@ export function AdminDashboard() {
                   <StateView title="Занятий пока нет" description="Добавьте свободное время или отправьте ссылку ученикам." />
                 </div>
               ) : (
-                <div className="mt-2.5 divide-y divide-black/[0.06] overflow-hidden rounded-[14px] border border-black/[0.05]">
+                <div className="mt-2.5 divide-y divide-black/[0.06] overflow-hidden rounded-[14px] border border-[#D8E0EC]">
                   {data.upcoming.map((entry) => (
-                    <Link key={entry.booking.id} to={`/booking/${entry.booking.id}`} className="grid grid-cols-[82px_minmax(0,1fr)] gap-2 bg-[#F8FAFE] px-2.5 py-2 transition hover:bg-[#EEF4FF] md:grid-cols-[122px_minmax(0,1fr)_minmax(120px,0.55fr)_92px] md:items-center md:px-3">
+                    <Link key={entry.booking.id} to={`/booking/${entry.booking.id}`} className="grid grid-cols-[82px_minmax(0,1fr)] gap-2 bg-white px-2.5 py-2 transition hover:bg-[#EEF4FF] md:grid-cols-[122px_minmax(0,1fr)_minmax(120px,0.55fr)_92px] md:items-center md:px-3">
                       <div>
                         <p className="text-[12px] font-black text-[#111827] md:text-[13px]">{entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMM', { locale: ru }) : '—'}</p>
                         <p className="text-[11px] font-bold text-[#3156D4]">{entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'HH:mm', { locale: ru }) : '—'}</p>
@@ -183,7 +180,7 @@ export function AdminDashboard() {
             </div>
 
             <aside className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
-              <section className={`rounded-[18px] border p-3 shadow-[0_12px_30px_rgba(35,47,78,0.07)] md:rounded-[22px] ${configuredTone}`}>
+              <section className={`rounded-[18px] border p-3 shadow-[0_14px_34px_rgba(35,47,78,0.12)] md:rounded-[22px] ${configuredTone}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-[16px] font-black tracking-[-0.03em]">Настроено: {configuredCount}/{configuredTotal}</h2>
@@ -195,7 +192,7 @@ export function AdminDashboard() {
                   {data.setupItems.map((item) => {
                     const Icon = item.icon
                     return (
-                      <button key={item.label} onClick={() => navigate(item.to)} className="flex items-center justify-between gap-2 rounded-[12px] bg-white/72 px-2.5 py-2 text-left">
+                      <button key={item.label} onClick={() => navigate(item.to)} className="flex items-center justify-between gap-2 rounded-[12px] bg-white px-2.5 py-2 text-left">
                         <span className="flex min-w-0 items-center gap-2">
                           <Icon size={14} className="shrink-0" />
                           <span className="truncate text-[12px] font-black">{item.label}</span>
@@ -207,7 +204,7 @@ export function AdminDashboard() {
                 </div>
               </section>
 
-              <section className="rounded-[18px] bg-[#111827] p-3 text-white shadow-[0_12px_30px_rgba(17,24,39,0.14)] md:rounded-[22px]">
+              <section className="rounded-[18px] border border-[#1F2937] bg-[#111827] p-3 text-white shadow-[0_16px_38px_rgba(17,24,39,0.22)] md:rounded-[22px]">
                 <div className="flex items-center gap-2">
                   <ExternalLink size={18} />
                   <div>
@@ -215,7 +212,7 @@ export function AdminDashboard() {
                     <p className="text-[11px] font-semibold text-white/55">для входа в кабинет</p>
                   </div>
                 </div>
-                <p className="mt-2 line-clamp-2 break-all rounded-[12px] bg-white/10 px-2.5 py-2 text-[11px] font-bold leading-4 text-white/82">{publicUrl}</p>
+                <p className="mt-2 line-clamp-2 break-all rounded-[12px] bg-white/14 px-2.5 py-2 text-[11px] font-bold leading-4 text-white/82">{publicUrl}</p>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
                   <button onClick={() => void copyPublicLink()} className="rounded-[12px] bg-white px-2 py-2 text-[12px] font-black text-[#111827]"><Copy size={13} className="mr-1 inline" />Копировать</button>
                   <button onClick={() => window.open(publicUrl, '_blank')} className="rounded-[12px] bg-white/12 px-2 py-2 text-[12px] font-black text-white">Открыть</button>
