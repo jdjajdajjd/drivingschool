@@ -38,7 +38,7 @@ jobs:
       - name: Smoke built app before deploy
         shell: bash
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 &
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/vroom-preview.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill "$PREVIEW_PID"' EXIT
 
@@ -50,6 +50,7 @@ jobs:
             sleep 1
           done
 
+          cat /tmp/vroom-preview.log >&2 || true
           echo "Local preview did not become ready for smoke checks." >&2
           exit 1
 
