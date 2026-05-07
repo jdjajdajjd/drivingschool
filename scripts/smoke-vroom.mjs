@@ -11,12 +11,12 @@ function isExpectedCompatibilityConsoleError(route, text) {
 const routes = [
   {
     path: '/school/virazh',
-    checks: ['Автошкола «Вираж»', 'Записаться на занятие'],
+    checks: ['Автошкола «Вираж»', 'Войти'],
     rejects: ['Автошкола не найдена'],
   },
   {
     path: '/school/virazh/book',
-    checks: ['Расписание', 'Записаться'],
+    checks: ['Запись только из личного кабинета', 'Войти в кабинет'],
     rejects: ['Автошкола не найдена'],
   },
   {

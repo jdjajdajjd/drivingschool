@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight01Icon, Building03Icon, Calendar03Icon, Location01Icon, Login03Icon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, Building03Icon, Login03Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
@@ -18,10 +18,7 @@ void React
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
 const Building2 = createHugeIcon(Building03Icon)
-const Calendar = createHugeIcon(Calendar03Icon)
-const Location = createHugeIcon(Location01Icon)
 const Login = createHugeIcon(Login03Icon)
-const Users = createHugeIcon(UserMultipleIcon)
 
 type ViewMode = 'public' | 'login'
 
@@ -30,27 +27,20 @@ export function SchoolPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<PublicSchoolData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState<ViewMode>('public')
+  const [mode, setMode] = useState<ViewMode>('login')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const school = data?.school ?? null
-  const activeBranches = data?.branches ?? []
-  const activeInstructors = data?.instructors ?? []
-  const futureSlots = (data?.slots ?? [])
-    .filter((slot) => slot.status === 'available')
-    .filter((slot) => new Date(`${slot.date}T${slot.time}:00`).getTime() > Date.now())
-    .sort((left, right) => new Date(`${left.date}T${left.time}:00`).getTime() - new Date(`${right.date}T${right.time}:00`).getTime())
-  const nextSlots = futureSlots.slice(0, 3)
 
   useEffect(() => {
     const isLocalSchool = slug === 'virazh' || slug === 'workspace'
     if (slug === 'virazh') setDataNamespace('demo')
     if (slug === 'workspace') setDataNamespace('workspace')
     setLoading(true)
-    setMode('public')
+    setMode('login')
     void loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
       .then((loaded) => setData(loaded))
       .finally(() => setLoading(false))
@@ -118,14 +108,14 @@ export function SchoolPage() {
           </button>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => setMode(mode === 'login' ? 'public' : 'login')}>
-              {mode === 'login' ? 'К записи' : 'Войти'}
+            <button className="min-h-10 rounded-full bg-[var(--accent)] px-5 text-[13px] font-extrabold text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)] active:scale-[0.97]" onClick={() => setMode('login')}>
+              Войти
             </button>
           </div>
         </header>
 
         {mode === 'public' ? (
-          <section className="flex flex-1 flex-col py-7">
+          <section className="flex flex-1 flex-col justify-center py-8">
             <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
               <div className="mb-5 flex items-center gap-3">
                 <SchoolLogo school={school} large />
@@ -135,45 +125,15 @@ export function SchoolPage() {
                 </div>
               </div>
 
-              <h2 className="text-[34px] font-black leading-[1.03] tracking-[-0.04em] text-[var(--text)]">Запишитесь на практическое занятие</h2>
+              <h2 className="text-[34px] font-black leading-[1.03] tracking-[-0.04em] text-[var(--text)]">Войдите в личный кабинет</h2>
               <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">
-                {school.description || 'Выберите удобный день, инструктора и свободное время. Подтверждение появится сразу после записи.'}
+                Запись на занятия доступна только зарегистрированным ученикам внутри личного кабинета.
               </p>
 
-              <Button size="lg" className="mt-5 w-full rounded-[18px]" onClick={() => navigate(`/school/${school.slug}/book`)}>
-                Записаться на занятие
+              <Button size="lg" className="mt-5 w-full rounded-[18px]" onClick={() => setMode('login')}>
+                Войти в кабинет
                 <ArrowRight size={18} />
               </Button>
-
-              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                <InfoStat icon={<Location size={15} />} value={activeBranches.length} label="филиала" />
-                <InfoStat icon={<Users size={15} />} value={activeInstructors.length} label="инструкторов" />
-                <InfoStat icon={<Calendar size={15} />} value={futureSlots.length} label="окон" />
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-card)]">
-              <p className="text-[13px] font-extrabold uppercase tracking-[0.12em] text-[var(--text-soft)]">Ближайшее время</p>
-              {nextSlots.length ? (
-                <div className="mt-3 space-y-2">
-                  {nextSlots.map((slot) => {
-                    const instructor = activeInstructors.find((item) => item.id === slot.instructorId)
-                    const branch = activeBranches.find((item) => item.id === slot.branchId)
-                    return (
-                      <button
-                        key={slot.id}
-                        className="w-full rounded-[20px] bg-[var(--surface-muted)] px-4 py-3 text-left active:scale-[0.98]"
-                        onClick={() => navigate(`/school/${school.slug}/book?slot=${slot.id}`)}
-                      >
-                        <p className="text-[15px] font-black text-[var(--text)]">{formatSlotDate(slot.date)}, {slot.time}</p>
-                        <p className="mt-1 text-[13px] font-bold text-[var(--text-muted)]">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</p>
-                      </button>
-                    )
-                  })}
-                </div>
-              ) : (
-                <p className="mt-3 text-[14px] font-semibold leading-5 text-[var(--text-muted)]">Свободные занятия появятся после настройки расписания.</p>
-              )}
             </div>
           </section>
         ) : (
@@ -192,7 +152,7 @@ export function SchoolPage() {
               </div>
               <h2 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Войдите в кабинет</h2>
               <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">
-                Здесь хранятся ваши записи, занятия и сообщения автошколы.
+                Запись на занятия доступна только из личного кабинета зарегистрированного ученика.
               </p>
 
               <div className="mt-6 space-y-4">
@@ -214,20 +174,6 @@ export function SchoolPage() {
       </main>
     </div>
   )
-}
-
-function InfoStat({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
-  return (
-    <div className="rounded-2xl bg-[var(--surface-muted)] px-2 py-3">
-      <div className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">{icon}</div>
-      <p className="text-[17px] font-black text-[var(--text)]">{value}</p>
-      <p className="text-[11px] font-bold text-[var(--text-soft)]">{label}</p>
-    </div>
-  )
-}
-
-function formatSlotDate(date: string): string {
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(new Date(`${date}T00:00:00`))
 }
 
 function SchoolLogo({ school, large = false }: { school: School; large?: boolean }) {

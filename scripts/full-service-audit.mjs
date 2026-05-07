@@ -6,8 +6,8 @@ const warnings = []
 const findings = []
 const routes = [
   { path: '/', expect: ['Онлайн-запись', 'Открыть демо автошколы'], reject: ['пустая настройка', 'DriveDesk'] },
-  { path: '/school/virazh', expect: ['Автошкола «Вираж»', 'Записаться на занятие'], reject: ['Автошкола не найдена', 'Здесь будут'] },
-  { path: '/school/virazh/book', expect: ['Расписание'], waitFor: 'Расписание', reject: ['Автошкола не найдена', 'name@example.ru', 'Если всё верно -'] },
+  { path: '/school/virazh', expect: ['Автошкола «Вираж»', 'Войти'], reject: ['Автошкола не найдена', 'Здесь будут', 'Записаться на занятие'] },
+  { path: '/school/virazh/book', expect: ['Запись только из личного кабинета', 'Войти в кабинет'], waitFor: 'Войти в кабинет', reject: ['Автошкола не найдена', 'name@example.ru', 'Если всё верно -', 'Нажмите свободное время'] },
   { path: '/school/virazh/register', expect: ['Введите фамилию'], reject: ['Автошкола не найдена'] },
   { path: '/school/virazh/login', expect: ['Телефон', 'Пароль', 'Забыли пароль?'], reject: ['скоро появится', 'Здесь будут'] },
   { path: '/login', expect: ['Телефон', 'Пароль', 'Забыли пароль?'], reject: ['скоро появится', 'Здесь будут'] },

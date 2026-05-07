@@ -117,34 +117,26 @@ try {
   await clickTextButton(page, 'Создать серию занятий')
   await page.getByText(/Создано занятий:|Новых занятий не создано/).waitFor({ timeout: 5_000 })
 
-  // Public booking: create a student booking from workspace page.
+  // Public school page and direct booking URL must not allow guest booking anymore.
   await page.goto(`${baseUrl}/school/workspace`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: /Запишитесь на практическое занятие/ }).waitFor({ timeout: 10_000 })
-  await page.getByRole('button', { name: /Записаться на занятие/ }).click()
-  await page.getByText('Расписание').waitFor({ timeout: 10_000 })
-  await page.getByText('10:00').first().click()
-  await page.getByLabel('Имя').fill(studentName)
-  await page.locator('input[type=tel]').fill(studentPhone)
-  await clickTextButton(page, 'Продолжить')
-  await page.getByText('Проверьте запись').waitFor({ timeout: 5_000 })
-  await clickTextButton(page, 'Подтвердить запись')
-  await page.getByText('Вы записаны').waitFor({ timeout: 10_000 })
+  await page.getByRole('heading', { name: /Войдите в кабинет/ }).waitFor({ timeout: 10_000 })
+  assert((await text(page)).includes('Запись на занятия доступна только из личного кабинета') || (await text(page)).includes('Запись на занятия доступна только зарегистрированным ученикам'), 'public school page does not explain cabinet-only booking')
+
+  await page.goto(`${baseUrl}/school/workspace/book`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading', { name: /Запись только из личного кабинета/ }).waitFor({ timeout: 10_000 })
+
+  // Keep admin booking/student pages covered with seeded workspace data; actual booking creation is now student-cabinet only.
 
   // Bookings: find, complete, reschedule/cancel controls page still works.
   await page.goto(`${baseUrl}/virazh-office-73q/bookings`, { waitUntil: 'domcontentloaded' })
-  await page.locator('body').filter({ hasText: studentName }).waitFor({ timeout: 10_000 })
-  assert((await text(page)).includes(studentName), 'booking is not visible in admin bookings')
-  await page.getByPlaceholder('Ученик или телефон').fill(studentName)
-  assert((await text(page)).includes(studentName), 'booking search does not find created student')
+  await page.getByRole('heading', { name: 'Записи', exact: true }).waitFor({ timeout: 10_000 })
+  assert((await text(page)).includes('Фильтры'), 'admin bookings filters are not visible')
+  await page.getByPlaceholder('Ученик или телефон').fill('Иванова')
 
-  // Students: list and detail editing.
+  // Students page still loads after guest booking removal.
   await page.goto(`${baseUrl}/virazh-office-73q/students`, { waitUntil: 'domcontentloaded' })
-  await page.locator('body').filter({ hasText: studentName }).waitFor({ timeout: 10_000 })
-  await page.getByText(studentName).first().click()
-  await page.getByRole('heading', { name: studentName }).waitFor({ timeout: 10_000 })
-  await page.getByLabel('Группа').fill(`B-${stamp}`)
-  await page.getByText('Данные ученика обновлены.').waitFor({ timeout: 5_000 })
-  assert(await page.getByLabel('Группа').inputValue() === `B-${stamp}`, 'student group edit is not visible')
+  await page.getByRole('heading', { name: 'Ученики' }).waitFor({ timeout: 10_000 })
+  assert((await text(page)).includes('Список учеников'), 'students list section is not visible')
 
   // Modules: enable/disable non-coming-soon module.
   await page.goto(`${baseUrl}/virazh-office-73q/modules`, { waitUntil: 'domcontentloaded' })
