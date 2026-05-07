@@ -6,6 +6,7 @@ import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { setDataNamespace } from '../../services/storage'
 import { seedIfNeeded } from '../../services/seed'
+import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
 
 const Menu = createHugeIcon(Menu01Icon)
 const Car = createHugeIcon(Car03Icon)
@@ -19,8 +20,12 @@ export function AdminLayout() {
     let disposed = false
     setDataNamespace('workspace')
     seedIfNeeded({ mode: 'workspace' })
-    if (!disposed) setReady(true)
-    const fallback = window.setTimeout(() => setReady(true), 500)
+    syncSupabaseSchoolToLocalDb('workspace')
+      .catch(() => undefined)
+      .finally(() => {
+        if (!disposed) setReady(true)
+      })
+    const fallback = window.setTimeout(() => setReady(true), 4000)
     return () => {
       disposed = true
       window.clearTimeout(fallback)

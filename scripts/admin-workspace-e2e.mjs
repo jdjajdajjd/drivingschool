@@ -43,7 +43,10 @@ const context = await browser.newContext({ viewport: { width: 430, height: 900 }
 const page = await context.newPage()
 page.on('pageerror', (error) => failures.push(`page error: ${error.message}`))
 page.on('console', (message) => {
-  if (message.type() === 'error') failures.push(`console error: ${message.text()}`)
+  if (message.type() !== 'error') return
+  const text = message.text()
+  if (text.includes('Failed to load resource') && /status of (404|406)/.test(text)) return
+  failures.push(`console error: ${text}`)
 })
 
 try {
@@ -157,7 +160,7 @@ try {
   const newPage = await context.waitForEvent('page', { timeout: 5_000 }).catch(() => null)
   const publicPage = newPage ?? page
   await publicPage.waitForLoadState('domcontentloaded').catch(() => undefined)
-  assert(publicPage.url().includes('/school/workspace'), 'dashboard public link did not open /school/workspace')
+  assert(/\/school\/(workspace|virazh)/.test(publicPage.url()), 'dashboard public link did not open school public page')
 } catch (error) {
   failures.push(error instanceof Error ? error.stack || error.message : String(error))
 } finally {

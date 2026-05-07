@@ -24,7 +24,18 @@ export const supabase = createClient(
   configured ? supabaseAnonKey! : fallbackSupabaseAnonKey,
 )
 
+export function isSupabaseRemoteConfigured(): boolean {
+  return configured
+}
+
+export function markWorkspaceSupabaseReady(ready: boolean): void {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem('dd:supabase_workspace_ready', ready ? 'true' : 'false')
+}
+
 export function isSupabaseConfigured(): boolean {
-  if (typeof window !== 'undefined' && window.sessionStorage.getItem('dd:data_namespace') === 'workspace') return false
+  if (typeof window !== 'undefined' && window.sessionStorage.getItem('dd:data_namespace') === 'workspace') {
+    return configured && window.sessionStorage.getItem('dd:supabase_workspace_ready') === 'true'
+  }
   return configured
 }

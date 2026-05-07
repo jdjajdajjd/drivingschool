@@ -41,7 +41,7 @@ begin
     where role = 'admin';
 
   if v_expected is null
-    or encode(digest(coalesce(p_staff_password, ''), 'sha256'), 'hex') <> v_expected then
+    or encode(extensions.digest(coalesce(p_staff_password, ''), 'sha256'), 'hex') <> v_expected then
     raise exception 'Admin access denied.';
   end if;
 end;
@@ -1066,7 +1066,7 @@ begin
     where role = 'admin';
 
   if v_expected is null
-    or encode(digest(coalesce(p_staff_password, ''), 'sha256'), 'hex') <> v_expected then
+    or encode(extensions.digest(coalesce(p_staff_password, ''), 'sha256'), 'hex') <> v_expected then
     raise exception 'Admin access denied.';
   end if;
 end;
