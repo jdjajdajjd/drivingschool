@@ -202,7 +202,7 @@ export function BookingConfirmation() {
               Добавить в календарь
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={() => navigate('/student/book')}>Записаться ещё</Button>
+          <Button variant="secondary" onClick={() => navigate(`/school/${bundles[0]?.school?.slug ?? 'virazh'}/book`)}>Записаться ещё</Button>
           <Button variant="ghost" onClick={() => navigate('/student')}>В кабинет</Button>
         </div>
 

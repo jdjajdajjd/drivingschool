@@ -85,7 +85,7 @@ export function AdminModules() {
     }
 
     if (module.isComingSoon) {
-      showToast('Модуль скоро появится. Сейчас его нельзя подключить.', 'error')
+      showToast('Модуль пока недоступен для подключения.', 'error')
       return
     }
 
