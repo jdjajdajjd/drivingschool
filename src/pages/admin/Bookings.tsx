@@ -220,19 +220,19 @@ export function AdminBookings() {
       />
 
       <div className="mt-3 space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(35,47,78,0.08)]">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Всего</p>
-            <p className="mt-1 text-2xl font-bold text-[text-[#111827]]">{allBookings.length}</p>
-          </div>
-          <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(35,47,78,0.08)]">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Активные</p>
-            <p className="mt-1 text-2xl font-bold text-[text-[#111827]]">{activeCount}</p>
-          </div>
-          <div className="rounded-[16px] border border-[#D8E0EC] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(35,47,78,0.08)]">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Сегодня</p>
-            <p className="mt-1 text-2xl font-bold text-[text-[#111827]]">{todayCount}</p>
-          </div>
+        <div className="grid grid-cols-3 gap-1.5 md:gap-3">
+          <button onClick={() => setStatus('all')} className="rounded-[14px] border border-[#D8E0EC] bg-white px-2.5 py-2 text-left shadow-[0_8px_18px_rgba(35,47,78,0.08)] md:rounded-[16px] md:px-3 md:py-2.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#667085] md:text-xs">Всего</p>
+            <p className="mt-1 text-[24px] font-black leading-none tracking-[-0.04em] text-[#111827] md:text-2xl">{allBookings.length}</p>
+          </button>
+          <button onClick={() => setPeriod('today')} className="rounded-[14px] border border-[#D8E0EC] bg-white px-2.5 py-2 text-left shadow-[0_8px_18px_rgba(35,47,78,0.08)] md:rounded-[16px] md:px-3 md:py-2.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#667085] md:text-xs">Сегодня</p>
+            <p className="mt-1 text-[24px] font-black leading-none tracking-[-0.04em] text-[#111827] md:text-2xl">{todayCount}</p>
+          </button>
+          <button onClick={() => setStatus('active')} className="rounded-[14px] border border-[#D8E0EC] bg-white px-2.5 py-2 text-left shadow-[0_8px_18px_rgba(35,47,78,0.08)] md:rounded-[16px] md:px-3 md:py-2.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#667085] md:text-xs">Активные</p>
+            <p className="mt-1 text-[24px] font-black leading-none tracking-[-0.04em] text-[#111827] md:text-2xl">{activeCount}</p>
+          </button>
         </div>
 
         <Section title="Фильтры" description="Ищите по ученику, телефону, периоду и статусу.">

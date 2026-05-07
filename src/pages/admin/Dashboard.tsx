@@ -188,16 +188,16 @@ export function AdminDashboard() {
                   </div>
                   <Check size={20} />
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
                   {data.setupItems.map((item) => {
                     const Icon = item.icon
                     return (
-                      <button key={item.label} onClick={() => navigate(item.to)} className="min-h-[62px] rounded-[12px] bg-white px-2 py-2 text-left shadow-[0_6px_14px_rgba(35,47,78,0.08)]">
+                      <button key={item.label} onClick={() => navigate(item.to)} className="min-h-[58px] rounded-[12px] bg-white px-2.5 py-2 text-left shadow-[0_6px_14px_rgba(35,47,78,0.08)]">
                         <div className="flex items-center justify-between gap-1">
                           <Icon size={14} className="shrink-0" />
                           <span className="text-[11px] font-black">{item.done ? '✓' : '!'}</span>
                         </div>
-                        <span className="mt-1 block text-[10.5px] font-black leading-3">{item.label}</span>
+                        <span className="mt-1 block text-[11px] font-black leading-3">{item.label}</span>
                       </button>
                     )
                   })}
