@@ -42,8 +42,8 @@ export function Card({
 
   return (
     <div
-      className={cn(baseStyles, variantStyles, selectedStyles, hoverStyles, paddingStyles, className)}
-      style={{ borderRadius: '28px' }}
+      className={cn(baseStyles, 'rounded-[22px] md:rounded-[28px]', variantStyles, selectedStyles, hoverStyles, paddingStyles, className)}
+
       {...props}
     >
       {children}

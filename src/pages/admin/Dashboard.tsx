@@ -86,7 +86,7 @@ export function AdminDashboard() {
 
   if (!school || !data) {
     return (
-      <div className="max-w-7xl p-4 md:p-6">
+      <div className="max-w-7xl p-3 md:p-6">
         <StateView kind="error" title="Школа не найдена" description="Откройте страницу школы или проверьте подключение данных." />
       </div>
     )
@@ -100,7 +100,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="max-w-7xl p-4 md:p-6">
+    <div className="max-w-7xl p-3 md:p-6">
       <PageHeader
         eyebrow={school.name}
         title="Сегодня"
@@ -113,14 +113,14 @@ export function AdminDashboard() {
         }
       />
 
-      <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-2.5 md:mt-6 md:gap-3 xl:grid-cols-4">
         <StatCard label="Занятий сегодня" value={data.todayBookings.length} icon={<CalendarDays size={18} />} />
         <StatCard label="Занятий завтра" value={data.tomorrowBookings.length} icon={<CalendarDays size={18} />} />
         <StatCard label="Свободное время на 7 дней" value={data.freeSlots7d.length} icon={<ClipboardList size={18} />} />
         <StatCard label="Активных инструкторов" value={data.instructors.filter((item) => item.isActive).length} icon={<Users size={18} />} />
       </div>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
+      <div className="mt-4 grid gap-4 md:mt-6 md:gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
         <Section
           title="Ближайшие занятия"
           description="Кто, когда и с каким инструктором. Самое ближайшее — сверху."

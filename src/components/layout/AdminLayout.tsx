@@ -37,10 +37,10 @@ export function AdminLayout() {
   return (
     <div className="shell">
       <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b rgba(0,0,0,0.06) bg-white/92 px-4 py-3 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b rgba(0,0,0,0.06) bg-white/92 px-3 py-2.5 backdrop-blur-xl">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-[rgba(55,38,20,0.08)] bg-white/90 text-[#6F655C] shadow-[0_14px_34px_rgba(63,46,28,0.08)]"
+            className="flex h-10 w-10 items-center justify-center rounded-[18px] border border-[rgba(55,38,20,0.08)] bg-white/90 text-[#6F655C] shadow-[0_14px_34px_rgba(63,46,28,0.08)]"
             aria-label="Открыть меню"
           >
             <Menu size={18} />
