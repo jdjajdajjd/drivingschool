@@ -51,7 +51,7 @@ page.on('console', (message) => {
 
 try {
   await page.goto(`${baseUrl}/workspace-admin`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Сегодня' }).waitFor({ timeout: 10_000 })
+  await page.getByRole('heading', { name: 'Рабочий день' }).waitFor({ timeout: 10_000 })
 
   // Settings: edit, save, reload persistence.
   await page.goto(`${baseUrl}/virazh-office-73q/settings`, { waitUntil: 'domcontentloaded' })
@@ -146,7 +146,7 @@ try {
 
   // Dashboard/public link should still open.
   await page.goto(`${baseUrl}/virazh-office-73q`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Сегодня' }).waitFor({ timeout: 10_000 })
+  await page.getByRole('heading', { name: 'Рабочий день' }).waitFor({ timeout: 10_000 })
   await clickTextButton(page, 'Открыть')
   const newPage = await context.waitForEvent('page', { timeout: 5_000 }).catch(() => null)
   const publicPage = newPage ?? page
