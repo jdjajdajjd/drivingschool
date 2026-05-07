@@ -44,27 +44,31 @@ export function StateView({ kind = 'empty', title, description, action, classNam
   const tone = toneByKind[kind]
   return (
     <div
-      className={cn('text-center', className)}
+      className={cn('text-left', className)}
       style={{
-        borderRadius: '24px',
-        border: '1px dashed rgba(0,0,0,0.08)',
-        background: '#F7F8F9',
-        padding: '2.5rem 1.5rem',
+        borderRadius: '14px',
+        border: '1px dashed rgba(0,0,0,0.12)',
+        background: '#F8FAFC',
+        padding: '0.875rem',
       }}
     >
-      <div
-        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
-        style={{ background: tone.bg, color: tone.color, boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
-      >
-        {iconByKind[kind]}
+      <div className="flex items-start gap-2.5">
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px]"
+          style={{ background: tone.bg, color: tone.color }}
+        >
+          {iconByKind[kind]}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</p>
+          {description ? (
+            <p className="mt-0.5 text-[13px] font-medium leading-5" style={{ color: '#6F747A' }}>
+              {description}
+            </p>
+          ) : null}
+          {action ? <div className="mt-2 flex justify-start">{action}</div> : null}
+        </div>
       </div>
-      <p className="text-[17px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</p>
-      {description ? (
-        <p className="body mx-auto mt-2 max-w-md" style={{ color: '#6F747A' }}>
-          {description}
-        </p>
-      ) : null}
-      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   )
 }

@@ -7,16 +7,15 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
 import { Input, Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
-import { Section } from '../../components/ui/Section'
+import { CompactSettingsSection, StickyBottomAction, WarningRow } from '../../components/ui/CompactAdmin'
 import { useToast } from '../../components/ui/Toast'
-import { formatDuration, hexToRgba } from '../../lib/utils'
+import { formatDuration } from '../../lib/utils'
 import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
 
 const Copy = createHugeIcon(Copy01Icon)
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 const Settings2 = createHugeIcon(Settings02Icon)
-import { BASE_FEATURES, BASE_MONTHLY_PRICE } from '../../services/modules'
 import { resetProductData, updateSchoolConfirmed, validatePrimaryColor } from '../../services/schoolService'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
@@ -180,17 +179,11 @@ export function AdminSettings() {
       <PageHeader
         eyebrow={school.name}
         title="Настройки"
-        description="Основные данные школы, публичная страница и правила записи для учеников."
-        actions={
-          <Button onClick={() => void handleSave()} disabled={saving}>
-            <Settings2 size={16} />
-            {saving ? 'Сохраняем...' : 'Сохранить изменения'}
-          </Button>
-        }
+        description="Данные школы, публичная страница и правила записи."
       />
 
       <div className="mt-3 space-y-3">
-        <Section title="Основное" description="Название, описание и внешний вид страницы школы.">
+        <CompactSettingsSection title="Данные школы" description="Название, описание и внешний вид страницы.">
           <div className="grid gap-4 md:grid-cols-2">
             <Input label="Название автошколы" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
             <Input label="Адрес страницы" helperText="Адрес страницы управляется перед запуском и сейчас недоступен для изменения" value={school.slug} readOnly disabled />
@@ -200,16 +193,16 @@ export function AdminSettings() {
           <div className="mt-4">
             <Textarea label="Описание" rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
           </div>
-        </Section>
+        </CompactSettingsSection>
 
-        <Section title="Публичная страница" description="Ссылка, preview и быстрые действия по странице записи.">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-4">
-              <div className="rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-4">
+        <CompactSettingsSection title="Публичная страница" description="Ссылка, кнопки и короткий preview.">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-3">
+              <div className="rounded-[14px] border border-[#D8E0EC] bg-[#F8FAFE] px-3 py-2">
                 <p className="caption">Ссылка</p>
-                <p className="mt-2 break-all text-sm font-bold text-[#111827]">{publicUrl}</p>
+                <p className="mt-1 break-all text-sm font-bold text-[#111827]">{publicUrl}</p>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={() => void copyPublicLink()}>
                   <Copy size={15} />
                   Скопировать ссылку
@@ -222,13 +215,10 @@ export function AdminSettings() {
             </div>
 
             <div
-              className="rounded-[2rem] border border-[#D8E0EC] bg-white p-5 "
-              style={{
-                boxShadow: `0 18px 48px ${hexToRgba(previewColor, 0.08)}`,
-              }}
+              className="rounded-[16px] border border-[#D8E0EC] bg-white p-3"
             >
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-[16px] text-sm font-semibold text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-[12px] text-sm font-semibold text-white"
                 style={{ backgroundColor: previewColor }}
               >
                 {form.logoUrl ? (
@@ -237,18 +227,18 @@ export function AdminSettings() {
                   form.name.slice(0, 2).toUpperCase()
                 )}
               </div>
-              <p className="mt-4 text-lg font-bold text-[#111827]">{form.name || 'Автошкола'}</p>
-              <p className="mt-2 text-sm leading-relaxed text-[#4B5A70]">
+              <p className="mt-2 text-[16px] font-bold text-[#111827]">{form.name || 'Автошкола'}</p>
+              <p className="mt-1 line-clamp-3 text-sm leading-5 text-[#4B5A70]">
                 {form.description || 'Описание школы будет показано на публичной странице записи.'}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {(selectedCategories.length ? selectedCategories : DRIVING_CATEGORIES.slice(0, 1)).slice(0, 5).map((category) => (
                   <span key={category.code} className="rounded-[16px] bg-[#F8FAFE] px-3 py-1 text-xs font-bold text-[#4B5A70]">
                     {category.code}
                   </span>
                 ))}
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+              <div className="mt-2 grid grid-cols-2 gap-1.5 text-center">
                 <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
                   <p className="text-lg font-bold text-[#111827]">{db.branches.bySchool(school.id).filter((branch) => branch.isActive).length}</p>
                   <p className="text-xs text-[#667085]">филиала</p>
@@ -258,15 +248,15 @@ export function AdminSettings() {
                   <p className="text-xs text-[#667085]">инструкторов</p>
                 </div>
               </div>
-              <div className="mt-4 rounded-[16px] px-4 py-3 text-center text-sm font-semibold text-white" style={{ backgroundColor: previewColor }}>
-                Записаться
+              <div className="mt-2 rounded-[12px] px-3 py-2 text-center text-sm font-semibold text-white" style={{ backgroundColor: previewColor }}>
+                Войти ученику
               </div>
             </div>
           </div>
-        </Section>
+        </CompactSettingsSection>
 
-        <Section title="Категории обучения" description="Выберите категории прав, которые видит ученик на странице школы и в записи.">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <CompactSettingsSection title="Категории прав" description="Что ученик видит при записи.">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {DRIVING_CATEGORIES.map((category) => {
               const enabled = form.enabledCategoryCodes.includes(category.code)
               return (
@@ -274,7 +264,7 @@ export function AdminSettings() {
                   key={category.code}
                   type="button"
                   onClick={() => toggleCategory(category.code)}
-                  className={`rounded-[16px] border px-4 py-4 text-left transition ${
+                  className={`rounded-[12px] border px-3 py-2 text-left transition ${
                     enabled
                       ? 'rgba(246,184,77,0.20) rgba(246,184,77,0.12) text-[#111827]'
                       : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20)'
@@ -295,10 +285,10 @@ export function AdminSettings() {
               Выберите хотя бы одну категорию, иначе ученики не увидят варианты записи.
             </div>
           ) : null}
-        </Section>
+        </CompactSettingsSection>
 
-        <Section title="Ограничения записи" description="Действуют только на публичную запись. Администратор может управлять записями вручную.">
-          <div className="grid gap-4 md:grid-cols-[260px_220px]">
+        <CompactSettingsSection title="Правила записи" description="Лимиты, филиалы и длительность занятия.">
+          <div className="grid gap-3 md:grid-cols-[260px_220px]">
             <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
               <input
                 type="checkbox"
@@ -322,7 +312,7 @@ export function AdminSettings() {
               }
             />
           </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
             <div>
               <p className="text-sm font-medium text-[#4B5A70]">Выбор филиала учеником</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -376,40 +366,26 @@ export function AdminSettings() {
               }
             />
           </div>
-        </Section>
+        </CompactSettingsSection>
 
-        <Section title="Базовый тариф" description="Без Start/Plus/Pro. Одна честная база и подключаемые дополнения.">
-          <div className="rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-5 py-5">
-            <p className="text-sm text-[#667085]">База</p>
-            <p className="mt-2 text-3xl font-semibold text-[#111827]">
-              {BASE_MONTHLY_PRICE.toLocaleString('ru-RU')} ₽<span className="ml-1 text-sm text-[#667085]">/мес</span>
-            </p>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {BASE_FEATURES.map((feature) => (
-              <div key={feature} className="rounded-[16px] border border-[#D8E0EC] bg-white px-4 py-3 text-sm text-[#4B5A70]">
-                <span className="font-semibold text-[#4B5A70]">{feature}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4">
-            <Button variant="secondary" onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}>
-              Перейти в каталог дополнений
-            </Button>
-          </div>
-        </Section>
-
-        <Section title="Служебное обновление" description="Используйте только при настройке стенда или восстановлении тестового состояния.">
-          <div className="rounded-[16px] border border-warning-soft #FFFBEB px-5 py-5 text-sm text-amber-900">
-            Это действие очищает локальный рабочий снимок и заново загружает стартовые данные школы. Не используйте во время реальной работы с учениками.
-          </div>
-          <div className="mt-4">
-            <Button variant="danger" onClick={() => setResetOpen(true)}>
+        <CompactSettingsSection title="Служебное" description="Для настройки стенда и восстановления тестовых данных.">
+          <WarningRow>
+            Это действие очищает локальный рабочий снимок и заново загружает стартовые данные. Не используйте во время реальной работы с учениками.
+          </WarningRow>
+          <div className="mt-3">
+            <Button variant="danger" size="sm" onClick={() => setResetOpen(true)}>
               <RefreshCw size={15} />
               Обновить стартовые данные
             </Button>
           </div>
-        </Section>
+        </CompactSettingsSection>
+
+        <StickyBottomAction>
+          <Button className="w-full md:w-auto" onClick={() => void handleSave()} disabled={saving}>
+            <Settings2 size={16} />
+            {saving ? 'Сохраняем...' : 'Сохранить изменения'}
+          </Button>
+        </StickyBottomAction>
       </div>
 
       <ConfirmDialog

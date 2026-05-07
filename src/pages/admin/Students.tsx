@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow, DataToolbar } from '../../components/ui/DataList'
+import { SmallEmptyState, compactFieldClassName } from '../../components/ui/CompactAdmin'
 import { FormField } from '../../components/ui/FormField'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
@@ -20,7 +21,7 @@ import { ADMIN_BASE_PATH } from '../../services/accessControl'
 type StudentFilter = 'all' | 'active' | 'inactive' | 'cancelled' | 'limit'
 
 function selectClassName() {
-  return 'field h-11 rounded-[16px]'
+  return compactFieldClassName()
 }
 
 export function AdminStudents() {
@@ -103,9 +104,9 @@ export function AdminStudents() {
 
         <Section title="Список учеников" description={`Найдено ${rows.length} учеников.`}>
           {rows.length === 0 ? (
-            <StateView kind="no-results" title="Ученики не найдены" description="Измените фильтры или создайте запись на публичной странице." />
+            <SmallEmptyState title="Ученики не найдены" description="Измените фильтры или дождитесь первой записи ученика." />
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               {rows.map(({ student, stats, nextSlot }) => (
                 <Link
                   key={student.id}
@@ -113,20 +114,20 @@ export function AdminStudents() {
                   className="block"
                 >
                   <DataRow>
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-[#F6B84D]/10 text-[#C97F10]">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#EEF2FF] text-[#2436D9]">
                           <UserRound size={18} />
                         </div>
                         <div>
-                          <p className="text-base font-bold text-[text-[#111827]]">{student.name}</p>
+                          <p className="text-[15px] font-bold text-[#111827]">{student.name}</p>
                           <p className="text-sm font-medium text-[text-[#4B5A70]]">{formatPhone(student.normalizedPhone)}</p>
                         </div>
                       </div>
                       {stats.limitReached ? <Badge variant="warning">Лимит достигнут</Badge> : <Badge variant={stats.activeFutureBookings > 0 ? 'success' : 'muted'}>{stats.activeFutureBookings > 0 ? 'Есть запись' : 'Без активных'}</Badge>}
                     </div>
 
-                    <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                    <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                       <div>
                         <p className="text-xs font-bold text-[#667085]">Всего записей</p>
                         <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{stats.totalBookings}</p>

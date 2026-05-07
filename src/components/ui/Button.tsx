@@ -18,7 +18,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const minHeight = { sm: 40, md: 48, lg: 56 }[size]
+  const minHeight = { sm: 36, md: 44, lg: 50 }[size]
 
   return (
     <button
@@ -27,24 +27,24 @@ export function Button({
         'active:scale-[0.97]',
         {
           primary:
-            'text-white shadow-[0_12px_28px_rgba(0,0,0,0.16)] hover:shadow-[0_18px_36px_rgba(0,0,0,0.22)] hover:-translate-y-0.5',
+            'text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)] hover:shadow-[0_10px_22px_rgba(0,0,0,0.16)]',
           secondary:
-            'border text-[#111418] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5',
+            'border text-[#111418] shadow-none',
           ghost:
             'text-[#6F747A] hover:bg-[rgba(0,0,0,0.04)] hover:text-[#111418]',
           danger:
-            'text-[#E5534B] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5',
+            'text-[#E5534B] shadow-none',
         }[variant],
         {
-          primary: 'bg-[#2436D9] rounded-full shadow-[0_14px_30px_rgba(36,54,217,0.24)] hover:bg-[#1D2CC4]',
-          secondary: 'bg-white border-[rgba(0,0,0,0.06)] rounded-full hover:border-[rgba(0,0,0,0.10)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.12)]',
-          ghost: 'bg-transparent border-none rounded-full',
-          danger: 'bg-white border border-[rgba(229,83,75,0.15)] rounded-full hover:bg-[#FEF2F2]',
+          primary: 'bg-[#2436D9] rounded-[14px] shadow-[0_8px_18px_rgba(36,54,217,0.18)] hover:bg-[#1D2CC4]',
+          secondary: 'bg-white border-[rgba(0,0,0,0.08)] rounded-[14px] hover:border-[rgba(0,0,0,0.14)] hover:bg-[#F8FAFC]',
+          ghost: 'bg-transparent border-none rounded-[12px]',
+          danger: 'bg-white border border-[rgba(229,83,75,0.18)] rounded-[14px] hover:bg-[#FEF2F2]',
         }[variant],
         {
-          sm: 'min-h-[40px] px-4 text-[13px]',
-          md: 'min-h-[48px] px-5 text-[15px]',
-          lg: 'min-h-[56px] px-6 text-[16px]',
+          sm: 'min-h-[36px] px-3 text-[13px]',
+          md: 'min-h-[44px] px-4 text-[15px]',
+          lg: 'min-h-[50px] px-5 text-[16px]',
         }[size],
         className,
       )}

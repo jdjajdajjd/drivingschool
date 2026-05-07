@@ -7,7 +7,8 @@ import { Button } from '../../components/ui/Button'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
-import { DataRow, DataToolbar } from '../../components/ui/DataList'
+import { DataRow } from '../../components/ui/DataList'
+import { FilterBar, StickyBottomAction, WarningRow, compactFieldClassName } from '../../components/ui/CompactAdmin'
 import { FormField } from '../../components/ui/FormField'
 import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -46,7 +47,7 @@ function lessonTypeLabel(type: LessonType | undefined) {
 }
 
 function selectClassName() {
-  return 'h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft'
+  return compactFieldClassName()
 }
 
 export function AdminSlots() {
@@ -90,7 +91,6 @@ export function AdminSlots() {
   })
 
   const slots = school ? getSlotsBySchool(school.id) : []
-  const scheduleStep = !bulkForm.branchId || !bulkForm.instructorId ? 1 : !bulkForm.dateFrom || !bulkForm.dateTo ? 2 : 3
 
   const filteredSlots = useMemo(() => {
     const now = new Date()
@@ -252,32 +252,19 @@ export function AdminSlots() {
       />
 
       <div className="mt-3 space-y-3">
-        <Section title="Добавить занятия" description="Для запуска обычно удобнее создать серию занятий на неделю или две вперед.">
-          <div className="mb-5 grid gap-2 sm:grid-cols-3">
-            {[
-              { step: 1, title: 'Кто ведёт', text: 'Филиал и инструктор' },
-              { step: 2, title: 'Когда', text: 'Даты и дни недели' },
-              { step: 3, title: 'Как долго', text: 'Время, тип, перерыв' },
-            ].map((item) => (
-              <div key={item.step} className={`rounded-[16px] border px-3 py-2.5 ${scheduleStep === item.step ? 'border-accent bg-[#F6B84D]/10' : 'border-[#D8E0EC] bg-white'}`}>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#667085]">Шаг {item.step}</p>
-                <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{item.title}</p>
-                <p className="text-xs font-semibold text-[text-[#4B5A70]]">{item.text}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mb-5 grid gap-2 sm:grid-cols-2">
-            <Button variant={mode === 'bulk' ? 'primary' : 'secondary'} onClick={() => setMode('bulk')}>
+        <Section title="Добавить занятия" description="Филиал, инструктор, даты, время и дни недели — всё на одном экране.">
+          <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-[14px] border border-[#D8E0EC] bg-white p-1">
+            <Button size="sm" variant={mode === 'bulk' ? 'primary' : 'ghost'} onClick={() => setMode('bulk')}>
               Серия занятий
             </Button>
-            <Button variant={mode === 'single' ? 'primary' : 'secondary'} onClick={() => setMode('single')}>
+            <Button size="sm" variant={mode === 'single' ? 'primary' : 'ghost'} onClick={() => setMode('single')}>
               Одно занятие
             </Button>
           </div>
 
           {mode === 'bulk' ? (
-            <div className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-3">
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Филиал">
                   <select value={bulkForm.branchId} onChange={(event) => setBulkForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
                     <option value="">Выберите филиал</option>
@@ -325,8 +312,8 @@ export function AdminSlots() {
                             weekdays: active ? current.weekdays.filter((value) => value !== day.value) : [...current.weekdays, day.value],
                           }))
                         }
-                        className={`rounded-full border px-4 py-2 text-base transition ${
-                          active ? 'border-accent bg-[#F6B84D]/10 text-[#C97F10]' : 'border-[#D8E0EC] bg-white text-[text-[#4B5A70]]'
+                        className={`rounded-[12px] border px-3 py-2 text-[14px] font-bold transition ${
+                          active ? 'border-[#2436D9] bg-[#EEF2FF] text-[#2436D9]' : 'border-[#D8E0EC] bg-white text-[#4B5A70]'
                         }`}
                       >
                         {day.label}
@@ -336,17 +323,19 @@ export function AdminSlots() {
                 </div>
               </FormField>
 
-              <div className="rounded-[16px] border border-[#F6B84D]/20 bg-[#F6B84D]/10 px-4 py-4 text-base text-[text-[#111827]]">
-                Проверьте: {branches.find((branch) => branch.id === bulkForm.branchId)?.name ?? 'филиал не выбран'}, {instructors.find((instructor) => instructor.id === bulkForm.instructorId)?.name ?? 'инструктор не выбран'}, период {bulkForm.dateFrom || 'дата от'} - {bulkForm.dateTo || 'дата до'}, время {bulkForm.windowStart}-{bulkForm.windowEnd}. Дубли и занятия в прошлом будут пропущены.
-              </div>
+              <WarningRow>
+                Проверьте: {branches.find((branch) => branch.id === bulkForm.branchId)?.name ?? 'филиал не выбран'}, {instructors.find((instructor) => instructor.id === bulkForm.instructorId)?.name ?? 'инструктор не выбран'}, {bulkForm.dateFrom || 'дата от'} — {bulkForm.dateTo || 'дата до'}, {bulkForm.windowStart}-{bulkForm.windowEnd}. Дубли и прошлые занятия пропустим.
+              </WarningRow>
 
-              <Button size="lg" className="min-h-12 text-base" onClick={() => void handleCreateBulk()}>
-                <CalendarPlus2 size={18} />
-                Создать серию занятий
-              </Button>
+              <StickyBottomAction>
+                <Button size="lg" className="w-full md:w-auto" onClick={() => void handleCreateBulk()}>
+                  <CalendarPlus2 size={18} />
+                  Создать серию занятий
+                </Button>
+              </StickyBottomAction>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
               <FormField label="Филиал">
                 <select value={singleForm.branchId} onChange={(event) => setSingleForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
                   <option value="">Выберите филиал</option>
@@ -368,74 +357,62 @@ export function AdminSlots() {
               </FormField>
               <Input label="Длительность" type="number" step={15} helperText={formatDuration(Number(singleForm.duration || defaultDuration))} value={singleForm.duration} onChange={(event) => setSingleForm((current) => ({ ...current, duration: event.target.value }))} />
               <div className="md:col-span-2 xl:col-span-5">
-                <Button size="lg" className="min-h-12 text-base" onClick={() => void handleCreateSingle()}>
-                  <CalendarPlus2 size={18} />
-                  Добавить занятие
-                </Button>
+                <StickyBottomAction>
+                  <Button size="lg" className="w-full md:w-auto" onClick={() => void handleCreateSingle()}>
+                    <CalendarPlus2 size={18} />
+                    Добавить занятие
+                  </Button>
+                </StickyBottomAction>
               </div>
             </div>
           )}
         </Section>
 
-        <Section title="Список занятий" description="Фильтры помогают быстро найти время, инструктора или запись ученика.">
-          <DataToolbar className="mt-1">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-            <FormField label="Поиск">
-              <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Инструктор, филиал, ученик"
-                  className="h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white pl-10 pr-3.5 text-[15px] text-[text-[#111827]] outline-none transition focus:border-[#F6B84D]/20 focus:ring-4 focus:ring-accent-soft"
-                />
-              </div>
-            </FormField>
-            <Input label="Дата" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
-            <FormField label="Филиал">
-              <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
-                <option value="all">Все филиалы</option>
-                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Инструктор">
-              <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className={selectClassName()}>
-                <option value="all">Все инструкторы</option>
-                {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Статус">
-              <select value={status} onChange={(event) => setStatus(event.target.value as SlotStatusFilter)} className={selectClassName()}>
-                <option value="all">Все</option>
-                <option value="available">Свободные</option>
-                <option value="booked">Занятые</option>
-                <option value="cancelled">Скрытые</option>
-              </select>
-            </FormField>
-            <FormField label="Период">
-              <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodFilter)} className={selectClassName()}>
-                <option value="all">Все</option>
-                <option value="today">Сегодня</option>
-                <option value="tomorrow">Завтра</option>
-                <option value="week">Неделя</option>
-                <option value="future">Будущие</option>
-              </select>
-            </FormField>
+        <Section title="Список занятий" description={`Найдено ${filteredSlots.length} занятий.`}>
+          <FilterBar>
+          <div className="relative col-span-2 md:col-span-2">
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Поиск" className={compactFieldClassName('pl-9')} />
           </div>
-          </DataToolbar>
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={compactFieldClassName('px-2 text-[13px]')} />
+          <select value={status} onChange={(event) => setStatus(event.target.value as SlotStatusFilter)} className={compactFieldClassName('px-2 text-[13px]')}>
+            <option value="all">Статус</option>
+            <option value="available">Свободные</option>
+            <option value="booked">Занятые</option>
+            <option value="cancelled">Скрытые</option>
+          </select>
+          <div className="col-span-4 grid gap-2 border-t border-[#E5EAF1] pt-2 md:col-span-6 md:grid-cols-3 xl:grid-cols-4">
+            <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
+              <option value="all">Все филиалы</option>
+              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+            </select>
+            <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className={selectClassName()}>
+              <option value="all">Все инструкторы</option>
+              {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+            </select>
+            <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodFilter)} className={selectClassName()}>
+              <option value="all">Все периоды</option>
+              <option value="today">Сегодня</option>
+              <option value="tomorrow">Завтра</option>
+              <option value="week">Неделя</option>
+              <option value="future">Будущие</option>
+            </select>
+          </div>
+          </FilterBar>
 
-          <div className="mt-5">
+
+          <div className="mt-3">
             {filteredSlots.length === 0 ? (
               <StateView kind="no-results" title="Занятия не найдены" description="Измените фильтры или создайте занятия выше." />
             ) : (
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {filteredSlots.map((entry) => (
                   <DataRow key={entry.slot.id}>
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="grid flex-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
                         <div>
                           <p className="caption">Дата и время</p>
-                          <p className="mt-1 text-base font-bold text-[text-[#111827]]">{formatHumanDate(entry.slot.date, false)}</p>
+                          <p className="mt-0.5 text-[15px] font-bold text-[#111827]">{formatHumanDate(entry.slot.date, false)}</p>
                           <p className="text-sm font-semibold text-[#C97F10]">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
                           <p className="text-xs font-semibold text-[text-[#4B5A70]]">{lessonTypeLabel(entry.slot.lessonType)}</p>
                         </div>
@@ -458,7 +435,7 @@ export function AdminSlots() {
                         </div>
                       </div>
 
-                      <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[330px]">
+                      <div className="grid gap-1.5 sm:grid-cols-3 lg:min-w-[330px]">
                         <Button variant="secondary" size="sm" disabled={!entry.booking} onClick={() => entry.booking && navigate(`/booking/${entry.booking.id}`)}>
                           <ExternalLink size={14} />
                           Открыть запись

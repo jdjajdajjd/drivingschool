@@ -7,7 +7,8 @@ import { Button } from '../../components/ui/Button'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
-import { DataRow, DataToolbar, TableShell } from '../../components/ui/DataList'
+import { DataRow, TableShell } from '../../components/ui/DataList'
+import { FilterBar, SmallEmptyState, compactFieldClassName } from '../../components/ui/CompactAdmin'
 import { FormField } from '../../components/ui/FormField'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -38,7 +39,7 @@ type StatusFilter = 'all' | 'active' | 'cancelled' | 'completed'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
 
 function selectClassName() {
-  return 'field h-11 rounded-[16px]'
+  return compactFieldClassName()
 }
 
 export function AdminBookings() {
@@ -235,76 +236,45 @@ export function AdminBookings() {
           </button>
         </div>
 
-        <Section title="Фильтры" description="Ищите по ученику, телефону, периоду и статусу.">
-          <DataToolbar>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-            <FormField label="Поиск">
-              <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Ученик или телефон"
-                  className="field h-11 rounded-[16px] pl-10"
-                />
-              </div>
-            </FormField>
-
-            <FormField label="Дата">
-              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={selectClassName()} />
-            </FormField>
-
-            <FormField label="Филиал">
-              <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
-                <option value="all">Все филиалы</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Инструктор">
-              <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className={selectClassName()}>
-                <option value="all">Все инструкторы</option>
-                {instructors.map((instructor) => (
-                  <option key={instructor.id} value={instructor.id}>
-                    {instructor.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Статус">
-              <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)} className={selectClassName()}>
-                <option value="all">Все</option>
-                <option value="active">Активные</option>
-                <option value="cancelled">Отменённые</option>
-                <option value="completed">Проведённые</option>
-              </select>
-            </FormField>
-
-            <FormField label="Период">
-              <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodFilter)} className={selectClassName()}>
-                <option value="all">Все</option>
-                <option value="today">Сегодня</option>
-                <option value="tomorrow">Завтра</option>
-                <option value="week">Эта неделя</option>
-                <option value="future">Будущие</option>
-                <option value="past">Прошедшие</option>
-              </select>
-            </FormField>
+        <div className="sr-only">Фильтры</div>
+        <FilterBar>
+          <div className="relative col-span-2 md:col-span-2">
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ученик или телефон" className={compactFieldClassName('pl-9')} />
           </div>
-          </DataToolbar>
-        </Section>
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={compactFieldClassName('px-2 text-[13px]')} />
+          <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)} className={compactFieldClassName('px-2 text-[13px]')}>
+            <option value="all">Статус</option>
+            <option value="active">Активные</option>
+            <option value="cancelled">Отменённые</option>
+            <option value="completed">Проведённые</option>
+          </select>
+          <div className="col-span-4 grid gap-2 border-t border-[#E5EAF1] pt-2 md:col-span-6 md:grid-cols-3 xl:grid-cols-4">
+            <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
+              <option value="all">Все филиалы</option>
+              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+            </select>
+            <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className={selectClassName()}>
+              <option value="all">Все инструкторы</option>
+              {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+            </select>
+            <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodFilter)} className={selectClassName()}>
+              <option value="all">Все периоды</option>
+              <option value="today">Сегодня</option>
+              <option value="tomorrow">Завтра</option>
+              <option value="week">Эта неделя</option>
+              <option value="future">Будущие</option>
+              <option value="past">Прошедшие</option>
+            </select>
+          </div>
+        </FilterBar>
 
         <Section
           title="Все записи"
           description={`Найдено ${filteredBookings.length} записей.`}
         >
           {filteredBookings.length === 0 ? (
-            <StateView kind="no-results" title="Записей не найдено" description="Измените фильтры или создайте новую запись на публичной странице." />
+            <SmallEmptyState title="Записей не найдено" description="Измените фильтры или дождитесь новой записи ученика." />
           ) : (
             <>
               <TableShell className="hidden xl:block">
@@ -397,7 +367,7 @@ export function AdminBookings() {
                 </table>
               </TableShell>
 
-              <div className="grid gap-3 xl:hidden">
+              <div className="grid gap-2 xl:hidden">
                 {filteredBookings.map((entry) => (
                   <DataRow key={entry.booking.id}>
                     <div className="flex items-start justify-between gap-3">
@@ -407,7 +377,7 @@ export function AdminBookings() {
                       </div>
                       <StatusBadge status={entry.booking.status} />
                     </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       <div>
                         <p className="text-xs font-medium text-[#667085]">Занятие</p>
                         <p className="mt-1 text-sm font-medium text-[#111827]">
@@ -429,7 +399,7 @@ export function AdminBookings() {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <div className="mt-2 grid gap-1.5 sm:grid-cols-3">
                       <Button
                         size="sm"
                         variant="secondary"

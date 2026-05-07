@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
-import { DataRow } from '../../components/ui/DataList'
+import { CompactDataRow, SmallEmptyState } from '../../components/ui/CompactAdmin'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -134,58 +134,56 @@ export function AdminBranches() {
         }
       />
 
-      <div className="mt-8">
-        <Section title="Все филиалы" description={`В школе ${rows.length} филиалов.`}>
+      <div className="mt-3">
+        <Section title="Филиалы" description={`${rows.length} филиалов`}>
           {rows.length === 0 ? (
-            <StateView title="Филиалов пока нет" description="Создайте первый филиал, чтобы привязать к нему инструкторов и занятия." action={<Button onClick={openCreate}>Создать филиал</Button>} />
+            <SmallEmptyState
+              title="Филиалов пока нет"
+              description="Создайте первый филиал."
+              action={<Button size="sm" onClick={openCreate}><Plus size={15} />Создать филиал</Button>}
+            />
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               {rows.map(({ branch, instructorCount, futureBookings, freeSlots7d }) => (
-                <DataRow key={branch.id} className="p-4">
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px_220px] xl:items-center">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-[16px] rgba(246,184,77,0.12) #C97F10">
-                        <Location size={18} />
+                <CompactDataRow key={branch.id}>
+                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_280px_auto] md:items-center">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Location size={16} className="shrink-0 text-[#2436D9]" />
+                        <p className="truncate text-[15px] font-black text-[#111827]">{branch.name}</p>
+                        <Badge variant={branch.isActive ? 'success' : 'default'}>{branch.isActive ? 'Активен' : 'Выключен'}</Badge>
                       </div>
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-lg font-bold text-[#111827]">{branch.name}</p>
-                          <Badge variant={branch.isActive ? 'success' : 'default'}>
-                            {branch.isActive ? 'Активен' : 'Выключен'}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 text-sm text-[#4B5A70]">{branch.address || 'Адрес не указан'}</p>
-                        {branch.phone ? <p className="mt-1 text-sm font-semibold text-[#667085]">{branch.phone}</p> : null}
+                      <p className="mt-0.5 truncate text-[13px] font-medium text-[#4B5A70]">{branch.address || 'Адрес не указан'}</p>
+                      {branch.phone ? <p className="text-[12px] font-semibold text-[#667085]">{branch.phone}</p> : null}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 text-center">
+                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
+                        <p className="text-[11px] font-bold text-[#667085]">Инстр.</p>
+                        <p className="text-[15px] font-black text-[#111827]">{instructorCount}</p>
+                      </div>
+                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
+                        <p className="text-[11px] font-bold text-[#667085]">Записи</p>
+                        <p className="text-[15px] font-black text-[#111827]">{futureBookings}</p>
+                      </div>
+                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
+                        <p className="text-[11px] font-bold text-[#667085]">Окна</p>
+                        <p className="text-[15px] font-black text-[#2436D9]">{freeSlots7d}</p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                        <p className="text-xs font-bold text-[#667085]">Инструкторы</p>
-                        <p className="mt-1 text-lg font-bold text-[#111827]">{instructorCount}</p>
-                      </div>
-                      <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                        <p className="text-xs font-bold text-[#667085]">Записи</p>
-                        <p className="mt-1 text-lg font-bold text-[#111827]">{futureBookings}</p>
-                      </div>
-                      <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                        <p className="text-xs font-bold text-[#667085]">Времяы 7д</p>
-                        <p className="mt-1 text-lg font-bold #C97F10">{freeSlots7d}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                    <div className="grid grid-cols-2 gap-1.5 md:w-[190px]">
                       <Button variant="secondary" size="sm" onClick={() => openEdit(branch.id)}>
                         <Pencil size={14} />
                         Редактировать
                       </Button>
                       <Button variant="danger" size="sm" onClick={() => setDeleteId(branch.id)}>
                         <Trash2 size={14} />
-                        Выключить
+                        Выкл.
                       </Button>
                     </div>
                   </div>
-                </DataRow>
+                </CompactDataRow>
               ))}
             </div>
           )}

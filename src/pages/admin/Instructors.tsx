@@ -1,11 +1,11 @@
-import { Add01Icon, LinkSquare02Icon, Link02Icon, PowerOffIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, PowerOffIcon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Avatar } from '../../components/ui/Avatar'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { StateView } from '../../components/ui/StateView'
-import { DataRow } from '../../components/ui/DataList'
+import { CompactDataRow, SmallEmptyState } from '../../components/ui/CompactAdmin'
 import { FormField } from '../../components/ui/FormField'
 import { Input, Textarea } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
@@ -13,8 +13,6 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 
-const ExternalLink = createHugeIcon(LinkSquare02Icon)
-const Link2 = createHugeIcon(Link02Icon)
 const Plus = createHugeIcon(Add01Icon)
 const Power = createHugeIcon(PowerOffIcon)
 import { formatPhone } from '../../lib/utils'
@@ -140,12 +138,6 @@ export function AdminInstructors() {
     })
   }
 
-  async function copyLink(instructor: Instructor): Promise<void> {
-    const url = `${window.location.origin}/instructor/${instructor.token}`
-    await navigator.clipboard.writeText(url)
-    showToast('Ссылка скопирована.', 'success')
-  }
-
   async function toggle(instructor: Instructor): Promise<void> {
     if (togglingId) return
     try {
@@ -185,92 +177,53 @@ export function AdminInstructors() {
         }
       />
 
-      <div className="mt-8">
-        <Section title="Команда" description={`В школе ${rows.length} инструкторов.`}>
+      <div className="mt-3">
+        <Section title="Инструкторы" description={`${rows.length} человек`}>
           {rows.length === 0 ? (
-            <StateView title="Инструкторов пока нет" description="Создайте первого инструктора, чтобы он появился в записи и расписании." action={<Button onClick={openCreate} disabled={saving || Boolean(togglingId)}>Создать инструктора</Button>} />
+            <SmallEmptyState
+              title="Инструкторов пока нет"
+              description="Создайте первого инструктора."
+              action={<Button size="sm" onClick={openCreate} disabled={saving || Boolean(togglingId)}><Plus size={15} />Создать инструктора</Button>}
+            />
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
-                <DataRow key={instructor.id} className="p-4">
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)_250px] xl:items-center">
-                  <div className="flex items-start gap-4">
-                    <Avatar
-                      initials={instructor.avatarInitials}
-                      color={instructor.avatarColor}
-                      src={getInstructorPhoto(instructor)}
-                      alt={instructor.name}
-                      size="xl"
-                      className="rounded-[16px]"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-lg font-bold text-[#111827]">{instructor.name}</p>
-                        <Badge variant={instructor.isActive ? 'success' : 'default'}>
-                          {instructor.isActive ? 'Активен' : 'Выключен'}
-                        </Badge>
-                      </div>
-                      <p className="mt-2 text-sm text-[#4B5A70]">{instructor.bio || 'Краткое описание пока не заполнено.'}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {(instructor.categories?.length ? instructor.categories : ['B']).map((code) => (
-                          <Badge key={code} variant="default">
-                            {DRIVING_CATEGORIES.find((category) => category.code === code)?.title ?? code}
-                          </Badge>
-                        ))}
+                <CompactDataRow key={instructor.id}>
+                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_260px_auto] md:items-center">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} src={getInstructorPhoto(instructor)} alt={instructor.name} size="md" className="rounded-[12px]" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-[15px] font-black text-[#111827]">{instructor.name}</p>
+                          <Badge variant={instructor.isActive ? 'success' : 'default'}>{instructor.isActive ? 'Активен' : 'Выключен'}</Badge>
+                        </div>
+                        <p className="truncate text-[13px] font-medium text-[#4B5A70]">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Филиал не найден'}</p>
+                        <p className="truncate text-[12px] font-semibold text-[#667085]">{instructor.phone ? formatPhone(instructor.phone) : 'Телефон не указан'} · {instructor.car ?? 'Машина не указана'}</p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                      <p className="caption">Филиал</p>
-                      <p className="mt-1 text-sm font-bold text-[#111827]">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Не найдено'}</p>
+                    <div className="grid grid-cols-2 gap-1.5 text-center">
+                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
+                        <p className="text-[11px] font-bold text-[#667085]">Записи</p>
+                        <p className="text-[15px] font-black text-[#111827]">{futureLessons}</p>
+                      </div>
+                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
+                        <p className="text-[11px] font-bold text-[#667085]">Окна</p>
+                        <p className="text-[15px] font-black text-[#2436D9]">{freeSlots7d}</p>
+                      </div>
                     </div>
-                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                      <p className="caption">Телефон</p>
-                      <p className="mt-1 text-sm font-bold text-[#111827]">{instructor.phone ? formatPhone(instructor.phone) : 'Не указан'}</p>
-                    </div>
-                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                      <p className="caption">Машина</p>
-                      <p className="mt-1 text-sm font-bold text-[#111827]">
-                        {instructor.car ?? 'Не указана'}
-                        {instructor.transmission ? ` · ${instructor.transmission === 'manual' ? 'Механика' : 'Автомат'}` : ''}
-                      </p>
-                    </div>
-                    <div className="rounded-[16px] bg-[#F8FAFE] px-3 py-3">
-                      <p className="caption">Записи / свободное занятия</p>
-                      <p className="mt-1 text-sm font-bold #C97F10">{futureLessons} / {freeSlots7d}</p>
-                    </div>
-                  </div>
 
-                  <div>
-                  <div className="rounded-[16px] bg-[#F8FAFE] px-4 py-4">
-                    <p className="caption">Личная ссылка</p>
-                    <p className="mt-2 break-all text-sm font-medium text-[#4B5A70]">
-                      {window.location.origin}/instructor/{instructor.token}
-                    </p>
+                    <div className="grid grid-cols-2 gap-1.5 md:w-[190px]">
+                      <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)} disabled={saving || Boolean(togglingId)}>
+                        Редактировать
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => void toggle(instructor)} disabled={saving || Boolean(togglingId)}>
+                        <Power size={14} />
+                        {togglingId === instructor.id ? '...' : instructor.isActive ? 'Выкл.' : 'Вкл.'}
+                      </Button>
+                    </div>
                   </div>
-
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)} disabled={saving || Boolean(togglingId)}>
-                      Редактировать
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => void copyLink(instructor)} disabled={saving || Boolean(togglingId)}>
-                      <Link2 size={14} />
-                      Скопировать
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => window.open(`/instructor/${instructor.token}`, '_blank')} disabled={saving || Boolean(togglingId)}>
-                      <ExternalLink size={14} />
-                      Открыть
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => void toggle(instructor)} disabled={saving || Boolean(togglingId)}>
-                      <Power size={14} />
-                      {togglingId === instructor.id ? 'Сохраняем...' : instructor.isActive ? 'Выключить' : 'Включить'}
-                    </Button>
-                  </div>
-                  </div>
-                  </div>
-                </DataRow>
+                </CompactDataRow>
               ))}
             </div>
           )}

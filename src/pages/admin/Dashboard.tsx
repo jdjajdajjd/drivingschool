@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { CompactChecklistRow } from '../../components/ui/CompactAdmin'
 import { StateView } from '../../components/ui/StateView'
 import { useToast } from '../../components/ui/Toast'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
@@ -68,10 +69,10 @@ export function AdminDashboard() {
     })
 
     const setupItems = [
-      { label: 'Данные школы', done: Boolean(school.name && school.phone && school.address), to: `${ADMIN_BASE_PATH}/settings`, icon: Settings },
-      { label: 'Филиал', done: branches.some((branch) => branch.isActive), to: `${ADMIN_BASE_PATH}/branches`, icon: Location },
-      { label: 'Инструктор', done: instructors.some((instructor) => instructor.isActive), to: `${ADMIN_BASE_PATH}/instructors`, icon: Users },
-      { label: 'Расписание', done: freeSlots7d.length > 0, to: `${ADMIN_BASE_PATH}/slots`, icon: Calendar },
+      { label: 'Данные школы', done: Boolean(school.name && school.phone && school.address), to: `${ADMIN_BASE_PATH}/settings`, icon: Settings, action: 'заполнить' },
+      { label: 'Филиал', done: branches.some((branch) => branch.isActive), to: `${ADMIN_BASE_PATH}/branches`, icon: Location, action: 'создать' },
+      { label: 'Инструктор', done: instructors.some((instructor) => instructor.isActive), to: `${ADMIN_BASE_PATH}/instructors`, icon: Users, action: 'создать' },
+      { label: 'Расписание', done: freeSlots7d.length > 0, to: `${ADMIN_BASE_PATH}/slots`, icon: Calendar, action: 'добавить' },
     ]
 
     return {
@@ -180,27 +181,25 @@ export function AdminDashboard() {
             </div>
 
             <aside className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
-              <section className={`rounded-[18px] border p-3 shadow-[0_14px_34px_rgba(35,47,78,0.12)] md:rounded-[22px] ${configuredTone}`}>
-                <div className="flex items-center justify-between gap-3">
+              <section className={`overflow-hidden rounded-[16px] border shadow-none ${configuredTone}`}>
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
                   <div>
                     <h2 className="text-[16px] font-black tracking-[-0.03em]">Настроено: {configuredCount}/{configuredTotal}</h2>
-                    <p className="mt-0.5 text-[11px] font-bold opacity-75">школа, филиал, инструктор, расписание</p>
+                    <p className="mt-0.5 text-[11px] font-bold opacity-75">что нужно сделать дальше</p>
                   </div>
-                  <Check size={20} />
+                  <Check size={18} />
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-1.5">
-                  {data.setupItems.map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <button key={item.label} onClick={() => navigate(item.to)} className="min-h-[58px] rounded-[12px] bg-white px-2.5 py-2 text-left shadow-[0_6px_14px_rgba(35,47,78,0.08)]">
-                        <div className="flex items-center justify-between gap-1">
-                          <Icon size={14} className="shrink-0" />
-                          <span className="text-[11px] font-black">{item.done ? '✓' : '!'}</span>
-                        </div>
-                        <span className="mt-1 block text-[11px] font-black leading-3">{item.label}</span>
-                      </button>
-                    )
-                  })}
+                <div className="border-t border-black/10 bg-white">
+                  {data.setupItems.map((item) => (
+                    <CompactChecklistRow
+                      key={item.label}
+                      title={item.label}
+                      status={item.done ? 'готово' : 'нужно настроить'}
+                      action={item.done ? 'открыть' : item.action}
+                      done={item.done}
+                      onClick={() => navigate(item.to)}
+                    />
+                  ))}
                 </div>
               </section>
 
