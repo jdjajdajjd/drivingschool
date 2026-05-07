@@ -168,7 +168,7 @@ export function AdminInstructors() {
       <PageHeader
         eyebrow={school.name}
         title="Инструкторы"
-        description="Управление карточками инструкторов, их доступностью и личными ссылками."
+        description="Команда, филиалы и доступность."
         actions={
           <Button onClick={openCreate} disabled={saving || Boolean(togglingId)}>
             <Plus size={16} />
@@ -183,13 +183,12 @@ export function AdminInstructors() {
             <SmallEmptyState
               title="Инструкторов пока нет"
               description="Создайте первого инструктора."
-              action={<Button size="sm" onClick={openCreate} disabled={saving || Boolean(togglingId)}><Plus size={15} />Создать инструктора</Button>}
-            />
+                          />
           ) : (
             <div className="grid gap-2">
               {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
                 <CompactDataRow key={instructor.id}>
-                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_260px_auto] md:items-center">
+                  <div className="grid gap-1.5 md:grid-cols-[minmax(0,1fr)_260px_auto] md:items-center">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} src={getInstructorPhoto(instructor)} alt={instructor.name} size="md" className="rounded-[12px]" />
                       <div className="min-w-0 flex-1">
@@ -213,7 +212,7 @@ export function AdminInstructors() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5 md:w-[190px]">
+                    <div className="grid grid-cols-2 gap-1 md:w-[190px]">
                       <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)} disabled={saving || Boolean(togglingId)}>
                         Редактировать
                       </Button>

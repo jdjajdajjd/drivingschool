@@ -1,6 +1,6 @@
 import { addDays, format, isAfter, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { Calendar03Icon, Car04Icon, CheckmarkCircle02Icon, Copy01Icon, LinkSquare02Icon, Location01Icon, Settings02Icon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { Calendar03Icon, CheckmarkCircle02Icon, Copy01Icon, LinkSquare02Icon, Location01Icon, Settings02Icon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
@@ -14,7 +14,6 @@ import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { db } from '../../services/storage'
 
 const Calendar = createHugeIcon(Calendar03Icon)
-const Car = createHugeIcon(Car04Icon)
 const Check = createHugeIcon(CheckmarkCircle02Icon)
 const Copy = createHugeIcon(Copy01Icon)
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
@@ -107,57 +106,56 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#E9EEF7] px-2.5 py-2.5 md:px-5 md:py-5">
-      <div className="mx-auto grid max-w-[1220px] gap-2.5 md:gap-3 lg:grid-cols-[minmax(0,1fr)_76px]">
+      <div className="mx-auto grid max-w-[1220px] gap-2.5 md:gap-3 ">
         <main className="space-y-2.5 md:space-y-3">
-          <section className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#5DA2FF] via-[#1F67F2] to-[#4539F5] p-3 text-white shadow-[0_18px_44px_rgba(31,103,242,0.30)] md:rounded-[24px] md:p-4">
-            <div className="absolute -right-12 -top-16 h-36 w-36 rounded-full bg-white/20 blur-2xl" />
-            <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch">
+          <section className="rounded-[16px] border border-[#D8E0EC] bg-white p-2.5 text-[#111827] md:p-3">
+            <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch">
               <div className="min-w-0">
-                <p className="truncate text-[12px] font-bold text-white/70">{school.name}</p>
-                <h1 className="mt-1 text-[23px] font-black leading-none tracking-[-0.045em] text-white md:text-[34px]">Панель школы</h1>
+                <p className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-[#667085]">{school.name}</p>
+                <h1 className="mt-0.5 text-[22px] font-black leading-none tracking-[-0.04em] text-[#111827] md:text-[28px]">Панель школы</h1>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[13px] bg-white px-3 py-2 text-[13px] font-black text-[#1F67F2]">Добавить время</button>
-                  <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[13px] bg-white/16 px-3 py-2 text-[13px] font-black text-white">Открыть записи</button>
+                  <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[12px] bg-[#2436D9] px-3 py-2 text-[13px] font-black text-white">Добавить время</button>
+                  <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[12px] border border-[#D8E0EC] bg-white px-3 py-2 text-[13px] font-black text-[#2436D9]">Открыть записи</button>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 gap-2 lg:grid-cols-2">
-                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[15px] bg-white p-2.5 text-left text-[#111827] shadow-[0_10px_22px_rgba(10,28,80,0.12)]">
+                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[12px] border border-[#E5EAF1] bg-[#F8FAFC] p-2 text-left text-[#111827]">
                   <Calendar size={16} className="text-[#3156D4]" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em] text-[#111827]">{data.todayBookings.length}</p>
                   <p className="mt-0.5 text-[10px] font-black leading-3 text-[#4B5A70]">занятий сегодня</p>
                 </button>
-                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[15px] bg-white p-2.5 text-left text-[#111827]">
+                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[12px] border border-[#E5EAF1] bg-[#F8FAFC] p-2 text-left text-[#111827]">
                   <Calendar size={16} className="text-[#3156D4]" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em]">{data.tomorrowBookings.length}</p>
                   <p className="mt-0.5 text-[10px] font-bold leading-3 text-[#4B5A70]">занятий завтра</p>
                 </button>
-                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[15px] bg-[#59BAB9] p-2.5 text-left text-white">
+                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[12px] border border-[#C7E8E7] bg-[#ECFDFD] p-2 text-left text-[#0F766E]">
                   <Check size={16} className="text-white/90" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em]">{data.freeSlots7d.length}</p>
-                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/76">свободных окон</p>
+                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-[#0F766E]">свободных окон</p>
                 </button>
-                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-[15px] bg-[#243B78] p-2.5 text-left text-white shadow-[0_10px_22px_rgba(10,28,80,0.16)]">
+                <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-[12px] border border-[#D8E0EC] bg-[#EEF2FF] p-2 text-left text-[#2436D9]">
                   <Users size={16} className="text-white/85" />
                   <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.04em]">{activeInstructors}</p>
-                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-white/70">активных инструкторов</p>
+                  <p className="mt-0.5 text-[10px] font-bold leading-3 text-[#2436D9]">активных инструкторов</p>
                 </button>
               </div>
             </div>
           </section>
 
           <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_330px]">
-            <div className="rounded-[18px] border border-[#D8E0EC] bg-white p-3 shadow-[0_14px_34px_rgba(35,47,78,0.12)] md:rounded-[22px] md:p-4">
+            <div className="rounded-[16px] border border-[#D8E0EC] bg-white p-2.5 md:p-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-[17px] font-black tracking-[-0.035em] text-[#111827] md:text-[20px]">Ближайшие занятия</h2>
+                  <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#111827] md:text-[18px]">Ближайшие занятия</h2>
                   <p className="mt-0.5 text-[11px] font-semibold text-[#8B95A7] md:text-[13px]">дата, ученик, инструктор</p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}>Все</Button>
               </div>
 
               {data.upcoming.length === 0 ? (
-                <div className="py-5 md:py-7">
+                <div className="mt-2">
                   <StateView title="Занятий пока нет" description="Добавьте свободное время или отправьте ссылку ученикам." />
                 </div>
               ) : (
@@ -203,31 +201,23 @@ export function AdminDashboard() {
                 </div>
               </section>
 
-              <section className="rounded-[18px] border border-[#1F2937] bg-[#111827] p-3 text-white shadow-[0_16px_38px_rgba(17,24,39,0.22)] md:rounded-[22px]">
+              <section className="rounded-[16px] border border-[#D8E0EC] bg-white p-2.5 text-[#111827]">
                 <div className="flex items-center gap-2">
                   <ExternalLink size={18} />
                   <div>
-                    <h2 className="text-[16px] font-black tracking-[-0.03em] text-white">Ссылка ученикам</h2>
-                    <p className="text-[11px] font-semibold text-white/55">для входа в кабинет</p>
+                    <h2 className="text-[15px] font-black tracking-[-0.03em] text-[#111827]">Ссылка ученикам</h2>
+                    <p className="text-[11px] font-semibold text-[#667085]">для входа в кабинет</p>
                   </div>
                 </div>
-                <p className="mt-2 line-clamp-2 break-all rounded-[12px] bg-white/14 px-2.5 py-2 text-[11px] font-bold leading-4 text-white/82">{publicUrl}</p>
+                <p className="mt-2 line-clamp-2 break-all rounded-[12px] bg-[#F8FAFC] px-2.5 py-1.5 text-[11px] font-bold leading-4 text-[#4B5A70]">{publicUrl}</p>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
-                  <button onClick={() => void copyPublicLink()} className="rounded-[12px] bg-white px-2 py-2 text-[12px] font-black text-[#111827]"><Copy size={13} className="mr-1 inline" />Копировать</button>
-                  <button onClick={() => window.open(publicUrl, '_blank')} className="rounded-[12px] bg-white/12 px-2 py-2 text-[12px] font-black text-white">Открыть</button>
+                  <button onClick={() => void copyPublicLink()} className="rounded-[10px] bg-[#2436D9] px-2 py-1.5 text-[12px] font-black text-white"><Copy size={13} className="mr-1 inline" />Копировать</button>
+                  <button onClick={() => window.open(publicUrl, '_blank')} className="rounded-[10px] border border-[#D8E0EC] bg-white px-2 py-1.5 text-[12px] font-black text-[#2436D9]">Открыть</button>
                 </div>
               </section>
             </aside>
           </section>
         </main>
-
-        <aside className="hidden lg:flex flex-col items-center gap-3 rounded-[24px] bg-[#1026D8] px-2.5 py-4 text-white shadow-[0_18px_50px_rgba(16,38,216,0.22)]">
-          <button onClick={() => navigate(ADMIN_BASE_PATH)} className="grid h-12 w-12 place-items-center rounded-[18px] bg-white text-[#1026D8]"><Car size={22} /></button>
-          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="grid h-10 w-10 place-items-center rounded-[16px] bg-white/15 text-white"><Calendar size={19} /></button>
-          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="grid h-10 w-10 place-items-center rounded-[16px] bg-white/15 text-white"><Check size={19} /></button>
-          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)} className="grid h-10 w-10 place-items-center rounded-[16px] bg-white/15 text-white"><Users size={19} /></button>
-          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/branches`)} className="grid h-10 w-10 place-items-center rounded-[16px] bg-white/15 text-white"><Location size={19} /></button>
-        </aside>
       </div>
     </div>
   )

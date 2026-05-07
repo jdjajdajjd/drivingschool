@@ -1,16 +1,17 @@
-import { Search01Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { Add01Icon, Search01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { StateView } from '../../components/ui/StateView'
-import { DataRow, DataToolbar } from '../../components/ui/DataList'
-import { SmallEmptyState, compactFieldClassName } from '../../components/ui/CompactAdmin'
-import { FormField } from '../../components/ui/FormField'
+import { DataRow } from '../../components/ui/DataList'
+import { FilterBar, SmallEmptyState, compactFieldClassName } from '../../components/ui/CompactAdmin'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { formatPhone } from '../../lib/utils'
 
+const Plus = createHugeIcon(Add01Icon)
 const Search = createHugeIcon(Search01Icon)
 const UserRound = createHugeIcon(User03Icon)
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
@@ -73,34 +74,24 @@ export function AdminStudents() {
       <PageHeader
         eyebrow={school.name}
         title="Ученики"
-        description="История записей, будущие занятия и базовый контроль лимитов по каждому ученику."
+        description="Поиск, записи и лимиты учеников."
+        actions={<Button size="sm" variant="secondary"><Plus size={15} />Пригласить</Button>}
       />
 
       <div className="mt-3 space-y-3">
-        <DataToolbar>
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_280px]">
-            <FormField label="Поиск">
-              <div className="relative">
-                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Имя или телефон"
-                  className="field h-11 rounded-[16px] pl-10"
-                />
-              </div>
-            </FormField>
-            <FormField label="Фильтр">
-              <select value={filter} onChange={(event) => setFilter(event.target.value as StudentFilter)} className={selectClassName()}>
-                <option value="all">Все ученики</option>
-                <option value="active">Есть активные записи</option>
-                <option value="inactive">Нет активных записей</option>
-                <option value="cancelled">Есть отмены</option>
-                <option value="limit">Достигнут лимит</option>
-              </select>
-            </FormField>
+        <FilterBar>
+          <div className="relative col-span-3 md:col-span-4">
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Имя или телефон" className={compactFieldClassName('pl-9')} />
           </div>
-        </DataToolbar>
+          <select value={filter} onChange={(event) => setFilter(event.target.value as StudentFilter)} className={selectClassName()}>
+            <option value="all">Все</option>
+            <option value="active">С записью</option>
+            <option value="inactive">Без записи</option>
+            <option value="cancelled">Есть отмены</option>
+            <option value="limit">Лимит</option>
+          </select>
+        </FilterBar>
 
         <Section title="Список учеников" description={`Найдено ${rows.length} учеников.`}>
           {rows.length === 0 ? (

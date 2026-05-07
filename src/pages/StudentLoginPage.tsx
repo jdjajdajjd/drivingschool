@@ -5,7 +5,6 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { createHugeIcon } from '../components/ui/HugeIcon'
-import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -78,10 +77,10 @@ export default function StudentLoginPage() {
 
   return (
     <div className="min-h-dvh bg-[var(--page-bg)] text-[var(--text)]">
-      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-5 pb-6 pt-5">
+      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-4 pb-5 pt-4">
         <header className="flex items-center justify-between">
           <button className="flex items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
-            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
+            <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-[14px] bg-[var(--accent)] text-white">
               {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={22} />}
             </div>
             <div className="min-w-0">
@@ -90,33 +89,32 @@ export default function StudentLoginPage() {
             </div>
           </button>
           <div className="flex items-center gap-2">
-            <ThemeToggle compact />
-            <button className="min-h-10 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}/register`)}>
+            <button className="min-h-9 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] font-extrabold text-[var(--accent)] active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}/register`)}>
               Регистрация
             </button>
           </div>
         </header>
 
-        <section className="flex flex-1 flex-col justify-center py-8">
-          <div className="rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]" onKeyDown={handleKeyDown}>
-            <div className="mb-5 inline-flex rounded-full bg-[var(--accent-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--accent)]">
+        <section className="flex flex-1 flex-col justify-center py-5">
+          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-4" onKeyDown={handleKeyDown}>
+            <div className="mb-3 inline-flex rounded-[10px] bg-[var(--accent-soft)] px-2.5 py-1.5 text-[12px] font-extrabold text-[var(--accent)]">
               Вход ученика
             </div>
-            <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Войдите в кабинет</h1>
-            <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">
-              Здесь хранятся ваши записи, занятия, документы и сообщения автошколы.
+            <h1 className="text-[26px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Войдите в кабинет</h1>
+            <p className="mt-2 text-[14px] font-semibold leading-5 text-[var(--text-muted)]">
+              Записи, занятия и документы автошколы.
             </p>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-4 space-y-3">
               <PhoneInput label="Телефон" value={phone} error={error && !isValidRussianPhone(phone) ? error : ''} onChange={(value) => { setError(''); setPhone(value) }} autoFocus />
               <Input label="Пароль" type="password" value={password} error={error && isValidRussianPhone(phone) ? error : ''} placeholder="Ваш пароль" autoComplete="current-password" onChange={(event) => { setError(''); setPassword(event.target.value) }} />
             </div>
 
-            <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={submitting || !isValidRussianPhone(phone) || password.trim().length < 6} onClick={() => void submit()}>
+            <Button size="lg" className="mt-4 w-full" disabled={submitting || !isValidRussianPhone(phone) || password.trim().length < 6} onClick={() => void submit()}>
               {submitting ? 'Входим...' : 'Войти'}
               <ArrowRight size={18} />
             </Button>
-            <button type="button" className="mt-3 w-full rounded-[16px] bg-[var(--surface-muted)] px-4 py-3 text-[13px] font-extrabold text-[var(--text-muted)]" onClick={() => setError('Для восстановления доступа обратитесь в автошколу.')}>Забыли пароль?</button>
+            <button type="button" className="mt-2 w-full rounded-[12px] bg-[var(--surface-muted)] px-3 py-2.5 text-[13px] font-extrabold text-[var(--text-muted)]" onClick={() => setError('Для восстановления доступа обратитесь в автошколу.')}>Забыли пароль?</button>
             <p className="mt-4 text-center text-[12px] font-semibold leading-5 text-[var(--text-soft)]">
               Продолжая, вы принимаете <a className="font-extrabold text-[var(--accent)]" href="/terms">условия сервиса</a> и <a className="font-extrabold text-[var(--accent)]" href="/privacy">политику конфиденциальности</a>.
             </p>

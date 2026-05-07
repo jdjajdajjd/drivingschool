@@ -183,15 +183,15 @@ export function AdminSettings() {
       />
 
       <div className="mt-3 space-y-3">
-        <CompactSettingsSection title="Данные школы" description="Название, описание и внешний вид страницы.">
-          <div className="grid gap-4 md:grid-cols-2">
+        <CompactSettingsSection title="Основное" description="Название, описание и внешний вид страницы.">
+          <div className="grid gap-2 md:grid-cols-2">
             <Input label="Название автошколы" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
             <Input label="Адрес страницы" helperText="Адрес страницы управляется перед запуском и сейчас недоступен для изменения" value={school.slug} readOnly disabled />
             <Input label="Основной цвет" placeholder="#1f5b43" value={form.primaryColor} onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))} />
             <Input label="Logo URL" placeholder="https://..." value={form.logoUrl} onChange={(event) => setForm((current) => ({ ...current, logoUrl: event.target.value }))} />
           </div>
-          <div className="mt-4">
-            <Textarea label="Описание" rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+          <div className="mt-2">
+            <Textarea label="Описание" rows={3} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
           </div>
         </CompactSettingsSection>
 
@@ -256,7 +256,7 @@ export function AdminSettings() {
         </CompactSettingsSection>
 
         <CompactSettingsSection title="Категории прав" description="Что ученик видит при записи.">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
             {DRIVING_CATEGORIES.map((category) => {
               const enabled = form.enabledCategoryCodes.includes(category.code)
               return (
@@ -270,12 +270,11 @@ export function AdminSettings() {
                       : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20)'
                   }`}
                 >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold">{category.code}</span>
-                    <span className={`h-3 w-3 rounded-full ${enabled ? 'bg-accent' : 'bg-warm-border'}`} />
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-[15px] font-black">{category.code}</span>
+                    <span className={`h-2.5 w-2.5 rounded-full ${enabled ? 'bg-[#2436D9]' : 'bg-warm-border'}`} />
                   </span>
-                  <span className="mt-1 block text-sm font-medium">{category.title}</span>
-                  <span className="mt-1 block text-xs leading-relaxed text-[#667085]">{category.description}</span>
+                  <span className="mt-0.5 block truncate text-[12px] font-semibold">{category.title}</span>
                 </button>
               )
             })}
@@ -288,7 +287,7 @@ export function AdminSettings() {
         </CompactSettingsSection>
 
         <CompactSettingsSection title="Правила записи" description="Лимиты, филиалы и длительность занятия.">
-          <div className="grid gap-3 md:grid-cols-[260px_220px]">
+          <div className="grid gap-2 md:grid-cols-[260px_220px]">
             <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
               <input
                 type="checkbox"
@@ -338,7 +337,7 @@ export function AdminSettings() {
             </div>
             <Input
               label="Занятий за одну запись"
-              helperText="Например: 2 — можно выбрать два времяа в один или разные дни"
+              helperText="Например: 2 — два занятия за раз"
               type="number"
               min={1}
               max={6}
@@ -368,7 +367,7 @@ export function AdminSettings() {
           </div>
         </CompactSettingsSection>
 
-        <CompactSettingsSection title="Служебное" description="Для настройки стенда и восстановления тестовых данных.">
+        <CompactSettingsSection title="Служебное" description="Опасное действие. Не основной рабочий путь.">
           <WarningRow>
             Это действие очищает локальный рабочий снимок и заново загружает стартовые данные. Не используйте во время реальной работы с учениками.
           </WarningRow>

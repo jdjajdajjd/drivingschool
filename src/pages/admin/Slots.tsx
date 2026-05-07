@@ -1,14 +1,13 @@
 import { addDays, endOfWeek, isAfter, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
-import { CalendarAdd01Icon, Delete02Icon, LinkSquare02Icon, Search01Icon } from '@hugeicons/core-free-icons'
+import { CalendarAdd01Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { StateView } from '../../components/ui/StateView'
-import { DataRow } from '../../components/ui/DataList'
-import { FilterBar, StickyBottomAction, WarningRow, compactFieldClassName } from '../../components/ui/CompactAdmin'
+
+import { CompactRow, FilterBar, SmallEmptyState, StickyBottomAction, WarningRow, compactFieldClassName } from '../../components/ui/CompactAdmin'
 import { FormField } from '../../components/ui/FormField'
 import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -19,12 +18,8 @@ import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { createBulkSlots, createBulkSlotsConfirmed, createSlot, createSlotConfirmed, deleteSlot, deleteSlotConfirmed, getSlotsBySchool, updateSlotStatus, updateSlotStatusConfirmed } from '../../services/slotService'
 import { db } from '../../services/storage'
 import type { LessonType } from '../../types'
-import { lessonTypeLabels } from '../student/studentUtils'
-
 const CalendarPlus2 = createHugeIcon(CalendarAdd01Icon)
-const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const Search = createHugeIcon(Search01Icon)
-const Trash2 = createHugeIcon(Delete02Icon)
 
 type SlotStatusFilter = 'all' | 'available' | 'booked' | 'cancelled'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'
@@ -42,10 +37,6 @@ const lessonTypeOptions: Array<{ value: LessonType; label: string }> = [
   { value: 'mistakes', label: 'Отработка' },
 ]
 
-function lessonTypeLabel(type: LessonType | undefined) {
-  return type ? lessonTypeLabels[type] : 'Вождение'
-}
-
 function selectClassName() {
   return compactFieldClassName()
 }
@@ -53,7 +44,6 @@ function selectClassName() {
 export function AdminSlots() {
   const school = db.schools.all()[0] ?? null
   const { showToast } = useToast()
-  const navigate = useNavigate()
   const [mode, setMode] = useState<CreateMode>('bulk')
   const [search, setSearch] = useState('')
   const [date, setDate] = useState('')
@@ -248,11 +238,11 @@ export function AdminSlots() {
       <PageHeader
         eyebrow={school.name}
         title="Расписание"
-        description="Создавайте свободные занятия для учеников. Это расписание видно на странице автошколы."
+        description="Добавить время и быстро проверить занятия."
       />
 
       <div className="mt-3 space-y-3">
-        <Section title="Добавить занятия" description="Филиал, инструктор, даты, время и дни недели — всё на одном экране.">
+        <Section title="Добавить занятия" description="Филиал, инструктор, даты и время.">
           <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-[14px] border border-[#D8E0EC] bg-white p-1">
             <Button size="sm" variant={mode === 'bulk' ? 'primary' : 'ghost'} onClick={() => setMode('bulk')}>
               Серия занятий
@@ -264,7 +254,7 @@ export function AdminSlots() {
 
           {mode === 'bulk' ? (
             <div className="space-y-3">
-              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                 <FormField label="Филиал">
                   <select value={bulkForm.branchId} onChange={(event) => setBulkForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
                     <option value="">Выберите филиал</option>
@@ -290,8 +280,8 @@ export function AdminSlots() {
                 <Input label="Перерыв, минут" type="number" value={bulkForm.breakMinutes} onChange={(event) => setBulkForm((current) => ({ ...current, breakMinutes: event.target.value }))} />
               </div>
 
-              <FormField label="Дни недели" helperText="Отметьте дни, когда инструктор принимает занятия.">
-                <div className="flex flex-wrap gap-2">
+              <FormField label="Дни недели">
+                <div className="grid grid-cols-7 gap-1">
                   {[
                     { label: 'Пн', value: 1 },
                     { label: 'Вт', value: 2 },
@@ -312,7 +302,7 @@ export function AdminSlots() {
                             weekdays: active ? current.weekdays.filter((value) => value !== day.value) : [...current.weekdays, day.value],
                           }))
                         }
-                        className={`rounded-[12px] border px-3 py-2 text-[14px] font-bold transition ${
+                        className={`rounded-[10px] border px-1.5 py-2 text-[13px] font-bold transition ${
                           active ? 'border-[#2436D9] bg-[#EEF2FF] text-[#2436D9]' : 'border-[#D8E0EC] bg-white text-[#4B5A70]'
                         }`}
                       >
@@ -335,7 +325,7 @@ export function AdminSlots() {
               </StickyBottomAction>
             </div>
           ) : (
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
               <FormField label="Филиал">
                 <select value={singleForm.branchId} onChange={(event) => setSingleForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
                   <option value="">Выберите филиал</option>
@@ -403,53 +393,28 @@ export function AdminSlots() {
 
           <div className="mt-3">
             {filteredSlots.length === 0 ? (
-              <StateView kind="no-results" title="Занятия не найдены" description="Измените фильтры или создайте занятия выше." />
+              <SmallEmptyState title="Занятия не найдены" description="Измените фильтры или создайте занятия выше." />
             ) : (
-              <div className="grid gap-2">
+              <div className="overflow-hidden rounded-[14px] border border-[#D8E0EC]">
                 {filteredSlots.map((entry) => (
-                  <DataRow key={entry.slot.id}>
-                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="grid flex-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
-                        <div>
-                          <p className="caption">Дата и время</p>
-                          <p className="mt-0.5 text-[15px] font-bold text-[#111827]">{formatHumanDate(entry.slot.date, false)}</p>
-                          <p className="text-sm font-semibold text-[#C97F10]">{formatTimeRange(entry.slot)} · {formatDuration(entry.slot.duration)}</p>
-                          <p className="text-xs font-semibold text-[text-[#4B5A70]]">{lessonTypeLabel(entry.slot.lessonType)}</p>
-                        </div>
-                        <div>
-                          <p className="caption">Филиал</p>
-                          <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{entry.branch?.name ?? 'Не найден'}</p>
-                        </div>
-                        <div>
-                          <p className="caption">Инструктор</p>
-                          <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Не найден'}</p>
-                          <p className="text-sm text-[#667085]">{entry.instructor?.car ?? 'Без машины'}</p>
-                        </div>
-                        <div>
-                          <p className="caption">Статус</p>
-                          <div className="mt-1"><StatusBadge status={entry.slot.status} kind="slot" /></div>
-                        </div>
-                        <div>
-                          <p className="caption">Ученик</p>
-                          <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{entry.student?.name ?? 'Нет записи'}</p>
-                        </div>
+                  <CompactRow key={entry.slot.id}>
+                    <div className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2">
+                      <div>
+                        <p className="text-[12px] font-black text-[#111827]">{formatTimeRange(entry.slot)}</p>
+                        <p className="text-[11px] font-bold text-[#667085]">{formatHumanDate(entry.slot.date, false)}</p>
                       </div>
-
-                      <div className="grid gap-1.5 sm:grid-cols-3 lg:min-w-[330px]">
-                        <Button variant="secondary" size="sm" disabled={!entry.booking} onClick={() => entry.booking && navigate(`/booking/${entry.booking.id}`)}>
-                          <ExternalLink size={14} />
-                          Открыть запись
-                        </Button>
-                        <Button variant="secondary" size="sm" disabled={entry.slot.status === 'booked'} onClick={() => setToggleSlotId(entry.slot.id)}>
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-black text-[#111827]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор не найден'}</p>
+                        <p className="truncate text-[12px] font-semibold text-[#667085]">{entry.branch?.name ?? 'Филиал не найден'} · {entry.student?.name ?? 'Нет записи'}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <StatusBadge status={entry.slot.status} kind="slot" />
+                        <button className="text-[12px] font-black text-[#2436D9]" disabled={entry.slot.status === 'booked'} onClick={() => setToggleSlotId(entry.slot.id)}>
                           {entry.slot.status === 'cancelled' ? 'Вернуть' : 'Скрыть'}
-                        </Button>
-                        <Button variant="danger" size="sm" disabled={entry.slot.status !== 'available'} onClick={() => setDeleteSlotId(entry.slot.id)}>
-                          <Trash2 size={14} />
-                          Удалить
-                        </Button>
+                        </button>
                       </div>
                     </div>
-                  </DataRow>
+                  </CompactRow>
                 ))}
               </div>
             )}

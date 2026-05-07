@@ -125,7 +125,7 @@ export function AdminBranches() {
       <PageHeader
         eyebrow={school.name}
         title="Филиалы"
-        description="Простое управление адресами, активностью филиалов и связанными данными."
+        description="Адреса, инструкторы и доступность."
         actions={
           <Button onClick={openCreate}>
             <Plus size={16} />
@@ -140,13 +140,12 @@ export function AdminBranches() {
             <SmallEmptyState
               title="Филиалов пока нет"
               description="Создайте первый филиал."
-              action={<Button size="sm" onClick={openCreate}><Plus size={15} />Создать филиал</Button>}
-            />
+                          />
           ) : (
             <div className="grid gap-2">
               {rows.map(({ branch, instructorCount, futureBookings, freeSlots7d }) => (
                 <CompactDataRow key={branch.id}>
-                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_280px_auto] md:items-center">
+                  <div className="grid gap-1.5 md:grid-cols-[minmax(0,1fr)_280px_auto] md:items-center">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <Location size={16} className="shrink-0 text-[#2436D9]" />
@@ -172,7 +171,7 @@ export function AdminBranches() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5 md:w-[190px]">
+                    <div className="grid grid-cols-2 gap-1 md:w-[190px]">
                       <Button variant="secondary" size="sm" onClick={() => openEdit(branch.id)}>
                         <Pencil size={14} />
                         Редактировать
