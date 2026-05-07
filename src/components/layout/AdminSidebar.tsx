@@ -28,13 +28,13 @@ const Users = createHugeIcon(UserMultipleIcon)
 const X = createHugeIcon(Cancel01Icon)
 
 const NAV = [
-  { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true },
-  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: ClipboardList },
-  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание', icon: CalendarDays },
-  { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound },
-  { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users },
-  { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: Location },
-  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2 },
+  { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true, color: 'bg-[#EAF7EE] text-[#188447]' },
+  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: ClipboardList, color: 'bg-[#EAF0FF] text-[#3156D4]' },
+  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание', icon: CalendarDays, color: 'bg-[#F2EAFF] text-[#7B3FD6]' },
+  { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound, color: 'bg-[#FFF0D8] text-[#C26A00]' },
+  { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users, color: 'bg-[#EAF7EE] text-[#188447]' },
+  { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: Location, color: 'bg-[#FFECEA] text-[#D94A38]' },
+  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройки', icon: Settings2, color: 'bg-[#F0ECE6] text-[#6F655C]' },
 ]
 
 interface AdminSidebarProps {
@@ -60,13 +60,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[300px] flex-col border-r border-[rgba(55,38,20,0.08)] bg-white/82 backdrop-blur-2xl transition-transform duration-200 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-[300px] flex-col border-r border-black/[0.06] bg-[#F7F1E7]/92 backdrop-blur-2xl transition-transform duration-200 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="flex items-center justify-between border-b border-[rgba(55,38,20,0.08)] px-4 py-4 md:px-5 md:py-5">
           <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-[20px] bg-[#15120E] shadow-[0_16px_34px_rgba(63,46,28,0.14)]">
+            <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-[20px] bg-[#10231C] shadow-[0_16px_34px_rgba(16,35,28,0.18)]">
               <Car size={19} className="text-white" />
             </div>
             <div className="text-left">
@@ -83,14 +83,14 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           </button>
         </div>
 
-        <div className="mx-3 mt-3 rounded-[20px] border border-[rgba(55,38,20,0.08)] bg-[#F8F3EA] px-3.5 py-3 md:rounded-[24px] md:px-4 md:py-4">
+        <div className="mx-3 mt-3 rounded-[20px] border border-[rgba(55,38,20,0.08)] bg-white/70 px-3.5 py-3 md:rounded-[24px] md:px-4 md:py-4">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#A09488]">Автошкола</p>
           <p className="mt-1 text-[15px] font-black leading-5 text-[#15120E]">{schoolName}</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F655C]">Рабочая панель директора</p>
+          <p className="mt-1 text-sm font-semibold text-[#6F655C]">Управление школой</p>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
+          {NAV.map(({ to, label, icon: Icon, end, color }) => (
             <NavLink
               key={to}
               to={to}
@@ -98,16 +98,16 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-10 items-center gap-3 rounded-[16px] px-3.5 py-2.5 text-[14px] font-bold transition-colors md:min-h-12 md:rounded-[20px] md:py-3 md:text-[15px]',
+                  'flex min-h-10 items-center gap-3 rounded-[18px] px-3 py-2.5 text-[14px] font-bold transition-colors md:min-h-12 md:rounded-[22px] md:py-3 md:text-[15px]',
                   isActive
-                    ? 'bg-[#15120E] text-white shadow-[0_14px_34px_rgba(63,46,28,0.16)]'
+                    ? 'bg-white text-[#15120E] shadow-[0_14px_34px_rgba(41,34,26,0.10)]'
                     : 'text-[#6F655C] hover:bg-[#F2ECE2] hover:text-[#15120E]',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={18} className={isActive ? 'text-white' : 'text-[#A09488]'} />
+                  <span className={`grid h-8 w-8 place-items-center rounded-[14px] ${isActive ? color : 'bg-white/70 text-[#A09488]'}`}><Icon size={17} /></span>
                   <span>{label}</span>
                 </>
               )}
