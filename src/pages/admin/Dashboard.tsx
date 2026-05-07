@@ -90,51 +90,51 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#F3F6FB] px-3 py-3 md:px-6 md:py-6">
       <div className="mx-auto grid max-w-[1180px] gap-4 lg:grid-cols-[minmax(0,1fr)_86px]">
-        <main className="space-y-4">
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-[#5DA2FF] via-[#1F67F2] to-[#4539F5] p-5 text-white shadow-[0_28px_70px_rgba(31,103,242,0.28)] md:p-7">
-            <div className="absolute -right-14 -top-16 h-52 w-52 rounded-full bg-white/20 blur-2xl" />
-            <div className="absolute right-10 bottom-8 h-24 w-24 rounded-full bg-[#81C8FF]/25 blur-xl" />
+        <main className="space-y-3">
+          <section className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#5DA2FF] via-[#1F67F2] to-[#4539F5] p-4 text-white shadow-[0_20px_48px_rgba(31,103,242,0.24)] md:rounded-[32px] md:p-6">
+            <div className="absolute -right-12 -top-14 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
+            <div className="absolute right-8 bottom-7 h-20 w-20 rounded-full bg-[#81C8FF]/25 blur-xl" />
 
             <div className="relative flex items-start justify-between gap-4">
               <div>
-                <p className="text-[13px] font-bold text-white/70">{school.name}</p>
-                <h1 className="mt-3 max-w-[620px] text-[34px] font-black leading-[0.94] tracking-[-0.06em] text-white md:text-[58px]">
-                  Админка автошколы
+                <p className="text-[12px] font-bold text-white/70">{school.name}</p>
+                <h1 className="mt-2 max-w-[520px] text-[28px] font-black leading-[0.96] tracking-[-0.055em] text-white md:text-[46px]">
+                  Панель школы
                 </h1>
-                <p className="mt-4 max-w-xl text-[15px] font-semibold leading-6 text-white/72">
-                  Записи, расписание, ученики и инструкторы — всё для ежедневной работы в одном экране.
+                <p className="mt-2 max-w-xl text-[13px] font-semibold leading-5 text-white/72 md:text-[15px] md:leading-6">
+                  Записи, расписание, ученики и инструкторы в одном месте.
                 </p>
               </div>
-              <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/18 text-white backdrop-blur">
-                <Search size={22} />
+              <button className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/18 text-white backdrop-blur">
+                <Search size={20} />
               </button>
             </div>
 
-            <div className="relative mt-7 grid gap-3 sm:grid-cols-3">
-              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[24px] bg-white/18 p-4 text-left backdrop-blur-md transition hover:bg-white/24">
-                <div className="grid h-11 w-11 place-items-center rounded-[17px] bg-white text-[#1F67F2]"><Calendar size={21} /></div>
-                <p className="mt-4 text-[34px] font-black leading-none tracking-[-0.06em] text-white">{data.todayBookings.length}</p>
-                <p className="mt-1 text-sm font-bold text-white/70">занятий сегодня</p>
+            <div className="relative mt-4 grid grid-cols-3 gap-2 md:mt-6 md:gap-3">
+              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[20px] bg-white/18 p-3 text-left backdrop-blur-md transition hover:bg-white/24">
+                <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-white text-[#1F67F2]"><Calendar size={18} /></div>
+                <p className="mt-3 text-[28px] font-black leading-none tracking-[-0.055em] md:text-[34px] text-white">{data.todayBookings.length}</p>
+                <p className="mt-1 text-[12px] font-bold md:text-sm text-white/70">занятий сегодня</p>
               </button>
-              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[24px] bg-white p-4 text-left text-[#131722] shadow-[0_16px_36px_rgba(10,28,80,0.14)] transition hover:-translate-y-0.5">
-                <div className="grid h-11 w-11 place-items-center rounded-[17px] bg-[#EAF0FF] text-[#3156D4]"><Check size={21} /></div>
-                <p className="mt-4 text-[34px] font-black leading-none tracking-[-0.06em]">{data.freeSlots7d.length}</p>
-                <p className="mt-1 text-sm font-bold text-[#7C8799]">свободных окон</p>
+              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[20px] bg-white p-3 text-left text-[#131722] shadow-[0_16px_36px_rgba(10,28,80,0.14)] transition hover:-translate-y-0.5">
+                <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#EAF0FF] text-[#3156D4]"><Check size={18} /></div>
+                <p className="mt-3 text-[28px] font-black leading-none tracking-[-0.055em] md:text-[34px]">{data.freeSlots7d.length}</p>
+                <p className="mt-1 text-[12px] font-bold md:text-sm text-[#7C8799]">свободных окон</p>
               </button>
-              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-[24px] bg-[#59BAB9] p-4 text-left text-white shadow-[0_16px_36px_rgba(89,186,185,0.26)] transition hover:-translate-y-0.5">
-                <div className="grid h-11 w-11 place-items-center rounded-[17px] bg-white/24 text-white"><Users size={21} /></div>
-                <p className="mt-4 text-[34px] font-black leading-none tracking-[-0.06em]">{activeInstructors}</p>
-                <p className="mt-1 text-sm font-bold text-white/78">инструкторов</p>
+              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-[20px] bg-[#59BAB9] p-3 text-left text-white shadow-[0_16px_36px_rgba(89,186,185,0.26)] transition hover:-translate-y-0.5">
+                <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-white/24 text-white"><Users size={18} /></div>
+                <p className="mt-3 text-[28px] font-black leading-none tracking-[-0.055em] md:text-[34px]">{activeInstructors}</p>
+                <p className="mt-1 text-[12px] font-bold md:text-sm text-white/78">инструкторов</p>
               </button>
             </div>
           </section>
 
-          <section className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(290px,0.65fr)]">
-            <div className="rounded-[30px] bg-white p-4 shadow-[0_20px_55px_rgba(35,47,78,0.08)] md:p-5">
+          <section className="grid gap-3 lg:grid-cols-[minmax(0,0.95fr)_minmax(290px,0.65fr)]">
+            <div className="rounded-[24px] bg-white p-3.5 shadow-[0_14px_38px_rgba(35,47,78,0.08)] md:rounded-[30px] md:p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-[22px] font-black tracking-[-0.04em] text-[#111827]">Ближайшие занятия</h2>
-                  <p className="mt-1 text-sm font-semibold text-[#8B95A7]">Кто едет, куда и к какому инструктору</p>
+                  <h2 className="text-[18px] font-black md:text-[22px] tracking-[-0.04em] text-[#111827]">Ближайшие занятия</h2>
+                  <p className="mt-0.5 text-[12px] font-semibold md:mt-1 md:text-sm text-[#8B95A7]">Кто едет, куда и к какому инструктору</p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}>Все</Button>
               </div>
@@ -144,12 +144,12 @@ export function AdminDashboard() {
                   <StateView title="Занятий пока нет" description="Добавьте свободное время или отправьте ссылку ученикам." />
                 </div>
               ) : (
-                <div className="mt-4 space-y-3">
+                <div className="mt-3 space-y-2">
                   {data.upcoming.map((entry) => (
-                    <Link key={entry.booking.id} to={`/booking/${entry.booking.id}`} className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 rounded-[24px] bg-[#F6F8FC] p-3 transition hover:bg-[#EEF4FF] md:grid-cols-[52px_minmax(0,1fr)_auto] md:items-center">
-                      <div className="grid h-12 w-12 place-items-center rounded-[18px] bg-[#EAF0FF] text-[#3156D4]"><Car size={22} /></div>
+                    <Link key={entry.booking.id} to={`/booking/${entry.booking.id}`} className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 rounded-[18px] bg-[#F6F8FC] p-2.5 md:rounded-[24px] md:p-3 transition hover:bg-[#EEF4FF] md:grid-cols-[52px_minmax(0,1fr)_auto] md:items-center">
+                      <div className="grid h-10 w-10 place-items-center rounded-[15px] bg-[#EAF0FF] text-[#3156D4]"><Car size={22} /></div>
                       <div className="min-w-0">
-                        <p className="truncate text-[15px] font-black text-[#111827]">{entry.booking.studentName}</p>
+                        <p className="truncate text-[14px] font-black md:text-[15px] text-[#111827]">{entry.booking.studentName}</p>
                         <p className="mt-0.5 text-sm font-semibold text-[#8B95A7]">
                           {entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMM, HH:mm', { locale: ru }) : 'Время не найдено'} · {entry.instructor?.name ?? 'Инструктор'}
                         </p>
@@ -161,8 +161,8 @@ export function AdminDashboard() {
               )}
             </div>
 
-            <div className="space-y-4">
-              <section className="rounded-[30px] bg-white p-4 shadow-[0_20px_55px_rgba(35,47,78,0.08)] md:p-5">
+            <div className="space-y-3">
+              <section className="rounded-[24px] bg-white p-3.5 shadow-[0_14px_38px_rgba(35,47,78,0.08)] md:rounded-[30px] md:p-5">
                 <div className="flex items-center gap-3">
                   <div className="grid h-12 w-12 place-items-center rounded-[19px] bg-[#FFF0D8] text-[#C26A00]"><Wallet size={22} /></div>
                   <div>
@@ -170,9 +170,9 @@ export function AdminDashboard() {
                     <p className="text-sm font-semibold text-[#8B95A7]">план на следующий день</p>
                   </div>
                 </div>
-                <div className="mt-5 rounded-[24px] bg-[#F7F8FC] p-4">
-                  <p className="text-[42px] font-black leading-none tracking-[-0.06em] text-[#111827]">{data.tomorrowBookings.length}</p>
-                  <p className="mt-1 text-sm font-bold text-[#8B95A7]">занятий запланировано</p>
+                <div className="mt-3 rounded-[20px] bg-[#F7F8FC] p-3">
+                  <p className="text-[32px] font-black leading-none tracking-[-0.055em] md:text-[42px] text-[#111827]">{data.tomorrowBookings.length}</p>
+                  <p className="mt-1 text-[12px] font-bold md:text-sm text-[#8B95A7]">занятий запланировано</p>
                 </div>
               </section>
 
@@ -184,10 +184,10 @@ export function AdminDashboard() {
                     <p className="text-sm font-semibold text-white/55">для входа в кабинет</p>
                   </div>
                 </div>
-                <p className="mt-4 break-all rounded-[20px] bg-white/10 px-3 py-3 text-sm font-bold leading-5 text-white/82">{publicUrl}</p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button onClick={() => void copyPublicLink()} className="rounded-[18px] bg-white px-3 py-3 text-sm font-black text-[#111827]"><Copy size={15} className="mr-1 inline" />Копировать</button>
-                  <button onClick={() => window.open(publicUrl, '_blank')} className="rounded-[18px] bg-white/12 px-3 py-3 text-sm font-black text-white">Открыть</button>
+                <p className="mt-3 break-all rounded-[16px] bg-white/10 px-3 py-2.5 text-sm font-bold leading-5 text-white/82">{publicUrl}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button onClick={() => void copyPublicLink()} className="rounded-[15px] bg-white px-3 py-2.5 text-sm font-black text-[#111827]"><Copy size={15} className="mr-1 inline" />Копировать</button>
+                  <button onClick={() => window.open(publicUrl, '_blank')} className="rounded-[15px] bg-white/12 px-3 py-2.5 text-sm font-black text-white">Открыть</button>
                 </div>
               </section>
             </div>
