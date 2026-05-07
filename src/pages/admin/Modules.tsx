@@ -85,20 +85,20 @@ export function AdminModules() {
     }
 
     if (module.isComingSoon) {
-      showToast('Модуль пока недоступен для подключения.', 'error')
+      showToast('Дополнение пока недоступно для подключения.', 'error')
       return
     }
 
     if (isModuleEnabled(school.id, module.id)) {
       disableModule(school.id, module.id)
       forceUpdate((current) => current + 1)
-      showToast('Модуль отключён', 'success')
+      showToast('Дополнение отключено', 'success')
       return
     }
 
     enableModule(school.id, module.id)
     forceUpdate((current) => current + 1)
-    showToast(module.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Модуль подключён', 'success')
+    showToast(module.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Дополнение подключено', 'success')
   }
 
   if (!school || !billing) {
@@ -113,7 +113,7 @@ export function AdminModules() {
     <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow={school.name}
-        title="Модули"
+        title="Дополнения"
         description="База остаётся простой: 4 990 ₽ в месяц. Дополнительные возможности подключаются отдельно, только когда они действительно нужны."
       />
 
@@ -125,7 +125,7 @@ export function AdminModules() {
               <p className="mt-2 text-2xl font-semibold tracking-tight #111418">{formatPrice(billing.baseMonthlyPrice)}</p>
             </div>
             <div className="rounded-2xl #F4F5F6 px-4 py-4">
-              <p className="text-sm font-medium #6F747A">Модули</p>
+              <p className="text-sm font-medium #6F747A">Дополнения</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight #111418">{formatPrice(billing.modulesMonthlyTotal)}</p>
               {billing.oneTimeTotal > 0 ? <p className="mt-1 text-sm #9EA3A8">Разово: {formatPrice(billing.oneTimeTotal)}</p> : null}
             </div>
@@ -135,7 +135,7 @@ export function AdminModules() {
                 {formatPrice(billing.totalMonthlyPrice)}
                 <span className="ml-1 text-base font-medium #9EA3A8">/мес</span>
               </p>
-              <p className="mt-1 text-sm #9EA3A8">Подключено модулей: {billing.enabledModulesCount}</p>
+              <p className="mt-1 text-sm #9EA3A8">Подключено дополнений: {billing.enabledModulesCount}</p>
             </div>
           </div>
         </Section>
@@ -160,7 +160,7 @@ export function AdminModules() {
 
         <Section
           title="Что входит в базу"
-          description="История ученика, записи, слоты и базовая админка уже входят в 4 990 ₽."
+          description="История ученика, записи, занятия и базовая админка уже входят в 4 990 ₽."
           actions={
             <Button variant="ghost" size="sm" onClick={() => setShowBaseFeatures((current) => !current)}>
               {showBaseFeatures ? 'Скрыть список' : 'Показать список'}
@@ -178,12 +178,12 @@ export function AdminModules() {
           ) : (
             <p className="text-sm #6F747A">
               Базовый пакет уже закрывает публичную запись, список записей, работу с учениками, инструкторами,
-              филиалами, слотами и личной ссылкой инструктора.
+              филиалами, времяами и личной ссылкой инструктора.
             </p>
           )}
         </Section>
 
-        <Section title="Каталог модулей" description="Подключайте только то, что усиливает продукт для конкретной школы.">
+        <Section title="Каталог дополнений" description="Подключайте только то, что усиливает продукт для конкретной школы.">
           <div className="mb-5 flex flex-wrap gap-2">
             {FILTERS.map((item) => (
               <button
@@ -201,7 +201,7 @@ export function AdminModules() {
           </div>
 
           {filteredModules.length === 0 ? (
-            <EmptyState title="По этому фильтру модулей нет" description="Попробуйте выбрать другую категорию." />
+            <EmptyState title="По этому фильтру дополнений нет" description="Попробуйте выбрать другую категорию." />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredModules.map((module) => {

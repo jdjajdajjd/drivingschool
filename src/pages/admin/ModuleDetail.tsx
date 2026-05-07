@@ -51,8 +51,8 @@ export function AdminModuleDetail() {
     return (
       <div className="max-w-5xl p-6 md:p-8">
         <EmptyState
-          title="Модуль не найден"
-          description="Проверьте ссылку или вернитесь в каталог модулей."
+          title="Дополнение не найден"
+          description="Проверьте ссылку или вернитесь в каталог дополнений."
           action={<Button onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}>К каталогу</Button>}
         />
       </div>
@@ -72,19 +72,19 @@ export function AdminModuleDetail() {
 
   function handleToggle(): void {
     if (currentModule.isComingSoon) {
-      showToast('Модуль пока недоступен для подключения.', 'error')
+      showToast('Дополнение пока недоступно для подключения.', 'error')
       return
     }
 
     if (enabled) {
       disableModule(currentSchool.id, currentModule.id)
-      showToast('Модуль отключён', 'success')
+      showToast('Дополнение отключено', 'success')
       navigate(`${ADMIN_BASE_PATH}/modules`)
       return
     }
 
     enableModule(currentSchool.id, currentModule.id)
-    showToast(currentModule.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Модуль подключён', 'success')
+    showToast(currentModule.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Дополнение подключено', 'success')
     navigate(`${ADMIN_BASE_PATH}/modules`)
   }
 
@@ -104,13 +104,13 @@ export function AdminModuleDetail() {
         description={module.description}
         actions={
           <Button variant={enabled ? 'secondary' : 'primary'} disabled={module.isComingSoon} onClick={handleToggle}>
-            {module.isComingSoon ? 'Скоро' : enabled ? 'Отключить модуль' : module.priceType === 'one_time' ? 'Добавить услугу' : 'Подключить модуль'}
+            {module.isComingSoon ? 'Скоро' : enabled ? 'Отключить дополнение' : module.priceType === 'one_time' ? 'Добавить услугу' : 'Подключить дополнение'}
           </Button>
         }
       />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <Section title="Что даёт модуль" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
+        <Section title="Что даёт дополнение" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
           <div className="flex items-start gap-4 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-5 py-5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white #C97F10 shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
               <Icon size={20} />
@@ -136,7 +136,7 @@ export function AdminModuleDetail() {
           </div>
         </Section>
 
-        <Section title="Статус" description="Как модуль учитывается в стоимости школы.">
+        <Section title="Статус" description="Как дополнение учитывается в стоимости школы.">
           <div className="space-y-3">
             <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] #9EA3A8">Категория</p>

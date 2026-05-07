@@ -60,18 +60,18 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r rgba(0,0,0,0.06) bg-white/95  backdrop-blur-xl transition-transform duration-200 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-[300px] flex-col border-r border-[rgba(55,38,20,0.08)] bg-white/82 backdrop-blur-2xl transition-transform duration-200 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between border-b rgba(0,0,0,0.06) px-5 py-5">
+        <div className="flex items-center justify-between border-b border-[rgba(55,38,20,0.08)] px-5 py-5">
           <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
-              <Car size={18} className="text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-[20px] bg-[#15120E] shadow-[0_16px_34px_rgba(63,46,28,0.14)]">
+              <Car size={19} className="text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold #111418">vroom</p>
-              <p className="text-xs font-medium #9EA3A8">Панель автошколы</p>
+              <p className="text-base font-black text-[#15120E]">vroom</p>
+              <p className="text-xs font-bold text-[#A09488]">Панель автошколы</p>
             </div>
           </button>
           <button
@@ -83,10 +83,10 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           </button>
         </div>
 
-        <div className="border-b rgba(0,0,0,0.06) px-5 py-4">
-          <p className="caption">Автошкола</p>
-          <p className="mt-1 text-sm font-bold #111418">{schoolName}</p>
-          <p className="mt-1 text-sm #6F747A">Рабочая панель</p>
+        <div className="mx-3 mt-3 rounded-[24px] border border-[rgba(55,38,20,0.08)] bg-[#F8F3EA] px-4 py-4">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#A09488]">Автошкола</p>
+          <p className="mt-1 text-[15px] font-black leading-5 text-[#15120E]">{schoolName}</p>
+          <p className="mt-1 text-sm font-semibold text-[#6F655C]">Рабочая панель директора</p>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -98,16 +98,16 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-[15px] font-semibold transition-colors',
+                  'flex min-h-12 items-center gap-3 rounded-[20px] px-3.5 py-3 text-[15px] font-bold transition-colors',
                   isActive
-                    ? 'rgba(246,184,77,0.12) #C97F10 shadow-[0_20px_60px_rgba(15,20,25,0.08)]'
-                    : '#6F747A hover:#F4F5F6 hover:#111418',
+                    ? 'bg-[#15120E] text-white shadow-[0_14px_34px_rgba(63,46,28,0.16)]'
+                    : 'text-[#6F655C] hover:bg-[#F2ECE2] hover:text-[#15120E]',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={18} className={isActive ? '#C97F10' : '#9EA3A8'} />
+                  <Icon size={18} className={isActive ? 'text-white' : 'text-[#A09488]'} />
                   <span>{label}</span>
                 </>
               )}
@@ -115,7 +115,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           ))}
         </nav>
 
-        <div className="space-y-2 border-t rgba(0,0,0,0.06) px-3 py-4">
+        <div className="space-y-2 border-t border-[rgba(55,38,20,0.08)] px-3 py-4">
           <button
             onClick={() => {
               navigate(publicPath)

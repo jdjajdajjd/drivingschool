@@ -210,7 +210,7 @@ export function AdminStudentDetail() {
       </div>
 
       <div className="mt-8 space-y-6">
-        <Section title="Профиль ученика" description="Основные данные и лимиты по бронированию.">
+        <Section title="Профиль ученика" description="Основные данные и лимиты по записям.">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-black/10 bg-[#F4F5F6] px-4 py-4">
               <p className="text-xs uppercase tracking-[0.16em] text-[#9EA3A8]">Телефон</p>
@@ -325,7 +325,7 @@ export function AdminStudentDetail() {
 
         <Section title="История записей" description="Активные, проведённые и отменённые занятия по ученику.">
           {history.length === 0 ? (
-            <EmptyState title="У ученика ещё нет записей" description="Новая запись появится здесь автоматически после бронирования." />
+            <EmptyState title="У ученика ещё нет записей" description="Новая запись появится здесь автоматически после записи." />
           ) : (
             <div className="space-y-4">
               {history.map((entry) => (
@@ -399,7 +399,7 @@ export function AdminStudentDetail() {
       <ConfirmDialog
         open={Boolean(cancelBookingId)}
         title="Отменить запись"
-        description="Запись ученика перейдёт в статус «Отменена», а слот станет свободным."
+        description="Запись ученика перейдёт в статус «Отменена», а время станет свободным."
         confirmLabel="Отменить запись"
         onClose={() => setCancelBookingId(null)}
         onConfirm={handleCancel}

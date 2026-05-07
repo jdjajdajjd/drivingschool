@@ -23,14 +23,14 @@ export function Card({
   const hoverStyles = hover ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(15,20,25,0.12)]' : ''
 
   const variantStyles = {
-    surface: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    hero: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    content: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    selectable: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    list: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    stat: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    schedule: 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
-    summary: 'bg-[rgba(246,184,77,0.08)] border border-[rgba(246,184,77,0.20)] shadow-[0_18px_45px_rgba(15,20,25,0.10)]',
+    surface: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
+    hero: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_22px_54px_rgba(63,46,28,0.10)] backdrop-blur-xl',
+    content: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
+    selectable: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
+    list: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_14px_34px_rgba(63,46,28,0.07)] backdrop-blur-xl',
+    stat: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
+    schedule: 'bg-white/95 border border-[rgba(55,38,20,0.08)] shadow-[0_18px_42px_rgba(63,46,28,0.08)] backdrop-blur-xl',
+    summary: 'bg-[#FFF7E8] border border-[rgba(174,118,35,0.18)] shadow-[0_18px_42px_rgba(63,46,28,0.08)]',
   }[variant]
 
   const paddingStyles = {
@@ -43,7 +43,7 @@ export function Card({
   return (
     <div
       className={cn(baseStyles, variantStyles, selectedStyles, hoverStyles, paddingStyles, className)}
-      style={{ borderRadius: '24px' }}
+      style={{ borderRadius: '28px' }}
       {...props}
     >
       {children}

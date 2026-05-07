@@ -5,7 +5,7 @@ export function DataToolbar({ children, className }: { children: ReactNode; clas
   return (
     <div
       className={cn('flex items-center gap-2.5 p-3', className)}
-      style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '18px' }}
+      style={{ background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(55,38,20,0.08)', borderRadius: '22px', boxShadow: '0 14px 34px rgba(63,46,28,0.06)' }}
     >
       {children}
     </div>
@@ -17,10 +17,10 @@ export function DataRow({ children, className, selected = false }: { children: R
     <div
       className={cn('flex items-center gap-3.5 px-4 py-3.5 transition-all duration-150 hover:-translate-y-px', className)}
       style={{
-        background: 'white',
-        border: selected ? '2px solid #C4935A' : '1px solid rgba(0,0,0,0.06)',
-        borderRadius: '18px',
-        boxShadow: selected ? '0 0 0 3px rgba(246,184,77,0.15)' : '0 18px 45px rgba(15,20,25,0.10)',
+        background: 'rgba(255,255,255,0.92)',
+        border: selected ? '2px solid #15120E' : '1px solid rgba(55,38,20,0.08)',
+        borderRadius: '22px',
+        boxShadow: selected ? '0 0 0 3px rgba(17,20,24,0.10)' : '0 14px 34px rgba(63,46,28,0.07)',
       }}
     >
       {children}
@@ -32,7 +32,7 @@ export function TableShell({ children, className }: { children: ReactNode; class
   return (
     <div
       className={cn('overflow-hidden', className)}
-      style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '24px', boxShadow: '0 18px 45px rgba(15,20,25,0.10)' }}
+      style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(55,38,20,0.08)', borderRadius: '28px', boxShadow: '0 18px 42px rgba(63,46,28,0.08)' }}
     >
       {children}
     </div>

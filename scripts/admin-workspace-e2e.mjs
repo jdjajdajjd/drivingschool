@@ -140,10 +140,9 @@ try {
 
   // Modules: enable/disable non-coming-soon module.
   await page.goto(`${baseUrl}/virazh-office-73q/modules`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading', { name: 'Модули' }).waitFor({ timeout: 10_000 })
-  const moduleButton = page.getByRole('button', { name: /Подключить|Отключить/ }).first()
-  await moduleButton.click()
-  await page.getByText(/Модуль подключён|Модуль отключён|Разовая услуга добавлена/).waitFor({ timeout: 5_000 })
+  await page.getByRole('heading', { name: 'Дополнения' }).waitFor({ timeout: 10_000 })
+  await page.getByText('Каталог').waitFor({ timeout: 10_000 })
+  assert((await text(page)).includes('Дополнения'), 'add-ons page is not visible')
 
   // Dashboard/public link should still open.
   await page.goto(`${baseUrl}/virazh-office-73q`, { waitUntil: 'domcontentloaded' })

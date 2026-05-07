@@ -46,19 +46,19 @@
 @layer components {
   /* ─── Design tokens ──────────────────────────────── */
   :root {
-    --page-bg: #F2F3F4;
-    --page-text: #111418;
-    --bg: #F2F3F7;
+    --page-bg: #F5F1EA;
+    --page-text: #15120E;
+    --bg: #F5F1EA;
     --surface: #FFFFFF;
-    --surface-soft: #F7F8F9;
-    --surface-muted: #F4F5F6;
+    --surface-soft: #FBF8F2;
+    --surface-muted: #F2ECE2;
 
-    --ink: #111418;
-    --ink-soft: #20252B;
-    --text: #111418;
-    --text-muted: #6F747A;
-    --text-soft: #9EA3A8;
-    --text-ghost: #C4C9CF;
+    --ink: #15120E;
+    --ink-soft: #2C261F;
+    --text: #15120E;
+    --text-muted: #6F655C;
+    --text-soft: #A09488;
+    --text-ghost: #C9BFB3;
 
     --black: #050607;
     --dark: #171B20;
@@ -68,9 +68,9 @@
     --border-strong: rgba(0, 0, 0, 0.10);
     --border-hover: rgba(0, 0, 0, 0.14);
 
-    --accent: #2436D9;
-    --accent-soft: rgba(36, 54, 217, 0.10);
-    --accent-deep: #1D2CC4;
+    --accent: #111418;
+    --accent-soft: rgba(17, 20, 24, 0.08);
+    --accent-deep: #000000;
 
     --green: #15803D;
     --green-soft: #F0FDF4;
@@ -80,8 +80,8 @@
     --blue-soft: #EFF2FF;
     --cream-soft: #FFF0CF;
 
-    --shadow-card: 0 18px 45px rgba(15, 20, 25, 0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
-    --shadow-card-hover: 0 28px 60px rgba(15, 20, 25, 0.14);
+    --shadow-card: 0 18px 42px rgba(63, 46, 28, 0.08), inset 0 0 0 1px rgba(55,38,20,0.05);
+    --shadow-card-hover: 0 26px 54px rgba(63, 46, 28, 0.12);
     --shadow-btn: 0 12px 28px rgba(0,0,0,0.16);
     --shadow-btn-hover: 0 18px 36px rgba(0,0,0,0.22);
     --shadow-dark: 0 28px 70px rgba(0,0,0,0.20);
@@ -357,7 +357,9 @@
   /* ─── Page shell ─────────────────────────────────── */
   .shell {
     min-height: 100dvh;
-    background: var(--bg);
+    background:
+      radial-gradient(circle at top left, rgba(255,255,255,0.72), transparent 34rem),
+      linear-gradient(135deg, #F7F2EA 0%, #F4EFE7 48%, #EEE7DC 100%);
   }
 
   /* ─── Cards ──────────────────────────────────────── */

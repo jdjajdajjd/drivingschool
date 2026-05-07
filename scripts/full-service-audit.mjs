@@ -21,7 +21,7 @@ const routes = [
   { path: '/virazh-office-73q/slots', auth: true, expect: ['Расписание', 'Добавить занятия'], reject: ['Школа не найдена'] },
   { path: '/virazh-office-73q/bookings', auth: true, expect: ['Записи', 'Фильтры'], reject: ['Школа не найдена'] },
   { path: '/virazh-office-73q/students', auth: true, expect: ['Ученики', 'Список учеников'], reject: ['Школа не найдена'] },
-  { path: '/virazh-office-73q/modules', auth: true, expect: ['Модули', 'Стоимость'], reject: ['Школа не найдена'] },
+  { path: '/virazh-office-73q/modules', auth: true, expect: ['Дополнения', 'Стоимость'], reject: ['Школа не найдена'] },
   { path: '/root-entrance-91x', expect: ['Вход супер-админа'], reject: ['404'] },
 ]
 

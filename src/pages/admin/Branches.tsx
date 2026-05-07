@@ -109,7 +109,7 @@ export function AdminBranches() {
       showToast(result.error ?? 'Не удалось выключить филиал.', 'error')
       return
     }
-    showToast('Филиал выключен, будущие свободные слоты скрыты. Брони не изменены.', 'success')
+    showToast('Филиал выключен, будущее свободное время скрыты. Записи не изменены.', 'success')
   }
 
   if (!school) {
@@ -137,7 +137,7 @@ export function AdminBranches() {
       <div className="mt-8">
         <Section title="Все филиалы" description={`В школе ${rows.length} филиалов.`}>
           {rows.length === 0 ? (
-            <StateView title="Филиалов пока нет" description="Создайте первый филиал, чтобы привязать к нему инструкторов и слоты." action={<Button onClick={openCreate}>Создать филиал</Button>} />
+            <StateView title="Филиалов пока нет" description="Создайте первый филиал, чтобы привязать к нему инструкторов и занятия." action={<Button onClick={openCreate}>Создать филиал</Button>} />
           ) : (
             <div className="grid gap-3">
               {rows.map(({ branch, instructorCount, futureBookings, freeSlots7d }) => (
@@ -169,7 +169,7 @@ export function AdminBranches() {
                         <p className="mt-1 text-lg font-bold #111418">{futureBookings}</p>
                       </div>
                       <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                        <p className="text-xs font-bold #9EA3A8">Слоты 7д</p>
+                        <p className="text-xs font-bold #9EA3A8">Времяы 7д</p>
                         <p className="mt-1 text-lg font-bold #C97F10">{freeSlots7d}</p>
                       </div>
                     </div>
@@ -215,7 +215,7 @@ export function AdminBranches() {
       <ConfirmDialog
         open={Boolean(deleteId)}
         title="Выключить филиал"
-        description="Филиал останется в истории и админке, существующие брони не изменятся. Будущие свободные слоты филиала будут отменены и скрыты из публичной записи."
+        description="Филиал останется в истории и админке, существующие записи не изменятся. Будущее свободное время филиала будут отменены и скрыты из публичной записи."
         confirmLabel={archiving ? 'Выключаем...' : 'Выключить филиал'}
         onClose={() => setDeleteId(null)}
         onConfirm={() => void handleArchive()}

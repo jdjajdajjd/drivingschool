@@ -152,7 +152,7 @@ export function AdminBookings() {
       showToast(result.error ?? 'Не удалось отменить запись.', 'error')
       return
     }
-    showToast('Запись отменена. Слот снова доступен.', 'success')
+    showToast('Запись отменена. Время снова доступен.', 'success')
   }
 
   async function handleCompleteConfirm(): Promise<void> {
@@ -177,7 +177,7 @@ export function AdminBookings() {
 
   async function handleRescheduleConfirm(): Promise<void> {
     if (!rescheduleBookingId || !selectedNewSlotId) {
-      showToast('Выберите новый свободный слот.', 'error')
+      showToast('Выберите новое свободное время.', 'error')
       return
     }
 
@@ -469,7 +469,7 @@ export function AdminBookings() {
       <ConfirmDialog
         open={Boolean(cancelBookingId)}
         title="Отменить запись"
-        description="Запись перейдёт в статус «Отменена», слот снова станет доступным для учеников. Действие попадёт в историю записи."
+        description="Запись перейдёт в статус «Отменена», время снова станет доступным для учеников. Действие попадёт в историю записи."
         confirmLabel="Отменить запись"
         onClose={() => setCancelBookingId(null)}
         onConfirm={() => void handleCancelConfirm()}
@@ -518,7 +518,7 @@ export function AdminBookings() {
           </div>
 
           {rescheduleCandidates.length === 0 ? (
-            <StateView kind="no-results" title="Свободных слотов не найдено" description="Измените фильтры или создайте новые слоты в разделе «Слоты»." />
+            <StateView kind="no-results" title="Свободное время не найдено" description="Измените фильтры или добавьте новое время в разделе «Расписание»." />
           ) : (
             <div className="grid max-h-[360px] gap-3 overflow-y-auto sm:grid-cols-2">
               {rescheduleCandidates.map((slot) => {

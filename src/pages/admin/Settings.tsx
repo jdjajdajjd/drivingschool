@@ -190,10 +190,10 @@ export function AdminSettings() {
       />
 
       <div className="mt-8 space-y-6">
-        <Section title="Основное" description="Название, slug, описание и фирменные акценты школы.">
+        <Section title="Основное" description="Название, описание и внешний вид страницы школы.">
           <div className="grid gap-4 md:grid-cols-2">
             <Input label="Название автошколы" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-            <Input label="Slug" helperText="Slug управляется перед запуском и сейчас недоступен для изменения" value={school.slug} readOnly disabled />
+            <Input label="Адрес страницы" helperText="Адрес страницы управляется перед запуском и сейчас недоступен для изменения" value={school.slug} readOnly disabled />
             <Input label="Основной цвет" placeholder="#1f5b43" value={form.primaryColor} onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))} />
             <Input label="Logo URL" placeholder="https://..." value={form.logoUrl} onChange={(event) => setForm((current) => ({ ...current, logoUrl: event.target.value }))} />
           </div>
@@ -348,7 +348,7 @@ export function AdminSettings() {
             </div>
             <Input
               label="Занятий за одну запись"
-              helperText="Например: 2 — можно выбрать два слота в один или разные дни"
+              helperText="Например: 2 — можно выбрать два времяа в один или разные дни"
               type="number"
               min={1}
               max={6}
@@ -378,7 +378,7 @@ export function AdminSettings() {
           </div>
         </Section>
 
-        <Section title="Базовый тариф" description="Без Start/Plus/Pro. Одна честная база и подключаемые модули.">
+        <Section title="Базовый тариф" description="Без Start/Plus/Pro. Одна честная база и подключаемые дополнения.">
           <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-5 py-5">
             <p className="text-sm #9EA3A8">База</p>
             <p className="mt-2 text-3xl font-semibold #111418">
@@ -394,7 +394,7 @@ export function AdminSettings() {
           </div>
           <div className="mt-4">
             <Button variant="secondary" onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}>
-              Перейти в каталог модулей
+              Перейти в каталог дополнений
             </Button>
           </div>
         </Section>

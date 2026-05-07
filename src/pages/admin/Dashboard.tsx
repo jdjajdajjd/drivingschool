@@ -104,7 +104,7 @@ export function AdminDashboard() {
       <PageHeader
         eyebrow={school.name}
         title="Сегодня"
-        description="Самое важное для работы автошколы: занятия, свободные места и готовность страницы для учеников."
+        description="Коротко о главном: кто сегодня учится, сколько есть свободного времени и что нужно проверить."
         actions={
           <Button variant="secondary" onClick={() => void copyPublicLink()}>
             <Copy size={16} />
@@ -116,14 +116,14 @@ export function AdminDashboard() {
       <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard label="Занятий сегодня" value={data.todayBookings.length} icon={<CalendarDays size={18} />} />
         <StatCard label="Занятий завтра" value={data.tomorrowBookings.length} icon={<CalendarDays size={18} />} />
-        <StatCard label="Свободных мест на 7 дней" value={data.freeSlots7d.length} icon={<ClipboardList size={18} />} />
+        <StatCard label="Свободное время на 7 дней" value={data.freeSlots7d.length} icon={<ClipboardList size={18} />} />
         <StatCard label="Активных инструкторов" value={data.instructors.filter((item) => item.isActive).length} icon={<Users size={18} />} />
       </div>
 
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
         <Section
           title="Ближайшие занятия"
-          description="Только реальные активные записи. Ближайшие занятия сверху."
+          description="Кто, когда и с каким инструктором. Самое ближайшее — сверху."
           actions={
             <Button variant="ghost" size="sm" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}>
               Все записи
@@ -162,7 +162,7 @@ export function AdminDashboard() {
         </Section>
 
         <div className="space-y-4">
-          <Section title="Мастер запуска" description="Что нужно проверить перед тем, как давать ссылку ученикам.">
+          <Section title="Проверка перед запуском" description="Простой список: что должно быть готово, прежде чем давать ученикам ссылку.">
             <div className="mb-3 rounded-2xl border rgba(0,0,0,0.06) #F4F5F6/80 px-3.5 py-3.5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-bold #111418">
@@ -202,7 +202,7 @@ export function AdminDashboard() {
             </div>
           </Section>
 
-          <Section title="Ссылка для учеников" description="Эту ссылку можно отправить в мессенджер или поставить на сайт школы.">
+          <Section title="Вход для учеников" description="Эту ссылку можно отправить в мессенджер или поставить на сайт школы.">
             <div className="rounded-2xl #F4F5F6 px-3.5 py-3.5">
               <p className="break-all text-sm font-semibold #111418">{publicUrl}</p>
             </div>

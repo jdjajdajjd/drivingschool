@@ -238,7 +238,7 @@ export function AdminInstructors() {
                       </p>
                     </div>
                     <div className="rounded-2xl #F4F5F6 px-3 py-3">
-                      <p className="caption">Записи / слоты</p>
+                      <p className="caption">Записи / свободное занятия</p>
                       <p className="mt-1 text-sm font-bold #C97F10">{futureLessons} / {freeSlots7d}</p>
                     </div>
                   </div>
@@ -337,7 +337,7 @@ export function AdminInstructors() {
           </label>
 
           <p className="rounded-2xl bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-[#8A5A00]">
-            При выключении инструктора будущие свободные слоты будут скрыты из публичной записи. Занятые слоты сохраняются.
+            При выключении инструктора будущее свободное время будут скрыты из публичной записи. Занятые занятия сохраняются.
           </p>
 
           <div className="flex gap-3">
