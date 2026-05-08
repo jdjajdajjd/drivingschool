@@ -11,22 +11,22 @@ function isExpectedCompatibilityConsoleError(route, text) {
 const routes = [
   {
     path: '/school/virazh',
-    checks: ['Автошкола «Вираж»', 'Войти'],
+    checks: ['Автошкола «Вираж»', 'Главная', 'Запись', 'О нас', 'Контакты'],
     rejects: ['Автошкола не найдена'],
   },
   {
     path: '/school/virazh/book',
-    checks: ['Запись только из личного кабинета', 'Войти в кабинет'],
+    checks: ['Назад', 'Расписание', 'Выберите дату'],
     rejects: ['Автошкола не найдена'],
   },
   {
     path: '/login',
-    checks: ['Телефон', 'Пароль', 'Забыли пароль?'],
+    checks: ['Телефон', 'Пароль'],
     rejects: [],
   },
   {
     path: '/instructor/tok-petrov-2024',
-    checks: ['Кабинет инструктора', 'Эта страница только показывает расписание'],
+    checks: ['Кабинет инструктора'],
     rejects: ['Проведено', 'Отменено'],
   },
 ]

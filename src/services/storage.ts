@@ -46,6 +46,70 @@ export function getDataNamespace(): DataNamespace {
 
 const memoryStore = new Map<string, unknown[]>()
 
+/**
+ * Read all records for a given key from a specific namespace, without changing
+ * the currently active namespace. Used for cross-namespace lookups (e.g. finding
+ * a workspace school by slug when the current namespace is 'demo').
+ */
+function readAllFromNamespace<T>(namespace: DataNamespace, key: string): T[] {
+  const nsKey = `${KEY_PREFIX}${namespace}:${key}`
+  try {
+    const raw = localStorage.getItem(nsKey)
+    return raw ? (JSON.parse(raw) as T[]) : []
+  } catch {
+    return [...((memoryStore.get(`${namespace}:${key}`) as T[] | undefined) ?? [])]
+  }
+}
+
+export function findSchoolNamespaceBySlug(slug: string): DataNamespace | null {
+  // Demo school 'virazh' is always the canonical demo — never shadowed by workspace.
+  if (slug === 'virazh') {
+    const demoSchool = readAllFromNamespace<School>('demo', K.SCHOOLS).some(
+      (school) => school.slug === slug,
+    )
+    if (demoSchool) return 'demo'
+  }
+
+  // Workspace data takes priority for all other slugs — owner configures schools from workspace admin.
+  const workspaceSchool = readAllFromNamespace<School>('workspace', K.SCHOOLS).some(
+    (school) => school.slug === slug,
+  )
+  if (workspaceSchool) return 'workspace'
+
+  const demoSchool = readAllFromNamespace<School>('demo', K.SCHOOLS).some(
+    (school) => school.slug === slug,
+  )
+  return demoSchool ? 'demo' : null
+}
+
+export function findSchoolBySlugAcrossNamespaces(slug: string): School | null {
+  const namespace = findSchoolNamespaceBySlug(slug)
+  if (!namespace) return null
+  return readAllFromNamespace<School>(namespace, K.SCHOOLS).find(
+    (school) => school.slug === slug,
+  ) ?? null
+}
+
+export function findSchoolNamespaceById(id: string): DataNamespace | null {
+  const workspaceSchool = readAllFromNamespace<School>('workspace', K.SCHOOLS).some(
+    (school) => school.id === id,
+  )
+  if (workspaceSchool) return 'workspace'
+
+  const demoSchool = readAllFromNamespace<School>('demo', K.SCHOOLS).some(
+    (school) => school.id === id,
+  )
+  return demoSchool ? 'demo' : null
+}
+
+export function findSchoolByIdAcrossNamespaces(id: string): School | null {
+  const namespace = findSchoolNamespaceById(id)
+  if (!namespace) return null
+  return readAllFromNamespace<School>(namespace, K.SCHOOLS).find(
+    (school) => school.id === id,
+  ) ?? null
+}
+
 export function clearLocalDbWhenSupabaseConfigured(): void {
   // Data is split by namespace now; Supabase should not wipe local demo/workspace state.
 }

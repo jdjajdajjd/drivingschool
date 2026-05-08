@@ -30,7 +30,7 @@ import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
-import { db, setDataNamespace } from '../services/storage'
+import { db, findSchoolByIdAcrossNamespaces, findSchoolNamespaceById, setDataNamespace } from '../services/storage'
 import { cancelBooking, createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { useToast } from '../components/ui/Toast'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
@@ -411,13 +411,18 @@ export function StudentPage() {
   const { showToast } = useToast()
 
   useEffect(() => {
-    setDataNamespace('demo')
     const found = findAnyStudentProfile()
-    const nextSchool = found ? db.schools.byId(found.schoolId) ?? (found.schoolId === fallbackSchool.id ? fallbackSchool : null) : db.schools.bySlug('virazh') ?? fallbackSchool
+    const foundNamespace = found ? findSchoolNamespaceById(found.schoolId) : null
+    if (foundNamespace) setDataNamespace(foundNamespace)
+    else setDataNamespace('demo')
+
+    const nextSchool = found
+      ? findSchoolByIdAcrossNamespaces(found.schoolId) ?? (found.schoolId === fallbackSchool.id ? fallbackSchool : null)
+      : db.schools.bySlug('virazh') ?? fallbackSchool
     const nextProfile = found?.profile ?? (nextSchool ? loadStudentProfile(nextSchool.id) : null)
     setSchool(nextSchool)
     setProfile(nextProfile)
-    if (nextProfile) {
+    if (nextSchool && nextProfile) {
       setForm({ name: nextProfile.name, phone: normalizePhone(nextProfile.phone).replace(/^7/, '').slice(0, 10), email: nextProfile.email ?? '' })
       setPendingAvatarUrl('')
       setEditingFields({ name: false, phone: false, email: false })

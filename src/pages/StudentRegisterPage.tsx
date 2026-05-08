@@ -8,7 +8,7 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
-import { db, setDataNamespace } from '../services/storage'
+import { findSchoolBySlugAcrossNamespaces } from '../services/storage'
 import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabase, type StudentProfile } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
 import type { School } from '../types'
@@ -65,10 +65,8 @@ export default function StudentRegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  if (slug === 'virazh') setDataNamespace('demo')
-  if (slug === 'workspace') setDataNamespace('workspace')
 
-  const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
+  const school = useMemo(() => findSchoolBySlugAcrossNamespaces(slug) ?? fallbackSchool, [slug])
   const currentIndex = stepIndex(step)
   const progress = step === 'success' ? 100 : Math.round(((currentIndex + 1) / steps.length) * 100)
   const fullName = [lastName, first, middleName].map((part) => part.trim()).filter(Boolean).join(' ')
@@ -185,15 +183,11 @@ export default function StudentRegisterPage() {
 
     setSubmitting(true)
     try {
-      if (slug === 'virazh') {
-        saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
-        saveStudentCredentials(phone, password, school.id)
-      } else if (isSupabaseConfigured()) {
+      if (isSupabaseConfigured()) {
         await saveStudentProfileToSupabase(school.id, { name: fullName, phone, password }, { passwordSet: true })
-      } else {
-        saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
-        saveStudentCredentials(phone, password, school.id)
       }
+      saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
+      saveStudentCredentials(phone, password, school.id)
       localStorage.removeItem(draftKey)
       sessionStorage.removeItem(draftKey)
     } catch {

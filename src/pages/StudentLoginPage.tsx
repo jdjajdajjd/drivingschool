@@ -8,7 +8,7 @@ import { createHugeIcon } from '../components/ui/HugeIcon'
 import { isValidRussianPhone } from '../services/bookingService'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { db, setDataNamespace } from '../services/storage'
+import { findSchoolBySlugAcrossNamespaces, findSchoolNamespaceBySlug, setDataNamespace } from '../services/storage'
 import type { School } from '../types'
 
 void React
@@ -35,9 +35,11 @@ export default function StudentLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  if (slug === 'virazh') setDataNamespace('demo')
-  if (slug === 'workspace') setDataNamespace('workspace')
-  const school = useMemo(() => db.schools.bySlug(slug) ?? db.schools.bySlug('virazh') ?? fallbackSchool, [slug])
+  const school = useMemo(() => {
+    const namespace = findSchoolNamespaceBySlug(slug)
+    if (namespace) setDataNamespace(namespace)
+    return findSchoolBySlugAcrossNamespaces(slug) ?? fallbackSchool
+  }, [slug])
 
   async function submit() {
     setError('')

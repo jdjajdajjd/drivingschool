@@ -2,6 +2,8 @@ import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { ProtectedAccess } from './components/layout/ProtectedAccess'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, WORKSPACE_ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
+import { setDataNamespace } from './services/storage'
+import { seedIfNeeded } from './services/seed'
 
 void React
 
@@ -44,15 +46,16 @@ function App() {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    Promise.all([import('./services/storage'), import('./services/seed')]).then(([storage, seed]) => {
-      const shouldUseWorkspace = window.location.pathname.startsWith(ADMIN_BASE_PATH) || window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH || window.location.pathname === '/admin' || window.location.pathname.startsWith('/school/workspace')
-      storage.setDataNamespace(shouldUseWorkspace ? 'workspace' : 'demo')
-      seed.seedIfNeeded({ mode: shouldUseWorkspace ? 'workspace' : 'demo' })
-      setIsReady(true)
-    })
-
-    const fallback = setTimeout(() => setIsReady(true), 1200)
-    return () => clearTimeout(fallback)
+    // Determine namespace BEFORE seed runs so SchoolPage can rely on it immediately.
+    const isWorkspace =
+      window.location.pathname.startsWith(ADMIN_BASE_PATH) ||
+      window.location.pathname === WORKSPACE_ADMIN_LOGIN_PATH ||
+      window.location.pathname === '/admin' ||
+      window.location.pathname.startsWith('/school/workspace')
+    const namespace = isWorkspace ? 'workspace' : 'demo'
+    setDataNamespace(namespace)
+    seedIfNeeded({ mode: namespace })
+    setIsReady(true)
   }, [])
 
   if (!isReady) {

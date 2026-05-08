@@ -243,24 +243,34 @@ export function seedIfNeeded(options: { force?: boolean; mode?: 'demo' | 'worksp
   clearLocalDbWhenSupabaseConfigured()
   if (!options.force && db.isSeeded()) return
 
-  db.reset()
-
   if (options.mode === 'workspace') {
-    db.schools.upsert({
-      ...SCHOOL,
-      id: WORKSPACE_SCHOOL_ID,
-      name: 'Новая автошкола',
-      slug: 'workspace',
-      description: '',
-      phone: '',
-      email: '',
-      address: '',
-      logoUrl: undefined,
-      enabledCategoryCodes: ['B'],
-    })
+    // Don't wipe existing workspace data — only seed school record if none exists.
+    // This preserves school settings, branches, instructors, slots across page loads.
+    if (!db.schools.all().length) {
+      db.schools.upsert({
+        id: WORKSPACE_SCHOOL_ID,
+        name: 'Новая автошкола',
+        slug: 'workspace',
+        description: '',
+        phone: '',
+        email: '',
+        address: '',
+        createdAt: new Date().toISOString(),
+        primaryColor: '#1f5b43',
+        bookingLimitEnabled: true,
+        maxActiveBookingsPerStudent: 2,
+        branchSelectionMode: 'student_choice',
+        maxSlotsPerBooking: 1,
+        defaultLessonDuration: 90,
+        enabledCategoryCodes: ['B'],
+        isActive: true,
+      })
+    }
     db.markSeeded()
     return
   }
+
+  db.reset()
 
   db.schools.upsert(SCHOOL)
   BRANCHES.forEach((b) => db.branches.upsert(b))

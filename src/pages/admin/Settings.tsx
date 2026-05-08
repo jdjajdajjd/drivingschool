@@ -1,23 +1,26 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
 import { formatDuration } from '../../lib/utils'
 import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
-import { resetProductData, updateSchoolConfirmed, validatePrimaryColor } from '../../services/schoolService'
-import { db } from '../../services/storage'
+import { resetProductData, updateSchoolConfirmed, validatePrimaryColor, validateSchoolSlug } from '../../services/schoolService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { db } from '../../services/storage'
 
 export function AdminSettings() {
-  const navigate = useNavigate()
   const { showToast } = useToast()
   const school = db.schools.all()[0] ?? null
   const [resetOpen, setResetOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [slugError, setSlugError] = useState('')
   const [form, setForm] = useState({
     name: '',
+    slug: '',
     description: '',
+    phone: '',
+    email: '',
+    address: '',
     primaryColor: '#1f5b43',
     logoUrl: '',
     bookingLimitEnabled: true,
@@ -33,7 +36,11 @@ export function AdminSettings() {
     const codes = Array.from(new Set(db.instructors.bySchool(school.id).flatMap((i) => i.categories ?? [])))
     setForm({
       name: school.name,
-      description: school.description,
+      slug: school.slug,
+      description: school.description ?? '',
+      phone: school.phone ?? '',
+      email: school.email ?? '',
+      address: school.address ?? '',
       primaryColor: school.primaryColor ?? '#1f5b43',
       logoUrl: school.logoUrl ?? '',
       bookingLimitEnabled: school.bookingLimitEnabled ?? true,
@@ -45,9 +52,24 @@ export function AdminSettings() {
     })
   }, [school?.id])
 
-  const publicUrl = `${window.location.origin}/school/${school?.slug ?? form.name.toLowerCase().replace(/\s+/g, '-')}`
+  function handleSlugChange(value: string) {
+    const slug = value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    setForm((f) => ({ ...f, slug }))
+    if (slug && !validateSchoolSlug(slug)) {
+      setSlugError('Только латиница, цифры и дефис')
+    } else {
+      setSlugError('')
+    }
+  }
 
-  async function copyLink() { await navigator.clipboard.writeText(publicUrl); showToast('Скопировано', 'success') }
+  const publicUrl = school
+    ? `${window.location.origin}/school/${school.slug}`
+    : `${window.location.origin}/school/${form.slug || 'ваша-школа'}`
+
+  async function copyLink() {
+    await navigator.clipboard.writeText(publicUrl)
+    showToast('Ссылка скопирована', 'success')
+  }
 
   function toggleCategory(code: string) {
     setForm((f) => ({
@@ -61,13 +83,19 @@ export function AdminSettings() {
   async function handleSave() {
     if (!school || saving) return
     if (!form.name.trim()) { showToast('Введите название', 'error'); return }
-    if (!validatePrimaryColor(form.primaryColor)) { showToast('Неверный цвет', 'error'); return }
-    if (form.enabledCategoryCodes.length === 0) { showToast('Выберите категорию', 'error'); return }
+    if (!form.slug.trim()) { showToast('Введите URL-имя', 'error'); return }
+    if (!validateSchoolSlug(form.slug)) { showToast('URL-имя: только латиница, цифры и дефис', 'error'); return }
+    if (form.primaryColor && !validatePrimaryColor(form.primaryColor)) { showToast('Цвет в формате #RRGGBB', 'error'); return }
+    if (form.enabledCategoryCodes.length === 0) { showToast('Выберите хотя бы одну категорию', 'error'); return }
+    if (form.phone && !/^\+?[\d\s\-()]{7,}$/.test(form.phone)) { showToast('Телефон выглядит некорректно', 'error'); return }
     setSaving(true)
     try {
-      const r = await updateSchoolConfirmed(school.id, {
+      const updatePatch: Parameters<typeof updateSchoolConfirmed>[1] = {
         name: form.name.trim(),
         description: form.description.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        address: form.address.trim(),
         primaryColor: form.primaryColor.trim(),
         logoUrl: form.logoUrl.trim(),
         bookingLimitEnabled: form.bookingLimitEnabled,
@@ -76,10 +104,11 @@ export function AdminSettings() {
         maxSlotsPerBooking: form.maxSlotsPerBooking,
         defaultLessonDuration: form.defaultLessonDuration,
         enabledCategoryCodes: form.enabledCategoryCodes,
-      })
+      }
+      updatePatch.slug = form.slug.trim()
+      const r = await updateSchoolConfirmed(school.id, updatePatch)
       if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-      showToast('Сохранено', 'success')
-      if (r.school?.slug !== school.slug) navigate(`${ADMIN_BASE_PATH}/settings`, { replace: true })
+      showToast('Настройки сохранены', 'success')
     } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
     finally { setSaving(false) }
   }
@@ -103,10 +132,46 @@ export function AdminSettings() {
       <div className="space-y-3">
         {/* School info */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Основное</h2>
+          <h2 className="text-[15px] font-black text-[#111418]">Название и контакты</h2>
           <div className="mt-3 space-y-2">
-            <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Название автошколы" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
-            <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Описание" rows={2} className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium outline-none focus:border-[#111418]" />
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Название автошколы</label>
+              <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Например: Автошкола Вираж" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">URL-имя (латиницей)</label>
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 text-[13px] font-semibold text-[#9EA3A8]">/school/</span>
+                <input value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="moika-avto" className="h-10 flex-1 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+              </div>
+              {slugError && <p className="mt-1 text-[11px] font-semibold text-[#E5534B]">{slugError}</p>}
+              <p className="mt-1 text-[11px] font-semibold text-[#9EA3A8]">
+                По этой ссылке ученики найдут вашу школу. Можно поменять, например: virazh, start-drive, avto-lider.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Описание</label>
+              <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Расскажите кратко о школе" rows={2} className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium outline-none focus:border-[#111418]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Contact info */}
+        <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
+          <h2 className="text-[15px] font-black text-[#111418]">Контактная информация</h2>
+          <div className="mt-3 space-y-2">
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Телефон</label>
+              <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+7 (495) 123-45-67" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Email</label>
+              <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="info@school.ru" type="email" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Адрес</label>
+              <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="г. Москва, ул. Примерная, 1" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+            </div>
           </div>
         </div>
 
@@ -132,8 +197,8 @@ export function AdminSettings() {
 
         {/* Categories */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Категории</h2>
-          <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">Что видят ученики при записи</p>
+          <h2 className="text-[15px] font-black text-[#111418]">Категории обучения</h2>
+          <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">Выберите категории — ученики увидят только их</p>
           <div className="mt-3 grid grid-cols-4 gap-1.5">
             {DRIVING_CATEGORIES.map((cat) => {
               const enabled = form.enabledCategoryCodes.includes(cat.code)
@@ -157,7 +222,7 @@ export function AdminSettings() {
             </label>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <p className="text-[12px] font-semibold text-[#9EA3A8]">Макс. активных</p>
+                <p className="text-[12px] font-semibold text-[#9EA3A8]">Макс. активных записей</p>
                 <input type="number" min={1} max={10} value={form.maxActiveBookingsPerStudent} onChange={(e) => setForm((f) => ({ ...f, maxActiveBookingsPerStudent: Number(e.target.value) }))}
                   className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none" />
               </div>

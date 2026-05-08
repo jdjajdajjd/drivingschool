@@ -20,7 +20,7 @@ import {
 } from '../components/product/CompactCards'
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { getFutureAvailableSlots, loadPublicSchoolData, refreshPublicSlots } from '../services/publicSchoolData'
-import { db, setDataNamespace } from '../services/storage'
+import { db, findSchoolNamespaceBySlug, setDataNamespace } from '../services/storage'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import {
   acquireSlotLock,
@@ -334,7 +334,7 @@ export function BookingFlowPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()
   const isDemo = slug === 'virazh'
   const isWorkspace = slug === 'workspace'
-  const isLocalSchool = isDemo || isWorkspace
+  const isLocalSchool = Boolean(findSchoolNamespaceBySlug(slug)) || isDemo || isWorkspace
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -357,8 +357,8 @@ export function BookingFlowPage() {
   const [lastSlotsRefreshAt, setLastSlotsRefreshAt] = useState<Date | null>(null)
 
   useEffect(() => {
-    if (isDemo) setDataNamespace('demo')
-    if (isWorkspace) setDataNamespace('workspace')
+    const namespace = findSchoolNamespaceBySlug(slug)
+    if (namespace) setDataNamespace(namespace)
     setLoading(true)
     void loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
       .then((data) => {

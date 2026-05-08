@@ -10,7 +10,7 @@ import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { loadPublicSchoolData, type PublicSchoolData } from '../services/publicSchoolData'
-import { setDataNamespace } from '../services/storage'
+import { findSchoolNamespaceBySlug } from '../services/storage'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import type { School } from '../types'
 
@@ -41,9 +41,7 @@ export function SchoolPage() {
   const school = data?.school ?? null
 
   useEffect(() => {
-    const isLocalSchool = slug === 'virazh' || slug === 'workspace'
-    if (slug === 'virazh') setDataNamespace('demo')
-    if (slug === 'workspace') setDataNamespace('workspace')
+    const isLocalSchool = Boolean(findSchoolNamespaceBySlug(slug)) || slug === 'virazh' || slug === 'workspace'
     setLoading(true)
     setMode('public')
     setTab('home')
@@ -308,7 +306,7 @@ export function SchoolPage() {
               <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-5">
                 <h3 className="text-[17px] font-black text-[var(--text)]">Категории обучения</h3>
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {['A', 'B', 'C', 'M', 'A1', 'B1'].map((cat) => (
+                  {(school.enabledCategoryCodes?.length ? school.enabledCategoryCodes : ['B']).map((cat) => (
                     <div key={cat} className="flex items-center justify-center rounded-[14px] bg-[var(--surface-muted)] py-3 text-[15px] font-black text-[var(--text)]">
                       {cat}
                     </div>

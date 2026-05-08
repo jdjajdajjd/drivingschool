@@ -1,55 +1,38 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
-import type { School } from '../types'
-import { db, setDataNamespace } from '../services/storage'
+import { ArrowRight01Icon, Building03Icon, CheckmarkCircle01Icon, Clock03Icon, SparklesIcon, UserGroup03Icon } from '@hugeicons/core-free-icons'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { db, setDataNamespace } from '../services/storage'
+import { WORKSPACE_ADMIN_LOGIN_PATH } from '../services/accessControl'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
+const Building = createHugeIcon(Building03Icon)
+const Check = createHugeIcon(CheckmarkCircle01Icon)
+const Clock = createHugeIcon(Clock03Icon)
+const Star = createHugeIcon(SparklesIcon)
+const Users = createHugeIcon(UserGroup03Icon)
 
-function SchoolLogo({ school }: { school: School }) {
-  return (
-    <div
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl overflow-hidden"
-      style={{
-        background: '#050607',
-        boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
-      }}
-    >
-      {school.logoUrl ? (
-        <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" />
-      ) : (
-        <span className="text-white font-black text-lg">{school.name.slice(0, 2)}</span>
-      )}
-    </div>
-  )
-}
+const BENEFITS = [
+  { icon: Clock, text: 'Ученики записываются онлайн — меньше звонков и сообщений' },
+  { icon: Users, text: 'Расписание инструкторов, филиалов и учеников в одном кабинете' },
+  { icon: Check, text: 'Подтверждение записи, напоминания — всё автоматически' },
+  { icon: Star, text: 'Понятный интерфейс для учеников: телефон, категория, слот' },
+]
 
 export function LandingPage() {
   const navigate = useNavigate()
-  const [schools, setSchools] = useState<School[]>([])
+  const [demoSchool, setDemoSchool] = useState<{ name: string; slug: string; description: string } | null>(null)
 
   useEffect(() => {
     setDataNamespace('demo')
-    setSchools(db.schools.all().filter((s) => s.isActive))
+    const schools = db.schools.all().filter((s) => s.isActive)
+    setDemoSchool(schools[0] ?? { name: 'Вираж', slug: 'virazh', description: 'Профессиональная подготовка водителей с 2008 года.' })
   }, [])
-
-  const defaultSchool = schools[0] ?? {
-    id: 'school-virazh',
-    name: 'Вираж',
-    slug: 'virazh',
-    description: 'Профессиональная подготовка водителей с 2008 года.',
-    phone: '+7 (495) 123-45-67',
-    email: '',
-    address: '',
-    createdAt: '',
-    isActive: true,
-  }
 
   return (
     <div className="shell">
-      <main className="mx-auto w-full max-w-5xl px-5 py-6">
+      <main className="mx-auto flex w-full max-w-[440px] flex-col px-5 py-6">
 
         {/* Header */}
         <motion.header
@@ -75,7 +58,7 @@ export function LandingPage() {
           </div>
           <button
             className="btn btn-secondary btn-sm"
-            onClick={() => navigate('/workspace-admin')}
+            onClick={() => navigate(WORKSPACE_ADMIN_LOGIN_PATH)}
           >
             Войти в кабинет
           </button>
@@ -88,35 +71,77 @@ export function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
         >
-          <h1 className="t-hero" style={{ maxWidth: 520 }}>
+          <h1 className="t-hero" style={{ maxWidth: 480 }}>
             Онлайн-запись<br /> для автошкол
           </h1>
-          <p className="t-body mt-4" style={{ maxWidth: 470 }}>
-            Ученики выбирают свободное время сами. Администратор видит расписание, инструкторов, записи и учеников в кабинете автошколы.
+          <p className="t-body mt-4" style={{ maxWidth: 440 }}>
+            Ученики выбирают удобное время сами. Вы — управляете расписанием, инструкторами и записями в одном кабинете.
           </p>
         </motion.section>
 
-        {/* Demo school quick card */}
+        {/* What is it */}
+        <motion.div
+          className="mb-6 grid gap-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.15 }}
+        >
+          {BENEFITS.map(({ icon: Icon, text }) => (
+            <div key={text} className="flex items-start gap-3 rounded-[18px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#EEF2FF]">
+                <Icon size={16} className="text-[#4455C4]" />
+              </div>
+              <p className="text-[14px] font-semibold leading-5 text-[#111418]">{text}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Demo school card */}
         <motion.div
           className="card-section p-5"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.22 }}
+          transition={{ duration: 0.25, delay: 0.25 }}
         >
-          <div className="flex items-center gap-4 mb-5">
-            <SchoolLogo school={defaultSchool} />
+          <div className="mb-4 flex items-center gap-4">
+            <div
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: '#4455C4', boxShadow: '0 12px 32px rgba(68,85,196,0.25)' }}
+            >
+              <Building size={26} className="text-white" />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="t-micro mb-1">Демо-автошкола</p>
-              <p className="t-subheading">{defaultSchool.name}</p>
-              <p className="t-small mt-0.5">{defaultSchool.description}</p>
+              <p className="t-subheading">{demoSchool?.name ?? 'Вираж'}</p>
+              <p className="t-small mt-0.5">{demoSchool?.description ?? 'Посмотрите, как это работает'}</p>
             </div>
           </div>
           <button
             className="btn btn-primary btn-lg w-full"
-            onClick={() => navigate('/demo')}
+            onClick={() => navigate(`/school/${demoSchool?.slug ?? 'virazh'}`)}
           >
             Открыть демо автошколы
             <ArrowRight size={17} />
+          </button>
+        </motion.div>
+
+        {/* Admin CTA */}
+        <motion.div
+          className="mt-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.3 }}
+        >
+          <button
+            className="flex w-full items-center justify-between rounded-[22px] border border-[rgba(0,0,0,0.07)] bg-white px-5 py-4 text-left transition active:scale-[0.99]"
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}
+            onClick={() => navigate(WORKSPACE_ADMIN_LOGIN_PATH)}
+          >
+            <div>
+              <p className="text-[15px] font-black text-[#111418]">Попробовать админку</p>
+              <p className="mt-0.5 text-[13px] font-semibold text-[#9EA3A8]">Настройте школу и посмотрите кабинет директора</p>
+            </div>
+            <ArrowRight size={18} className="shrink-0 text-[#9EA3A8]" />
           </button>
         </motion.div>
 

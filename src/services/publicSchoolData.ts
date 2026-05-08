@@ -1,6 +1,6 @@
 import type { Branch, Instructor, School, Slot } from '../types'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { db } from './storage'
+import { db, findSchoolBySlugAcrossNamespaces, findSchoolNamespaceBySlug, setDataNamespace } from './storage'
 import { getPublicSchoolBundle, getPublicSlots } from './supabasePublicService'
 
 export interface PublicSchoolData {
@@ -58,8 +58,12 @@ export async function loadPublicSchoolData(slug: string, options: { preferLocal?
     }
   }
 
-  const localSchool = db.schools.bySlug(slug)
-  return localSchool ? applyLocal(localSchool) : null
+  const namespace = findSchoolNamespaceBySlug(slug)
+  const localSchool = namespace ? findSchoolBySlugAcrossNamespaces(slug) : null
+  if (!namespace || !localSchool) return null
+
+  setDataNamespace(namespace)
+  return applyLocal(localSchool)
 }
 
 export function getFutureAvailableSlots(schoolId: string): Slot[] {
