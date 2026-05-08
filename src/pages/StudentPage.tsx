@@ -29,7 +29,6 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
-import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { db, findSchoolByIdAcrossNamespaces, findSchoolNamespaceById, setDataNamespace } from '../services/storage'
 import { cancelBooking, createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { useToast } from '../components/ui/Toast'
@@ -685,8 +684,7 @@ export function StudentPage() {
                 </div>
               </button>
               <div className="flex shrink-0 items-center gap-2">
-                <ThemeToggle compact />
-                <button className="grid place-items-center active:scale-[0.97]" style={{ minHeight: 48, minWidth: 48 }} onClick={() => navigate(`/school/${school.slug}`)} aria-label="Автошкола">
+                    <button className="grid place-items-center active:scale-[0.97]" style={{ minHeight: 48, minWidth: 48 }} onClick={() => navigate(`/school/${school.slug}`)} aria-label="Автошкола">
                   <SchoolLogo school={school} />
                 </button>
               </div>
@@ -715,8 +713,7 @@ export function StudentPage() {
             <div className="flex items-center justify-between pt-2">
               <h1 className={pageTitle}>Расписание</h1>
               <div className="flex items-center gap-2">
-                <ThemeToggle compact />
-                <button className="grid h-11 w-11 place-items-center rounded-full bg-white active:scale-[0.96]" onClick={() => setInstructorSheetOpen(true)}><Filter size={22} /></button>
+                    <button className="grid h-11 w-11 place-items-center rounded-full bg-white active:scale-[0.96]" onClick={() => setInstructorSheetOpen(true)}><Filter size={22} /></button>
               </div>
             </div>
             <section className={cn(card, 'p-4')}>
@@ -751,8 +748,7 @@ export function StudentPage() {
                 <button className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#050609] active:scale-[0.96]" onClick={() => setView('profile')} aria-label="Назад"><ChevronLeft size={23} /></button>
                 <h1 className={pageTitle}>Вождение</h1>
               </div>
-              <ThemeToggle compact />
-            </div>
+              </div>
 
             <div className="grid grid-cols-2 gap-2.5">
               <StatCard title={'Остаток учебных\nчасов'} value={String(drivingRemaining)} subtitle={`${drivingCompleted} из ${drivingTotal} часов пройдено`} tone="green" />
@@ -879,8 +875,7 @@ export function StudentPage() {
           <section className="space-y-5 pt-2">
             <div className="flex items-center justify-between gap-3">
               <h1 className={pageTitle}>Связь</h1>
-              <ThemeToggle compact />
-            </div>
+              </div>
             {[
               { title: school.name, text: school.phone ? `Позвонить: ${school.phone}` : 'Телефон автошколы пока не указан', icon: Building2, action: school.phone ? `tel:${school.phone}` : '' },
               { title: selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор', text: selectedInstructor?.phone ? `Позвонить: ${selectedInstructor.phone}` : 'Появится после назначения', icon: CarFront, action: selectedInstructor?.phone ? `tel:${selectedInstructor.phone}` : '' },
@@ -908,8 +903,7 @@ export function StudentPage() {
                 <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Личные данные и обучение</p>
               </div>
               <div className="flex items-center gap-2">
-                <ThemeToggle compact />
-                <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1F2BD8] active:scale-[0.96]" onClick={() => setInfoSheet('settings')} aria-label="Настройки"><Settings size={20} /></button>
+                    <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1F2BD8] active:scale-[0.96]" onClick={() => setInfoSheet('settings')} aria-label="Настройки"><Settings size={20} /></button>
               </div>
             </div>
             <div className={cn(card, 'p-4 text-center')}>

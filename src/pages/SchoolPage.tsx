@@ -6,7 +6,6 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
 import { createHugeIcon } from '../components/ui/HugeIcon'
-import { ThemeToggle } from '../components/ui/ThemeProvider'
 import { isValidRussianPhone } from '../services/bookingService'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { loadPublicSchoolData, type PublicSchoolData } from '../services/publicSchoolData'
@@ -112,7 +111,6 @@ export function SchoolPage() {
             </div>
           </button>
           <div className="flex items-center gap-2">
-            <ThemeToggle compact />
           </div>
         </header>
 

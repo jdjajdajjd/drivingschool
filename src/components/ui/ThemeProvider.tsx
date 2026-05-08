@@ -1,11 +1,8 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'
-import { createHugeIcon } from './HugeIcon'
-import { cn } from '../../lib/utils'
+import React, { createContext, useContext, useEffect, useMemo } from 'react'
 
 void React
 
-type ThemeMode = 'light' | 'dark'
+type ThemeMode = 'light'
 
 interface ThemeContextValue {
   theme: ThemeMode
@@ -15,30 +12,19 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 const storageKey = 'vroom:theme:v2'
-const Moon = createHugeIcon(Moon02Icon)
-const Sun = createHugeIcon(Sun03Icon)
-
-function getInitialTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'light'
-  const saved = localStorage.getItem(storageKey)
-  if (saved === 'light' || saved === 'dark') return saved
-  return 'light'
-}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
-
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
-    document.documentElement.style.colorScheme = theme
-    localStorage.setItem(storageKey, theme)
-  }, [theme])
+    document.documentElement.dataset.theme = 'light'
+    document.documentElement.style.colorScheme = 'light'
+    localStorage.removeItem(storageKey)
+  }, [])
 
-  function toggleTheme() {
-    setTheme((current) => current === 'light' ? 'dark' : 'light')
-  }
-
-  const value = useMemo(() => ({ theme, toggleTheme, transitioning: false }), [theme])
+  const value = useMemo(() => ({
+    theme: 'light' as const,
+    toggleTheme: () => {},
+    transitioning: false,
+  }), [])
 
   return (
     <ThemeContext.Provider value={value}>
@@ -53,22 +39,6 @@ export function useTheme() {
   return context
 }
 
-export function ThemeToggle({ compact = false }: { compact?: boolean }) {
-  const { theme, toggleTheme } = useTheme()
-  const dark = theme === 'dark'
-
-  return (
-    <button
-      type="button"
-      className={cn('theme-toggle', compact && 'theme-toggle-compact')}
-      onClick={toggleTheme}
-      aria-label={dark ? 'Включить светлую тему' : 'Включить тёмную тему'}
-    >
-      <span className="theme-toggle-track">
-        <span className="theme-toggle-thumb" />
-        <Sun size={16} className="theme-toggle-sun" />
-        <Moon size={16} className="theme-toggle-moon" />
-      </span>
-    </button>
-  )
+export function ThemeToggle() {
+  return null
 }
