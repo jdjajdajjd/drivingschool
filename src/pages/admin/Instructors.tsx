@@ -1,43 +1,27 @@
-import { Add01Icon, PowerOffIcon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
-import { Avatar } from '../../components/ui/Avatar'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { StateView } from '../../components/ui/StateView'
-import { CompactDataRow, SmallEmptyState } from '../../components/ui/CompactAdmin'
-import { FormField } from '../../components/ui/FormField'
-import { Input, Textarea } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
-import { PageHeader } from '../../components/ui/PageHeader'
-import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-
-const Plus = createHugeIcon(Add01Icon)
-const Power = createHugeIcon(PowerOffIcon)
-import { formatPhone } from '../../lib/utils'
-import { getUpcomingBookings, validateRussianPhone } from '../../services/bookingService'
 import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
-import { createInstructorConfirmed, getInstructorsBySchool, toggleInstructorActiveConfirmed, updateInstructorConfirmed } from '../../services/instructorService'
-import { getInstructorPhoto } from '../../services/instructorPhotos'
+import {
+  createInstructorConfirmed,
+  getInstructorsBySchool,
+  toggleInstructorActiveConfirmed,
+  updateInstructorConfirmed,
+} from '../../services/instructorService'
+import { validateRussianPhone } from '../../services/bookingService'
 import { db } from '../../services/storage'
 import { getAvailableSlots } from '../../services/slotService'
 import type { Instructor, Transmission } from '../../types'
 
-const initialForm = {
-  branchId: '',
-  name: '',
-  phone: '',
-  email: '',
-  bio: '',
-  car: '',
-  transmission: 'manual' as Transmission,
-  categories: ['B'],
-  isActive: true,
+const INIT = {
+  branchId: '', name: '', phone: '', email: '', bio: '',
+  car: '', transmission: 'manual' as Transmission, categories: ['B'] as string[], isActive: true,
 }
 
-function selectClassName() {
-  return 'h-11 w-full rounded-[16px] border border-[#D8E0EC] bg-white px-3.5 text-[15px] text-[text-[#111827]] outline-none transition focus:border-accent focus:ring-3 focus:ring-accent/10'
+function fieldCls() {
+  return 'h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium text-[#111418] outline-none focus:border-[#111418]'
 }
 
 export function AdminInstructors() {
@@ -45,260 +29,171 @@ export function AdminInstructors() {
   const { showToast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(INIT)
   const [saving, setSaving] = useState(false)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [toggling, setToggling] = useState<string | null>(null)
 
-  const branches = school ? db.branches.bySchool(school.id) : []
+  const branches = school ? db.branches.bySchool(school.id).filter((b) => b.isActive) : []
   const instructors = school ? getInstructorsBySchool(school.id) : []
-  const upcomingBookings = school ? getUpcomingBookings(school.id) : []
 
-  const rows = useMemo(
-    () =>
-      instructors.map((instructor) => ({
-        instructor,
-        futureLessons: upcomingBookings.filter(
-          (entry) => entry.booking.status === 'active' && entry.booking.instructorId === instructor.id,
-        ).length,
-        freeSlots7d: getAvailableSlots(instructor.id).filter((slot) => {
-          const startsAt = new Date(`${slot.date}T${slot.time}:00`)
-          return startsAt.getTime() <= Date.now() + 7 * 24 * 60 * 60 * 1000
-        }).length,
-      })),
-    [instructors, upcomingBookings],
-  )
+  const rows = useMemo(() => {
+    return instructors.map((inst) => {
+      const upcoming = db.bookings.all().filter((b) => b.status === 'active' && b.instructorId === inst.id).length
+      const freeSlots = getAvailableSlots(inst.id).filter((s) => {
+        const t = new Date(`${s.date}T${s.time}:00`).getTime()
+        return t > Date.now() && t <= Date.now() + 7 * 24 * 60 * 60 * 1000
+      }).length
+      return { inst, upcoming, freeSlots }
+    })
+  }, [instructors])
 
-  function openCreate(): void {
+  function openCreate() {
     setEditingId(null)
+    setForm({ ...INIT, branchId: branches[0]?.id ?? '' })
+    setModalOpen(true)
+  }
+
+  function openEdit(inst: Instructor) {
+    setEditingId(inst.id)
     setForm({
-      ...initialForm,
-      branchId: branches[0]?.id ?? '',
+      branchId: inst.branchId,
+      name: inst.name,
+      phone: inst.phone,
+      email: inst.email,
+      bio: inst.bio,
+      car: inst.car ?? '',
+      transmission: inst.transmission ?? 'manual',
+      categories: inst.categories?.length ? inst.categories : ['B'],
+      isActive: inst.isActive,
     })
     setModalOpen(true)
   }
 
-  function openEdit(instructor: Instructor): void {
-    setEditingId(instructor.id)
-    setForm({
-      branchId: instructor.branchId,
-      name: instructor.name,
-      phone: instructor.phone,
-      email: instructor.email,
-      bio: instructor.bio,
-      car: instructor.car ?? '',
-      transmission: instructor.transmission ?? 'manual',
-      categories: instructor.categories?.length ? instructor.categories : ['B'],
-      isActive: instructor.isActive,
-    })
-    setModalOpen(true)
-  }
-
-  async function handleSubmit(): Promise<void> {
-    if (!school || saving) return
-
-    if (form.phone && !validateRussianPhone(form.phone)) {
-      showToast('Телефон инструктора указан в неверном формате.', 'error')
-      return
-    }
-
+  async function handleSubmit() {
+    if (!school || !form.name) { showToast('Введите имя', 'error'); return }
+    if (form.phone && !validateRussianPhone(form.phone)) { showToast('Неверный телефон', 'error'); return }
+    setSaving(true)
     try {
-      setSaving(true)
-      const result = editingId
+      const r = editingId
         ? await updateInstructorConfirmed(editingId, form)
-        : await createInstructorConfirmed({
-            schoolId: school.id,
-            ...form,
-          })
-
-      if (!result.ok) {
-        showToast(result.error ?? 'Не удалось сохранить инструктора.', 'error')
-        return
-      }
-
+        : await createInstructorConfirmed({ schoolId: school.id, ...form })
+      if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
+      showToast(editingId ? 'Обновлён' : 'Создан', 'success')
       setModalOpen(false)
-      showToast(editingId ? 'Инструктор обновлён.' : 'Инструктор создан.', 'success')
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось сохранить инструктора.', 'error')
-    } finally {
-      setSaving(false)
-    }
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
+    finally { setSaving(false) }
   }
 
-  function toggleCategory(code: string): void {
-    setForm((current) => {
-      const active = current.categories.includes(code)
-      const nextCategories = active
-        ? current.categories.filter((item) => item !== code)
-        : [...current.categories, code]
-
-      return {
-        ...current,
-        categories: nextCategories.length ? nextCategories : ['B'],
-      }
-    })
-  }
-
-  async function toggle(instructor: Instructor): Promise<void> {
-    if (togglingId) return
+  async function handleToggle(inst: Instructor) {
+    if (toggling) return
+    setToggling(inst.id)
     try {
-      setTogglingId(instructor.id)
-      const result = await toggleInstructorActiveConfirmed(instructor.id)
-      if (!result.ok) {
-        showToast(result.error ?? 'Не удалось изменить статус инструктора.', 'error')
-        return
-      }
-      showToast(result.instructor?.isActive ? 'Инструктор включён.' : 'Инструктор выключен и скрыт из публичной записи.', 'success')
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось изменить статус инструктора.', 'error')
-    } finally {
-      setTogglingId(null)
-    }
+      const r = await toggleInstructorActiveConfirmed(inst.id)
+      if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
+      showToast(inst.isActive ? 'Выключен' : 'Включён', 'success')
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
+    finally { setToggling(null) }
   }
 
-  if (!school) {
-    return (
-      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-        <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
-      </div>
-    )
-  }
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
 
   return (
-    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-      <PageHeader
-        eyebrow={school.name}
-        title="Инструкторы"
-        description="Команда, филиалы и доступность."
-        actions={
-          <Button onClick={openCreate} disabled={saving || Boolean(togglingId)}>
-            <Plus size={16} />
-            Создать инструктора
-          </Button>
-        }
-      />
-
-      <div className="mt-3">
-        <Section title="Инструкторы" description={`${rows.length} человек`}>
-          {rows.length === 0 ? (
-            <SmallEmptyState
-              title="Инструкторов пока нет"
-              description="Создайте первого инструктора."
-                          />
-          ) : (
-            <div className="grid gap-2">
-              {rows.map(({ instructor, futureLessons, freeSlots7d }) => (
-                <CompactDataRow key={instructor.id}>
-                  <div className="grid gap-1.5 md:grid-cols-[minmax(0,1fr)_260px_auto] md:items-center">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <Avatar initials={instructor.avatarInitials} color={instructor.avatarColor} src={getInstructorPhoto(instructor)} alt={instructor.name} size="md" className="rounded-[12px]" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-[15px] font-black text-[#111827]">{instructor.name}</p>
-                          <Badge variant={instructor.isActive ? 'success' : 'default'}>{instructor.isActive ? 'Активен' : 'Выключен'}</Badge>
-                        </div>
-                        <p className="truncate text-[13px] font-medium text-[#4B5A70]">{branches.find((branch) => branch.id === instructor.branchId)?.name ?? 'Филиал не найден'}</p>
-                        <p className="truncate text-[12px] font-semibold text-[#667085]">{instructor.phone ? formatPhone(instructor.phone) : 'Телефон не указан'} · {instructor.car ?? 'Машина не указана'}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1.5 text-center">
-                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
-                        <p className="text-[11px] font-bold text-[#667085]">Записи</p>
-                        <p className="text-[15px] font-black text-[#111827]">{futureLessons}</p>
-                      </div>
-                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
-                        <p className="text-[11px] font-bold text-[#667085]">Окна</p>
-                        <p className="text-[15px] font-black text-[#2436D9]">{freeSlots7d}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1 md:w-[190px]">
-                      <Button variant="secondary" size="sm" onClick={() => openEdit(instructor)} disabled={saving || Boolean(togglingId)}>
-                        Редактировать
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => void toggle(instructor)} disabled={saving || Boolean(togglingId)}>
-                        <Power size={14} />
-                        {togglingId === instructor.id ? '...' : instructor.isActive ? 'Выкл.' : 'Вкл.'}
-                      </Button>
-                    </div>
-                  </div>
-                </CompactDataRow>
-              ))}
-            </div>
-          )}
-        </Section>
+    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Инструкторы</h1>
+        </div>
+        <Button onClick={openCreate}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Добавить
+        </Button>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Редактировать инструктора' : 'Новый инструктор'} size="lg">
-        <div className="space-y-4 px-6 pb-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input label="Имя" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-            <FormField label="Филиал">
-              <select value={form.branchId} onChange={(event) => setForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
-                <option value="">Выберите филиал</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <Input label="Телефон" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-            <Input label="Email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
-            <Input label="Машина" value={form.car} onChange={(event) => setForm((current) => ({ ...current, car: event.target.value }))} />
-            <FormField label="Коробка">
-              <select value={form.transmission} onChange={(event) => setForm((current) => ({ ...current, transmission: event.target.value as Transmission }))} className={selectClassName()}>
-                <option value="manual">Механика</option>
-                <option value="auto">Автомат</option>
-              </select>
-            </FormField>
+      {rows.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+          <p className="font-black text-[#111418]">Инструкторов пока нет</p>
+          <p className="mt-1 text-sm text-[#9EA3A8]">Создайте первого инструктора</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map(({ inst, upcoming, freeSlots }) => (
+            <div key={inst.id} className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[#F1F2F5]">
+                  {inst.avatarInitials && (
+                    <div className="flex h-full w-full items-center justify-center text-[14px] font-black text-white" style={{ backgroundColor: inst.avatarColor ?? '#3156D4' }}>
+                      {inst.avatarInitials}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-black text-[#111418]">{inst.name}</p>
+                  <p className="truncate text-[12px] font-semibold text-[#6F747A]">
+                    {branches.find((b) => b.id === inst.branchId)?.name ?? 'Филиал'} · {inst.car || 'Машина не указана'}
+                  </p>
+                </div>
+                <Badge variant={inst.isActive ? 'success' : 'muted'}>{inst.isActive ? 'Активен' : 'Выключен'}</Badge>
+              </div>
+              <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
+                <div>
+                  <p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p>
+                  <p className="text-[13px] font-black text-[#111418]">{upcoming}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p>
+                  <p className="text-[13px] font-black text-[#3156D4]">{freeSlots}</p>
+                </div>
+              </div>
+              <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
+                <button onClick={() => openEdit(inst)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5]">Редактировать</button>
+                <button onClick={() => void handleToggle(inst)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#6F747A] transition hover:bg-[#F1F2F5]">
+                  {toggling === inst.id ? '...' : inst.isActive ? 'Выключить' : 'Включить'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Редактировать' : 'Новый инструктор'}>
+        <div className="space-y-4 px-5 pb-5">
+          <div className="grid grid-cols-2 gap-3">
+            <input className={fieldCls()} placeholder="Имя *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+            <select className={fieldCls()} value={form.branchId} onChange={(e) => setForm((f) => ({ ...f, branchId: e.target.value }))}>
+              <option value="">Филиал</option>
+              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+            <input className={fieldCls()} placeholder="Телефон" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+            <input className={fieldCls()} placeholder="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+            <input className={fieldCls()} placeholder="Машина" value={form.car} onChange={(e) => setForm((f) => ({ ...f, car: e.target.value }))} />
+            <select className={fieldCls()} value={form.transmission} onChange={(e) => setForm((f) => ({ ...f, transmission: e.target.value as Transmission }))}>
+              <option value="manual">Механика</option>
+              <option value="auto">Автомат</option>
+            </select>
           </div>
-
-          <Textarea label="Описание" value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} rows={4} />
-
-          <FormField label="Категории, по которым инструктор доступен для записи">
-            <div className="grid gap-2 sm:grid-cols-2">
-              {DRIVING_CATEGORIES.map((category) => {
-                const active = form.categories.includes(category.code)
+          <textarea className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium text-[#111418] outline-none focus:border-[#111418]" rows={3} placeholder="Описание (необязательно)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} />
+          <div>
+            <p className="mb-2 text-[13px] font-bold text-[#6F747A]">Категории</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {DRIVING_CATEGORIES.map((cat) => {
+                const active = form.categories.includes(cat.code)
                 return (
-                  <button
-                    key={category.code}
-                    type="button"
-                    onClick={() => toggleCategory(category.code)}
-                    className={`rounded-[16px] border px-3 py-2.5 text-left transition ${
-                      active
-                        ? 'border-accent rgba(246,184,77,0.12) text-[#111827]'
-                        : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20)'
-                    }`}
-                  >
-                    <span className="text-sm font-semibold">{category.title}</span>
-                    <span className="mt-1 block text-xs text-[#667085]">{category.description}</span>
+                  <button key={cat.code} type="button" onClick={() => setForm((f) => ({ ...f, categories: active ? f.categories.filter((c) => c !== cat.code) : [...f.categories, cat.code] }))}
+                    className={`rounded-[10px] border px-2 py-2 text-left transition ${active ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
+                    <span className="text-[13px] font-black">{cat.code}</span>
                   </button>
                 )
               })}
             </div>
-          </FormField>
-
-          <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
-            />
-            Инструктор активен и доступен в публичной записи
+          </div>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} />
+            <span className="text-[13px] font-semibold text-[#6F747A]">Активен для записи</span>
           </label>
-
-          <p className="rounded-[16px] bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-[#8A5A00]">
-            При выключении инструктора будущее свободное время будут скрыты из публичной записи. Занятые занятия сохраняются.
-          </p>
-
-          <div className="flex gap-3">
-            <Button className="flex-1" onClick={() => void handleSubmit()} disabled={saving || Boolean(togglingId)}>
-              {saving ? 'Сохраняем...' : editingId ? 'Сохранить изменения' : 'Создать инструктора'}
-            </Button>
-            <Button variant="secondary" className="flex-1" onClick={() => setModalOpen(false)} disabled={saving}>
-              Закрыть
-            </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => void handleSubmit()} disabled={saving} className="flex-1">{saving ? '...' : editingId ? 'Сохранить' : 'Создать'}</Button>
+            <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Закрыть</Button>
           </div>
         </div>
       </Modal>

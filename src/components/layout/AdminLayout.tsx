@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Car03Icon, Menu01Icon } from '@hugeicons/core-free-icons'
-import { AdminSidebar } from './AdminSidebar'
+import { LinkSquare02Icon, Logout03Icon } from '@hugeicons/core-free-icons'
+import { AdminBottomNav, AdminTopBar } from './AdminBottomNav'
 import { createHugeIcon } from '../ui/HugeIcon'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { clearAccess } from '../../services/accessControl'
 import { setDataNamespace } from '../../services/storage'
 import { seedIfNeeded } from '../../services/seed'
 import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
+import { db } from '../../services/storage'
 
-const Menu = createHugeIcon(Menu01Icon)
-const Car = createHugeIcon(Car03Icon)
+const ExternalLink = createHugeIcon(LinkSquare02Icon)
+const LogOut = createHugeIcon(Logout03Icon)
 
 export function AdminLayout() {
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -32,33 +32,81 @@ export function AdminLayout() {
     }
   }, [])
 
-  if (!ready) return <div className="min-h-screen bg-[#F4F5F6]" />
+  if (!ready) return <div className="min-h-screen" style={{ background: '#F2F3F4' }} />
+
+  const school = db.schools.all()[0]
+  const publicPath = school ? `/school/${school.slug}` : '/'
 
   return (
-    <div className="shell">
-      <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b rgba(0,0,0,0.06) bg-white/92 px-2.5 py-2 backdrop-blur-xl">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#D8E0EC] bg-white text-[#334155]"
-            aria-label="Открыть меню"
-          >
-            <Menu size={18} />
-          </button>
-          <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#15120E]">
-              <Car size={16} className="text-white" />
-            </div>
-            <span className="text-sm font-black text-[#15120E]">vroom</span>
-          </button>
-        </header>
+    <div className="min-h-screen" style={{ background: '#F2F3F4' }}>
+      {/* Mobile top bar */}
+      <header
+        className="sticky top-0 z-20 flex items-center justify-between border-b md:hidden"
+        style={{
+          background: 'rgba(255,255,255,0.96)',
+          backdropFilter: 'blur(16px)',
+          borderColor: 'rgba(0,0,0,0.06)',
+        }}
+      >
+        <div className="flex items-center gap-2 px-3 py-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#111418]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
+              <path d="M5 17h14M5 17l3-8h8l3 8M9 9V6m6 3V6M4 17h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <span className="text-sm font-black text-[#111418]">vroom</span>
+        </div>
+        <button
+          onClick={() => { if (school) window.location.href = publicPath }}
+          className="mr-3 flex items-center gap-1.5 text-[12px] font-black text-[#6F747A] hover:text-[#111418]"
+        >
+          <ExternalLink size={13} />
+          Страница
+        </button>
+      </header>
+
+      {/* Desktop top bar */}
+      <AdminTopBar />
+
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex"
+        style={{
+          position: 'fixed',
+          top: 57,
+          left: 0,
+          bottom: 0,
+          width: 240,
+          flexDirection: 'column',
+          background: '#FFFFFF',
+          borderRight: '1px solid rgba(0,0,0,0.06)',
+          padding: '16px 12px',
+          gap: '8px',
+        }}
+      >
+        <a
+          href={publicPath}
+          className="mt-auto flex items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-bold text-[#6F747A] transition hover:bg-[rgba(0,0,0,0.03)] hover:text-[#111418]"
+        >
+          <ExternalLink size={14} />
+          Страница школы
+        </a>
+        <button
+          onClick={() => { clearAccess('admin'); navigate('/') }}
+          className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-bold text-[#E5534B] transition hover:bg-[rgba(229,83,75,0.06)]"
+        >
+          <LogOut size={14} />
+          Выйти
+        </button>
+      </aside>
+
+      {/* Main content area */}
+      <div className="pb-20 md:pb-0 md:pl-[240px]">
+        <Outlet />
       </div>
 
-      <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      <main className="min-h-screen md:ml-[300px]">
-        <Outlet />
-      </main>
+      {/* Mobile bottom navigation */}
+      <AdminBottomNav />
     </div>
   )
 }

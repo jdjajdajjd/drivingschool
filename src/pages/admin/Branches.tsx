@@ -1,29 +1,15 @@
-import { Add01Icon, Delete02Icon, Location01Icon, PencilEdit02Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { StateView } from '../../components/ui/StateView'
-import { CompactDataRow, SmallEmptyState } from '../../components/ui/CompactAdmin'
-import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
-import { PageHeader } from '../../components/ui/PageHeader'
-import { Section } from '../../components/ui/Section'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
-
-const Location = createHugeIcon(Location01Icon)
-const Pencil = createHugeIcon(PencilEdit02Icon)
-const Plus = createHugeIcon(Add01Icon)
-const Trash2 = createHugeIcon(Delete02Icon)
 import { archiveBranchConfirmed, createBranchConfirmed, getBranchesBySchool, updateBranchConfirmed } from '../../services/branchService'
 import { db } from '../../services/storage'
 
-const initialForm = {
-  name: '',
-  address: '',
-  phone: '',
-  isActive: true,
+const INIT = { name: '', address: '', phone: '', isActive: true }
+function fieldCls() {
+  return 'h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium text-[#111418] outline-none focus:border-[#111418]'
 }
 
 export function AdminBranches() {
@@ -32,192 +18,114 @@ export function AdminBranches() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(INIT)
   const [saving, setSaving] = useState(false)
   const [archiving, setArchiving] = useState(false)
 
   const branches = school ? getBranchesBySchool(school.id) : []
-  const rows = useMemo(
-    () => {
-      const now = Date.now()
-      const sevenDaysFromNow = now + 7 * 24 * 60 * 60 * 1000
-      return branches.map((branch) => ({
-        branch,
-        instructorCount: db.instructors.byBranch(branch.id).length,
-        futureBookings: db.bookings
-          .all()
-          .filter((booking) => booking.branchId === branch.id && booking.status === 'active').length,
-        freeSlots7d: db.slots
-          .byBranch(branch.id)
-          .filter((slot) => {
-            const startsAt = new Date(`${slot.date}T${slot.time}:00`).getTime()
-            return slot.status === 'available' && startsAt >= now && startsAt <= sevenDaysFromNow
-          })
-          .length,
-      }))
-    },
-    [branches],
-  )
 
-  function openCreate(): void {
-    setEditingId(null)
-    setForm(initialForm)
-    setModalOpen(true)
-  }
+  const rows = useMemo(() => {
+    const now = Date.now()
+    const weekEnd = now + 7 * 24 * 60 * 60 * 1000
+    return branches.map((b) => ({
+      b,
+      instructorCount: db.instructors.byBranch(b.id).length,
+      futureBookings: db.bookings.all().filter((bk) => bk.branchId === b.id && bk.status === 'active').length,
+      freeSlots7d: db.slots.byBranch(b.id).filter((s) => {
+        const t = new Date(`${s.date}T${s.time}:00`).getTime()
+        return s.status === 'available' && t > now && t <= weekEnd
+      }).length,
+    }))
+  }, [branches])
 
-  function openEdit(branchId: string): void {
-    const branch = branches.find((item) => item.id === branchId)
-    if (!branch) return
-    setEditingId(branch.id)
-    setForm({
-      name: branch.name,
-      address: branch.address,
-      phone: branch.phone,
-      isActive: branch.isActive,
-    })
-    setModalOpen(true)
-  }
+  function openCreate() { setEditingId(null); setForm(INIT); setModalOpen(true) }
+  function openEdit(b: typeof branches[0]) { setEditingId(b.id); setForm({ name: b.name, address: b.address, phone: b.phone, isActive: b.isActive }); setModalOpen(true) }
 
-  async function handleSubmit(): Promise<void> {
+  async function handleSubmit() {
     if (!school || saving) return
-
     setSaving(true)
-    const result = editingId
+    const r = editingId
       ? await updateBranchConfirmed(editingId, form)
-      : await createBranchConfirmed({
-          schoolId: school.id,
-          ...form,
-        })
+      : await createBranchConfirmed({ schoolId: school.id, ...form })
     setSaving(false)
-
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось сохранить филиал.', 'error')
-      return
-    }
-
+    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
+    showToast(editingId ? 'Обновлён' : 'Создан', 'success')
     setModalOpen(false)
-    showToast(editingId ? 'Филиал обновлён.' : 'Филиал создан.', 'success')
   }
 
-  async function handleArchive(): Promise<void> {
+  async function handleArchive() {
     if (!deleteId || archiving) return
     setArchiving(true)
-    const result = await archiveBranchConfirmed(deleteId)
+    const r = await archiveBranchConfirmed(deleteId)
     setArchiving(false)
     setDeleteId(null)
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось выключить филиал.', 'error')
-      return
-    }
-    showToast('Филиал выключен, будущее свободное время скрыты. Записи не изменены.', 'success')
+    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
+    showToast('Филиал выключен', 'success')
   }
 
-  if (!school) {
-    return (
-      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-        <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
-      </div>
-    )
-  }
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
 
   return (
-    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-      <PageHeader
-        eyebrow={school.name}
-        title="Филиалы"
-        description="Адреса, инструкторы и доступность."
-        actions={
-          <Button onClick={openCreate}>
-            <Plus size={16} />
-            Создать филиал
-          </Button>
-        }
-      />
-
-      <div className="mt-3">
-        <Section title="Филиалы" description={`${rows.length} филиалов`}>
-          {rows.length === 0 ? (
-            <SmallEmptyState
-              title="Филиалов пока нет"
-              description="Создайте первый филиал."
-                          />
-          ) : (
-            <div className="grid gap-2">
-              {rows.map(({ branch, instructorCount, futureBookings, freeSlots7d }) => (
-                <CompactDataRow key={branch.id}>
-                  <div className="grid gap-1.5 md:grid-cols-[minmax(0,1fr)_280px_auto] md:items-center">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Location size={16} className="shrink-0 text-[#2436D9]" />
-                        <p className="truncate text-[15px] font-black text-[#111827]">{branch.name}</p>
-                        <Badge variant={branch.isActive ? 'success' : 'default'}>{branch.isActive ? 'Активен' : 'Выключен'}</Badge>
-                      </div>
-                      <p className="mt-0.5 truncate text-[13px] font-medium text-[#4B5A70]">{branch.address || 'Адрес не указан'}</p>
-                      {branch.phone ? <p className="text-[12px] font-semibold text-[#667085]">{branch.phone}</p> : null}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-1.5 text-center">
-                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
-                        <p className="text-[11px] font-bold text-[#667085]">Инстр.</p>
-                        <p className="text-[15px] font-black text-[#111827]">{instructorCount}</p>
-                      </div>
-                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
-                        <p className="text-[11px] font-bold text-[#667085]">Записи</p>
-                        <p className="text-[15px] font-black text-[#111827]">{futureBookings}</p>
-                      </div>
-                      <div className="rounded-[10px] bg-[#F8FAFC] px-2 py-1.5">
-                        <p className="text-[11px] font-bold text-[#667085]">Окна</p>
-                        <p className="text-[15px] font-black text-[#2436D9]">{freeSlots7d}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1 md:w-[190px]">
-                      <Button variant="secondary" size="sm" onClick={() => openEdit(branch.id)}>
-                        <Pencil size={14} />
-                        Редактировать
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleteId(branch.id)}>
-                        <Trash2 size={14} />
-                        Выкл.
-                      </Button>
-                    </div>
-                  </div>
-                </CompactDataRow>
-              ))}
-            </div>
-          )}
-        </Section>
+    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Филиалы</h1>
+        </div>
+        <Button onClick={openCreate}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Добавить
+        </Button>
       </div>
 
+      {rows.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+          <p className="font-black text-[#111418]">Филиалов пока нет</p>
+          <p className="mt-1 text-sm text-[#9EA3A8]">Создайте первый филиал</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map(({ b, instructorCount, futureBookings, freeSlots7d }) => (
+            <div key={b.id} className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-black text-[#111418]">{b.name}</p>
+                  <p className="truncate text-[12px] font-semibold text-[#6F747A]">{b.address || 'Адрес не указан'}</p>
+                  {b.phone && <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">{b.phone}</p>}
+                </div>
+                <Badge variant={b.isActive ? 'success' : 'muted'}>{b.isActive ? 'Активен' : 'Выключен'}</Badge>
+              </div>
+              <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
+                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Инстр.</p><p className="text-[13px] font-black text-[#111418]">{instructorCount}</p></div>
+                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p><p className="text-[13px] font-black text-[#111418]">{futureBookings}</p></div>
+                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p><p className="text-[13px] font-black text-[#3156D4]">{freeSlots7d}</p></div>
+              </div>
+              <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
+                <button onClick={() => openEdit(b)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5]">Редактировать</button>
+                <button onClick={() => setDeleteId(b.id)} className="flex-1 rounded-[10px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-1.5 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2]">Выключить</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Редактировать филиал' : 'Новый филиал'}>
-        <div className="space-y-4 px-6 pb-6">
-          <Input label="Название" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-          <Input label="Адрес" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />
-          <Input label="Телефон" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-          <label className="flex items-center gap-3 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-4 py-3 text-sm text-[#4B5A70]">
-            <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />
-            Филиал активен
+        <div className="space-y-4 px-5 pb-5">
+          <input className={fieldCls()} placeholder="Название *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <input className={fieldCls()} placeholder="Адрес" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
+          <input className={fieldCls()} placeholder="Телефон" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} />
+            <span className="text-[13px] font-semibold text-[#6F747A]">Активен</span>
           </label>
-          <div className="flex gap-3">
-            <Button className="flex-1" onClick={() => void handleSubmit()} disabled={saving}>
-              {saving ? 'Сохраняем...' : editingId ? 'Сохранить изменения' : 'Создать филиал'}
-            </Button>
-            <Button variant="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
-              Закрыть
-            </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => void handleSubmit()} disabled={saving} className="flex-1">{saving ? '...' : editingId ? 'Сохранить' : 'Создать'}</Button>
+            <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Закрыть</Button>
           </div>
         </div>
       </Modal>
 
-      <ConfirmDialog
-        open={Boolean(deleteId)}
-        title="Выключить филиал"
-        description="Филиал останется в истории и админке, существующие записи не изменятся. Будущее свободное время филиала будут отменены и скрыты из публичной записи."
-        confirmLabel={archiving ? 'Выключаем...' : 'Выключить филиал'}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => void handleArchive()}
-        danger
-      />
+      <ConfirmDialog open={Boolean(deleteId)} title="Выключить филиал" description="Будущее свободное время филиала будет скрыто. Существующие записи не изменятся." confirmLabel="Выключить" onClose={() => setDeleteId(null)} onConfirm={() => void handleArchive()} danger />
     </div>
   )
 }

@@ -1,41 +1,20 @@
-import { Add01Icon, Search01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
-import { StateView } from '../../components/ui/StateView'
-import { DataRow } from '../../components/ui/DataList'
-import { FilterBar, SmallEmptyState, compactFieldClassName } from '../../components/ui/CompactAdmin'
-import { PageHeader } from '../../components/ui/PageHeader'
-import { Section } from '../../components/ui/Section'
 import { formatPhone } from '../../lib/utils'
-
-const Plus = createHugeIcon(Add01Icon)
-const Search = createHugeIcon(Search01Icon)
-const UserRound = createHugeIcon(User03Icon)
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import { db } from '../../services/storage'
 import { getStudentsBySchool, getStudentStats } from '../../services/studentService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
-type StudentFilter = 'all' | 'active' | 'inactive' | 'cancelled' | 'limit'
-
-function selectClassName() {
-  return compactFieldClassName()
-}
-
 export function AdminStudents() {
   const school = db.schools.all()[0] ?? null
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<StudentFilter>('all')
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
   const rows = useMemo(() => {
-    if (!school) {
-      return []
-    }
-
-    const search = query.trim().toLowerCase()
+    if (!school) return []
+    const q = query.trim().toLowerCase()
     return getStudentsBySchool(school.id)
       .map((student) => {
         const stats = getStudentStats(student.id)
@@ -43,110 +22,97 @@ export function AdminStudents() {
         return { student, stats, nextSlot }
       })
       .filter(({ student, stats }) => {
-        const matchesSearch =
-          !search ||
-          student.name.toLowerCase().includes(search) ||
-          student.normalizedPhone.includes(search.replace(/\D/g, ''))
-
-        const matchesFilter = (() => {
-          if (filter === 'all') return true
-          if (filter === 'active') return stats.activeFutureBookings > 0
-          if (filter === 'inactive') return stats.activeFutureBookings === 0
-          if (filter === 'cancelled') return stats.cancelledBookings > 0
-          if (filter === 'limit') return stats.limitReached
-          return true
-        })()
-
-        return matchesSearch && matchesFilter
+        if (q && !student.name.toLowerCase().includes(q) && !student.normalizedPhone.includes(q.replace(/\D/g, ''))) return false
+        if (filter === 'active' && stats.activeFutureBookings === 0) return false
+        if (filter === 'inactive' && stats.activeFutureBookings > 0) return false
+        return true
       })
   }, [school, query, filter])
 
-  if (!school) {
-    return (
-      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-        <StateView kind="error" title="Школа не найдена" description="Данные школы не загружены." />
-      </div>
-    )
-  }
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
 
   return (
-    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-      <PageHeader
-        eyebrow={school.name}
-        title="Ученики"
-        description="Поиск, записи и лимиты учеников."
-        actions={<Button size="sm" variant="secondary"><Plus size={15} />Пригласить</Button>}
-      />
-
-      <div className="mt-3 space-y-3">
-        <FilterBar>
-          <div className="relative col-span-3 md:col-span-4">
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Имя или телефон" className={compactFieldClassName('pl-9')} />
-          </div>
-          <select value={filter} onChange={(event) => setFilter(event.target.value as StudentFilter)} className={selectClassName()}>
-            <option value="all">Все</option>
-            <option value="active">С записью</option>
-            <option value="inactive">Без записи</option>
-            <option value="cancelled">Есть отмены</option>
-            <option value="limit">Лимит</option>
-          </select>
-        </FilterBar>
-
-        <Section title="Список учеников" description={`Найдено ${rows.length} учеников.`}>
-          {rows.length === 0 ? (
-            <SmallEmptyState title="Ученики не найдены" description="Измените фильтры или дождитесь первой записи ученика." />
-          ) : (
-            <div className="grid gap-2">
-              {rows.map(({ student, stats, nextSlot }) => (
-                <Link
-                  key={student.id}
-                  to={`${ADMIN_BASE_PATH}/students/${student.id}`}
-                  className="block"
-                >
-                  <DataRow>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#EEF2FF] text-[#2436D9]">
-                          <UserRound size={18} />
-                        </div>
-                        <div>
-                          <p className="text-[15px] font-bold text-[#111827]">{student.name}</p>
-                          <p className="text-sm font-medium text-[text-[#4B5A70]]">{formatPhone(student.normalizedPhone)}</p>
-                        </div>
-                      </div>
-                      {stats.limitReached ? <Badge variant="warning">Лимит достигнут</Badge> : <Badge variant={stats.activeFutureBookings > 0 ? 'success' : 'muted'}>{stats.activeFutureBookings > 0 ? 'Есть запись' : 'Без активных'}</Badge>}
-                    </div>
-
-                    <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                      <div>
-                        <p className="text-xs font-bold text-[#667085]">Всего записей</p>
-                        <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{stats.totalBookings}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#667085]">Будущих активных</p>
-                        <p className="mt-1 text-sm font-bold text-[text-[#111827]]">{stats.activeFutureBookings}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#667085]">Последняя запись</p>
-                        <p className="mt-1 text-sm font-bold text-[text-[#111827]]">
-                          {stats.lastBooking ? new Date(stats.lastBooking.createdAt).toLocaleDateString('ru-RU') : 'Нет'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#667085]">Ближайшая запись</p>
-                        <p className="mt-1 text-sm font-bold text-[text-[#111827]]">
-                          {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : 'Нет'}
-                        </p>
-                      </div>
-                    </div>
-                  </DataRow>
-                </Link>
-              ))}
-            </div>
-          )}
-        </Section>
+    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
+      <div className="mb-4">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Ученики</h1>
       </div>
+
+      {/* Search */}
+      <div className="mb-3">
+        <div className="relative">
+          <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Имя или телефон"
+            className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[14px] font-medium text-[#111418] outline-none placeholder:text-[#9EA3A8]"
+          />
+        </div>
+      </div>
+
+      {/* Filter chips */}
+      <div className="mb-4 flex gap-2">
+        {[{ label: 'Все', value: 'all' }, { label: 'С записью', value: 'active' }, { label: 'Без записи', value: 'inactive' }].map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value as typeof filter)}
+            className={`rounded-[10px] border px-3 py-1.5 text-[12px] font-black transition ${filter === f.value ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}
+          >
+            {f.label} · {f.value === 'all' ? rows.length : f.value === 'active' ? rows.filter((r) => r.stats.activeFutureBookings > 0).length : rows.filter((r) => r.stats.activeFutureBookings === 0).length}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      {rows.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+          <p className="font-black text-[#111418]">Ученики не найдены</p>
+          <p className="mt-1 text-sm text-[#9EA3A8]">Измените фильтры</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map(({ student, stats, nextSlot }) => (
+            <Link
+              key={student.id}
+              to={`${ADMIN_BASE_PATH}/students/${student.id}`}
+              className="block rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 transition hover:bg-[#F8FAFC] active:bg-[#F1F2F5]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-black text-[#111418]">{student.name}</p>
+                  <p className="mt-0.5 text-[13px] font-semibold text-[#6F747A]">{formatPhone(student.normalizedPhone)}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  {stats.limitReached ? (
+                    <Badge variant="warning">Лимит</Badge>
+                  ) : (
+                    <Badge variant={stats.activeFutureBookings > 0 ? 'success' : 'muted'}>{stats.activeFutureBookings > 0 ? `Записей: ${stats.activeFutureBookings}` : 'Нет записей'}</Badge>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
+                <div>
+                  <p className="text-[10px] font-bold text-[#9EA3A8]">Всего</p>
+                  <p className="text-[13px] font-black text-[#111418]">{stats.totalBookings}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-[#9EA3A8]">Проведено</p>
+                  <p className="text-[13px] font-black text-[#111418]">{stats.completedBookings}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-[#9EA3A8]">Следующее</p>
+                  <p className="text-[13px] font-black text-[#3156D4]">
+                    {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : '—'}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

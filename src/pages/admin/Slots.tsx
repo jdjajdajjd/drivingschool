@@ -1,62 +1,51 @@
 import { addDays, endOfWeek, isAfter, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
-import { CalendarAdd01Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { useMemo, useState } from 'react'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { StateView } from '../../components/ui/StateView'
-
-import { CompactRow, FilterBar, SmallEmptyState, StickyBottomAction, WarningRow, compactFieldClassName } from '../../components/ui/CompactAdmin'
-import { FormField } from '../../components/ui/FormField'
-import { Input } from '../../components/ui/Input'
-import { PageHeader } from '../../components/ui/PageHeader'
-import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-import { formatDuration, formatInstructorName } from '../../lib/utils'
+import { formatInstructorName } from '../../lib/utils'
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
-import { createBulkSlots, createBulkSlotsConfirmed, createSlot, createSlotConfirmed, deleteSlot, deleteSlotConfirmed, getSlotsBySchool, updateSlotStatus, updateSlotStatusConfirmed } from '../../services/slotService'
+import {
+  createBulkSlotsConfirmed,
+  createSlotConfirmed,
+  getSlotsBySchool,
+  updateSlotStatusConfirmed,
+} from '../../services/slotService'
 import { db } from '../../services/storage'
 import type { LessonType } from '../../types'
-const CalendarPlus2 = createHugeIcon(CalendarAdd01Icon)
-const Search = createHugeIcon(Search01Icon)
 
 type SlotStatusFilter = 'all' | 'available' | 'booked' | 'cancelled'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future'
-type CreateMode = 'single' | 'bulk'
-
-const lessonTypeOptions: Array<{ value: LessonType; label: string }> = [
-  { value: 'driving', label: 'Вождение' },
-  { value: 'main', label: 'Основное' },
-  { value: 'extra', label: 'Дополнительное' },
-  { value: 'practice_ground', label: 'Площадка' },
-  { value: 'city', label: 'Город' },
-  { value: 'exam_route', label: 'Экзамен. маршрут' },
-  { value: 'internal_exam', label: 'Внутренний экзамен' },
-  { value: 'retake', label: 'Пересдача' },
-  { value: 'mistakes', label: 'Отработка' },
-]
-
-function selectClassName() {
-  return compactFieldClassName()
-}
 
 export function AdminSlots() {
   const school = db.schools.all()[0] ?? null
   const { showToast } = useToast()
-  const [mode, setMode] = useState<CreateMode>('bulk')
+  const [createMode, setCreateMode] = useState<'bulk' | 'single'>('bulk')
   const [search, setSearch] = useState('')
   const [date, setDate] = useState('')
   const [branchId, setBranchId] = useState('all')
   const [instructorId, setInstructorId] = useState('all')
-  const [status, setStatus] = useState<SlotStatusFilter>('all')
-  const [period, setPeriod] = useState<PeriodFilter>('future')
-  const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null)
-  const [toggleSlotId, setToggleSlotId] = useState<string | null>(null)
+  const [status] = useState<SlotStatusFilter>('all')
+  const [period] = useState<PeriodFilter>('future')
+  const [toggleId, setToggleId] = useState<string | null>(null)
 
-  const branches = school ? db.branches.bySchool(school.id).filter((item) => item.isActive) : []
-  const instructors = school ? db.instructors.bySchool(school.id).filter((item) => item.isActive) : []
+  const branches = school ? db.branches.bySchool(school.id).filter((b) => b.isActive) : []
+  const instructors = school ? db.instructors.bySchool(school.id).filter((i) => i.isActive) : []
   const defaultDuration = String(school?.defaultLessonDuration ?? 90)
+
+  const [bulkForm, setBulkForm] = useState({
+    branchId: branches[0]?.id ?? '',
+    instructorId: instructors[0]?.id ?? '',
+    dateFrom: '',
+    dateTo: '',
+    weekdays: [1, 2, 3, 4, 5] as number[],
+    windowStart: '09:00',
+    windowEnd: '18:00',
+    duration: defaultDuration,
+    lessonType: 'driving' as LessonType,
+    breakMinutes: '15',
+  })
 
   const [singleForm, setSingleForm] = useState({
     branchId: branches[0]?.id ?? '',
@@ -67,95 +56,36 @@ export function AdminSlots() {
     lessonType: 'driving' as LessonType,
   })
 
-  const [bulkForm, setBulkForm] = useState({
-    branchId: branches[0]?.id ?? '',
-    instructorId: instructors[0]?.id ?? '',
-    dateFrom: '',
-    dateTo: '',
-    weekdays: [1, 2, 3, 4, 5],
-    windowStart: '09:00',
-    windowEnd: '18:00',
-    duration: defaultDuration,
-    lessonType: 'driving' as LessonType,
-    breakMinutes: '15',
-  })
-
   const slots = school ? getSlotsBySchool(school.id) : []
 
-  const filteredSlots = useMemo(() => {
+  const filtered = useMemo(() => {
     const now = new Date()
-    const query = search.trim().toLowerCase()
-
+    const q = search.trim().toLowerCase()
     return slots.filter((entry) => {
       const startsAt = new Date(`${entry.slot.date}T${entry.slot.time}:00`)
-      const matchesSearch = !query
-        ? true
-        : entry.instructor?.name.toLowerCase().includes(query) ||
-          entry.branch?.name.toLowerCase().includes(query) ||
-          entry.student?.name.toLowerCase().includes(query) ||
-          entry.slot.time.includes(query)
-      const matchesDate = date ? entry.slot.date === date : true
-      const matchesBranch = branchId === 'all' ? true : entry.slot.branchId === branchId
-      const matchesInstructor = instructorId === 'all' ? true : entry.slot.instructorId === instructorId
-      const matchesStatus = status === 'all' ? true : entry.slot.status === status
-      const matchesPeriod = (() => {
-        if (period === 'all') return true
+      if (q && !entry.instructor?.name.toLowerCase().includes(q) && !entry.branch?.name.toLowerCase().includes(q) && !entry.slot.time.includes(q)) return false
+      if (date && entry.slot.date !== date) return false
+      if (branchId !== 'all' && entry.slot.branchId !== branchId) return false
+      if (instructorId !== 'all' && entry.slot.instructorId !== instructorId) return false
+      if (status !== 'all' && entry.slot.status !== status) return false
+      if (period !== 'all') {
         if (period === 'today') return isSameDay(startsAt, now)
         if (period === 'tomorrow') return isSameDay(startsAt, addDays(now, 1))
         if (period === 'week') {
-          const weekStart = startOfWeek(now, { weekStartsOn: 1 })
-          const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
-          return !isBefore(startsAt, weekStart) && !isAfter(startsAt, weekEnd)
+          const ws = startOfWeek(now, { weekStartsOn: 1 })
+          const we = endOfWeek(now, { weekStartsOn: 1 })
+          return !isBefore(startsAt, ws) && !isAfter(startsAt, we)
         }
         return !isBefore(startsAt, startOfDay(now))
-      })()
-      return matchesSearch && matchesDate && matchesBranch && matchesInstructor && matchesStatus && matchesPeriod
+      }
+      return true
     })
-  }, [branchId, date, instructorId, period, search, slots, status])
+  }, [slots, search, date, branchId, instructorId, status, period])
 
-  function validateBase(branch: string, instructor: string): boolean {
-    if (!school) return false
-    if (!branch) {
-      showToast('Выберите филиал.', 'error')
-      return false
-    }
-    if (!instructor) {
-      showToast('Выберите инструктора.', 'error')
-      return false
-    }
-    return true
-  }
-
-  async function handleCreateSingle(): Promise<void> {
-    if (!school || !validateBase(singleForm.branchId, singleForm.instructorId)) return
-    let result: ReturnType<typeof createSlot>
+  async function handleBulkCreate() {
+    if (!school || !bulkForm.branchId || !bulkForm.instructorId) { showToast('Заполните все поля', 'error'); return }
     try {
-      result = await createSlotConfirmed({
-        schoolId: school.id,
-        branchId: singleForm.branchId,
-        instructorId: singleForm.instructorId,
-        date: singleForm.date,
-        startTime: singleForm.startTime,
-        duration: Number(singleForm.duration),
-        lessonType: singleForm.lessonType,
-      })
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось создать занятие.', 'error')
-      return
-    }
-
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось создать занятие.', 'error')
-      return
-    }
-    showToast('Занятие добавлено в расписание.', 'success')
-  }
-
-  async function handleCreateBulk(): Promise<void> {
-    if (!school || !validateBase(bulkForm.branchId, bulkForm.instructorId)) return
-    let result: ReturnType<typeof createBulkSlots>
-    try {
-      result = await createBulkSlotsConfirmed({
+      const r = await createBulkSlotsConfirmed({
         schoolId: school.id,
         branchId: bulkForm.branchId,
         instructorId: bulkForm.instructorId,
@@ -168,277 +98,171 @@ export function AdminSlots() {
         lessonType: bulkForm.lessonType,
         breakMinutes: Number(bulkForm.breakMinutes),
       })
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось создать расписание.', 'error')
-      return
-    }
-
-    if (!result.ok || !result.result) {
-      showToast(result.error ?? 'Не удалось создать расписание.', 'error')
-      return
-    }
-
-    const { createdCount, skippedDuplicates, skippedPast } = result.result
-    if (createdCount === 0) {
-      showToast('Новых занятий не создано: все времена уже были заняты или в прошлом.', 'error')
-      return
-    }
-    showToast(`Создано занятий: ${createdCount}. Пропущено дублей: ${skippedDuplicates}. В прошлом: ${skippedPast}.`, 'success')
+      if (!r.ok || !r.result) { showToast(r.error ?? 'Ошибка', 'error'); return }
+      const { createdCount, skippedDuplicates, skippedPast } = r.result
+      showToast(`Создано: ${createdCount}. Дублей: ${skippedDuplicates}. Прошлых: ${skippedPast}.`, 'success')
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
   }
 
-  async function handleDeleteSlot(): Promise<void> {
-    if (!deleteSlotId) return
-    let result: ReturnType<typeof deleteSlot>
+  async function handleSingleCreate() {
+    if (!school || !singleForm.branchId || !singleForm.instructorId || !singleForm.date) { showToast('Заполните все поля', 'error'); return }
     try {
-      result = await deleteSlotConfirmed(deleteSlotId)
-    } catch (error) {
-      setDeleteSlotId(null)
-      showToast(error instanceof Error ? error.message : 'Не удалось удалить занятие.', 'error')
-      return
-    }
-    setDeleteSlotId(null)
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось удалить занятие.', 'error')
-      return
-    }
-    showToast('Занятие удалено.', 'success')
+      const r = await createSlotConfirmed({
+        schoolId: school.id,
+        branchId: singleForm.branchId,
+        instructorId: singleForm.instructorId,
+        date: singleForm.date,
+        startTime: singleForm.startTime,
+        duration: Number(singleForm.duration),
+        lessonType: singleForm.lessonType,
+      })
+      if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
+      showToast('Занятие добавлено', 'success')
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
   }
 
-  async function handleToggleSlot(): Promise<void> {
-    if (!toggleSlotId) return
-    const entry = slots.find((item) => item.slot.id === toggleSlotId)
+  async function handleToggle() {
+    if (!toggleId) return
+    const entry = slots.find((e) => e.slot.id === toggleId)
     if (!entry) return
-    const nextStatus = entry.slot.status === 'cancelled' ? 'available' : 'cancelled'
-    let result: ReturnType<typeof updateSlotStatus>
+    const next = entry.slot.status === 'cancelled' ? 'available' : 'cancelled'
     try {
-      result = await updateSlotStatusConfirmed(toggleSlotId, nextStatus)
-    } catch (error) {
-      setToggleSlotId(null)
-      showToast(error instanceof Error ? error.message : 'Не удалось изменить статус занятия.', 'error')
-      return
-    }
-    setToggleSlotId(null)
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось изменить статус занятия.', 'error')
-      return
-    }
-    showToast(nextStatus === 'cancelled' ? 'Занятие скрыто из записи.' : 'Занятие снова доступно.', 'success')
+      const r = await updateSlotStatusConfirmed(toggleId, next)
+      if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
+      showToast(next === 'cancelled' ? 'Занятие скрыто' : 'Занятие доступно', 'success')
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
+    setToggleId(null)
   }
 
-  if (!school) {
-    return (
-      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-        <StateView kind="error" title="Школа не найдена" description="Проверьте данные школы." />
-      </div>
-    )
-  }
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
 
   return (
-    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
-      <PageHeader
-        eyebrow={school.name}
-        title="Расписание"
-        description="Добавить время и быстро проверить занятия."
-      />
-
-      <div className="mt-3 space-y-3">
-        <Section title="Добавить занятия" description="Филиал, инструктор, даты и время.">
-          <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-[14px] border border-[#D8E0EC] bg-white p-1">
-            <Button size="sm" variant={mode === 'bulk' ? 'primary' : 'ghost'} onClick={() => setMode('bulk')}>
-              Серия занятий
-            </Button>
-            <Button size="sm" variant={mode === 'single' ? 'primary' : 'ghost'} onClick={() => setMode('single')}>
-              Одно занятие
-            </Button>
-          </div>
-
-          {mode === 'bulk' ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-                <FormField label="Филиал">
-                  <select value={bulkForm.branchId} onChange={(event) => setBulkForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
-                    <option value="">Выберите филиал</option>
-                    {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-                  </select>
-                </FormField>
-                <FormField label="Инструктор">
-                  <select value={bulkForm.instructorId} onChange={(event) => setBulkForm((current) => ({ ...current, instructorId: event.target.value }))} className={selectClassName()}>
-                    <option value="">Выберите инструктора</option>
-                    {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
-                  </select>
-                </FormField>
-                <Input label="Дата от" type="date" value={bulkForm.dateFrom} onChange={(event) => setBulkForm((current) => ({ ...current, dateFrom: event.target.value }))} />
-                <Input label="Дата до" type="date" value={bulkForm.dateTo} onChange={(event) => setBulkForm((current) => ({ ...current, dateTo: event.target.value }))} />
-                <Input label="Начало дня" type="time" value={bulkForm.windowStart} onChange={(event) => setBulkForm((current) => ({ ...current, windowStart: event.target.value }))} />
-                <Input label="Конец дня" type="time" value={bulkForm.windowEnd} onChange={(event) => setBulkForm((current) => ({ ...current, windowEnd: event.target.value }))} />
-                <FormField label="Тип занятия">
-                  <select value={bulkForm.lessonType} onChange={(event) => setBulkForm((current) => ({ ...current, lessonType: event.target.value as LessonType }))} className={selectClassName()}>
-                    {lessonTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                </FormField>
-                <Input label="Длительность" type="number" step={15} helperText={formatDuration(Number(bulkForm.duration || defaultDuration))} value={bulkForm.duration} onChange={(event) => setBulkForm((current) => ({ ...current, duration: event.target.value }))} />
-                <Input label="Перерыв, минут" type="number" value={bulkForm.breakMinutes} onChange={(event) => setBulkForm((current) => ({ ...current, breakMinutes: event.target.value }))} />
-              </div>
-
-              <FormField label="Дни недели">
-                <div className="grid grid-cols-7 gap-1">
-                  {[
-                    { label: 'Пн', value: 1 },
-                    { label: 'Вт', value: 2 },
-                    { label: 'Ср', value: 3 },
-                    { label: 'Чт', value: 4 },
-                    { label: 'Пт', value: 5 },
-                    { label: 'Сб', value: 6 },
-                    { label: 'Вс', value: 0 },
-                  ].map((day) => {
-                    const active = bulkForm.weekdays.includes(day.value)
-                    return (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() =>
-                          setBulkForm((current) => ({
-                            ...current,
-                            weekdays: active ? current.weekdays.filter((value) => value !== day.value) : [...current.weekdays, day.value],
-                          }))
-                        }
-                        className={`rounded-[10px] border px-1.5 py-2 text-[13px] font-bold transition ${
-                          active ? 'border-[#2436D9] bg-[#EEF2FF] text-[#2436D9]' : 'border-[#D8E0EC] bg-white text-[#4B5A70]'
-                        }`}
-                      >
-                        {day.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </FormField>
-
-              <WarningRow>
-                Проверьте: {branches.find((branch) => branch.id === bulkForm.branchId)?.name ?? 'филиал не выбран'}, {instructors.find((instructor) => instructor.id === bulkForm.instructorId)?.name ?? 'инструктор не выбран'}, {bulkForm.dateFrom || 'дата от'} — {bulkForm.dateTo || 'дата до'}, {bulkForm.windowStart}-{bulkForm.windowEnd}. Дубли и прошлые занятия пропустим.
-              </WarningRow>
-
-              <StickyBottomAction>
-                <Button size="lg" className="w-full md:w-auto" onClick={() => void handleCreateBulk()}>
-                  <CalendarPlus2 size={18} />
-                  Создать серию занятий
-                </Button>
-              </StickyBottomAction>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
-              <FormField label="Филиал">
-                <select value={singleForm.branchId} onChange={(event) => setSingleForm((current) => ({ ...current, branchId: event.target.value }))} className={selectClassName()}>
-                  <option value="">Выберите филиал</option>
-                  {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Инструктор">
-                <select value={singleForm.instructorId} onChange={(event) => setSingleForm((current) => ({ ...current, instructorId: event.target.value }))} className={selectClassName()}>
-                  <option value="">Выберите инструктора</option>
-                  {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
-                </select>
-              </FormField>
-              <Input label="Дата" type="date" value={singleForm.date} onChange={(event) => setSingleForm((current) => ({ ...current, date: event.target.value }))} />
-              <Input label="Время" type="time" value={singleForm.startTime} onChange={(event) => setSingleForm((current) => ({ ...current, startTime: event.target.value }))} />
-              <FormField label="Тип занятия">
-                <select value={singleForm.lessonType} onChange={(event) => setSingleForm((current) => ({ ...current, lessonType: event.target.value as LessonType }))} className={selectClassName()}>
-                  {lessonTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </FormField>
-              <Input label="Длительность" type="number" step={15} helperText={formatDuration(Number(singleForm.duration || defaultDuration))} value={singleForm.duration} onChange={(event) => setSingleForm((current) => ({ ...current, duration: event.target.value }))} />
-              <div className="md:col-span-2 xl:col-span-5">
-                <StickyBottomAction>
-                  <Button size="lg" className="w-full md:w-auto" onClick={() => void handleCreateSingle()}>
-                    <CalendarPlus2 size={18} />
-                    Добавить занятие
-                  </Button>
-                </StickyBottomAction>
-              </div>
-            </div>
-          )}
-        </Section>
-
-        <Section title="Список занятий" description={`Найдено ${filteredSlots.length} занятий.`}>
-          <FilterBar>
-          <div className="relative col-span-2 md:col-span-2">
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Поиск" className={compactFieldClassName('pl-9')} />
-          </div>
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className={compactFieldClassName('px-2 text-[13px]')} />
-          <select value={status} onChange={(event) => setStatus(event.target.value as SlotStatusFilter)} className={compactFieldClassName('px-2 text-[13px]')}>
-            <option value="all">Статус</option>
-            <option value="available">Свободные</option>
-            <option value="booked">Занятые</option>
-            <option value="cancelled">Скрытые</option>
-          </select>
-          <div className="col-span-4 grid gap-2 border-t border-[#E5EAF1] pt-2 md:col-span-6 md:grid-cols-3 xl:grid-cols-4">
-            <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className={selectClassName()}>
-              <option value="all">Все филиалы</option>
-              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-            </select>
-            <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className={selectClassName()}>
-              <option value="all">Все инструкторы</option>
-              {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
-            </select>
-            <select value={period} onChange={(event) => setPeriod(event.target.value as PeriodFilter)} className={selectClassName()}>
-              <option value="all">Все периоды</option>
-              <option value="today">Сегодня</option>
-              <option value="tomorrow">Завтра</option>
-              <option value="week">Неделя</option>
-              <option value="future">Будущие</option>
-            </select>
-          </div>
-          </FilterBar>
-
-
-          <div className="mt-3">
-            {filteredSlots.length === 0 ? (
-              <SmallEmptyState title="Занятия не найдены" description="Измените фильтры или создайте занятия выше." />
-            ) : (
-              <div className="overflow-hidden rounded-[14px] border border-[#D8E0EC]">
-                {filteredSlots.map((entry) => (
-                  <CompactRow key={entry.slot.id}>
-                    <div className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2">
-                      <div>
-                        <p className="text-[12px] font-black text-[#111827]">{formatTimeRange(entry.slot)}</p>
-                        <p className="text-[11px] font-bold text-[#667085]">{formatHumanDate(entry.slot.date, false)}</p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-[14px] font-black text-[#111827]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор не найден'}</p>
-                        <p className="truncate text-[12px] font-semibold text-[#667085]">{entry.branch?.name ?? 'Филиал не найден'} · {entry.student?.name ?? 'Нет записи'}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <StatusBadge status={entry.slot.status} kind="slot" />
-                        <button className="text-[12px] font-black text-[#2436D9]" disabled={entry.slot.status === 'booked'} onClick={() => setToggleSlotId(entry.slot.id)}>
-                          {entry.slot.status === 'cancelled' ? 'Вернуть' : 'Скрыть'}
-                        </button>
-                      </div>
-                    </div>
-                  </CompactRow>
-                ))}
-              </div>
-            )}
-          </div>
-        </Section>
+    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
+      <div className="mb-4">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Расписание</h1>
       </div>
 
-      <ConfirmDialog
-        open={Boolean(deleteSlotId)}
-        title="Удалить занятие"
-        description="Удалить можно только свободное занятие. Если занятие занято учеником, сначала обработайте запись."
-        confirmLabel="Удалить"
-        onClose={() => setDeleteSlotId(null)}
-        onConfirm={() => void handleDeleteSlot()}
-        danger
-      />
+      {/* Create form */}
+      <div className="mb-5 space-y-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
+        {/* Mode toggle */}
+        <div className="flex gap-1 rounded-[12px] border border-[rgba(0,0,0,0.06)] p-0.5">
+          <button onClick={() => setCreateMode('bulk')} className={`flex-1 rounded-[10px] py-1.5 text-[12px] font-black transition ${createMode === 'bulk' ? 'bg-[#111418] text-white' : 'text-[#6F747A]'}`}>Серия</button>
+          <button onClick={() => setCreateMode('single')} className={`flex-1 rounded-[10px] py-1.5 text-[12px] font-black transition ${createMode === 'single' ? 'bg-[#111418] text-white' : 'text-[#6F747A]'}`}>Одно</button>
+        </div>
+
+        {createMode === 'bulk' ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <select value={bulkForm.branchId} onChange={(e) => setBulkForm((f) => ({ ...f, branchId: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
+                <option value="">Филиал</option>
+                {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              <select value={bulkForm.instructorId} onChange={(e) => setBulkForm((f) => ({ ...f, instructorId: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
+                <option value="">Инструктор</option>
+                {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+              <input type="date" value={bulkForm.dateFrom} onChange={(e) => setBulkForm((f) => ({ ...f, dateFrom: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none" placeholder="От" />
+              <input type="date" value={bulkForm.dateTo} onChange={(e) => setBulkForm((f) => ({ ...f, dateTo: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none" placeholder="До" />
+              <input type="time" value={bulkForm.windowStart} onChange={(e) => setBulkForm((f) => ({ ...f, windowStart: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none" />
+              <input type="time" value={bulkForm.windowEnd} onChange={(e) => setBulkForm((f) => ({ ...f, windowEnd: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none" />
+            </div>
+
+            {/* Weekdays */}
+            <div className="flex gap-1">
+              {[{ label: 'Пн', v: 1 }, { label: 'Вт', v: 2 }, { label: 'Ср', v: 3 }, { label: 'Чт', v: 4 }, { label: 'Пт', v: 5 }, { label: 'Сб', v: 6 }, { label: 'Вс', v: 0 }].map((d) => {
+                const active = bulkForm.weekdays.includes(d.v)
+                return (
+                  <button key={d.v} type="button" onClick={() => setBulkForm((f) => ({ ...f, weekdays: active ? f.weekdays.filter((x) => x !== d.v) : [...f.weekdays, d.v] }))}
+                    className={`flex-1 rounded-[10px] border py-2 text-[11px] font-black transition ${active ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
+                    {d.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={() => void handleBulkCreate()} className="flex-1">Создать серию</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
+              <select value={singleForm.branchId} onChange={(e) => setSingleForm((f) => ({ ...f, branchId: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
+                <option value="">Филиал</option>
+                {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              <select value={singleForm.instructorId} onChange={(e) => setSingleForm((f) => ({ ...f, instructorId: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
+                <option value="">Инструктор</option>
+                {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+              <input type="date" value={singleForm.date} onChange={(e) => setSingleForm((f) => ({ ...f, date: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none" />
+              <input type="time" value={singleForm.startTime} onChange={(e) => setSingleForm((f) => ({ ...f, startTime: e.target.value }))} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none" />
+            </div>
+            <Button onClick={() => void handleSingleCreate()} className="w-full">Добавить занятие</Button>
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="mb-3 space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[14px] font-medium text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#111418]" />
+          </div>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-[130px] rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none">
+            <option value="all">Все филиалы</option>
+            {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none">
+            <option value="all">Все инструкторы</option>
+            {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+          <p className="font-black text-[#111418]">Занятий не найдено</p>
+          <p className="mt-1 text-sm text-[#9EA3A8]">Создайте занятия выше</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((entry) => (
+            <div key={entry.slot.id} className="flex items-center gap-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
+              <div className="shrink-0 text-center">
+                <p className="text-[13px] font-black text-[#111418]">{formatTimeRange(entry.slot)}</p>
+                <p className="text-[11px] font-semibold text-[#9EA3A8]">{formatHumanDate(entry.slot.date, false)}</p>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-black text-[#111418]">{entry.instructor ? formatInstructorName(entry.instructor.name) : '—'}</p>
+                <p className="truncate text-[12px] font-semibold text-[#6F747A]">{entry.branch?.name ?? '—'}</p>
+              </div>
+              <StatusBadge status={entry.slot.status} kind="slot" />
+              {entry.slot.status !== 'booked' && (
+                <button onClick={() => setToggleId(entry.slot.id)} className="shrink-0 text-[11px] font-bold text-[#3156D4]">
+                  {entry.slot.status === 'cancelled' ? 'Вернуть' : 'Скрыть'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <ConfirmDialog
-        open={Boolean(toggleSlotId)}
+        open={Boolean(toggleId)}
         title="Изменить доступность"
-        description="Свободное занятие можно скрыть из записи, а скрытое - вернуть в расписание."
+        description="Свободное занятие можно скрыть или вернуть."
         confirmLabel="Подтвердить"
-        onClose={() => setToggleSlotId(null)}
-        onConfirm={() => void handleToggleSlot()}
+        onClose={() => setToggleId(null)}
+        onConfirm={() => void handleToggle()}
       />
     </div>
   )
