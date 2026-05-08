@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Login03Icon, Refresh03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Refresh03Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { ThemeToggle } from '../components/ui/ThemeProvider'
@@ -48,7 +48,6 @@ const CalendarPlus = createHugeIcon(CalendarAdd01Icon)
 const Car = createHugeIcon(Car03Icon)
 const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
 const Clock3 = createHugeIcon(Clock01Icon)
-const Login = createHugeIcon(Login03Icon)
 const RefreshCw = createHugeIcon(Refresh03Icon)
 
 const ui = {
@@ -697,37 +696,6 @@ export function BookingFlowPage() {
   }
 
   if (loading) return <div className="shell" />
-  if (school) {
-    return (
-      <div className="min-h-dvh overflow-x-hidden" style={{ background: 'var(--page-bg)', color: ui.text }}>
-        <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col justify-center px-4 pb-8 pt-5">
-          <section
-            className="rounded-[28px] p-5 text-center"
-            style={{ background: ui.surface, border: `1px solid ${ui.border}`, boxShadow: ui.shadowCard }}
-          >
-            <div
-              className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ background: ui.accentSoft, color: ui.accent }}
-            >
-              <Login size={24} />
-            </div>
-            <h1 className="mt-5 text-[30px] font-black leading-[1.05] tracking-[-0.03em]" style={{ color: ui.text }}>
-              Запись только из личного кабинета
-            </h1>
-            <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: ui.textMuted }}>
-              Войдите как зарегистрированный ученик. После входа выберите дату, инструктора и свободное время.
-            </p>
-            <Button size="lg" className="mt-5 w-full rounded-[18px]" onClick={() => navigate(`/school/${school.slug}/login`)}>
-              Войти в кабинет
-            </Button>
-            <Button variant="secondary" className="mt-3 w-full rounded-[18px]" onClick={() => navigate(`/school/${school.slug}/register`)}>
-              Зарегистрироваться
-            </Button>
-          </section>
-        </main>
-      </div>
-    )
-  }
   if (!school) {
     return (
       <div className="shell flex items-center justify-center px-4">

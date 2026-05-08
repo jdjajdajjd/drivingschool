@@ -89,7 +89,7 @@ export function LandingPage() {
           transition={{ duration: 0.3, delay: 0.05 }}
         >
           <h1 className="t-hero" style={{ maxWidth: 520 }}>
-            Онлайн-запись<br />для автошкол
+            Онлайн-запись<br /> для автошкол
           </h1>
           <p className="t-body mt-4" style={{ maxWidth: 470 }}>
             Ученики выбирают свободное время сами. Администратор видит расписание, инструкторов, записи и учеников в кабинете автошколы.

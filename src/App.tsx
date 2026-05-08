@@ -89,6 +89,7 @@ function App() {
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
           <Route element={<ProtectedAccess role="admin" mode="workspace" />}>
             <Route path={ADMIN_BASE_PATH} element={<AdminLayout />}>
+              <Route path="today" element={<Navigate to={ADMIN_BASE_PATH} replace />} />
               <Route index element={<AdminDashboard />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="slots" element={<AdminSlots />} />

@@ -265,6 +265,9 @@ export default function StudentRegisterPage() {
             <AnimatePresence mode="wait">
               {step === 'lastName' ? (
                 <motion.div key="lastName" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--accent)]">
+                    <UserRound size={14} /> Регистрация ученика
+                  </div>
                   <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Введите фамилию</h1>
                   <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Начнём с короткой регистрации ученика. Можно использовать только буквы, пробел и дефис.</p>
                   <div className="mt-6">

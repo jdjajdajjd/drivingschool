@@ -198,8 +198,8 @@ export function AdminBookings() {
       {/* List */}
       {filtered.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-          <p className="font-black text-[#111418]">Записей не найдено</p>
-          <p className="mt-1 text-sm text-[#9EA3A8]">Измените фильтры</p>
+          <p className="font-black text-[#111418]">Записей пока нет</p>
+          <p className="mt-1 text-sm text-[#9EA3A8]">Когда ученики запишутся, они появятся здесь</p>
         </div>
       ) : (
         <div className="space-y-2">
