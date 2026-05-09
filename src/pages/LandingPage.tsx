@@ -52,7 +52,7 @@ export function LandingPage() {
               </svg>
             </div>
             <div>
-              <p className="font-black tracking-tight" style={{ fontSize: 17, color: '#111418' }}>vroom</p>
+              <p className="font-black tracking-tight" style={{ fontSize: 17, color: '#050609' }}>vroom</p>
               <p className="font-semibold" style={{ fontSize: 12, color: '#9EA3A8' }}>Онлайн-запись на вождение</p>
             </div>
           </div>
@@ -89,9 +89,9 @@ export function LandingPage() {
           {BENEFITS.map(({ icon: Icon, text }) => (
             <div key={text} className="flex items-start gap-3 rounded-[18px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
               <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#EEF2FF]">
-                <Icon size={16} className="text-[#4455C4]" />
+                <Icon size={16} className="text-[#1F2BD8]" />
               </div>
-              <p className="text-[14px] font-semibold leading-5 text-[#111418]">{text}</p>
+              <p className="text-[14px] font-semibold leading-5 text-[#050609]">{text}</p>
             </div>
           ))}
         </motion.div>
@@ -106,7 +106,7 @@ export function LandingPage() {
           <div className="mb-4 flex items-center gap-4">
             <div
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
-              style={{ background: '#4455C4', boxShadow: '0 12px 32px rgba(68,85,196,0.25)' }}
+              style={{ background: '#1F2BD8', boxShadow: '0 12px 32px rgba(68,85,196,0.25)' }}
             >
               <Building size={26} className="text-white" />
             </div>
@@ -138,7 +138,7 @@ export function LandingPage() {
             onClick={() => navigate(WORKSPACE_ADMIN_LOGIN_PATH)}
           >
             <div>
-              <p className="text-[15px] font-black text-[#111418]">Попробовать админку</p>
+              <p className="text-[15px] font-black text-[#050609]">Попробовать админку</p>
               <p className="mt-0.5 text-[13px] font-semibold text-[#9EA3A8]">Настройте школу и посмотрите кабинет директора</p>
             </div>
             <ArrowRight size={18} className="shrink-0 text-[#9EA3A8]" />

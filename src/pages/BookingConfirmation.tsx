@@ -207,14 +207,14 @@ export function BookingConfirmation() {
         </div>
 
         {!isCancelled ? (
-          <div className="rounded-2xl border rgba(246,184,77,0.20) rgba(196,147,90,0.12) p-4 ">
+          <div className="rounded-2xl border border-[rgba(31,43,216,0.20)] bg-[rgba(31,43,216,0.08)] p-4 ">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl white #9B7034 ">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1F2BD8] ">
                 <UserRound size={18} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-[22px] #111418">Создать кабинет?</p>
-                <p className="mt-1 text-[13px] font-medium leading-5 #6F747A">Эта запись появится в вашем кабинете, а следующая запись будет быстрее.</p>
+                <p className="text-[15px] font-semibold leading-[22px] text-[#050609]">Создать кабинет?</p>
+                <p className="mt-1 text-[13px] font-medium leading-5 text-[#6F747A]">Эта запись появится в вашем кабинете, а следующая запись будет быстрее.</p>
               </div>
             </div>
             <Button className="mt-4 w-full" variant="secondary" onClick={createCabinetFromBooking}>Создать кабинет</Button>

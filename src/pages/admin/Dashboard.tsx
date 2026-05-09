@@ -84,7 +84,7 @@ export function AdminDashboard() {
     return (
       <div className="px-3 py-4 md:px-6 md:py-5">
         <div className="rounded-[14px] border border-[#D8E0EC] bg-white px-4 py-8 text-center">
-          <p className="font-black text-[#111418]">Данные школы не загружены</p>
+          <p className="font-black text-[#050609]">Данные школы не загружены</p>
           <p className="mt-1 text-sm text-[#6F747A]">Проверьте подключение.</p>
         </div>
       </div>
@@ -99,7 +99,7 @@ export function AdminDashboard() {
       {/* Header */}
       <div className="mb-4">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Сегодня</h1>
+        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#050609] md:text-[26px]">Сегодня</h1>
       </div>
 
       {/* Stat strip */}
@@ -108,28 +108,28 @@ export function AdminDashboard() {
           onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}
           className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
         >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{data.todayBookings.length}</p>
+          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#050609]">{data.todayBookings.length}</p>
           <p className="text-[11px] font-semibold text-[#6F747A]">занятий сегодня</p>
         </button>
         <button
           onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}
           className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
         >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{data.freeSlots7d.length}</p>
+          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#050609]">{data.freeSlots7d.length}</p>
           <p className="text-[11px] font-semibold text-[#6F747A]">свободных окон</p>
         </button>
         <button
           onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)}
           className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
         >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{activeInstructors}</p>
+          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#050609]">{activeInstructors}</p>
           <p className="text-[11px] font-semibold text-[#6F747A]">инструкторов</p>
         </button>
         <button
           onClick={() => navigate(`${ADMIN_BASE_PATH}/branches`)}
           className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
         >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{data.branches.filter((b) => b.isActive).length}</p>
+          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#050609]">{data.branches.filter((b) => b.isActive).length}</p>
           <p className="text-[11px] font-semibold text-[#6F747A]">филиалов</p>
         </button>
       </div>
@@ -138,7 +138,7 @@ export function AdminDashboard() {
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}
-          className="flex items-center gap-2 rounded-[14px] bg-[#111418] px-4 py-3 text-[13px] font-black text-white transition active:scale-[0.97]"
+          className="flex items-center gap-2 rounded-[14px] bg-[#050609] px-4 py-3 text-[13px] font-black text-white transition active:scale-[0.97]"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -147,7 +147,7 @@ export function AdminDashboard() {
         </button>
         <button
           onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}
-          className="flex items-center gap-2 rounded-[14px] border border-[rgba(0,0,0,0.08)] bg-white px-4 py-3 text-[13px] font-black text-[#111418] transition active:scale-[0.97]"
+          className="flex items-center gap-2 rounded-[14px] border border-[rgba(0,0,0,0.08)] bg-white px-4 py-3 text-[13px] font-black text-[#050609] transition active:scale-[0.97]"
         >
           Все записи
         </button>
@@ -172,7 +172,7 @@ export function AdminDashboard() {
                 <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-[7px] border text-[11px] font-black ${item.done ? 'border-[#15803D] bg-[#F0FDF4] text-[#15803D]' : 'border-[#D0D5DD] bg-white text-transparent'}`}>
                   {item.done ? '✓' : ''}
                 </span>
-                <span className={`flex-1 text-[14px] font-black ${item.done ? 'text-[#111418]' : 'text-[#92400E]'}`}>{item.label}</span>
+                <span className={`flex-1 text-[14px] font-black ${item.done ? 'text-[#050609]' : 'text-[#92400E]'}`}>{item.label}</span>
                 <span className="text-[12px] font-semibold text-[#9EA3A8]">{item.action}</span>
               </button>
             ))}
@@ -183,10 +183,10 @@ export function AdminDashboard() {
       {/* Upcoming lessons */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#111418]">Ближайшие занятия</h2>
+          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#050609]">Ближайшие занятия</h2>
           <button
             onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}
-            className="text-[12px] font-semibold text-[#3156D4]"
+            className="text-[12px] font-semibold text-[#1F2BD8]"
           >
             Все →
           </button>
@@ -194,7 +194,7 @@ export function AdminDashboard() {
 
         {data.upcoming.length === 0 ? (
           <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-            <p className="font-black text-[#111418]">Занятий пока нет</p>
+            <p className="font-black text-[#050609]">Занятий пока нет</p>
             <p className="mt-1 text-sm text-[#9EA3A8]">Добавьте свободное время ученикам</p>
           </div>
         ) : (
@@ -206,15 +206,15 @@ export function AdminDashboard() {
                 className="flex items-center gap-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 transition hover:bg-[#F8FAFC] active:bg-[#F1F2F5]"
               >
                 <div className="shrink-0 text-center">
-                  <p className="text-[12px] font-black text-[#111418]">
+                  <p className="text-[12px] font-black text-[#050609]">
                     {entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMM', { locale: ru }) : '—'}
                   </p>
-                  <p className="text-[11px] font-semibold text-[#3156D4]">
+                  <p className="text-[11px] font-semibold text-[#1F2BD8]">
                     {entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'HH:mm', { locale: ru }) : '—'}
                   </p>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-black text-[#111418]">{entry.booking.studentName}</p>
+                  <p className="truncate text-[14px] font-black text-[#050609]">{entry.booking.studentName}</p>
                   <p className="truncate text-[12px] font-semibold text-[#6F747A]">
                     {entry.instructor?.name ?? 'Инструктор'} · {entry.branch?.name ?? 'Филиал'}
                   </p>

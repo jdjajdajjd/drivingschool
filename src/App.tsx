@@ -59,7 +59,7 @@ function App() {
   }, [])
 
   if (!isReady) {
-    return <div className="min-h-screen" style={{ background: '#F2F3F4' }} />
+    return <div className="min-h-screen" style={{ background: '#F5F6F8' }} />
   }
 
   return (

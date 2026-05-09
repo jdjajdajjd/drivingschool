@@ -53,8 +53,8 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
       <textarea
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-[15px] font-medium text-[#111418] placeholder:text-[#9EA3A8] transition-all duration-200 outline-none',
-          'focus:border-[#2436D9] focus:shadow-[0_0_0_3px_rgba(36,54,217,0.14)]',
+          'w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-[15px] font-medium text-[#050609] placeholder:text-[#9EA3A8] transition-all duration-200 outline-none',
+          'focus:border-[#1F2BD8] focus:shadow-[0_0_0_3px_rgba(36,54,217,0.14)]',
           error && '!border-[#E5534B] focus:shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
           className,
         )}

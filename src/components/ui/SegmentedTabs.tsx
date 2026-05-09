@@ -33,8 +33,8 @@ export function SegmentedTabs<T extends string>({
             className={cn(
               'min-h-9 rounded-full px-4 text-[13px] font-bold transition-all duration-150 active:scale-[0.97]',
               active
-                ? 'bg-white text-[#111418] shadow-[0_8px_20px_rgba(0,0,0,0.08)]'
-                : 'text-[#6F747A] hover:text-[#111418]',
+                ? 'bg-white text-[#050609] shadow-[0_8px_20px_rgba(0,0,0,0.08)]'
+                : 'text-[#6F747A] hover:text-[#050609]',
             )}
           >
             {tab.label}

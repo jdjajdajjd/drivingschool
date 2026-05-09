@@ -32,13 +32,13 @@ export function AdminLayout() {
     }
   }, [])
 
-  if (!ready) return <div className="min-h-screen" style={{ background: '#F2F3F4' }} />
+  if (!ready) return <div className="min-h-screen" style={{ background: 'var(--page-bg)' }} />
 
   const school = db.schools.all()[0]
   const publicPath = school ? `/school/${school.slug}` : '/'
 
   return (
-    <div className="min-h-screen" style={{ background: '#F2F3F4' }}>
+    <div className="min-h-screen" style={{ background: 'var(--page-bg)' }}>
       {/* Mobile top bar */}
       <header
         className="sticky top-0 z-20 flex items-center justify-between border-b md:hidden"
@@ -49,16 +49,16 @@ export function AdminLayout() {
         }}
       >
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#111418]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1F2BD8]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
               <path d="M5 17h14M5 17l3-8h8l3 8M9 9V6m6 3V6M4 17h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <span className="text-sm font-black text-[#111418]">vroom</span>
+          <span className="text-sm font-black text-[#050609]">vroom</span>
         </div>
         <button
           onClick={() => { if (school) window.location.href = publicPath }}
-          className="mr-3 flex items-center gap-1.5 text-[12px] font-black text-[#6F747A] hover:text-[#111418]"
+          className="mr-3 flex items-center gap-1.5 text-[12px] font-black text-[#6F747A] hover:text-[#050609]"
         >
           <ExternalLink size={13} />
           Страница
@@ -86,7 +86,7 @@ export function AdminLayout() {
       >
         <a
           href={publicPath}
-          className="mt-auto flex items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-bold text-[#6F747A] transition hover:bg-[rgba(0,0,0,0.03)] hover:text-[#111418]"
+          className="mt-auto flex items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-bold text-[#6F747A] transition hover:bg-[rgba(0,0,0,0.03)] hover:text-[#050609]"
         >
           <ExternalLink size={14} />
           Страница школы

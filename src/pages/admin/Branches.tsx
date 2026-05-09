@@ -9,7 +9,7 @@ import { db } from '../../services/storage'
 
 const INIT = { name: '', address: '', phone: '', isActive: true }
 function fieldCls() {
-  return 'h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium text-[#111418] outline-none focus:border-[#111418]'
+  return 'h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium text-[#050609] outline-none focus:border-[#050609]'
 }
 
 export function AdminBranches() {
@@ -70,7 +70,7 @@ export function AdminBranches() {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Филиалы</h1>
+          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#050609] md:text-[26px]">Филиалы</h1>
         </div>
         <Button onClick={openCreate}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -80,7 +80,7 @@ export function AdminBranches() {
 
       {rows.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-          <p className="font-black text-[#111418]">Филиалов пока нет</p>
+          <p className="font-black text-[#050609]">Филиалов пока нет</p>
           <p className="mt-1 text-sm text-[#9EA3A8]">Создайте первый филиал</p>
         </div>
       ) : (
@@ -89,19 +89,19 @@ export function AdminBranches() {
             <div key={b.id} className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-black text-[#111418]">{b.name}</p>
+                  <p className="truncate text-[15px] font-black text-[#050609]">{b.name}</p>
                   <p className="truncate text-[12px] font-semibold text-[#6F747A]">{b.address || 'Адрес не указан'}</p>
                   {b.phone && <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">{b.phone}</p>}
                 </div>
                 <Badge variant={b.isActive ? 'success' : 'muted'}>{b.isActive ? 'Активен' : 'Выключен'}</Badge>
               </div>
               <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Инстр.</p><p className="text-[13px] font-black text-[#111418]">{instructorCount}</p></div>
-                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p><p className="text-[13px] font-black text-[#111418]">{futureBookings}</p></div>
-                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p><p className="text-[13px] font-black text-[#3156D4]">{freeSlots7d}</p></div>
+                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Инстр.</p><p className="text-[13px] font-black text-[#050609]">{instructorCount}</p></div>
+                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p><p className="text-[13px] font-black text-[#050609]">{futureBookings}</p></div>
+                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p><p className="text-[13px] font-black text-[#1F2BD8]">{freeSlots7d}</p></div>
               </div>
               <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <button onClick={() => openEdit(b)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5]">Редактировать</button>
+                <button onClick={() => openEdit(b)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#050609] transition hover:bg-[#F1F2F5]">Редактировать</button>
                 <button onClick={() => setDeleteId(b.id)} className="flex-1 rounded-[10px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-1.5 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2]">Выключить</button>
               </div>
             </div>

@@ -102,8 +102,8 @@ export function SuperAdminOverview() {
                 <DataRow key={item.school.id}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <p className="text-sm font-bold #111418">{item.school.name}</p>
-                      <p className="mt-1 text-sm #6F747A">
+                      <p className="text-sm font-bold text-[#050609]">{item.school.name}</p>
+                      <p className="mt-1 text-sm text-[#6F747A]">
                         /{item.school.slug} · {formatPrice(item.billing.totalMonthlyPrice)}/мес · модулей: {item.enabledModules}
                       </p>
                     </div>

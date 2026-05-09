@@ -10,7 +10,7 @@ export function SuccessStateBlock({ title, subtitle, children }: { title: string
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#15803D] ">
         <CheckCircle2 size={26} />
       </div>
-      <h1 className="mt-4 font-sans text-[28px] font-bold leading-[34px] text-[#111418]">{title}</h1>
+      <h1 className="mt-4 font-sans text-[28px] font-bold leading-[34px] text-[#050609]">{title}</h1>
       {subtitle ? <p className="mx-auto mt-2 max-w-sm text-[15px] leading-[22px] text-[#6F747A]">{subtitle}</p> : null}
       {children ? <div className="mt-5">{children}</div> : null}
     </div>

@@ -10,10 +10,10 @@ export default {
       },
       colors: {
         // Premium monochrome palette
-        bg: '#F2F3F4',
+        bg: '#F5F6F8',
         surface: '#FFFFFF',
         'surface-soft': '#F7F8F9',
-        ink: '#111418',
+        ink: '#050609',
         dark: '#171B20',
         'dark-soft': '#20252B',
 
@@ -34,7 +34,7 @@ export default {
         accent: {
           DEFAULT: '#F6B84D',
           soft: '#FFF1D2',
-          dark: '#D4900A',
+          dark: '#1F2BD8',
         },
 
         // Status cards
@@ -44,12 +44,12 @@ export default {
 
         // Legacy warm tokens (kept for compatibility)
         warm: {
-          base: '#F2F3F4',
+          base: '#F5F6F8',
           surface: '#FFFFFF',
           muted: '#F7F8F9',
           border: 'rgba(0,0,0,0.06)',
           'border-hover': 'rgba(0,0,0,0.10)',
-          main: '#111418',
+          main: '#050609',
           secondary: '#6F747A',
           muted2: '#9EA3A8',
         },

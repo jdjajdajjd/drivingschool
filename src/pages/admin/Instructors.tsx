@@ -21,7 +21,7 @@ const INIT = {
 }
 
 function fieldCls() {
-  return 'h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium text-[#111418] outline-none focus:border-[#111418]'
+  return 'h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium text-[#050609] outline-none focus:border-[#050609]'
 }
 
 export function AdminInstructors() {
@@ -102,7 +102,7 @@ export function AdminInstructors() {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Инструкторы</h1>
+          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#050609] md:text-[26px]">Инструкторы</h1>
         </div>
         <Button onClick={openCreate}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -112,7 +112,7 @@ export function AdminInstructors() {
 
       {rows.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-          <p className="font-black text-[#111418]">Инструкторов пока нет</p>
+          <p className="font-black text-[#050609]">Инструкторов пока нет</p>
           <p className="mt-1 text-sm text-[#9EA3A8]">Создайте первого инструктора</p>
         </div>
       ) : (
@@ -122,13 +122,13 @@ export function AdminInstructors() {
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[#F1F2F5]">
                   {inst.avatarInitials && (
-                    <div className="flex h-full w-full items-center justify-center text-[14px] font-black text-white" style={{ backgroundColor: inst.avatarColor ?? '#3156D4' }}>
+                    <div className="flex h-full w-full items-center justify-center text-[14px] font-black text-white" style={{ backgroundColor: inst.avatarColor ?? '#1F2BD8' }}>
                       {inst.avatarInitials}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-black text-[#111418]">{inst.name}</p>
+                  <p className="truncate text-[15px] font-black text-[#050609]">{inst.name}</p>
                   <p className="truncate text-[12px] font-semibold text-[#6F747A]">
                     {branches.find((b) => b.id === inst.branchId)?.name ?? 'Филиал'} · {inst.car || 'Машина не указана'}
                   </p>
@@ -138,15 +138,15 @@ export function AdminInstructors() {
               <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
                 <div>
                   <p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p>
-                  <p className="text-[13px] font-black text-[#111418]">{upcoming}</p>
+                  <p className="text-[13px] font-black text-[#050609]">{upcoming}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p>
-                  <p className="text-[13px] font-black text-[#3156D4]">{freeSlots}</p>
+                  <p className="text-[13px] font-black text-[#1F2BD8]">{freeSlots}</p>
                 </div>
               </div>
               <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <button onClick={() => openEdit(inst)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5]">Редактировать</button>
+                <button onClick={() => openEdit(inst)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#050609] transition hover:bg-[#F1F2F5]">Редактировать</button>
                 <button onClick={() => void handleToggle(inst)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#6F747A] transition hover:bg-[#F1F2F5]">
                   {toggling === inst.id ? '...' : inst.isActive ? 'Выключить' : 'Включить'}
                 </button>
@@ -172,7 +172,7 @@ export function AdminInstructors() {
               <option value="auto">Автомат</option>
             </select>
           </div>
-          <textarea className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium text-[#111418] outline-none focus:border-[#111418]" rows={3} placeholder="Описание (необязательно)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} />
+          <textarea className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium text-[#050609] outline-none focus:border-[#050609]" rows={3} placeholder="Описание (необязательно)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} />
           <div>
             <p className="mb-2 text-[13px] font-bold text-[#6F747A]">Категории</p>
             <div className="grid grid-cols-3 gap-1.5">
@@ -180,7 +180,7 @@ export function AdminInstructors() {
                 const active = form.categories.includes(cat.code)
                 return (
                   <button key={cat.code} type="button" onClick={() => setForm((f) => ({ ...f, categories: active ? f.categories.filter((c) => c !== cat.code) : [...f.categories, cat.code] }))}
-                    className={`rounded-[10px] border px-2 py-2 text-left transition ${active ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
+                    className={`rounded-[10px] border px-2 py-2 text-left transition ${active ? 'border-[#050609] bg-[#050609] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
                     <span className="text-[13px] font-black">{cat.code}</span>
                   </button>
                 )

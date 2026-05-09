@@ -16,7 +16,7 @@ export function Avatar({ initials, color = '#EFF2FF', src, alt = initials, size 
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-sans font-semibold shrink-0 overflow-hidden border rgba(0,0,0,0.06)',
+        'rounded-full flex items-center justify-center font-sans font-semibold shrink-0 overflow-hidden border border-[rgba(0,0,0,0.06)]',
         {
           sm: 'w-8 h-8 text-[11px]',
           md: 'w-10 h-10 text-sm',
@@ -28,7 +28,7 @@ export function Avatar({ initials, color = '#EFF2FF', src, alt = initials, size 
       style={src ? {} : { backgroundColor: color }}
     >
       {src ? <img src={src} alt={alt} className="h-full w-full object-cover" /> : (
-        <span className={src ? '' : 'text-[#2436D9] font-bold'}>
+        <span className={src ? '' : 'text-[#1F2BD8] font-bold'}>
           {initials}
         </span>
       )}

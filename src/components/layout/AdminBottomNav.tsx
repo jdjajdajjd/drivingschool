@@ -51,7 +51,7 @@ export function AdminBottomNav() {
               cn(
                 'flex flex-col items-center justify-center gap-0.5 py-2.5 text-center transition-colors',
                 isActive
-                  ? 'text-[#111418]'
+                  ? 'text-[#1F2BD8]'
                   : 'text-[#9EA3A8] hover:text-[#6F747A]',
               )
             }
@@ -62,7 +62,7 @@ export function AdminBottomNav() {
                   className={cn(
                     'grid h-7 w-7 place-items-center rounded-[10px] transition-all',
                     isActive
-                      ? 'bg-[#111418] text-white'
+                      ? 'bg-[#EEF0FA] text-[#1F2BD8]'
                       : 'text-current',
                   )}
                 >
@@ -71,7 +71,7 @@ export function AdminBottomNav() {
                 <span
                   className={cn(
                     'text-[10px] font-extrabold leading-none tracking-tight',
-                    isActive ? 'text-[#111418]' : '',
+                    isActive ? 'text-[#1F2BD8]' : '',
                   )}
                 >
                   {tab.label}
@@ -106,10 +106,10 @@ export function AdminTopBar() {
       style={{ background: '#FFFFFF', borderColor: 'rgba(0,0,0,0.06)' }}
     >
       <div className="flex items-center gap-1 px-3 py-2">
-        <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#111418]">
+        <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#1F2BD8]">
           <Home size={13} className="text-white" />
         </div>
-        <span className="text-sm font-black text-[#111418]">vroom</span>
+        <span className="text-sm font-black text-[#050609]">vroom</span>
         <span className="mx-3 h-4 w-px bg-[rgba(0,0,0,0.08)]" />
         {TABS.map((tab) => (
           <NavLink
@@ -119,8 +119,8 @@ export function AdminTopBar() {
             className={cn(
               'flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-extrabold transition-colors',
               activeTab === tab.key
-                ? 'bg-[#111418] text-white'
-                : 'text-[#6F747A] hover:bg-[rgba(0,0,0,0.04)] hover:text-[#111418]',
+                ? 'bg-[#1F2BD8] text-white'
+                : 'text-[#6F747A] hover:bg-[#EEF0FA] hover:text-[#1F2BD8]',
             )}
           >
             <tab.icon size={14} />

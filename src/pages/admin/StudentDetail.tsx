@@ -103,7 +103,7 @@ export function AdminStudentDetail() {
           ← Ученики
         </button>
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-8 text-center">
-          <p className="font-black text-[#111418]">Ученик не найден</p>
+          <p className="font-black text-[#050609]">Ученик не найден</p>
         </div>
       </div>
     )
@@ -119,11 +119,11 @@ export function AdminStudentDetail() {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school?.name}</p>
-          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418]">{student.name}</h1>
+          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#050609]">{student.name}</h1>
           <p className="mt-0.5 text-[13px] font-semibold text-[#6F747A]">{formatPhone(student.normalizedPhone)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[22px] font-black text-[#111418]">{stats.activeFutureBookings}</p>
+          <p className="text-[22px] font-black text-[#050609]">{stats.activeFutureBookings}</p>
           <p className="text-[11px] font-semibold text-[#9EA3A8]">активных записей</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export function AdminStudentDetail() {
 
       {/* Assignment */}
       <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-        <h2 className="text-[15px] font-black text-[#111418]">Назначения</h2>
+        <h2 className="text-[15px] font-black text-[#050609]">Назначения</h2>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div>
             <p className="text-[11px] font-bold text-[#9EA3A8]">Этап</p>
@@ -177,7 +177,7 @@ export function AdminStudentDetail() {
 
       {/* Progress */}
       <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-        <h2 className="text-[15px] font-black text-[#111418]">Прогресс</h2>
+        <h2 className="text-[15px] font-black text-[#050609]">Прогресс</h2>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div>
             <p className="text-[11px] font-bold text-[#9EA3A8]">Темы (всего/закрыто)</p>
@@ -219,7 +219,7 @@ export function AdminStudentDetail() {
       {/* Documents */}
       {docs.length > 0 && (
         <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Документы</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Документы</h2>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {docs.map((doc) => (
               <div key={doc.type}>
@@ -238,11 +238,11 @@ export function AdminStudentDetail() {
       {/* Requests */}
       {requests.filter((r) => r.studentId === student.id).length > 0 && (
         <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Запросы</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Запросы</h2>
           <div className="mt-3 space-y-2">
             {requests.filter((r) => r.studentId === student.id).map((req) => (
               <div key={req.id} className="rounded-[10px] border border-[rgba(0,0,0,0.06)] px-3 py-2">
-                <p className="text-[13px] font-black text-[#111418]">{req.type === 'reschedule' ? 'Перенос' : 'Отмена'}: {req.reason}</p>
+                <p className="text-[13px] font-black text-[#050609]">{req.type === 'reschedule' ? 'Перенос' : 'Отмена'}: {req.reason}</p>
                 <p className="mt-0.5 text-[12px] text-[#9EA3A8]">{req.comment}</p>
                 <select value={req.status} onChange={(e) => void patchRequest(req.id, e.target.value)} className="mt-2 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
                   {['new', 'reviewing', 'resolved', 'rejected'].map((s) => (
@@ -258,7 +258,7 @@ export function AdminStudentDetail() {
       {/* History */}
       {history.length > 0 && (
         <div className="mb-4">
-          <h2 className="mb-2 text-[15px] font-black text-[#111418]">История записей</h2>
+          <h2 className="mb-2 text-[15px] font-black text-[#050609]">История записей</h2>
           <div className="space-y-2">
             {history.map((entry) => (
               <div key={entry.booking.id} className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
@@ -274,7 +274,7 @@ export function AdminStudentDetail() {
                 </div>
                 {entry.booking.status === 'active' && (
                   <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                    <button onClick={() => setCompleteId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418]">Проведена</button>
+                    <button onClick={() => setCompleteId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#050609]">Проведена</button>
                     <button onClick={() => setCancelId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-1.5 text-[12px] font-black text-[#E5534B]">Отменить</button>
                   </div>
                 )}

@@ -35,7 +35,7 @@ export function AdminStudents() {
     <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
       <div className="mb-4">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Ученики</h1>
+        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#050609] md:text-[26px]">Ученики</h1>
       </div>
 
       {/* Search */}
@@ -48,7 +48,7 @@ export function AdminStudents() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Имя или телефон"
-            className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[14px] font-medium text-[#111418] outline-none placeholder:text-[#9EA3A8]"
+            className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[14px] font-medium text-[#050609] outline-none placeholder:text-[#9EA3A8]"
           />
         </div>
       </div>
@@ -59,7 +59,7 @@ export function AdminStudents() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value as typeof filter)}
-            className={`rounded-[10px] border px-3 py-1.5 text-[12px] font-black transition ${filter === f.value ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}
+            className={`rounded-[10px] border px-3 py-1.5 text-[12px] font-black transition ${filter === f.value ? 'border-[#050609] bg-[#050609] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}
           >
             {f.label} · {f.value === 'all' ? rows.length : f.value === 'active' ? rows.filter((r) => r.stats.activeFutureBookings > 0).length : rows.filter((r) => r.stats.activeFutureBookings === 0).length}
           </button>
@@ -69,7 +69,7 @@ export function AdminStudents() {
       {/* List */}
       {rows.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-          <p className="font-black text-[#111418]">Учеников пока нет</p>
+          <p className="font-black text-[#050609]">Учеников пока нет</p>
           <p className="mt-1 text-sm text-[#9EA3A8]">Пригласите учеников по ссылке автошколы</p>
         </div>
       ) : (
@@ -82,7 +82,7 @@ export function AdminStudents() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-black text-[#111418]">{student.name}</p>
+                  <p className="truncate text-[15px] font-black text-[#050609]">{student.name}</p>
                   <p className="mt-0.5 text-[13px] font-semibold text-[#6F747A]">{formatPhone(student.normalizedPhone)}</p>
                 </div>
                 <div className="shrink-0 text-right">
@@ -96,15 +96,15 @@ export function AdminStudents() {
               <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
                 <div>
                   <p className="text-[10px] font-bold text-[#9EA3A8]">Всего</p>
-                  <p className="text-[13px] font-black text-[#111418]">{stats.totalBookings}</p>
+                  <p className="text-[13px] font-black text-[#050609]">{stats.totalBookings}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-[#9EA3A8]">Проведено</p>
-                  <p className="text-[13px] font-black text-[#111418]">{stats.completedBookings}</p>
+                  <p className="text-[13px] font-black text-[#050609]">{stats.completedBookings}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-[#9EA3A8]">Следующее</p>
-                  <p className="text-[13px] font-black text-[#3156D4]">
+                  <p className="text-[13px] font-black text-[#1F2BD8]">
                     {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : '—'}
                   </p>
                 </div>

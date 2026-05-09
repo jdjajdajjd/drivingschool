@@ -126,23 +126,23 @@ export function AdminSettings() {
     <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
       <div className="mb-4">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Настройки</h1>
+        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#050609] md:text-[26px]">Настройки</h1>
       </div>
 
       <div className="space-y-3">
         {/* School info */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Название и контакты</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Название и контакты</h2>
           <div className="mt-3 space-y-2">
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Название автошколы</label>
-              <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Например: Автошкола Вираж" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+              <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Например: Автошкола Вираж" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#050609]" />
             </div>
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">URL-имя (латиницей)</label>
               <div className="flex items-center gap-2">
                 <span className="shrink-0 text-[13px] font-semibold text-[#9EA3A8]">/school/</span>
-                <input value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="moika-avto" className="h-10 flex-1 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+                <input value={form.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="moika-avto" className="h-10 flex-1 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#050609]" />
               </div>
               {slugError && <p className="mt-1 text-[11px] font-semibold text-[#E5534B]">{slugError}</p>}
               <p className="mt-1 text-[11px] font-semibold text-[#9EA3A8]">
@@ -151,44 +151,44 @@ export function AdminSettings() {
             </div>
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Описание</label>
-              <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Расскажите кратко о школе" rows={2} className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium outline-none focus:border-[#111418]" />
+              <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Расскажите кратко о школе" rows={2} className="w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[14px] font-medium outline-none focus:border-[#050609]" />
             </div>
           </div>
         </div>
 
         {/* Contact info */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Контактная информация</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Контактная информация</h2>
           <div className="mt-3 space-y-2">
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Телефон</label>
-              <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+7 (495) 123-45-67" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+              <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+7 (495) 123-45-67" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#050609]" />
             </div>
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Email</label>
-              <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="info@school.ru" type="email" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+              <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="info@school.ru" type="email" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#050609]" />
             </div>
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-[#6F747A]">Адрес</label>
-              <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="г. Москва, ул. Примерная, 1" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#111418]" />
+              <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="г. Москва, ул. Примерная, 1" className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[14px] font-medium outline-none focus:border-[#050609]" />
             </div>
           </div>
         </div>
 
         {/* Public page */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Публичная страница</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Публичная страница</h2>
           <div className="mt-3 space-y-3">
             <div className="rounded-[10px] bg-[#F8FAFC] px-3 py-2">
               <p className="text-[10px] font-bold text-[#9EA3A8]">Ссылка для учеников</p>
-              <p className="mt-0.5 break-all text-[13px] font-black text-[#111418]">{publicUrl}</p>
+              <p className="mt-0.5 break-all text-[13px] font-black text-[#050609]">{publicUrl}</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => void copyLink()} className="flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[12px] font-black text-[#111418]">
+              <button onClick={() => void copyLink()} className="flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[12px] font-black text-[#050609]">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 Копировать
               </button>
-              <button onClick={() => window.open(publicUrl, '_blank')} className="flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[12px] font-black text-[#111418]">
+              <button onClick={() => window.open(publicUrl, '_blank')} className="flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2 text-[12px] font-black text-[#050609]">
                 Открыть
               </button>
             </div>
@@ -197,14 +197,14 @@ export function AdminSettings() {
 
         {/* Categories */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Категории обучения</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Категории обучения</h2>
           <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">Выберите категории — ученики увидят только их</p>
           <div className="mt-3 grid grid-cols-4 gap-1.5">
             {DRIVING_CATEGORIES.map((cat) => {
               const enabled = form.enabledCategoryCodes.includes(cat.code)
               return (
                 <button key={cat.code} type="button" onClick={() => toggleCategory(cat.code)}
-                  className={`rounded-[10px] border px-2 py-2 text-left transition ${enabled ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
+                  className={`rounded-[10px] border px-2 py-2 text-left transition ${enabled ? 'border-[#050609] bg-[#050609] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
                   <span className="text-[13px] font-black">{cat.code}</span>
                 </button>
               )
@@ -214,7 +214,7 @@ export function AdminSettings() {
 
         {/* Rules */}
         <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Правила записи</h2>
+          <h2 className="text-[15px] font-black text-[#050609]">Правила записи</h2>
           <div className="mt-3 space-y-3">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={form.bookingLimitEnabled} onChange={(e) => setForm((f) => ({ ...f, bookingLimitEnabled: e.target.checked }))} />
