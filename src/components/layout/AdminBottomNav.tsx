@@ -34,11 +34,11 @@ const TABS: Tab[] = [
 
 export function AdminBottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t md:hidden"
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-1.5 md:hidden"
       style={{
         background: 'rgba(255,255,255,0.96)',
-        backdropFilter: 'blur(16px)',
-        borderColor: 'rgba(0,0,0,0.08)',
+        backdropFilter: 'blur(18px)',
+        borderColor: 'rgba(15,20,25,0.08)',
       }}
     >
       <div className="grid grid-cols-5">
@@ -49,9 +49,9 @@ export function AdminBottomNav() {
             end={tab.key === 'today'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center justify-center gap-0.5 py-2.5 text-center transition-colors',
+                'flex min-h-[58px] flex-col items-center justify-center gap-0.5 rounded-[18px] text-center transition-colors',
                 isActive
-                  ? 'text-[#111418]'
+                  ? 'text-[#1F2BD8]'
                   : 'text-[#9EA3A8] hover:text-[#6F747A]',
               )
             }
@@ -62,7 +62,7 @@ export function AdminBottomNav() {
                   className={cn(
                     'grid h-7 w-7 place-items-center rounded-[10px] transition-all',
                     isActive
-                      ? 'bg-[#111418] text-white'
+                      ? 'bg-[#EEF0FA] text-[#2442D8]'
                       : 'text-current',
                   )}
                 >
@@ -71,7 +71,7 @@ export function AdminBottomNav() {
                 <span
                   className={cn(
                     'text-[10px] font-extrabold leading-none tracking-tight',
-                    isActive ? 'text-[#111418]' : '',
+                    isActive ? 'text-[#1F2BD8]' : '',
                   )}
                 >
                   {tab.label}
@@ -105,22 +105,19 @@ export function AdminTopBar() {
       className="hidden border-b md:block"
       style={{ background: '#FFFFFF', borderColor: 'rgba(0,0,0,0.06)' }}
     >
-      <div className="flex items-center gap-1 px-3 py-2">
-        <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#111418]">
-          <Home size={13} className="text-white" />
-        </div>
-        <span className="text-sm font-black text-[#111418]">vroom</span>
-        <span className="mx-3 h-4 w-px bg-[rgba(0,0,0,0.08)]" />
+      <div className="flex items-center gap-1 px-4 py-2.5">
+        <span className="mr-3 text-sm font-black tracking-[-0.03em] text-[#111418]">vroom</span>
+        <span className="mx-2 h-4 w-px bg-[rgba(0,0,0,0.08)]" />
         {TABS.map((tab) => (
           <NavLink
             key={tab.key}
             to={tab.to}
             end={tab.key === 'today'}
             className={cn(
-              'flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-extrabold transition-colors',
+              'flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 py-2 text-[13px] font-extrabold transition-colors',
               activeTab === tab.key
-                ? 'bg-[#111418] text-white'
-                : 'text-[#6F747A] hover:bg-[rgba(0,0,0,0.04)] hover:text-[#111418]',
+                ? 'bg-[#EEF0FA] text-[#1F2BD8]'
+                : 'text-[#6F747A] hover:bg-[#EEF0FA] hover:text-[#1F2BD8]',
             )}
           >
             <tab.icon size={14} />

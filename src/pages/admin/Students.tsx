@@ -32,7 +32,7 @@ export function AdminStudents() {
   if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
+    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
       <div className="mb-4">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
         <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Ученики</h1>
@@ -48,7 +48,7 @@ export function AdminStudents() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Имя или телефон"
-            className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[14px] font-medium text-[#111418] outline-none placeholder:text-[#9EA3A8]"
+            className="min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#2442D8]"
           />
         </div>
       </div>
@@ -59,7 +59,7 @@ export function AdminStudents() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value as typeof filter)}
-            className={`rounded-[10px] border px-3 py-1.5 text-[12px] font-black transition ${filter === f.value ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}
+            className={`min-h-11 rounded-[14px] border px-3.5 py-2 text-[12px] font-black transition active:scale-[0.97] ${filter === f.value ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}
           >
             {f.label} · {f.value === 'all' ? rows.length : f.value === 'active' ? rows.filter((r) => r.stats.activeFutureBookings > 0).length : rows.filter((r) => r.stats.activeFutureBookings === 0).length}
           </button>
@@ -70,7 +70,7 @@ export function AdminStudents() {
       {rows.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Учеников пока нет</p>
-          <p className="mt-1 text-sm text-[#9EA3A8]">Пригласите учеников по ссылке автошколы</p>
+          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Когда ученик запишется или создаст кабинет, он появится здесь.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -78,7 +78,7 @@ export function AdminStudents() {
             <Link
               key={student.id}
               to={`${ADMIN_BASE_PATH}/students/${student.id}`}
-              className="block rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 transition hover:bg-[#F8FAFC] active:bg-[#F1F2F5]"
+              className="block min-h-[88px] rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 transition hover:bg-[#F8FAFC] active:scale-[0.99] active:bg-[#F1F2F5]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -104,7 +104,7 @@ export function AdminStudents() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-[#9EA3A8]">Следующее</p>
-                  <p className="text-[13px] font-black text-[#3156D4]">
+                  <p className="text-[13px] font-black text-[#2442D8]">
                     {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : '—'}
                   </p>
                 </div>

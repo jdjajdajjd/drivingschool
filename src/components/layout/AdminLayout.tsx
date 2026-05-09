@@ -32,13 +32,13 @@ export function AdminLayout() {
     }
   }, [])
 
-  if (!ready) return <div className="min-h-screen" style={{ background: '#F2F3F4' }} />
+  if (!ready) return <div className="v-admin-shell min-h-dvh" />
 
   const school = db.schools.all()[0]
   const publicPath = school ? `/school/${school.slug}` : '/'
 
   return (
-    <div className="min-h-screen" style={{ background: '#F2F3F4' }}>
+    <div className="v-admin-shell">
       {/* Mobile top bar */}
       <header
         className="sticky top-0 z-20 flex items-center justify-between border-b md:hidden"
@@ -48,20 +48,20 @@ export function AdminLayout() {
           borderColor: 'rgba(0,0,0,0.06)',
         }}
       >
-        <div className="flex items-center gap-2 px-3 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#111418]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#EEF0FA] text-[#2442D8]">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 17h14M5 17l3-8h8l3 8M9 9V6m6 3V6M4 17h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <span className="text-sm font-black text-[#111418]">vroom</span>
+          <span className="text-[15px] font-black tracking-[-0.03em] text-[#050609]">vroom</span>
         </div>
         <button
           onClick={() => { if (school) window.location.href = publicPath }}
-          className="mr-3 flex items-center gap-1.5 text-[12px] font-black text-[#6F747A] hover:text-[#111418]"
+          className="mr-3 flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 text-[12px] font-black text-[#6F747A] transition hover:bg-[#EEF0FA] hover:text-[#111418] active:scale-[0.97]"
         >
           <ExternalLink size={13} />
-          Страница
+          Открыть сайт
         </button>
       </header>
 
@@ -78,10 +78,11 @@ export function AdminLayout() {
           bottom: 0,
           width: 240,
           flexDirection: 'column',
-          background: '#FFFFFF',
-          borderRight: '1px solid rgba(0,0,0,0.06)',
+          background: 'rgba(255,255,255,0.74)',
+          borderRight: '1px solid rgba(15,20,25,0.07)',
           padding: '16px 12px',
           gap: '8px',
+          backdropFilter: 'blur(18px)',
         }}
       >
         <a
@@ -101,7 +102,7 @@ export function AdminLayout() {
       </aside>
 
       {/* Main content area */}
-      <div className="pb-20 md:pb-0 md:pl-[240px]">
+      <div className="pb-[calc(104px+env(safe-area-inset-bottom))] md:pb-0 md:pl-[240px]">
         <Outlet />
       </div>
 

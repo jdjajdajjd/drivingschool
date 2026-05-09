@@ -138,7 +138,7 @@ export function AdminBookings() {
   if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
+    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
       <div className="mb-4">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
         <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Записи</h1>
@@ -154,7 +154,7 @@ export function AdminBookings() {
           <button
             key={s.label}
             onClick={s.onClick}
-            className={`rounded-[12px] border px-2.5 py-2 text-left transition ${s.active ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#111418]'}`}
+            className={`min-h-[68px] rounded-[16px] border px-3 py-2.5 text-left transition active:scale-[0.98] ${s.active ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#111418]'}`}
           >
             <p className="text-[18px] font-black leading-none">{s.value}</p>
             <p className="mt-0.5 text-[10px] font-semibold opacity-70">{s.label}</p>
@@ -173,22 +173,22 @@ export function AdminBookings() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ученик или телефон"
-              className="h-10 w-full rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[14px] font-medium text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#111418]"
+              className="min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#2442D8]"
             />
           </div>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-10 w-[130px] rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none"
+            className="min-h-11 w-[138px] rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#2442D8]"
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none">
+          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
             <option value="all">Все филиалы</option>
             {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="h-9 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none">
+          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
             <option value="all">Все инструкторы</option>
             {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
@@ -199,12 +199,12 @@ export function AdminBookings() {
       {filtered.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Записей пока нет</p>
-          <p className="mt-1 text-sm text-[#9EA3A8]">Когда ученики запишутся, они появятся здесь</p>
+          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Когда ученик выберет время на сайте, запись появится здесь.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((entry) => (
-            <div key={entry.booking.id} className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
+            <div key={entry.booking.id} className="rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 shadow-[0_8px_24px_rgba(15,20,25,0.035)]">
               <div className="flex items-start gap-3">
                 <div className="shrink-0 text-center">
                   <p className="text-[12px] font-black text-[#111418]">
@@ -215,7 +215,7 @@ export function AdminBookings() {
                   </p>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Link to={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="block truncate text-[14px] font-black text-[#111418] hover:text-[#3156D4]">
+                  <Link to={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="block min-h-11 truncate rounded-[12px] py-1 text-[15px] font-black text-[#111418] hover:text-[#2442D8]">
                     {entry.booking.studentName}
                   </Link>
                   <p className="truncate text-[12px] font-semibold text-[#6F747A]">
@@ -227,13 +227,13 @@ export function AdminBookings() {
 
               {entry.booking.status === 'active' && (
                 <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                  <button onClick={() => openReschedule(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#3156D4] transition hover:bg-[#F1F2F5]">
+                  <button onClick={() => openReschedule(entry.booking.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#2442D8] transition hover:bg-[#F1F2F5] active:scale-[0.97]">
                     Перенести
                   </button>
-                  <button onClick={() => setCompleteId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5]">
+                  <button onClick={() => setCompleteId(entry.booking.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] active:scale-[0.97]">
                     Проведена
                   </button>
-                  <button onClick={() => setCancelId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-1.5 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2]">
+                  <button onClick={() => setCancelId(entry.booking.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-2 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2] active:scale-[0.97]">
                     Отменить
                   </button>
                 </div>
@@ -249,19 +249,19 @@ export function AdminBookings() {
       <Modal open={Boolean(rescheduleId)} onClose={() => setRescheduleId(null)} title="Перенести запись">
         <div className="space-y-4 px-5 pb-5">
           <div className="grid grid-cols-2 gap-2">
-            <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="h-10 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none">
+            <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
               <option value="all">Все филиалы</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
-            <select value={rescheduleInstructorId} onChange={(e) => setRescheduleInstructorId(e.target.value)} className="h-10 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none">
+            <select value={rescheduleInstructorId} onChange={(e) => setRescheduleInstructorId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
               <option value="all">Все инструкторы</option>
               {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
             </select>
-            <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className="col-span-2 h-10 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none" />
+            <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className="col-span-2 min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#2442D8]" />
           </div>
 
           {rescheduleSlots.length === 0 ? (
-            <p className="text-sm text-[#9EA3A8]">Нет свободного времени. Измените фильтры.</p>
+            <p className="text-sm font-semibold text-[#6F747A]">Нет свободного времени. Измените фильтры.</p>
           ) : (
             <div className="max-h-[260px] space-y-1.5 overflow-y-auto">
               {rescheduleSlots.map((slot) => {
@@ -271,7 +271,7 @@ export function AdminBookings() {
                   <button
                     key={slot.id}
                     onClick={() => setSelectedSlotId(slot.id)}
-                    className={`flex w-full items-center gap-2 rounded-[12px] border px-3 py-2 text-left transition ${selectedSlotId === slot.id ? 'border-[#111418] bg-[#111418] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white hover:border-[rgba(0,0,0,0.12)]'}`}
+                    className={`flex min-h-[56px] w-full items-center gap-2 rounded-[14px] border px-3 py-2 text-left transition active:scale-[0.98] ${selectedSlotId === slot.id ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white hover:border-[rgba(0,0,0,0.12)]'}`}
                   >
                     <span className="text-[13px] font-black">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</span>
                     <span className={`text-[12px] font-semibold ${selectedSlotId === slot.id ? 'text-white/70' : 'text-[#6F747A]'}`}>{inst?.name} · {br?.name}</span>

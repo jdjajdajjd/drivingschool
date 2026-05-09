@@ -137,6 +137,190 @@
     }
   }
 
+
+
+  /* ─── Vroom clean light admin/mobile helpers ─────────── */
+  .v-admin-shell {
+    --admin-bg: #F6F7FA;
+    --admin-ink: #111418;
+    --admin-muted: #737985;
+    --admin-soft: #F7F8FB;
+    --admin-line: #E3E6EE;
+    --admin-blue: #2442D8;
+    min-height: 100dvh;
+    background:
+      radial-gradient(circle at 20% -10%, rgba(36,66,216,0.08), transparent 30rem),
+      linear-gradient(180deg, #FAFBFD 0%, #F6F7FA 52%, #EEF1F6 100%);
+    color: var(--admin-ink);
+  }
+
+  .v-admin-page {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 12px 12px 104px;
+  }
+
+  .v-admin-hero {
+    overflow: hidden;
+    border: 1px solid var(--admin-line);
+    border-radius: 28px;
+    background: rgba(255,255,255,0.96);
+    color: var(--admin-ink);
+    padding: 18px;
+    box-shadow: 0 16px 44px rgba(15,20,25,0.07);
+  }
+
+  .v-admin-eyebrow {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--admin-muted);
+  }
+
+  .v-admin-title {
+    margin-top: 4px;
+    font-size: 31px;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    font-weight: 950;
+    color: var(--admin-ink);
+    text-wrap: balance;
+  }
+
+  .v-admin-subtitle {
+    margin-top: 8px;
+    max-width: 42rem;
+    font-size: 14px;
+    line-height: 1.55;
+    font-weight: 700;
+    color: var(--admin-muted);
+  }
+
+  .v-panel {
+    border: 1px solid var(--admin-line);
+    background: rgba(255,255,255,0.94);
+    border-radius: 26px;
+    box-shadow: 0 14px 42px rgba(15,20,25,0.06);
+  }
+
+  .v-card {
+    border: 1px solid var(--admin-line);
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(15,20,25,0.045);
+  }
+
+  .v-primary {
+    min-height: 52px;
+    border-radius: 18px;
+    background: var(--admin-blue);
+    color: white;
+    font-weight: 900;
+    box-shadow: 0 14px 34px rgba(36,66,216,0.22);
+    transition: transform 160ms var(--ease), box-shadow 180ms var(--ease), background-color 180ms var(--ease);
+    touch-action: manipulation;
+  }
+
+  .v-primary:active { transform: scale(0.98); }
+  .v-primary:hover { background: #1C34B8; box-shadow: 0 18px 42px rgba(36,66,216,0.28); }
+
+  .v-secondary {
+    min-height: 52px;
+    border-radius: 18px;
+    border: 1px solid var(--admin-line);
+    background: white;
+    color: var(--admin-ink);
+    font-weight: 900;
+    transition: transform 160ms var(--ease), background-color 180ms var(--ease), border-color 180ms var(--ease);
+    touch-action: manipulation;
+  }
+  .v-secondary:active { transform: scale(0.98); }
+  .v-secondary:hover { background: var(--admin-soft); border-color: #D7DAE2; }
+
+  .v-input {
+    min-height: 48px;
+    width: 100%;
+    border-radius: 17px;
+    border: 1px solid var(--admin-line);
+    background: white;
+    padding: 0 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--admin-ink);
+    outline: none;
+  }
+  .v-input::placeholder { color: #B8BABF; }
+  .v-input:focus { border-color: var(--admin-blue); box-shadow: 0 0 0 4px rgba(36,66,216,0.10); }
+
+  .v-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .v-stat {
+    min-height: 84px;
+    border-radius: 22px;
+    border: 1px solid var(--admin-line);
+    background: white;
+    padding: 14px;
+    text-align: left;
+    touch-action: manipulation;
+  }
+  .v-stat strong { display: block; font-size: 28px; line-height: 0.95; letter-spacing: -0.045em; color: #111418; font-weight: 950; }
+  .v-stat span { display: block; margin-top: 8px; color: #737985; font-size: 12px; line-height: 1.25; font-weight: 800; }
+
+  .v-quick-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .v-quick {
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border-radius: 24px;
+    border: 1px solid var(--admin-line);
+    background: white;
+    padding: 13px 14px;
+    text-align: left;
+    box-shadow: 0 12px 34px rgba(15,20,25,0.05);
+    touch-action: manipulation;
+  }
+  .v-quick strong { display: block; color: #111418; font-size: 15px; line-height: 1.1; font-weight: 950; }
+  .v-quick span { display: block; margin-top: 4px; color: #737985; font-size: 12px; line-height: 1.25; font-weight: 700; }
+
+  .v-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 20px 2px 10px; }
+  .v-section-title { color: #111418; font-size: 19px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 950; }
+  .v-section-link { min-height: 44px; padding: 0 6px; color: #2442D8; font-size: 13px; font-weight: 900; }
+
+  .v-empty {
+    border: 1px dashed #CDD1DA;
+    background: rgba(255,255,255,0.78);
+    border-radius: 26px;
+    padding: 24px 18px;
+    text-align: center;
+  }
+  .v-empty strong { display: block; color: #111418; font-size: 17px; font-weight: 950; }
+  .v-empty span { display: block; margin-top: 5px; color: #737985; font-size: 14px; line-height: 1.45; font-weight: 700; }
+
+  .v-chip {
+    min-height: 42px;
+    border-radius: 15px;
+    border: 1px solid var(--admin-line);
+    background: white;
+    padding: 0 13px;
+    color: #737985;
+    font-size: 12px;
+    font-weight: 900;
+    touch-action: manipulation;
+  }
+  .v-chip-active { border-color: #111418; background: #111418; color: white; }
+
+  @media (min-width: 768px) {
+    .v-admin-page { padding: 22px 24px 32px; }
+    .v-admin-hero { padding: 24px; border-radius: 30px; }
+    .v-admin-title { font-size: 42px; }
+    .v-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .v-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+
   /* ─── Page shell ─────────────────────────────────── */
   .shell {
     min-height: 100dvh;
@@ -156,7 +340,7 @@
   .card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-card-hover);
-    transition: all 220ms var(--ease);
+    transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
   }
 
   .card-body {

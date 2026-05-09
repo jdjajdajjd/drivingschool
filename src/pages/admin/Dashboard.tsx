@@ -36,37 +36,37 @@ export function AdminDashboard() {
 
     const freeSlots7d = slots.filter((slot) => {
       const startsAt = new Date(`${slot.date}T${slot.time}:00`)
-      return slot.status === 'available' && isAfter(startsAt, now) && startsAt <= weekAhead
+      return slot.status === 'available' && startsAt.getTime() > now.getTime() && startsAt <= weekAhead
     })
-
-    function isAfter(d1: Date, d2: Date) {
-      return d1.getTime() > d2.getTime()
-    }
 
     const setupItems = [
       {
-        label: 'Школа',
+        label: 'Данные школы',
+        helper: 'Название, телефон и ссылка для учеников',
         done: Boolean(school.name && school.phone),
         to: `${ADMIN_BASE_PATH}/settings`,
-        action: school.name ? 'открыть' : 'заполнить',
+        action: school.name ? 'Проверить' : 'Заполнить',
       },
       {
-        label: 'Филиал',
+        label: 'Филиалы',
+        helper: 'Где проходят занятия',
         done: branches.some((branch) => branch.isActive),
         to: `${ADMIN_BASE_PATH}/branches`,
-        action: 'создать',
+        action: 'Добавить',
       },
       {
-        label: 'Инструктор',
+        label: 'Инструкторы',
+        helper: 'Кто ведёт занятия',
         done: instructors.some((instructor) => instructor.isActive),
         to: `${ADMIN_BASE_PATH}/instructors`,
-        action: 'создать',
+        action: 'Добавить',
       },
       {
         label: 'Расписание',
+        helper: 'Свободные окна для записи',
         done: freeSlots7d.length > 0,
         to: `${ADMIN_BASE_PATH}/slots`,
-        action: 'добавить',
+        action: 'Создать',
       },
     ]
 
@@ -82,10 +82,10 @@ export function AdminDashboard() {
 
   if (!school || !data) {
     return (
-      <div className="px-3 py-4 md:px-6 md:py-5">
-        <div className="rounded-[14px] border border-[#D8E0EC] bg-white px-4 py-8 text-center">
-          <p className="font-black text-[#111418]">Данные школы не загружены</p>
-          <p className="mt-1 text-sm text-[#6F747A]">Проверьте подключение.</p>
+      <div className="v-admin-page">
+        <div className="v-empty">
+          <strong>Данные школы не загружены</strong>
+          <span>Проверьте подключение и обновите страницу.</span>
         </div>
       </div>
     )
@@ -93,129 +93,111 @@ export function AdminDashboard() {
 
   const activeInstructors = data.instructors.filter((i) => i.isActive).length
   const configuredCount = data.setupItems.filter((item) => item.done).length
+  const publicPath = `/school/${school.slug}`
 
   return (
-    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
-      {/* Header */}
-      <div className="mb-4">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Сегодня</h1>
-      </div>
+    <div className="v-admin-page">
+      <section className="v-admin-hero">
+        <p className="v-admin-eyebrow">{school.name}</p>
+        <h1 className="v-admin-title">Сегодня</h1>
+        <p className="v-admin-subtitle">Что происходит сейчас: записи, свободные окна и быстрые действия для школы.</p>
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          <button type="button" className="v-primary min-h-[52px] px-4 text-[14px]" onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}>Добавить занятие</button>
+          <button type="button" className="v-secondary min-h-[52px] px-4 text-[14px]" onClick={() => { window.location.href = publicPath }}>Открыть сайт</button>
+        </div>
+      </section>
 
-      {/* Stat strip */}
-      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <button
-          onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}
-          className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
-        >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{data.todayBookings.length}</p>
-          <p className="text-[11px] font-semibold text-[#6F747A]">занятий сегодня</p>
+      <section className="mt-4 v-stat-grid">
+        <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="v-stat">
+          <strong>{data.todayBookings.length}</strong>
+          <span>занятий сегодня</span>
         </button>
-        <button
-          onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}
-          className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
-        >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{data.freeSlots7d.length}</p>
-          <p className="text-[11px] font-semibold text-[#6F747A]">свободных окон</p>
+        <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="v-stat">
+          <strong>{data.freeSlots7d.length}</strong>
+          <span>свободных окон на 7 дней</span>
         </button>
-        <button
-          onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)}
-          className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
-        >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{activeInstructors}</p>
-          <p className="text-[11px] font-semibold text-[#6F747A]">инструкторов</p>
+        <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="v-stat">
+          <strong>{activeInstructors}</strong>
+          <span>активных инструкторов</span>
         </button>
-        <button
-          onClick={() => navigate(`${ADMIN_BASE_PATH}/branches`)}
-          className="flex flex-col items-start gap-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 text-left transition active:scale-[0.98]"
-        >
-          <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[#111418]">{data.branches.filter((b) => b.isActive).length}</p>
-          <p className="text-[11px] font-semibold text-[#6F747A]">филиалов</p>
+        <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/branches`)} className="v-stat">
+          <strong>{data.branches.filter((b) => b.isActive).length}</strong>
+          <span>филиалов в работе</span>
         </button>
-      </div>
+      </section>
 
-      {/* Quick actions */}
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}
-          className="flex items-center gap-2 rounded-[14px] bg-[#111418] px-4 py-3 text-[13px] font-black text-white transition active:scale-[0.97]"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Добавить время
+      <section className="mt-4 v-quick-grid">
+        <button type="button" className="v-quick" onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}>
+          <span><strong>Создать расписание</strong><span>Серия окон на неделю или месяц</span></span>
+          <span className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#EEF0FA] text-[#2442D8]">＋</span>
         </button>
-        <button
-          onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}
-          className="flex items-center gap-2 rounded-[14px] border border-[rgba(0,0,0,0.08)] bg-white px-4 py-3 text-[13px] font-black text-[#111418] transition active:scale-[0.97]"
-        >
-          Все записи
+        <button type="button" className="v-quick" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}>
+          <span><strong>Все записи</strong><span>Перенос, отмена, статус занятий</span></span>
+          <span className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F1F2F5] text-[#050609]">→</span>
         </button>
-      </div>
+      </section>
 
-      {/* Setup checklist */}
-      {configuredCount < data.setupItems.length && (
-        <div className="mb-4 overflow-hidden rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB]">
-          <div className="flex items-center gap-2 px-3 py-2.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span className="text-[13px] font-black text-[#92400E]">Настроено: {configuredCount}/{data.setupItems.length}</span>
+      {configuredCount < data.setupItems.length ? (
+        <section className="mt-5 overflow-hidden v-panel">
+          <div className="flex items-center justify-between gap-3 border-b border-[#E7E9EF] px-4 py-4">
+            <div>
+              <h2 className="text-[19px] font-black leading-tight tracking-[-0.035em] text-[#111418]">Запуск школы</h2>
+              <p className="mt-1 text-[13px] font-bold text-[#737985]">Готово {configuredCount} из {data.setupItems.length}</p>
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-[18px] bg-[#EEF0FA] text-[14px] font-black text-[#2442D8]">{configuredCount}/{data.setupItems.length}</div>
           </div>
-          <div className="border-t border-[#FDE68A]">
+          <div>
             {data.setupItems.map((item) => (
               <button
+                type="button"
                 key={item.label}
                 onClick={() => navigate(item.to)}
-                className="flex w-full items-center gap-3 border-b border-[#FDE68A] px-3 py-2.5 text-left last:border-b-0 transition hover:bg-[rgba(251,191,36,0.10)]"
+                className="grid min-h-[72px] w-full grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#EEF0F4] px-4 text-left last:border-b-0 active:bg-[#F7F8FA]"
               >
-                <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-[7px] border text-[11px] font-black ${item.done ? 'border-[#15803D] bg-[#F0FDF4] text-[#15803D]' : 'border-[#D0D5DD] bg-white text-transparent'}`}>
-                  {item.done ? '✓' : ''}
+                <span className={`grid h-8 w-8 place-items-center rounded-[13px] text-[14px] font-black ${item.done ? 'bg-[#EAF6F0] text-[#14934A]' : 'bg-[#FFF5DF] text-[#B45309]'}`}>
+                  {item.done ? '✓' : '!' }
                 </span>
-                <span className={`flex-1 text-[14px] font-black ${item.done ? 'text-[#111418]' : 'text-[#92400E]'}`}>{item.label}</span>
-                <span className="text-[12px] font-semibold text-[#9EA3A8]">{item.action}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px] font-black text-[#111418]">{item.label}</span>
+                  <span className="mt-0.5 block truncate text-[12px] font-bold text-[#737985]">{item.helper}</span>
+                </span>
+                <span className="grid min-h-11 place-items-center rounded-[14px] bg-[#F1F2F5] px-3 py-2 text-[12px] font-black text-[#111418]">{item.action}</span>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        </section>
+      ) : null}
 
-      {/* Upcoming lessons */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#111418]">Ближайшие занятия</h2>
-          <button
-            onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}
-            className="text-[12px] font-semibold text-[#3156D4]"
-          >
-            Все →
-          </button>
+      <section>
+        <div className="v-section-head">
+          <h2 className="v-section-title">Ближайшие занятия</h2>
+          <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="v-section-link">Все записи</button>
         </div>
 
         {data.upcoming.length === 0 ? (
-          <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-            <p className="font-black text-[#111418]">Занятий пока нет</p>
-            <p className="mt-1 text-sm text-[#9EA3A8]">Добавьте свободное время ученикам</p>
+          <div className="v-empty">
+            <strong>Занятий пока нет</strong>
+            <span>Добавьте расписание, и ученики смогут записаться онлайн.</span>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {data.upcoming.map((entry) => (
               <Link
                 key={entry.booking.id}
                 to={`/booking/${entry.booking.id}`}
-                className="flex items-center gap-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 transition hover:bg-[#F8FAFC] active:bg-[#F1F2F5]"
+                className="grid min-h-[74px] grid-cols-[54px_minmax(0,1fr)_auto] items-center gap-3 rounded-[22px] border border-[#E7E9EF] bg-white px-3.5 shadow-[0_10px_30px_rgba(15,20,25,0.045)] active:scale-[0.995]"
               >
-                <div className="shrink-0 text-center">
+                <div className="text-center">
                   <p className="text-[12px] font-black text-[#111418]">
                     {entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'd MMM', { locale: ru }) : '—'}
                   </p>
-                  <p className="text-[11px] font-semibold text-[#3156D4]">
+                  <p className="text-[12px] font-black text-[#2442D8]">
                     {entry.slot ? format(new Date(`${entry.slot.date}T${entry.slot.time}:00`), 'HH:mm', { locale: ru }) : '—'}
                   </p>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-black text-[#111418]">{entry.booking.studentName}</p>
-                  <p className="truncate text-[12px] font-semibold text-[#6F747A]">
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-black text-[#111418]">{entry.booking.studentName}</p>
+                  <p className="mt-0.5 truncate text-[12px] font-bold text-[#737985]">
                     {entry.instructor?.name ?? 'Инструктор'} · {entry.branch?.name ?? 'Филиал'}
                   </p>
                 </div>
@@ -224,7 +206,7 @@ export function AdminDashboard() {
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }
