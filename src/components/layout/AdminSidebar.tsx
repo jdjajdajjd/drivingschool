@@ -29,7 +29,7 @@ const X = createHugeIcon(Cancel01Icon)
 
 const NAV = [
   { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true, color: 'bg-[#EAF7EE] text-[#188447]' },
-  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: ClipboardList, color: 'bg-[#EAF0FF] text-[#1F2BD8]' },
+  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: ClipboardList, color: 'bg-[#EAF0FF] text-[#3156D4]' },
   { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание', icon: CalendarDays, color: 'bg-[#F2EAFF] text-[#7B3FD6]' },
   { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound, color: 'bg-[#FFF0D8] text-[#C26A00]' },
   { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users, color: 'bg-[#EAF7EE] text-[#188447]' },
@@ -70,13 +70,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               <Car size={19} className="text-white" />
             </div>
             <div className="text-left">
-              <p className="text-base font-black text-[#050609]">vroom</p>
+              <p className="text-base font-black text-[#15120E]">vroom</p>
               <p className="text-xs font-bold text-[#667085]">Панель автошколы</p>
             </div>
           </button>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-2xl text-[#9EA3A8] transition hover:bg-white hover:text-[#1026D8] md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl #9EA3A8 transition hover:bg-white hover:text-[#1026D8] md:hidden"
             aria-label="Закрыть меню"
           >
             <X size={18} />
@@ -85,7 +85,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
         <div className="mx-2.5 mt-2.5 rounded-[10px] border border-[#D8E0EC] bg-white px-3 py-2.5">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#667085]">Автошкола</p>
-          <p className="mt-1 text-[15px] font-black leading-5 text-[#050609]">{schoolName}</p>
+          <p className="mt-1 text-[15px] font-black leading-5 text-[#15120E]">{schoolName}</p>
           <p className="mt-1 text-sm font-semibold text-[#334155]">Управление школой</p>
         </div>
 

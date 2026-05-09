@@ -47,12 +47,12 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
                   className="flex items-center justify-between px-5 py-4"
                   style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
                 >
-                  <h2 className="text-[18px] font-extrabold tracking-tight" style={{ color: '#050609' }}>{title}</h2>
+                  <h2 className="text-[18px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</h2>
                   <button
                     onClick={onClose}
                     className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
                     style={{ color: '#9EA3A8' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F4F5F6'; e.currentTarget.style.color = '#050609' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F4F5F6'; e.currentTarget.style.color = '#111418' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9EA3A8' }}
                   >
                     <X size={15} />

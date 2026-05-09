@@ -21,7 +21,7 @@ export function Badge({
     success: { bg: '#F0FDF4', color: '#15803D', border: 'rgba(21,128,61,0.15)' },
     warning: { bg: '#FFFBEB', color: '#B45309', border: 'rgba(180,83,9,0.15)' },
     error: { bg: '#FEF2F2', color: '#E5534B', border: 'rgba(229,83,75,0.15)' },
-    accent: { bg: 'rgba(246,184,77,0.12)', color: '#1F2BD8', border: 'rgba(246,184,77,0.20)' },
+    accent: { bg: 'rgba(246,184,77,0.12)', color: '#C97F10', border: 'rgba(246,184,77,0.20)' },
     outline: { bg: 'transparent', color: '#6F747A', border: 'rgba(0,0,0,0.10)' },
     info: { bg: '#EFF6FF', color: '#1D4ED8', border: 'rgba(29,78,216,0.15)' },
     muted: { bg: '#F4F5F6', color: '#9EA3A8', border: 'rgba(0,0,0,0.06)' },

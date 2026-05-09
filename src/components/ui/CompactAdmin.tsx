@@ -77,7 +77,7 @@ export function CompactChecklistRow({
         <span className="block truncate text-[15px] font-extrabold text-[#111827]">{title}</span>
         <span className={cn('block truncate text-[12px] font-bold', done ? 'text-[#188447]' : 'text-[#9A3412]')}>{status}</span>
       </span>
-      <span className="rounded-[9px] border border-[#D7DEE8] bg-[#F8FAFC] px-2 py-1 text-[12px] font-black text-[#1F2BD8]">{action}</span>
+      <span className="rounded-[9px] border border-[#D7DEE8] bg-[#F8FAFC] px-2 py-1 text-[12px] font-black text-[#2436D9]">{action}</span>
     </button>
   )
 }
@@ -142,5 +142,5 @@ export function CompactSettingsSection({ title, description, actions, children, 
 }
 
 export function compactFieldClassName(extra?: string) {
-  return cn('h-9 w-full rounded-[10px] border border-[#D7DEE8] bg-white px-2.5 text-[13px] font-semibold text-[#111827] outline-none transition focus:border-[#1F2BD8] focus:ring-3 focus:ring-[#1F2BD8]/10', extra)
+  return cn('h-9 w-full rounded-[10px] border border-[#D7DEE8] bg-white px-2.5 text-[13px] font-semibold text-[#111827] outline-none transition focus:border-[#2436D9] focus:ring-3 focus:ring-[#2436D9]/10', extra)
 }

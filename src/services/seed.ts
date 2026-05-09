@@ -16,7 +16,7 @@ const SCHOOL: School = {
   email: 'info@virazh-school.ru',
   address: 'г. Москва, ул. Ленина, 45',
   createdAt: '2024-01-15T10:00:00Z',
-  primaryColor: '#1F2BD8',
+  primaryColor: '#4455C4',
   bookingLimitEnabled: true,
   maxActiveBookingsPerStudent: 2,
   branchSelectionMode: 'student_choice',

@@ -34,7 +34,7 @@ const iconByKind: Record<StateKind, ReactNode> = {
 const toneByKind: Record<StateKind, { bg: string; color: string }> = {
   empty: { bg: '#F4F5F6', color: '#9EA3A8' },
   'no-results': { bg: '#F4F5F6', color: '#9EA3A8' },
-  loading: { bg: 'rgba(36,54,217,0.10)', color: '#1F2BD8' },
+  loading: { bg: 'rgba(36,54,217,0.10)', color: '#2436D9' },
   error: { bg: '#FEF2F2', color: '#E5534B' },
   success: { bg: '#F0FDF4', color: '#15803D' },
   locked: { bg: '#FFFBEB', color: '#B45309' },
@@ -60,7 +60,7 @@ export function StateView({ kind = 'empty', title, description, action, classNam
           {iconByKind[kind]}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#050609' }}>{title}</p>
+          <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</p>
           {description ? (
             <p className="mt-0.5 text-[13px] font-medium leading-5" style={{ color: '#6F747A' }}>
               {description}

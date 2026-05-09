@@ -18,7 +18,7 @@ export function DataRow({ children, className, selected = false }: { children: R
       className={cn('block px-3 py-2.5 transition-all duration-150 hover:bg-[#F8FAFC] md:px-3.5 md:py-3', className)}
       style={{
         background: '#FFFFFF',
-        border: selected ? '2px solid #1F2BD8' : '1px solid #D8E0EC',
+        border: selected ? '2px solid #2436D9' : '1px solid #D8E0EC',
         borderRadius: '14px',
         boxShadow: selected ? '0 0 0 3px rgba(36,54,217,0.10)' : 'none',
       }}

@@ -41,7 +41,7 @@ export function AdminInfoTile({
       )}
     >
       <p className="caption">{label}</p>
-      <div className="mt-1 text-[14px] font-semibold text-[#050609]">{value}</div>
+      <div className="mt-1 text-[14px] font-semibold text-[#111418]">{value}</div>
       {meta ? <div className="mt-1 text-[13px] text-[#6F747A]">{meta}</div> : null}
     </div>
   )
