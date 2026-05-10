@@ -141,40 +141,40 @@
 
   /* ─── Vroom clean light admin/mobile helpers ─────────── */
   .v-admin-shell {
-    --admin-bg: #F3F5F8;
-    --admin-bg-2: #ECEFF4;
+    --admin-bg: #F6F7F9;
+    --admin-bg-2: #F2F4F7;
     --admin-surface: #FFFFFF;
-    --admin-soft: #F8FAFC;
-    --admin-text: #111418;
-    --admin-muted: #5F6875;
-    --admin-subtle: #8B929C;
-    --admin-line: #D8DEE8;
-    --admin-line-strong: #B8C2CF;
-    --admin-primary: #1F3A8A;
-    --admin-primary-hover: #172E70;
-    --admin-danger: #D6453D;
-    --admin-success: #177245;
-    --admin-warning: #A15C00;
+    --admin-soft: #F9FAFB;
+    --admin-text: #111827;
+    --admin-muted: #667085;
+    --admin-subtle: #98A2B3;
+    --admin-line: #E4E7EC;
+    --admin-line-strong: #D0D5DD;
+    --admin-primary: #111827;
+    --admin-primary-hover: #030712;
+    --admin-danger: #B42318;
+    --admin-success: #15803D;
+    --admin-warning: #B45309;
     min-height: 100dvh;
     background: var(--admin-bg);
     color: var(--admin-text);
   }
-  .v-admin-page { width: 100%; max-width: 1240px; margin: 0 auto; padding: 12px 12px 24px; }
-  .v-admin-hero { overflow: hidden; border: 1px solid var(--admin-line); border-radius: 12px; background: var(--admin-surface); color: var(--admin-text); padding: 14px; box-shadow: none; }
+  .v-admin-page { width: 100%; max-width: 1240px; margin: 0 auto; padding: 14px 12px 28px; }
+  .v-admin-hero { overflow: hidden; border: 1px solid var(--admin-line); border-radius: 18px; background: var(--admin-surface); color: var(--admin-text); padding: 18px; box-shadow: none; }
   .v-admin-eyebrow { color: var(--admin-subtle); font-size: 11px; font-weight: 900; line-height: 1.2; letter-spacing: 0.08em; text-transform: uppercase; }
-  .v-admin-title { margin-top: 4px; color: var(--admin-text); font-size: 28px; font-weight: 950; line-height: 1; letter-spacing: -0.045em; }
-  .v-admin-subtitle { margin-top: 7px; max-width: 46rem; color: var(--admin-muted); font-size: 14px; font-weight: 700; line-height: 1.45; }
+  .v-admin-title { margin-top: 4px; color: var(--admin-text); font-size: 32px; font-weight: 950; line-height: 0.98; letter-spacing: -0.055em; }
+  .v-admin-subtitle { margin-top: 8px; max-width: 46rem; color: var(--admin-muted); font-size: 15px; font-weight: 650; line-height: 1.5; }
   .v-section-head { margin: 20px 2px 10px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
   .v-section-title { color: var(--admin-text); font-size: 19px; font-weight: 950; line-height: 1.1; letter-spacing: -0.035em; }
-  .v-section-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; padding: 0 8px; color: var(--admin-primary); font-size: 13px; font-weight: 900; }
-  .v-panel, .v-card { border: 1px solid var(--admin-line); background: var(--admin-surface); border-radius: 12px; box-shadow: none; }
-  .v-primary, .v-secondary { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; font-weight: 900; line-height: 1; transition: background-color 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease); touch-action: manipulation; }
+  .v-section-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; padding: 0 10px; color: var(--admin-primary); font-size: 13px; font-weight: 900; }
+  .v-panel, .v-card { border: 1px solid var(--admin-line); background: var(--admin-surface); border-radius: 16px; box-shadow: none; }
+  .v-primary, .v-secondary { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-weight: 900; line-height: 1; transition: background-color 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease); touch-action: manipulation; }
   .v-primary { border: 1px solid #111827; background: #111827; color: white; box-shadow: none; }
   .v-primary:hover { border-color: #000; background: #000; box-shadow: none; }
-  .v-secondary { border: 1px solid var(--admin-line-strong); background: var(--admin-surface); color: var(--admin-text); box-shadow: none; }
-  .v-secondary:hover { border-color: var(--admin-muted); background: var(--admin-soft); }
-  .v-input { min-height: 44px; width: 100%; border-radius: 8px; border: 1px solid var(--admin-line); background: var(--admin-surface); padding: 0 12px; color: var(--admin-text); font-size: 15px; font-weight: 700; outline: none; transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease); }
-  .v-input:focus { border-color: var(--admin-primary); box-shadow: 0 0 0 3px rgba(31,58,138,0.12); }
+  .v-secondary { border: 1px solid var(--admin-line); background: var(--admin-surface); color: var(--admin-text); box-shadow: none; }
+  .v-secondary:hover { border-color: var(--admin-line-strong); background: var(--admin-soft); }
+  .v-input { min-height: 44px; width: 100%; border-radius: 12px; border: 1px solid var(--admin-line); background: var(--admin-surface); padding: 0 12px; color: var(--admin-text); font-size: 15px; font-weight: 650; outline: none; transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease); }
+  .v-input:focus { border-color: #98A2B3; box-shadow: 0 0 0 4px rgba(17,24,39,0.08); }
   .v-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .v-stat { min-height: 72px; border-radius: 10px; border: 1px solid var(--admin-line); background: var(--admin-surface); padding: 12px; text-align: left; box-shadow: none; transition: border-color 150ms var(--ease), background-color 150ms var(--ease); }
   .v-stat:hover { border-color: var(--admin-line-strong); background: var(--admin-soft); }
