@@ -11,9 +11,11 @@ import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import {
   cancelBookingConfirmed,
   completeBookingConfirmed,
+  createBooking,
   getBookingsBySchool,
   getSlotDateTime,
   rescheduleBookingConfirmed,
+  updateBookingComment,
 } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { db } from '../../services/storage'
@@ -21,6 +23,16 @@ import { getAvailableSlots } from '../../services/slotService'
 
 type StatusFilter = 'all' | 'active' | 'cancelled' | 'completed'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
+
+const emptyIntakeForm = {
+  studentName: '',
+  studentPhone: '',
+  date: '',
+  branchId: 'all',
+  instructorId: 'all',
+  slotId: '',
+  comment: '',
+}
 
 export function AdminBookings() {
   const school = db.schools.all()[0] ?? null
@@ -38,10 +50,13 @@ export function AdminBookings() {
   const [rescheduleBranchId, setRescheduleBranchId] = useState('all')
   const [rescheduleInstructorId, setRescheduleInstructorId] = useState('all')
   const [selectedSlotId, setSelectedSlotId] = useState('')
+  const [intakeOpen, setIntakeOpen] = useState(false)
+  const [intakeForm, setIntakeForm] = useState(emptyIntakeForm)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const branches = school ? db.branches.bySchool(school.id) : []
   const instructors = school ? db.instructors.bySchool(school.id) : []
-  const allBookings = school ? getBookingsBySchool(school.id) : []
+  const allBookings = useMemo(() => school ? getBookingsBySchool(school.id) : [], [school, refreshKey])
   const activeCount = allBookings.filter((e) => e.booking.status === 'active').length
   const todayCount = allBookings.filter((e) => e.slot && isSameDay(getSlotDateTime(e.slot), new Date())).length
 
@@ -89,6 +104,14 @@ export function AdminBookings() {
     )
   }, [rescheduleId, rescheduleDate, rescheduleBranchId, rescheduleInstructorId])
 
+  const intakeSlots = useMemo(() => {
+    return getAvailableSlots(
+      intakeForm.instructorId === 'all' ? undefined : intakeForm.instructorId,
+      intakeForm.date || undefined,
+      intakeForm.branchId === 'all' ? undefined : intakeForm.branchId,
+    ).slice(0, 18)
+  }, [intakeForm.branchId, intakeForm.date, intakeForm.instructorId, refreshKey])
+
   function openReschedule(bookingId: string) {
     const entry = allBookings.find((e) => e.booking.id === bookingId)
     setRescheduleId(bookingId)
@@ -128,11 +151,33 @@ export function AdminBookings() {
       const r = await rescheduleBookingConfirmed({ bookingId: rescheduleId, newSlotId: selectedSlotId, ignoreLimits: true })
       if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
       showToast(r.warning ?? 'Запись перенесена', 'success')
+      setRefreshKey((value) => value + 1)
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Ошибка', 'error')
     }
     setRescheduleId(null)
     setSelectedSlotId('')
+  }
+
+  function handleIntakeSubmit() {
+    if (!school) return
+    const slot = db.slots.byId(intakeForm.slotId)
+    if (!slot) { showToast('Выберите свободное окно', 'error'); return }
+    const r = createBooking({
+      schoolId: school.id,
+      branchId: slot.branchId,
+      instructorId: slot.instructorId,
+      slotId: slot.id,
+      studentName: intakeForm.studentName,
+      studentPhone: intakeForm.studentPhone,
+      sessionId: 'admin-intake',
+    })
+    if (!r.ok || !r.booking) { showToast(r.error ?? 'Не удалось записать ученика', 'error'); return }
+    if (intakeForm.comment.trim()) updateBookingComment(r.booking.id, `Админ-запись: ${intakeForm.comment.trim()}`)
+    showToast('Ученик записан администратором', 'success')
+    setIntakeOpen(false)
+    setIntakeForm(emptyIntakeForm)
+    setRefreshKey((value) => value + 1)
   }
 
   if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
@@ -143,6 +188,9 @@ export function AdminBookings() {
         <p className="v-admin-eyebrow">{school.name}</p>
         <h1 className="v-admin-title">Журнал записей</h1>
         <p className="v-admin-subtitle">Поиск, перенос, отмена и закрытие занятий учеников.</p>
+        <button type="button" onClick={() => setIntakeOpen(true)} className="v-primary mt-4 min-h-[48px] w-full px-4 text-[14px]">
+          Записать ученика
+        </button>
       </section>
 
       {/* Stats */}
@@ -246,6 +294,53 @@ export function AdminBookings() {
 
       <ConfirmDialog open={Boolean(cancelId)} title="Отменить запись" description="Время снова станет доступным для записи." confirmLabel="Отменить" onClose={() => setCancelId(null)} onConfirm={handleCancel} danger />
       <ConfirmDialog open={Boolean(completeId)} title="Отметить проведённой" description="Занятие будет считаться проведённым." confirmLabel="Подтвердить" onClose={() => setCompleteId(null)} onConfirm={handleComplete} />
+
+      <Modal open={intakeOpen} onClose={() => setIntakeOpen(false)} title="Записать ученика">
+        <div className="space-y-4 px-5 pb-5">
+          <div className="rounded-[8px] border border-[#DDE3EC] bg-[#F8FAFC] px-3 py-3 text-[13px] font-bold leading-5 text-[#3F4854]">
+            Для звонка или WhatsApp: введите ученика, выберите свободное окно — запись сразу появится в журнале и у инструктора.
+          </div>
+          <div className="grid gap-2">
+            <input value={intakeForm.studentName} onChange={(e) => setIntakeForm((f) => ({ ...f, studentName: e.target.value }))} placeholder="Имя ученика" className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[15px] font-semibold outline-none focus:border-[#1F3A8A]" />
+            <input value={intakeForm.studentPhone} onChange={(e) => setIntakeForm((f) => ({ ...f, studentPhone: e.target.value }))} placeholder="Телефон" className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[15px] font-semibold outline-none focus:border-[#1F3A8A]" />
+            <div className="grid grid-cols-2 gap-2">
+              <select value={intakeForm.branchId} onChange={(e) => setIntakeForm((f) => ({ ...f, branchId: e.target.value, slotId: '' }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
+                <option value="all">Любой филиал</option>
+                {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              <select value={intakeForm.instructorId} onChange={(e) => setIntakeForm((f) => ({ ...f, instructorId: e.target.value, slotId: '' }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
+                <option value="all">Любой инструктор</option>
+                {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+            </div>
+            <input type="date" value={intakeForm.date} onChange={(e) => setIntakeForm((f) => ({ ...f, date: e.target.value, slotId: '' }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[14px] font-semibold outline-none focus:border-[#1F3A8A]" />
+            <textarea value={intakeForm.comment} onChange={(e) => setIntakeForm((f) => ({ ...f, comment: e.target.value }))} placeholder="Комментарий администратора: откуда заявка, пожелания, что обещали" className="min-h-[82px] rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-[14px] font-semibold outline-none focus:border-[#1F3A8A]" />
+          </div>
+          <div>
+            <p className="mb-2 text-[13px] font-black text-[#111418]">Свободные окна</p>
+            {intakeSlots.length === 0 ? (
+              <p className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-3 py-4 text-center text-sm font-semibold text-[#5F6875]">Нет свободных окон. Измените дату, филиал или инструктора.</p>
+            ) : (
+              <div className="max-h-[260px] space-y-1.5 overflow-y-auto">
+                {intakeSlots.map((slot) => {
+                  const inst = db.instructors.byId(slot.instructorId)
+                  const br = db.branches.byId(slot.branchId)
+                  return (
+                    <button key={slot.id} type="button" onClick={() => setIntakeForm((f) => ({ ...f, slotId: slot.id }))} className={`flex min-h-[58px] w-full items-center justify-between gap-2 rounded-[8px] border px-3 py-2 text-left ${intakeForm.slotId === slot.id ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[#DDE3EC] bg-white text-[#111418]'}`}>
+                      <span><strong className="block text-[13px]">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</strong><span className="text-[12px] font-semibold opacity-75">{inst?.name} · {br?.name}</span></span>
+                      <span className="text-[12px] font-black">Выбрать</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleIntakeSubmit} disabled={!intakeForm.slotId} className="flex-1">Создать запись</Button>
+            <Button variant="secondary" onClick={() => setIntakeOpen(false)} className="flex-1">Закрыть</Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal open={Boolean(rescheduleId)} onClose={() => setRescheduleId(null)} title="Перенести запись">
         <div className="space-y-4 px-5 pb-5">

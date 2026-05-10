@@ -5,6 +5,7 @@ import { saveStudentProgress, saveLessonDescription } from './studentProfile'
 
 const SCHOOL_ID = 'school-virazh'
 export const WORKSPACE_SCHOOL_ID = 'school-workspace'
+const DEMO_SEED_DATE = format(new Date(), 'yyyy-MM-dd')
 
 const SCHOOL: School = {
   id: SCHOOL_ID,
@@ -148,7 +149,7 @@ function generateSlots(): Slot[] {
   const today = new Date()
 
   for (const instructor of INSTRUCTORS) {
-    for (let d = 1; d <= 7; d++) {
+    for (let d = 0; d <= 7; d++) {
       const date = format(addDays(today, d), 'yyyy-MM-dd')
       const timesForDay =
         d % 3 === 0
@@ -222,6 +223,36 @@ function generateBookings(slots: Slot[]): Booking[] {
   return bookings
 }
 
+function ensureInstructorTodayWorkday(slots: Slot[], bookings: Booking[]): void {
+  const petrovTodaySlots = slots
+    .filter((slot) => slot.instructorId === 'inst-petrov' && slot.date === DEMO_SEED_DATE)
+    .sort((left, right) => left.time.localeCompare(right.time))
+    .slice(0, 4)
+
+  petrovTodaySlots.forEach((slot, idx) => {
+    if (bookings.some((booking) => booking.slotId === slot.id)) return
+    const student = STUDENTS[idx % STUDENTS.length]
+    const bookingId = `booking-today-petrov-${idx + 1}`
+    slot.status = 'booked'
+    slot.bookingId = bookingId
+    bookings.push({
+      id: bookingId,
+      schoolId: SCHOOL_ID,
+      slotId: slot.id,
+      instructorId: slot.instructorId,
+      branchId: slot.branchId,
+      studentId: student.id,
+      studentName: student.name,
+      studentPhone: student.normalizedPhone ?? student.phone,
+      studentEmail: student.email,
+      status: 'active',
+      createdAt: new Date(Date.now() - idx * 45 * 60000).toISOString(),
+      notes: idx === 0 ? 'Встреча у центрального офиса, повторить перестроения.' : '',
+      comment: idx === 1 ? 'Ученик просил напомнить про удобную обувь.' : '',
+    })
+  })
+}
+
 const ACTIVE_MODULES: SchoolModule[] = [
   {
     id: 'school-module-telegram',
@@ -278,6 +309,7 @@ export function seedIfNeeded(options: { force?: boolean; mode?: 'demo' | 'worksp
 
   const slots = generateSlots()
   const bookings = generateBookings(slots)
+  ensureInstructorTodayWorkday(slots, bookings)
 
   slots.forEach((s) => db.slots.upsert(s))
   bookings.forEach((b) => db.bookings.upsert(b))

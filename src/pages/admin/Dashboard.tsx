@@ -1,10 +1,11 @@
 import { addDays, format, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { getUpcomingBookings } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { loadStudentRequests, studentRequestStatusLabels, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 import { db } from '../../services/storage'
 
 function getSchool() {
@@ -14,6 +15,7 @@ function getSchool() {
 export function AdminDashboard() {
   const school = getSchool()
   const navigate = useNavigate()
+  const [requestRefresh, setRequestRefresh] = useState(0)
 
   const data = useMemo(() => {
     if (!school) return null
@@ -24,6 +26,7 @@ export function AdminDashboard() {
     const instructors = db.instructors.bySchool(school.id)
     const slots = db.slots.bySchool(school.id)
     const bookings = db.bookings.bySchool(school.id)
+    const requests = loadStudentRequests(school.id)
     const activeBookings = bookings.filter((booking) => booking.status === 'active')
     const upcoming = getUpcomingBookings(school.id)
       .filter((entry) => entry.booking.status === 'active')
@@ -74,11 +77,12 @@ export function AdminDashboard() {
       branches,
       freeSlots7d,
       instructors,
+      requests,
       setupItems,
       todayBookings,
       upcoming,
     }
-  }, [school])
+  }, [school, requestRefresh])
 
   if (!school || !data) {
     return (
@@ -94,6 +98,13 @@ export function AdminDashboard() {
   const activeInstructors = data.instructors.filter((i) => i.isActive).length
   const configuredCount = data.setupItems.filter((item) => item.done).length
   const publicPath = `/school/${school.slug}`
+  const openRequests = data.requests.filter((request) => request.status === 'new' || request.status === 'reviewing').slice(0, 4)
+
+  async function patchRequest(requestId: string, status: 'reviewing' | 'resolved' | 'rejected') {
+    const result = await updateStudentRequestStatusAdminConfirmed(school.id, requestId, status)
+    if (!result.ok) return
+    setRequestRefresh((value) => value + 1)
+  }
 
   return (
     <div className="v-admin-page">
@@ -132,10 +143,42 @@ export function AdminDashboard() {
           <span className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#EEF0FA] text-[#2442D8]">＋</span>
         </button>
         <button type="button" className="v-quick" onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)}>
-          <span><strong>Все записи</strong><span>Перенос, отмена, статус занятий</span></span>
+          <span><strong>Записать ученика</strong><span>Звонок, WhatsApp или ручная запись</span></span>
           <span className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F1F2F5] text-[#050609]">→</span>
         </button>
       </section>
+
+      {openRequests.length > 0 ? (
+        <section className="mt-5 overflow-hidden v-panel border-[#F6D99D]">
+          <div className="border-b border-[#F6D99D] bg-[#FFF8E6] px-4 py-4">
+            <h2 className="text-[19px] font-black leading-tight tracking-[-0.035em] text-[#111418]">Запросы учеников</h2>
+            <p className="mt-1 text-[13px] font-bold text-[#7A5607]">То, что администратор должен разобрать: переносы и отмены.</p>
+          </div>
+          <div>
+            {openRequests.map((request) => {
+              const student = db.students.byId(request.studentId)
+              const booking = request.bookingId ? db.bookings.byId(request.bookingId) : null
+              const slot = booking ? db.slots.byId(booking.slotId) : null
+              return (
+                <div key={request.id} className="border-b border-[#EEF0F4] px-4 py-3 last:border-b-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-black text-[#111418]">{request.type === 'reschedule' ? 'Перенос' : 'Отмена'} · {student?.name ?? 'Ученик'}</p>
+                      <p className="mt-1 text-[12px] font-bold leading-5 text-[#5F6875]">{slot ? `${format(new Date(`${slot.date}T${slot.time}:00`), 'd MMM, HH:mm', { locale: ru })} · ` : ''}{request.reason || request.comment || 'причина не указана'}</p>
+                    </div>
+                    <span className="shrink-0 rounded-[7px] bg-[#F1F2F5] px-2 py-1 text-[11px] font-black text-[#3F4854]">{studentRequestStatusLabels[request.status]}</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button type="button" onClick={() => void patchRequest(request.id, 'reviewing')} className="min-h-10 rounded-[8px] border border-[#D8DEE8] bg-white px-2 text-[12px] font-black text-[#111418]">В работу</button>
+                    <button type="button" onClick={() => void patchRequest(request.id, 'resolved')} className="min-h-10 rounded-[8px] bg-[#1F3A8A] px-2 text-[12px] font-black text-white">Решено</button>
+                    <button type="button" onClick={() => void patchRequest(request.id, 'rejected')} className="min-h-10 rounded-[8px] border border-[#F3B7B3] bg-white px-2 text-[12px] font-black text-[#C6372E]">Отклонить</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {configuredCount < data.setupItems.length ? (
         <section className="mt-5 overflow-hidden v-panel">

@@ -352,7 +352,25 @@ export async function cancelBookingConfirmed(bookingId: string): Promise<Booking
   return cancelBooking(bookingId, { skipRemote: true })
 }
 
-export function completeBooking(bookingId: string, options: { skipRemote?: boolean } = {}): BookingMutationResult {
+export function updateBookingComment(bookingId: string, comment: string): BookingMutationResult {
+  const booking = db.bookings.byId(bookingId)
+  if (!booking) {
+    return { ok: false, error: 'Запись не найдена.' }
+  }
+
+  const text = comment.trim()
+  const nextBooking: Booking = {
+    ...booking,
+    comment: text,
+    notes: text,
+    updatedAt: new Date().toISOString(),
+  }
+
+  db.bookings.upsert(nextBooking)
+  return { ok: true, booking: nextBooking }
+}
+
+export function completeBooking(bookingId: string, options: { skipRemote?: boolean; comment?: string } = {}): BookingMutationResult {
   const booking = db.bookings.byId(bookingId)
   if (!booking) {
     return { ok: false, error: 'Запись не найдена.' }
@@ -362,9 +380,12 @@ export function completeBooking(bookingId: string, options: { skipRemote?: boole
     return { ok: false, error: 'Провести можно только активную запись.' }
   }
 
+  const note = options.comment?.trim()
   const nextBooking: Booking = {
     ...booking,
     status: 'completed',
+    comment: note || booking.comment,
+    notes: note || booking.notes,
     updatedAt: new Date().toISOString(),
   }
 

@@ -8,7 +8,7 @@ import type {
   Student,
   SchoolModule,
 } from '../types'
-export const SEED_VERSION = '6'
+export const SEED_VERSION = '7'
 
 const KEY_PREFIX = 'dd:'
 let activeNamespace = 'demo'
