@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
-import { LinkSquare02Icon, Logout03Icon } from '@hugeicons/core-free-icons'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import {
+  Calendar03Icon,
+  ClipboardIcon,
+  DashboardSquare03Icon,
+  LinkSquare02Icon,
+  Logout03Icon,
+  Settings02Icon,
+  UserGroupIcon,
+  UserMultipleIcon,
+} from '@hugeicons/core-free-icons'
 import { AdminBottomNav, AdminTopBar } from './AdminBottomNav'
 import { createHugeIcon } from '../ui/HugeIcon'
-import { clearAccess } from '../../services/accessControl'
+import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 import { setDataNamespace } from '../../services/storage'
 import { seedIfNeeded } from '../../services/seed'
 import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
@@ -11,6 +20,21 @@ import { db } from '../../services/storage'
 
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const LogOut = createHugeIcon(Logout03Icon)
+const Home = createHugeIcon(DashboardSquare03Icon)
+const Clipboard = createHugeIcon(ClipboardIcon)
+const Calendar = createHugeIcon(Calendar03Icon)
+const Students = createHugeIcon(UserMultipleIcon)
+const Staff = createHugeIcon(UserGroupIcon)
+const Settings = createHugeIcon(Settings02Icon)
+
+const sidebar = [
+  { to: ADMIN_BASE_PATH, label: 'Операционный день', hint: 'что делать сейчас', icon: Home, end: true },
+  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Журнал записей', hint: 'переносы, отмены', icon: Clipboard },
+  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание окон', hint: 'инструкторы и время', icon: Calendar },
+  { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', hint: 'карточки и прогресс', icon: Students },
+  { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', hint: 'доступ и машины', icon: Staff },
+  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Настройка школы', hint: 'готовность к запуску', icon: Settings },
+]
 
 export function AdminLayout() {
   const navigate = useNavigate()
@@ -39,72 +63,68 @@ export function AdminLayout() {
 
   return (
     <div className="v-admin-shell">
-      {/* Mobile top bar */}
-      <header
-        className="sticky top-0 z-20 flex items-center justify-between border-b md:hidden"
-        style={{
-          background: '#FFFFFF',
-          borderColor: '#D8DEE8',
-        }}
-      >
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[#D8DEE8] bg-white/95 backdrop-blur md:hidden">
         <div className="flex items-center gap-2 px-3 py-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-[8px] border border-[#D8DEE8] bg-white text-[#1F3A8A]">
+          <div className="grid h-9 w-9 place-items-center rounded-[9px] bg-[#111827] text-white">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 17h14M5 17l3-8h8l3 8M9 9V6m6 3V6M4 17h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <span className="text-[15px] font-black tracking-[-0.03em] text-[#050609]">vroom</span>
+          <div>
+            <span className="block text-[15px] font-black tracking-[-0.04em] text-[#050609]">vroom</span>
+            <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-[#64748B]">пульт автошколы</span>
+          </div>
         </div>
-        <button
-          onClick={() => { if (school) window.location.href = publicPath }}
-          className="mr-3 flex min-h-11 items-center gap-1.5 rounded-[8px] px-3 text-[12px] font-black text-[#5F6875] transition hover:bg-[#F8FAFC] hover:text-[#111418]"
-        >
+        <button onClick={() => { if (school) window.location.href = publicPath }} className="mr-3 flex min-h-11 items-center gap-1.5 rounded-[8px] bg-[#EFF6FF] px-3 text-[12px] font-black text-[#1D4ED8]">
           <ExternalLink size={13} />
-          Открыть сайт
+          Сайт
         </button>
       </header>
 
-      {/* Desktop top bar */}
       <AdminTopBar />
 
-      {/* Desktop sidebar */}
-      <aside
-        className="hidden md:flex"
-        style={{
-          position: 'fixed',
-          top: 57,
-          left: 0,
-          bottom: 0,
-          width: 240,
-          flexDirection: 'column',
-          background: '#FFFFFF',
-          borderRight: '1px solid #D8DEE8',
-          padding: '16px 12px',
-          gap: '8px',
-        }}
-      >
-        <a
-          href={publicPath}
-          className="mt-auto flex items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-bold text-[#6F747A] transition hover:bg-[rgba(0,0,0,0.03)] hover:text-[#111418]"
-        >
-          <ExternalLink size={14} />
-          Страница школы
-        </a>
-        <button
-          onClick={() => { clearAccess('admin'); navigate('/') }}
-          className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-bold text-[#E5534B] transition hover:bg-[rgba(229,83,75,0.06)]"
-        >
+      <aside className="fixed bottom-0 left-0 top-[58px] hidden w-[276px] flex-col border-r border-[#D8DEE8] bg-[#F8FAFC] p-3 md:flex">
+        <div className="rounded-[14px] border border-[#D8DEE8] bg-white p-3">
+          <p className="text-[11px] font-black uppercase tracking-[0.1em] text-[#64748B]">школа</p>
+          <p className="mt-1 truncate text-[15px] font-black text-[#111418]">{school?.name ?? 'Новая автошкола'}</p>
+          <a href={publicPath} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-[9px] bg-[#EFF6FF] px-3 text-[12px] font-black text-[#1D4ED8]">
+            <ExternalLink size={14} /> Открыть публичную страницу
+          </a>
+        </div>
+
+        <nav className="mt-3 space-y-1">
+          {sidebar.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => `grid min-h-[58px] grid-cols-[34px_minmax(0,1fr)] items-center gap-3 rounded-[12px] px-3 transition ${isActive ? 'bg-[#111827] text-white' : 'text-[#334155] hover:bg-white'}`}
+            >
+              {({ isActive }) => (
+                <>
+                  <span className={`grid h-9 w-9 place-items-center rounded-[9px] ${isActive ? 'bg-white/12 text-white' : 'bg-white text-[#1F3A8A]'}`}>
+                    <item.icon size={16} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-black">{item.label}</span>
+                    <span className={`block truncate text-[11px] font-bold ${isActive ? 'text-white/62' : 'text-[#64748B]'}`}>{item.hint}</span>
+                  </span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        <button onClick={() => { clearAccess('admin'); navigate('/') }} className="mt-auto flex min-h-11 items-center gap-2 rounded-[10px] px-3 text-[13px] font-black text-[#DC2626] transition hover:bg-[#FEF2F2]">
           <LogOut size={14} />
           Выйти
         </button>
       </aside>
 
-      {/* Main content area */}
-      <div className="pb-[calc(104px+env(safe-area-inset-bottom))] md:pb-0 md:pl-[240px]">
+      <div className="pb-[calc(104px+env(safe-area-inset-bottom))] md:pb-0 md:pl-[276px]">
         <Outlet />
       </div>
 
-      {/* Mobile bottom navigation */}
       <AdminBottomNav />
     </div>
   )

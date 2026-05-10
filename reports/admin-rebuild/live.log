@@ -1,0 +1,8 @@
+[10:07:45] START full admin rebuild audit
+[10:07:46] AUDIT real ops + current UI
+[10:08:06] DESIGN new admin information architecture
+[10:08:26] REBUILD dashboard/bookings/slots
+[10:08:46] REBUILD students/instructors/settings
+[10:09:06] QA click routes + mobile visual
+[10:09:26] TYPECHECK build push
+[manual] implementing new shell/navigation and dashboard/cards
