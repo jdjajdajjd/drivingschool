@@ -104,8 +104,7 @@ export function AdminDashboard() {
         <section className="overflow-hidden rounded-[18px] border border-[#E4E7EC] bg-white">
           <div className="p-5 md:p-8">
             <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#667085]">Новая автошкола</p>
-            <h1 className="mt-2 max-w-[760px] text-[32px] font-black leading-[0.95] tracking-[-0.055em] text-[#111827] md:text-[56px]">Запустим запись учеников</h1>
-            <p className="mt-4 max-w-[620px] text-[15px] font-semibold leading-6 text-[#667085] md:text-[17px]">Настройте четыре вещи: контакты, филиал, инструктора и первые окна. После этого публичная страница начнёт принимать записи.</p>
+            <h1 className="mt-2 max-w-[760px] text-[32px] font-black leading-[0.95] tracking-[-0.055em] text-[#111827] md:text-[56px]">Запуск школы</h1>
             <div className="mt-5 flex flex-wrap gap-2">
               <button onClick={() => navigate(nextStep?.to ?? `${ADMIN_BASE_PATH}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">{nextStep ? `${nextStep.action}: ${nextStep.title}` : 'Перейти к работе'}</button>
               <a href={`/school/${school.slug}`} className="inline-flex min-h-12 items-center rounded-[12px] border border-[#E4E7EC] bg-white px-5 text-[14px] font-black text-[#111827]">Посмотреть страницу</a>
@@ -145,7 +144,6 @@ export function AdminDashboard() {
           <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="text-[34px] font-black leading-none tracking-[-0.055em] text-[#111827] md:text-[48px]">Сегодня</h1>
-              <p className="mt-3 max-w-[560px] text-[15px] font-semibold leading-6 text-[#667085]">Рабочий день: ближайшее занятие, свободные окна и всё, что требует внимания.</p>
             </div>
             <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">Записать ученика</button>
           </div>
