@@ -112,9 +112,9 @@ function readinessIssues(row: BookingRow, branch: Branch | null, instructor: Ins
   return issues
 }
 
-function contactLink(phone: string, channel: 'tel' | 'wa'): string {
+function contactLink(phone: string, channel: 'tel' | 'sms'): string {
   const digits = phone.replace(/\D/g, '')
-  if (channel === 'wa') return `https://wa.me/${digits.startsWith('8') ? `7${digits.slice(1)}` : digits}`
+  if (channel === 'sms') return `sms:${digits}`
   return `tel:${digits}`
 }
 
@@ -228,12 +228,12 @@ function WorkdayRow({
             </a>
             <a
               className={`grid min-h-11 place-items-center rounded-[8px] border px-3 text-center text-[12px] font-black ${hasStudentPhone ? 'border-[#DDE3EC] bg-white text-[#111418]' : 'pointer-events-none border-[#EEF0F4] bg-[#F7F8FA] text-[#9EA3A8]'}`}
-              href={hasStudentPhone ? contactLink(row.booking.studentPhone, 'wa') : undefined}
+              href={hasStudentPhone ? contactLink(row.booking.studentPhone, 'sms') : undefined}
               target="_blank"
               rel="noreferrer"
               aria-disabled={!hasStudentPhone}
             >
-              <span className="inline-flex items-center gap-1.5"><Message size={14} /> WhatsApp</span>
+              <span className="inline-flex items-center gap-1.5"><Message size={14} /> SMS</span>
             </a>
             <button
               type="button"

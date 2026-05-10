@@ -298,7 +298,7 @@ export function AdminBookings() {
       <Modal open={intakeOpen} onClose={() => setIntakeOpen(false)} title="Записать ученика">
         <div className="space-y-4 px-5 pb-5">
           <div className="rounded-[8px] border border-[#DDE3EC] bg-[#F8FAFC] px-3 py-3 text-[13px] font-bold leading-5 text-[#3F4854]">
-            Для звонка или WhatsApp: введите ученика, выберите свободное окно — запись сразу появится в журнале и у инструктора.
+            Для звонка, SMS или другого канала связи: введите ученика, выберите свободное окно — запись сразу появится в журнале и у инструктора.
           </div>
           <div className="grid gap-2">
             <input value={intakeForm.studentName} onChange={(e) => setIntakeForm((f) => ({ ...f, studentName: e.target.value }))} placeholder="Имя ученика" className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[15px] font-semibold outline-none focus:border-[#1F3A8A]" />
