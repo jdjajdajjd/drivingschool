@@ -36,9 +36,8 @@ export function AdminBottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-1.5 md:hidden"
       style={{
-        background: 'rgba(255,255,255,0.96)',
-        backdropFilter: 'blur(18px)',
-        borderColor: 'rgba(15,20,25,0.08)',
+        background: '#FFFFFF',
+        borderColor: '#D8DEE8',
       }}
     >
       <div className="grid grid-cols-5">
@@ -49,10 +48,10 @@ export function AdminBottomNav() {
             end={tab.key === 'today'}
             className={({ isActive }) =>
               cn(
-                'flex min-h-[58px] flex-col items-center justify-center gap-0.5 rounded-[18px] text-center transition-colors',
+                'flex min-h-[58px] flex-col items-center justify-center gap-0.5 rounded-[8px] text-center transition-colors',
                 isActive
-                  ? 'text-[#1F2BD8]'
-                  : 'text-[#9EA3A8] hover:text-[#6F747A]',
+                  ? 'text-[#1F3A8A]'
+                  : 'text-[#8B929C] hover:text-[#5F6875]',
               )
             }
           >
@@ -60,9 +59,9 @@ export function AdminBottomNav() {
               <>
                 <span
                   className={cn(
-                    'grid h-7 w-7 place-items-center rounded-[10px] transition-all',
+                    'grid h-7 w-7 place-items-center rounded-[6px] transition-all',
                     isActive
-                      ? 'bg-[#EEF0FA] text-[#2442D8]'
+                      ? 'bg-[#111827] text-white'
                       : 'text-current',
                   )}
                 >
@@ -71,7 +70,7 @@ export function AdminBottomNav() {
                 <span
                   className={cn(
                     'text-[10px] font-extrabold leading-none tracking-tight',
-                    isActive ? 'text-[#1F2BD8]' : '',
+                    isActive ? 'text-[#1F3A8A]' : '',
                   )}
                 >
                   {tab.label}
@@ -114,10 +113,10 @@ export function AdminTopBar() {
             to={tab.to}
             end={tab.key === 'today'}
             className={cn(
-              'flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 py-2 text-[13px] font-extrabold transition-colors',
+              'flex min-h-11 items-center gap-1.5 rounded-[8px] px-3 py-2 text-[13px] font-extrabold transition-colors',
               activeTab === tab.key
-                ? 'bg-[#EEF0FA] text-[#1F2BD8]'
-                : 'text-[#6F747A] hover:bg-[#EEF0FA] hover:text-[#1F2BD8]',
+                ? 'bg-[#111827] text-white'
+                : 'text-[#5F6875] hover:bg-[#F8FAFC] hover:text-[#111418]',
             )}
           >
             <tab.icon size={14} />

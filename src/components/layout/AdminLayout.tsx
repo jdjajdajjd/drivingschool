@@ -43,13 +43,12 @@ export function AdminLayout() {
       <header
         className="sticky top-0 z-20 flex items-center justify-between border-b md:hidden"
         style={{
-          background: 'rgba(255,255,255,0.96)',
-          backdropFilter: 'blur(16px)',
-          borderColor: 'rgba(0,0,0,0.06)',
+          background: '#FFFFFF',
+          borderColor: '#D8DEE8',
         }}
       >
         <div className="flex items-center gap-2 px-3 py-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#EEF0FA] text-[#2442D8]">
+          <div className="grid h-9 w-9 place-items-center rounded-[8px] border border-[#D8DEE8] bg-white text-[#1F3A8A]">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 17h14M5 17l3-8h8l3 8M9 9V6m6 3V6M4 17h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -58,7 +57,7 @@ export function AdminLayout() {
         </div>
         <button
           onClick={() => { if (school) window.location.href = publicPath }}
-          className="mr-3 flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 text-[12px] font-black text-[#6F747A] transition hover:bg-[#EEF0FA] hover:text-[#111418] active:scale-[0.97]"
+          className="mr-3 flex min-h-11 items-center gap-1.5 rounded-[8px] px-3 text-[12px] font-black text-[#5F6875] transition hover:bg-[#F8FAFC] hover:text-[#111418]"
         >
           <ExternalLink size={13} />
           Открыть сайт
@@ -78,11 +77,10 @@ export function AdminLayout() {
           bottom: 0,
           width: 240,
           flexDirection: 'column',
-          background: 'rgba(255,255,255,0.74)',
-          borderRight: '1px solid rgba(15,20,25,0.07)',
+          background: '#FFFFFF',
+          borderRight: '1px solid #D8DEE8',
           padding: '16px 12px',
           gap: '8px',
-          backdropFilter: 'blur(18px)',
         }}
       >
         <a

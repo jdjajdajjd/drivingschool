@@ -9,7 +9,7 @@ import { db } from '../../services/storage'
 
 const INIT = { name: '', address: '', phone: '', isActive: true }
 function fieldCls() {
-  return 'min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]'
+  return 'min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]'
 }
 
 export function AdminBranches() {
@@ -63,13 +63,13 @@ export function AdminBranches() {
     showToast('Филиал выключен', 'success')
   }
 
-  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
+    <div className="v-admin-page">
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8B929C]">{school.name}</p>
           <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Филиалы</h1>
         </div>
         <Button onClick={openCreate}>
@@ -79,30 +79,30 @@ export function AdminBranches() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Филиалов пока нет</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Добавьте место, где проходят занятия и откуда ученики выбирают расписание.</p>
+          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Добавьте место, где проходят занятия и откуда ученики выбирают расписание.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {rows.map(({ b, instructorCount, futureBookings, freeSlots7d }) => (
-            <div key={b.id} className="rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 shadow-[0_8px_24px_rgba(15,20,25,0.035)]">
+            <div key={b.id} className="rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 ">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-black text-[#111418]">{b.name}</p>
-                  <p className="truncate text-[12px] font-semibold text-[#6F747A]">{b.address || 'Адрес не указан'}</p>
-                  {b.phone && <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">{b.phone}</p>}
+                  <p className="truncate text-[12px] font-semibold text-[#5F6875]">{b.address || 'Адрес не указан'}</p>
+                  {b.phone && <p className="mt-0.5 text-[12px] font-semibold text-[#8B929C]">{b.phone}</p>}
                 </div>
                 <Badge variant={b.isActive ? 'success' : 'muted'}>{b.isActive ? 'Активен' : 'Выключен'}</Badge>
               </div>
               <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Инстр.</p><p className="text-[13px] font-black text-[#111418]">{instructorCount}</p></div>
-                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p><p className="text-[13px] font-black text-[#111418]">{futureBookings}</p></div>
-                <div><p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p><p className="text-[13px] font-black text-[#3156D4]">{freeSlots7d}</p></div>
+                <div><p className="text-[10px] font-bold text-[#8B929C]">Инстр.</p><p className="text-[13px] font-black text-[#111418]">{instructorCount}</p></div>
+                <div><p className="text-[10px] font-bold text-[#8B929C]">Записей</p><p className="text-[13px] font-black text-[#111418]">{futureBookings}</p></div>
+                <div><p className="text-[10px] font-bold text-[#8B929C]">Окон 7д</p><p className="text-[13px] font-black text-[#3156D4]">{freeSlots7d}</p></div>
               </div>
               <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <button onClick={() => openEdit(b)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] active:scale-[0.97]">Редактировать</button>
-                <button onClick={() => setDeleteId(b.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-2 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2] active:scale-[0.97]">Выключить</button>
+                <button onClick={() => openEdit(b)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] ">Редактировать</button>
+                <button onClick={() => setDeleteId(b.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-2 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2] ">Выключить</button>
               </div>
             </div>
           ))}
@@ -114,8 +114,8 @@ export function AdminBranches() {
           <input className={fieldCls()} placeholder="Название *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           <input className={fieldCls()} placeholder="Адрес" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
           <input className={fieldCls()} placeholder="Телефон" inputMode="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-          <label className="flex min-h-12 items-center gap-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-[#F8FAFC] px-3">
-            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} className="h-5 w-5 accent-[#2442D8]" />
+          <label className="flex min-h-12 items-center gap-3 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[#F8FAFC] px-3">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} className="h-5 w-5 accent-[#1F3A8A]" />
             <span className="text-[14px] font-bold text-[#111418]">Активен для записи</span>
           </label>
           <div className="flex gap-2">

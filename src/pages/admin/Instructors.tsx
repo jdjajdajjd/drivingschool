@@ -21,7 +21,7 @@ const INIT = {
 }
 
 function fieldCls() {
-  return 'min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]'
+  return 'min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]'
 }
 
 export function AdminInstructors() {
@@ -95,13 +95,13 @@ export function AdminInstructors() {
     finally { setToggling(null) }
   }
 
-  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
+    <div className="v-admin-page">
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8B929C]">{school.name}</p>
           <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Инструкторы</h1>
         </div>
         <Button onClick={openCreate}>
@@ -111,16 +111,16 @@ export function AdminInstructors() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Инструкторов пока нет</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Добавьте инструктора, чтобы ученики могли выбирать свободные окна.</p>
+          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Добавьте инструктора, чтобы ученики могли выбирать свободные окна.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {rows.map(({ inst, upcoming, freeSlots }) => (
-            <div key={inst.id} className="rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 shadow-[0_8px_24px_rgba(15,20,25,0.035)]">
+            <div key={inst.id} className="rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 ">
               <div className="flex items-start gap-3">
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[14px] bg-[#F1F2F5]">
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[8px] bg-[#F1F2F5]">
                   {inst.avatarInitials && (
                     <div className="flex h-full w-full items-center justify-center text-[14px] font-black text-white" style={{ backgroundColor: inst.avatarColor ?? '#3156D4' }}>
                       {inst.avatarInitials}
@@ -129,7 +129,7 @@ export function AdminInstructors() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-black text-[#111418]">{inst.name}</p>
-                  <p className="truncate text-[12px] font-semibold text-[#6F747A]">
+                  <p className="truncate text-[12px] font-semibold text-[#5F6875]">
                     {branches.find((b) => b.id === inst.branchId)?.name ?? 'Филиал'} · {inst.car || 'Машина не указана'}
                   </p>
                 </div>
@@ -137,17 +137,17 @@ export function AdminInstructors() {
               </div>
               <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
                 <div>
-                  <p className="text-[10px] font-bold text-[#9EA3A8]">Записей</p>
+                  <p className="text-[10px] font-bold text-[#8B929C]">Записей</p>
                   <p className="text-[13px] font-black text-[#111418]">{upcoming}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#9EA3A8]">Окон 7д</p>
-                  <p className="text-[13px] font-black text-[#2442D8]">{freeSlots}</p>
+                  <p className="text-[10px] font-bold text-[#8B929C]">Окон 7д</p>
+                  <p className="text-[13px] font-black text-[#1F3A8A]">{freeSlots}</p>
                 </div>
               </div>
               <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <button onClick={() => openEdit(inst)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] active:scale-[0.97]">Редактировать</button>
-                <button onClick={() => void handleToggle(inst)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#6F747A] transition hover:bg-[#F1F2F5] active:scale-[0.97]">
+                <button onClick={() => openEdit(inst)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] ">Редактировать</button>
+                <button onClick={() => void handleToggle(inst)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#5F6875] transition hover:bg-[#F1F2F5] ">
                   {toggling === inst.id ? '...' : inst.isActive ? 'Выключить' : 'Включить'}
                 </button>
               </div>
@@ -172,23 +172,23 @@ export function AdminInstructors() {
               <option value="auto">Автомат</option>
             </select>
           </div>
-          <textarea className="min-h-[88px] w-full resize-none rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]" rows={3} placeholder="Описание (необязательно)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} />
+          <textarea className="min-h-[88px] w-full resize-none rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]" rows={3} placeholder="Описание (необязательно)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} />
           <div>
-            <p className="mb-2 text-[13px] font-bold text-[#6F747A]">Категории</p>
+            <p className="mb-2 text-[13px] font-bold text-[#5F6875]">Категории</p>
             <div className="grid grid-cols-3 gap-1.5">
               {DRIVING_CATEGORIES.map((cat) => {
                 const active = form.categories.includes(cat.code)
                 return (
                   <button key={cat.code} type="button" onClick={() => setForm((f) => ({ ...f, categories: active ? f.categories.filter((c) => c !== cat.code) : [...f.categories, cat.code] }))}
-                    className={`min-h-11 rounded-[14px] border px-2 py-2 text-left transition active:scale-[0.97] ${active ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
+                    className={`min-h-11 rounded-[8px] border px-2 py-2 text-left transition  ${active ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#5F6875]'}`}>
                     <span className="text-[13px] font-black">{cat.code}</span>
                   </button>
                 )
               })}
             </div>
           </div>
-          <label className="flex min-h-12 items-center gap-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-[#F8FAFC] px-3">
-            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} className="h-5 w-5 accent-[#2442D8]" />
+          <label className="flex min-h-12 items-center gap-3 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[#F8FAFC] px-3">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} className="h-5 w-5 accent-[#1F3A8A]" />
             <span className="text-[14px] font-bold text-[#111418]">Активен для записи</span>
           </label>
           <div className="flex gap-2">

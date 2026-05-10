@@ -134,38 +134,38 @@ export function AdminSlots() {
     setToggleId(null)
   }
 
-  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
+    <div className="v-admin-page">
       <div className="mb-4">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8B929C]">{school.name}</p>
         <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Расписание</h1>
       </div>
 
       {/* Create form */}
-      <div className="mb-5 space-y-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
+      <div className="mb-5 space-y-3 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
         {/* Mode toggle */}
-        <div className="flex gap-1 rounded-[12px] border border-[rgba(0,0,0,0.06)] p-0.5">
-          <button onClick={() => setCreateMode('bulk')} className={`min-h-11 flex-1 rounded-[12px] py-2 text-[12px] font-black transition active:scale-[0.97] ${createMode === 'bulk' ? 'bg-[#2442D8] text-white' : 'text-[#6F747A]'}`}>Серия занятий</button>
-          <button onClick={() => setCreateMode('single')} className={`min-h-11 flex-1 rounded-[12px] py-2 text-[12px] font-black transition active:scale-[0.97] ${createMode === 'single' ? 'bg-[#2442D8] text-white' : 'text-[#6F747A]'}`}>Одно занятие</button>
+        <div className="flex gap-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] p-0.5">
+          <button onClick={() => setCreateMode('bulk')} className={`min-h-11 flex-1 rounded-[8px] py-2 text-[12px] font-black transition  ${createMode === 'bulk' ? 'bg-[#1F3A8A] text-white' : 'text-[#5F6875]'}`}>Серия занятий</button>
+          <button onClick={() => setCreateMode('single')} className={`min-h-11 flex-1 rounded-[8px] py-2 text-[12px] font-black transition  ${createMode === 'single' ? 'bg-[#1F3A8A] text-white' : 'text-[#5F6875]'}`}>Одно занятие</button>
         </div>
 
         {createMode === 'bulk' ? (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              <select value={bulkForm.branchId} onChange={(e) => setBulkForm((f) => ({ ...f, branchId: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#2442D8]">
+              <select value={bulkForm.branchId} onChange={(e) => setBulkForm((f) => ({ ...f, branchId: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
                 <option value="">Филиал</option>
                 {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
-              <select value={bulkForm.instructorId} onChange={(e) => setBulkForm((f) => ({ ...f, instructorId: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#2442D8]">
+              <select value={bulkForm.instructorId} onChange={(e) => setBulkForm((f) => ({ ...f, instructorId: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
                 <option value="">Инструктор</option>
                 {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
-              <input type="date" value={bulkForm.dateFrom} onChange={(e) => setBulkForm((f) => ({ ...f, dateFrom: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#2442D8]" placeholder="От" />
-              <input type="date" value={bulkForm.dateTo} onChange={(e) => setBulkForm((f) => ({ ...f, dateTo: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#2442D8]" placeholder="До" />
-              <input type="time" value={bulkForm.windowStart} onChange={(e) => setBulkForm((f) => ({ ...f, windowStart: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#2442D8]" />
-              <input type="time" value={bulkForm.windowEnd} onChange={(e) => setBulkForm((f) => ({ ...f, windowEnd: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#2442D8]" />
+              <input type="date" value={bulkForm.dateFrom} onChange={(e) => setBulkForm((f) => ({ ...f, dateFrom: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#1F3A8A]" placeholder="От" />
+              <input type="date" value={bulkForm.dateTo} onChange={(e) => setBulkForm((f) => ({ ...f, dateTo: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#1F3A8A]" placeholder="До" />
+              <input type="time" value={bulkForm.windowStart} onChange={(e) => setBulkForm((f) => ({ ...f, windowStart: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#1F3A8A]" />
+              <input type="time" value={bulkForm.windowEnd} onChange={(e) => setBulkForm((f) => ({ ...f, windowEnd: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#1F3A8A]" />
             </div>
 
             {/* Weekdays */}
@@ -174,7 +174,7 @@ export function AdminSlots() {
                 const active = bulkForm.weekdays.includes(d.v)
                 return (
                   <button key={d.v} type="button" onClick={() => setBulkForm((f) => ({ ...f, weekdays: active ? f.weekdays.filter((x) => x !== d.v) : [...f.weekdays, d.v] }))}
-                    className={`min-h-11 flex-1 rounded-[12px] border py-2 text-[11px] font-black transition active:scale-[0.97] ${active ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}>
+                    className={`min-h-11 flex-1 rounded-[8px] border py-2 text-[11px] font-black transition  ${active ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#5F6875]'}`}>
                     {d.label}
                   </button>
                 )
@@ -188,16 +188,16 @@ export function AdminSlots() {
         ) : (
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2">
-              <select value={singleForm.branchId} onChange={(e) => setSingleForm((f) => ({ ...f, branchId: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#2442D8]">
+              <select value={singleForm.branchId} onChange={(e) => setSingleForm((f) => ({ ...f, branchId: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
                 <option value="">Филиал</option>
                 {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
-              <select value={singleForm.instructorId} onChange={(e) => setSingleForm((f) => ({ ...f, instructorId: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#2442D8]">
+              <select value={singleForm.instructorId} onChange={(e) => setSingleForm((f) => ({ ...f, instructorId: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
                 <option value="">Инструктор</option>
                 {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
-              <input type="date" value={singleForm.date} onChange={(e) => setSingleForm((f) => ({ ...f, date: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#2442D8]" />
-              <input type="time" value={singleForm.startTime} onChange={(e) => setSingleForm((f) => ({ ...f, startTime: e.target.value }))} className="min-h-11 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#2442D8]" />
+              <input type="date" value={singleForm.date} onChange={(e) => setSingleForm((f) => ({ ...f, date: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#1F3A8A]" />
+              <input type="time" value={singleForm.startTime} onChange={(e) => setSingleForm((f) => ({ ...f, startTime: e.target.value }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[12px] outline-none focus:border-[#1F3A8A]" />
             </div>
             <Button onClick={() => void handleSingleCreate()} className="w-full">Добавить занятие</Button>
           </div>
@@ -208,19 +208,19 @@ export function AdminSlots() {
       <div className="mb-3 space-y-2">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8B929C]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск" className="min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#2442D8]" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск" className="min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#8B929C] focus:border-[#1F3A8A]" />
           </div>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="min-h-11 w-[138px] rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#2442D8]" />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="min-h-11 w-[138px] rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#1F3A8A]" />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
+          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
             <option value="all">Все филиалы</option>
             {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
+          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
             <option value="all">Все инструкторы</option>
             {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
@@ -229,25 +229,25 @@ export function AdminSlots() {
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Занятий не найдено</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Создайте серию занятий выше или выберите другой фильтр.</p>
+          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Создайте серию занятий выше или выберите другой фильтр.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((entry) => (
-            <div key={entry.slot.id} className="flex items-center gap-3 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
+            <div key={entry.slot.id} className="flex items-center gap-3 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
               <div className="shrink-0 text-center">
                 <p className="text-[13px] font-black text-[#111418]">{formatTimeRange(entry.slot)}</p>
-                <p className="text-[11px] font-semibold text-[#9EA3A8]">{formatHumanDate(entry.slot.date, false)}</p>
+                <p className="text-[11px] font-semibold text-[#8B929C]">{formatHumanDate(entry.slot.date, false)}</p>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14px] font-black text-[#111418]">{entry.instructor ? formatInstructorName(entry.instructor.name) : '—'}</p>
-                <p className="truncate text-[12px] font-semibold text-[#6F747A]">{entry.branch?.name ?? '—'}</p>
+                <p className="truncate text-[12px] font-semibold text-[#5F6875]">{entry.branch?.name ?? '—'}</p>
               </div>
               <StatusBadge status={entry.slot.status} kind="slot" />
               {entry.slot.status !== 'booked' && (
-                <button onClick={() => setToggleId(entry.slot.id)} className="min-h-10 shrink-0 rounded-[12px] px-3 text-[12px] font-black text-[#2442D8] transition hover:bg-[#EEF0FA] active:scale-[0.97]">
+                <button onClick={() => setToggleId(entry.slot.id)} className="min-h-10 shrink-0 rounded-[8px] px-3 text-[12px] font-black text-[#1F3A8A] transition hover:bg-[#EEF0FA] ">
                   {entry.slot.status === 'cancelled' ? 'Вернуть' : 'Скрыть'}
                 </button>
               )}

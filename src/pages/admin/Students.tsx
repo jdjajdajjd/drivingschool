@@ -29,26 +29,26 @@ export function AdminStudents() {
       })
   }, [school, query, filter])
 
-  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
+    <div className="v-admin-page">
       <div className="mb-4">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8B929C]">{school.name}</p>
         <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Ученики</h1>
       </div>
 
       {/* Search */}
       <div className="mb-3">
         <div className="relative">
-          <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8B929C]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Имя или телефон"
-            className="min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#2442D8]"
+            className="min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#8B929C] focus:border-[#1F3A8A]"
           />
         </div>
       </div>
@@ -59,7 +59,7 @@ export function AdminStudents() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value as typeof filter)}
-            className={`min-h-11 rounded-[14px] border px-3.5 py-2 text-[12px] font-black transition active:scale-[0.97] ${filter === f.value ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A]'}`}
+            className={`min-h-11 rounded-[8px] border px-3.5 py-2 text-[12px] font-black transition  ${filter === f.value ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#5F6875]'}`}
           >
             {f.label} · {f.value === 'all' ? rows.length : f.value === 'active' ? rows.filter((r) => r.stats.activeFutureBookings > 0).length : rows.filter((r) => r.stats.activeFutureBookings === 0).length}
           </button>
@@ -68,9 +68,9 @@ export function AdminStudents() {
 
       {/* List */}
       {rows.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Учеников пока нет</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Когда ученик запишется или создаст кабинет, он появится здесь.</p>
+          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Когда ученик запишется или создаст кабинет, он появится здесь.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -78,12 +78,12 @@ export function AdminStudents() {
             <Link
               key={student.id}
               to={`${ADMIN_BASE_PATH}/students/${student.id}`}
-              className="block min-h-[88px] rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 transition hover:bg-[#F8FAFC] active:scale-[0.99] active:bg-[#F1F2F5]"
+              className="block min-h-[88px] rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 transition hover:bg-[#F8FAFC]  active:bg-[#F1F2F5]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-black text-[#111418]">{student.name}</p>
-                  <p className="mt-0.5 text-[13px] font-semibold text-[#6F747A]">{formatPhone(student.normalizedPhone)}</p>
+                  <p className="mt-0.5 text-[13px] font-semibold text-[#5F6875]">{formatPhone(student.normalizedPhone)}</p>
                 </div>
                 <div className="shrink-0 text-right">
                   {stats.limitReached ? (
@@ -95,16 +95,16 @@ export function AdminStudents() {
               </div>
               <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
                 <div>
-                  <p className="text-[10px] font-bold text-[#9EA3A8]">Всего</p>
+                  <p className="text-[10px] font-bold text-[#8B929C]">Всего</p>
                   <p className="text-[13px] font-black text-[#111418]">{stats.totalBookings}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#9EA3A8]">Проведено</p>
+                  <p className="text-[10px] font-bold text-[#8B929C]">Проведено</p>
                   <p className="text-[13px] font-black text-[#111418]">{stats.completedBookings}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#9EA3A8]">Следующее</p>
-                  <p className="text-[13px] font-black text-[#2442D8]">
+                  <p className="text-[10px] font-bold text-[#8B929C]">Следующее</p>
+                  <p className="text-[13px] font-black text-[#1F3A8A]">
                     {nextSlot ? `${formatHumanDate(nextSlot.date, false)} · ${formatTimeRange(nextSlot)}` : '—'}
                   </p>
                 </div>

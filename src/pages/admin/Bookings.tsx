@@ -135,17 +135,18 @@ export function AdminBookings() {
     setSelectedSlotId('')
   }
 
-  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#6F747A]">Данные школы не загружены</p></div>
+  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="px-3 pb-6 pt-3 md:px-5 md:pt-4">
-      <div className="mb-4">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school.name}</p>
-        <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Записи</h1>
-      </div>
+    <div className="v-admin-page">
+      <section className="v-admin-hero">
+        <p className="v-admin-eyebrow">{school.name}</p>
+        <h1 className="v-admin-title">Журнал записей</h1>
+        <p className="v-admin-subtitle">Поиск, перенос, отмена и закрытие занятий учеников.</p>
+      </section>
 
       {/* Stats */}
-      <div className="mb-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 mb-3 grid grid-cols-3 gap-2">
         {[
           { label: 'Всего', value: allBookings.length, active: status === 'all' && period === 'all', onClick: () => { setStatus('all'); setPeriod('all') } },
           { label: 'Сегодня', value: todayCount, active: period === 'today', onClick: () => { setPeriod('today') } },
@@ -154,7 +155,7 @@ export function AdminBookings() {
           <button
             key={s.label}
             onClick={s.onClick}
-            className={`min-h-[68px] rounded-[16px] border px-3 py-2.5 text-left transition active:scale-[0.98] ${s.active ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#111418]'}`}
+            className={`min-h-[68px] rounded-[8px] border px-3 py-2.5 text-left transition  ${s.active ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#111418]'}`}
           >
             <p className="text-[18px] font-black leading-none">{s.value}</p>
             <p className="mt-0.5 text-[10px] font-semibold opacity-70">{s.label}</p>
@@ -166,29 +167,29 @@ export function AdminBookings() {
       <div className="mb-3 space-y-2">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8B929C]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ученик или телефон"
-              className="min-h-11 w-full rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#9EA3A8] focus:border-[#2442D8]"
+              className="min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#8B929C] focus:border-[#1F3A8A]"
             />
           </div>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="min-h-11 w-[138px] rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#2442D8]"
+            className="min-h-11 w-[138px] rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#1F3A8A]"
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
+          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
             <option value="all">Все филиалы</option>
             {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
+          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
             <option value="all">Все инструкторы</option>
             {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
@@ -197,28 +198,28 @@ export function AdminBookings() {
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
+        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
           <p className="font-black text-[#111418]">Записей пока нет</p>
-          <p className="mt-1 text-sm font-semibold text-[#6F747A]">Когда ученик выберет время на сайте, запись появится здесь.</p>
+          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Когда ученик выберет время на сайте, запись появится здесь.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((entry) => (
-            <div key={entry.booking.id} className="rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 shadow-[0_8px_24px_rgba(15,20,25,0.035)]">
+            <div key={entry.booking.id} className="rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 ">
               <div className="flex items-start gap-3">
                 <div className="shrink-0 text-center">
                   <p className="text-[12px] font-black text-[#111418]">
                     {entry.slot ? formatTimeRange(entry.slot) : '—'}
                   </p>
-                  <p className="text-[10px] font-semibold text-[#9EA3A8]">
+                  <p className="text-[10px] font-semibold text-[#8B929C]">
                     {entry.slot ? formatHumanDate(entry.slot.date, false) : '—'}
                   </p>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Link to={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="block min-h-11 truncate rounded-[12px] py-1 text-[15px] font-black text-[#111418] hover:text-[#2442D8]">
+                  <Link to={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="block min-h-11 truncate rounded-[8px] py-1 text-[15px] font-black text-[#111418] hover:text-[#1F3A8A]">
                     {entry.booking.studentName}
                   </Link>
-                  <p className="truncate text-[12px] font-semibold text-[#6F747A]">
+                  <p className="truncate text-[12px] font-semibold text-[#5F6875]">
                     {entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор'} · {entry.branch?.name ?? 'Филиал'}
                   </p>
                 </div>
@@ -227,13 +228,13 @@ export function AdminBookings() {
 
               {entry.booking.status === 'active' && (
                 <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                  <button onClick={() => openReschedule(entry.booking.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#2442D8] transition hover:bg-[#F1F2F5] active:scale-[0.97]">
+                  <button onClick={() => openReschedule(entry.booking.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#1F3A8A] transition hover:bg-[#F1F2F5] ">
                     Перенести
                   </button>
-                  <button onClick={() => setCompleteId(entry.booking.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] active:scale-[0.97]">
+                  <button onClick={() => setCompleteId(entry.booking.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] ">
                     Проведена
                   </button>
-                  <button onClick={() => setCancelId(entry.booking.id)} className="min-h-11 flex-1 rounded-[14px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-2 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2] active:scale-[0.97]">
+                  <button onClick={() => setCancelId(entry.booking.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-2 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2] ">
                     Отменить
                   </button>
                 </div>
@@ -249,19 +250,19 @@ export function AdminBookings() {
       <Modal open={Boolean(rescheduleId)} onClose={() => setRescheduleId(null)} title="Перенести запись">
         <div className="space-y-4 px-5 pb-5">
           <div className="grid grid-cols-2 gap-2">
-            <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
+            <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
               <option value="all">Все филиалы</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
-            <select value={rescheduleInstructorId} onChange={(e) => setRescheduleInstructorId(e.target.value)} className="min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#2442D8]">
+            <select value={rescheduleInstructorId} onChange={(e) => setRescheduleInstructorId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
               <option value="all">Все инструкторы</option>
               {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
             </select>
-            <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className="col-span-2 min-h-11 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#2442D8]" />
+            <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className="col-span-2 min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#1F3A8A]" />
           </div>
 
           {rescheduleSlots.length === 0 ? (
-            <p className="text-sm font-semibold text-[#6F747A]">Нет свободного времени. Измените фильтры.</p>
+            <p className="text-sm font-semibold text-[#5F6875]">Нет свободного времени. Измените фильтры.</p>
           ) : (
             <div className="max-h-[260px] space-y-1.5 overflow-y-auto">
               {rescheduleSlots.map((slot) => {
@@ -271,10 +272,10 @@ export function AdminBookings() {
                   <button
                     key={slot.id}
                     onClick={() => setSelectedSlotId(slot.id)}
-                    className={`flex min-h-[56px] w-full items-center gap-2 rounded-[14px] border px-3 py-2 text-left transition active:scale-[0.98] ${selectedSlotId === slot.id ? 'border-[#2442D8] bg-[#2442D8] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white hover:border-[rgba(0,0,0,0.12)]'}`}
+                    className={`flex min-h-[56px] w-full items-center gap-2 rounded-[8px] border px-3 py-2 text-left transition  ${selectedSlotId === slot.id ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white hover:border-[rgba(0,0,0,0.12)]'}`}
                   >
                     <span className="text-[13px] font-black">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</span>
-                    <span className={`text-[12px] font-semibold ${selectedSlotId === slot.id ? 'text-white/70' : 'text-[#6F747A]'}`}>{inst?.name} · {br?.name}</span>
+                    <span className={`text-[12px] font-semibold ${selectedSlotId === slot.id ? 'text-white/70' : 'text-[#5F6875]'}`}>{inst?.name} · {br?.name}</span>
                   </button>
                 )
               })}

@@ -99,11 +99,11 @@ export function AdminDashboard() {
     <div className="v-admin-page">
       <section className="v-admin-hero">
         <p className="v-admin-eyebrow">{school.name}</p>
-        <h1 className="v-admin-title">Сегодня</h1>
-        <p className="v-admin-subtitle">Что происходит сейчас: записи, свободные окна и быстрые действия для школы.</p>
+        <h1 className="v-admin-title">Операционный день</h1>
+        <p className="v-admin-subtitle">Записи, свободные окна и готовность школы к онлайн-записи.</p>
         <div className="mt-5 grid grid-cols-2 gap-2.5">
-          <button type="button" className="v-primary min-h-[52px] px-4 text-[14px]" onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}>Добавить занятие</button>
-          <button type="button" className="v-secondary min-h-[52px] px-4 text-[14px]" onClick={() => { window.location.href = publicPath }}>Открыть сайт</button>
+          <button type="button" className="v-primary min-h-[48px] px-4 text-[14px]" onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)}>Создать окно</button>
+          <button type="button" className="v-secondary min-h-[48px] px-4 text-[14px]" onClick={() => { window.location.href = publicPath }}>Публичная страница</button>
         </div>
       </section>
 
@@ -139,12 +139,12 @@ export function AdminDashboard() {
 
       {configuredCount < data.setupItems.length ? (
         <section className="mt-5 overflow-hidden v-panel">
-          <div className="flex items-center justify-between gap-3 border-b border-[#E7E9EF] px-4 py-4">
+          <div className="flex items-center justify-between gap-3 border-b border-[#D8DEE8] px-4 py-4">
             <div>
-              <h2 className="text-[19px] font-black leading-tight tracking-[-0.035em] text-[#111418]">Запуск школы</h2>
-              <p className="mt-1 text-[13px] font-bold text-[#737985]">Готово {configuredCount} из {data.setupItems.length}</p>
+              <h2 className="text-[19px] font-black leading-tight tracking-[-0.035em] text-[#111418]">Готовность системы</h2>
+              <p className="mt-1 text-[13px] font-bold text-[#5F6875]">{configuredCount}/{data.setupItems.length} параметра настроены</p>
             </div>
-            <div className="grid h-12 w-12 place-items-center rounded-[18px] bg-[#EEF0FA] text-[14px] font-black text-[#2442D8]">{configuredCount}/{data.setupItems.length}</div>
+            <div className="grid h-10 w-14 place-items-center rounded-[8px] border border-[#D8DEE8] bg-[#F8FAFC] text-[13px] font-black text-[#111418]">{configuredCount}/{data.setupItems.length}</div>
           </div>
           <div>
             {data.setupItems.map((item) => (
@@ -154,14 +154,14 @@ export function AdminDashboard() {
                 onClick={() => navigate(item.to)}
                 className="grid min-h-[72px] w-full grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#EEF0F4] px-4 text-left last:border-b-0 active:bg-[#F7F8FA]"
               >
-                <span className={`grid h-8 w-8 place-items-center rounded-[13px] text-[14px] font-black ${item.done ? 'bg-[#EAF6F0] text-[#14934A]' : 'bg-[#FFF5DF] text-[#B45309]'}`}>
+                <span className={`grid h-8 w-8 place-items-center rounded-[6px] text-[14px] font-black ${item.done ? 'bg-[#EAF6F0] text-[#177245]' : 'bg-[#FFFBEB] text-[#A15C00]'}`}>
                   {item.done ? '✓' : '!' }
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] font-black text-[#111418]">{item.label}</span>
                   <span className="mt-0.5 block truncate text-[12px] font-bold text-[#737985]">{item.helper}</span>
                 </span>
-                <span className="grid min-h-11 place-items-center rounded-[14px] bg-[#F1F2F5] px-3 py-2 text-[12px] font-black text-[#111418]">{item.action}</span>
+                <span className="grid min-h-11 place-items-center rounded-[8px] border border-[#D8DEE8] bg-white px-3 py-2 text-[12px] font-black text-[#111418]">{item.action}</span>
               </button>
             ))}
           </div>
