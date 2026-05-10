@@ -1,6 +1,5 @@
 import { addDays, endOfWeek, isAfter, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -50,7 +49,6 @@ export function AdminBookings() {
   const [rescheduleBranchId, setRescheduleBranchId] = useState('all')
   const [rescheduleInstructorId, setRescheduleInstructorId] = useState('all')
   const [selectedSlotId, setSelectedSlotId] = useState('')
-  const [intakeOpen, setIntakeOpen] = useState(false)
   const [intakeForm, setIntakeForm] = useState(emptyIntakeForm)
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -59,6 +57,7 @@ export function AdminBookings() {
   const allBookings = useMemo(() => school ? getBookingsBySchool(school.id) : [], [school, refreshKey])
   const activeCount = allBookings.filter((e) => e.booking.status === 'active').length
   const todayCount = allBookings.filter((e) => e.slot && isSameDay(getSlotDateTime(e.slot), new Date())).length
+  const overdueCount = allBookings.filter((e) => e.booking.status === 'active' && e.slot && isBefore(getSlotDateTime(e.slot), new Date())).length
 
   const filtered = useMemo(() => {
     const now = new Date()
@@ -109,7 +108,7 @@ export function AdminBookings() {
       intakeForm.instructorId === 'all' ? undefined : intakeForm.instructorId,
       intakeForm.date || undefined,
       intakeForm.branchId === 'all' ? undefined : intakeForm.branchId,
-    ).slice(0, 18)
+    ).slice(0, 10)
   }, [intakeForm.branchId, intakeForm.date, intakeForm.instructorId, refreshKey])
 
   function openReschedule(bookingId: string) {
@@ -127,6 +126,7 @@ export function AdminBookings() {
       const r = await cancelBookingConfirmed(cancelId)
       if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
       showToast('Запись отменена', 'success')
+      setRefreshKey((value) => value + 1)
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Ошибка', 'error')
     }
@@ -139,6 +139,7 @@ export function AdminBookings() {
       const r = await completeBookingConfirmed(completeId)
       if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
       showToast('Занятие проведено', 'success')
+      setRefreshKey((value) => value + 1)
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Ошибка', 'error')
     }
@@ -173,9 +174,8 @@ export function AdminBookings() {
       sessionId: 'admin-intake',
     })
     if (!r.ok || !r.booking) { showToast(r.error ?? 'Не удалось записать ученика', 'error'); return }
-    if (intakeForm.comment.trim()) updateBookingComment(r.booking.id, `Админ-запись: ${intakeForm.comment.trim()}`)
-    showToast('Ученик записан администратором', 'success')
-    setIntakeOpen(false)
+    if (intakeForm.comment.trim()) updateBookingComment(r.booking.id, `Админ: ${intakeForm.comment.trim()}`)
+    showToast('Ученик записан', 'success')
     setIntakeForm(emptyIntakeForm)
     setRefreshKey((value) => value + 1)
   }
@@ -183,204 +183,151 @@ export function AdminBookings() {
   if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="v-admin-page">
-      <section className="v-admin-hero">
-        <p className="v-admin-eyebrow">{school.name}</p>
-        <h1 className="v-admin-title">Журнал записей</h1>
-        <p className="v-admin-subtitle">Поиск, перенос, отмена и закрытие занятий учеников.</p>
-        <button type="button" onClick={() => setIntakeOpen(true)} className="v-primary mt-4 min-h-[48px] w-full px-4 text-[14px]">
-          Записать ученика
-        </button>
-      </section>
+    <div className="min-h-dvh bg-[#E9EDF2] pb-4 text-[#0F172A]">
+      <div className="mx-auto grid max-w-[1320px] gap-3 p-3 md:grid-cols-[360px_minmax(0,1fr)] md:p-5">
+        <aside className="space-y-3">
+          <section className="border border-[#0F172A] bg-[#0F172A] text-white">
+            <div className="p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">журнал оператора</p>
+              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.055em] text-white">Записи</h1>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-white/62">Ручная запись после звонка, переносы, отмены, закрытие занятий.</p>
+            </div>
+            <div className="grid grid-cols-3 border-t border-white/10">
+              <button onClick={() => { setStatus('all'); setPeriod('all') }} className="min-h-[76px] border-r border-white/10 p-3 text-left">
+                <strong className="block text-[26px] font-black leading-none text-white">{allBookings.length}</strong><span className="text-[10px] font-black uppercase text-white/48">всего</span>
+              </button>
+              <button onClick={() => setPeriod('today')} className="min-h-[76px] border-r border-white/10 p-3 text-left">
+                <strong className="block text-[26px] font-black leading-none text-white">{todayCount}</strong><span className="text-[10px] font-black uppercase text-white/48">сегодня</span>
+              </button>
+              <button onClick={() => setStatus('active')} className="min-h-[76px] p-3 text-left">
+                <strong className="block text-[26px] font-black leading-none text-white">{activeCount}</strong><span className="text-[10px] font-black uppercase text-white/48">активно</span>
+              </button>
+            </div>
+          </section>
 
-      {/* Stats */}
-      <div className="mt-3 mb-3 grid grid-cols-3 gap-2">
-        {[
-          { label: 'Всего', value: allBookings.length, active: status === 'all' && period === 'all', onClick: () => { setStatus('all'); setPeriod('all') } },
-          { label: 'Сегодня', value: todayCount, active: period === 'today', onClick: () => { setPeriod('today') } },
-          { label: 'Активных', value: activeCount, active: status === 'active', onClick: () => { setStatus('active') } },
-        ].map((s) => (
-          <button
-            key={s.label}
-            onClick={s.onClick}
-            className={`min-h-[68px] rounded-[8px] border px-3 py-2.5 text-left transition  ${s.active ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#111418]'}`}
-          >
-            <p className="text-[18px] font-black leading-none">{s.value}</p>
-            <p className="mt-0.5 text-[10px] font-semibold opacity-70">{s.label}</p>
-          </button>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="mb-3 space-y-2">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8B929C]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ученик или телефон"
-              className="min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-3 text-[15px] font-semibold text-[#111418] outline-none placeholder:text-[#8B929C] focus:border-[#1F3A8A]"
-            />
-          </div>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="min-h-11 w-[138px] rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#1F3A8A]"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
-            <option value="all">Все филиалы</option>
-            {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
-            <option value="all">Все инструкторы</option>
-            {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-          <p className="font-black text-[#111418]">Записей пока нет</p>
-          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Когда ученик выберет время на сайте, запись появится здесь.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((entry) => (
-            <div key={entry.booking.id} className="rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 ">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 text-center">
-                  <p className="text-[12px] font-black text-[#111418]">
-                    {entry.slot ? formatTimeRange(entry.slot) : '—'}
-                  </p>
-                  <p className="text-[10px] font-semibold text-[#8B929C]">
-                    {entry.slot ? formatHumanDate(entry.slot.date, false) : '—'}
-                  </p>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Link to={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="block min-h-11 truncate rounded-[8px] py-1 text-[15px] font-black text-[#111418] hover:text-[#1F3A8A]">
-                    {entry.booking.studentName}
-                  </Link>
-                  <p className="truncate text-[12px] font-semibold text-[#5F6875]">
-                    {entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор'} · {entry.branch?.name ?? 'Филиал'}
-                  </p>
-                </div>
-                <StatusBadge status={entry.booking.status} />
+          <section className="border border-[#CBD5E1] bg-white">
+            <div className="border-b border-[#CBD5E1] px-4 py-3">
+              <h2 className="text-[16px] font-black">Принять звонок</h2>
+              <p className="mt-1 text-[12px] font-bold text-[#64748B]">Телефон/SMS/любой канал связи → запись в окно.</p>
+            </div>
+            <div className="space-y-2 p-3">
+              <input value={intakeForm.studentName} onChange={(e) => setIntakeForm((f) => ({ ...f, studentName: e.target.value }))} placeholder="Имя ученика" className="min-h-11 w-full border border-[#CBD5E1] bg-white px-3 text-[14px] font-bold outline-none focus:border-[#0F172A]" />
+              <input value={intakeForm.studentPhone} onChange={(e) => setIntakeForm((f) => ({ ...f, studentPhone: e.target.value }))} placeholder="Телефон" className="min-h-11 w-full border border-[#CBD5E1] bg-white px-3 text-[14px] font-bold outline-none focus:border-[#0F172A]" />
+              <div className="grid grid-cols-2 gap-2">
+                <select value={intakeForm.branchId} onChange={(e) => setIntakeForm((f) => ({ ...f, branchId: e.target.value, slotId: '' }))} className="min-h-11 border border-[#CBD5E1] bg-white px-2 text-[12px] font-bold outline-none">
+                  <option value="all">Филиал</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+                <select value={intakeForm.instructorId} onChange={(e) => setIntakeForm((f) => ({ ...f, instructorId: e.target.value, slotId: '' }))} className="min-h-11 border border-[#CBD5E1] bg-white px-2 text-[12px] font-bold outline-none">
+                  <option value="all">Инструктор</option>{instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                </select>
               </div>
-
-              {entry.booking.status === 'active' && (
-                <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                  <button onClick={() => openReschedule(entry.booking.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#1F3A8A] transition hover:bg-[#F1F2F5] ">
-                    Перенести
-                  </button>
-                  <button onClick={() => setCompleteId(entry.booking.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] ">
-                    Проведена
-                  </button>
-                  <button onClick={() => setCancelId(entry.booking.id)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-2 text-[12px] font-black text-[#E5534B] transition hover:bg-[#FEF2F2] ">
-                    Отменить
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <ConfirmDialog open={Boolean(cancelId)} title="Отменить запись" description="Время снова станет доступным для записи." confirmLabel="Отменить" onClose={() => setCancelId(null)} onConfirm={handleCancel} danger />
-      <ConfirmDialog open={Boolean(completeId)} title="Отметить проведённой" description="Занятие будет считаться проведённым." confirmLabel="Подтвердить" onClose={() => setCompleteId(null)} onConfirm={handleComplete} />
-
-      <Modal open={intakeOpen} onClose={() => setIntakeOpen(false)} title="Записать ученика">
-        <div className="space-y-4 px-5 pb-5">
-          <div className="rounded-[8px] border border-[#DDE3EC] bg-[#F8FAFC] px-3 py-3 text-[13px] font-bold leading-5 text-[#3F4854]">
-            Для звонка, SMS или другого канала связи: введите ученика, выберите свободное окно — запись сразу появится в журнале и у инструктора.
-          </div>
-          <div className="grid gap-2">
-            <input value={intakeForm.studentName} onChange={(e) => setIntakeForm((f) => ({ ...f, studentName: e.target.value }))} placeholder="Имя ученика" className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[15px] font-semibold outline-none focus:border-[#1F3A8A]" />
-            <input value={intakeForm.studentPhone} onChange={(e) => setIntakeForm((f) => ({ ...f, studentPhone: e.target.value }))} placeholder="Телефон" className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[15px] font-semibold outline-none focus:border-[#1F3A8A]" />
-            <div className="grid grid-cols-2 gap-2">
-              <select value={intakeForm.branchId} onChange={(e) => setIntakeForm((f) => ({ ...f, branchId: e.target.value, slotId: '' }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
-                <option value="all">Любой филиал</option>
-                {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-              <select value={intakeForm.instructorId} onChange={(e) => setIntakeForm((f) => ({ ...f, instructorId: e.target.value, slotId: '' }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[13px] font-semibold outline-none focus:border-[#1F3A8A]">
-                <option value="all">Любой инструктор</option>
-                {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-              </select>
-            </div>
-            <input type="date" value={intakeForm.date} onChange={(e) => setIntakeForm((f) => ({ ...f, date: e.target.value, slotId: '' }))} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[14px] font-semibold outline-none focus:border-[#1F3A8A]" />
-            <textarea value={intakeForm.comment} onChange={(e) => setIntakeForm((f) => ({ ...f, comment: e.target.value }))} placeholder="Комментарий администратора: откуда заявка, пожелания, что обещали" className="min-h-[82px] rounded-[8px] border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-[14px] font-semibold outline-none focus:border-[#1F3A8A]" />
-          </div>
-          <div>
-            <p className="mb-2 text-[13px] font-black text-[#111418]">Свободные окна</p>
-            {intakeSlots.length === 0 ? (
-              <p className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-3 py-4 text-center text-sm font-semibold text-[#5F6875]">Нет свободных окон. Измените дату, филиал или инструктора.</p>
-            ) : (
-              <div className="max-h-[260px] space-y-1.5 overflow-y-auto">
-                {intakeSlots.map((slot) => {
+              <input type="date" value={intakeForm.date} onChange={(e) => setIntakeForm((f) => ({ ...f, date: e.target.value, slotId: '' }))} className="min-h-11 w-full border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none" />
+              <textarea value={intakeForm.comment} onChange={(e) => setIntakeForm((f) => ({ ...f, comment: e.target.value }))} placeholder="Комментарий: откуда заявка, пожелания, что обещали" className="min-h-[76px] w-full border border-[#CBD5E1] bg-white px-3 py-2 text-[13px] font-bold outline-none" />
+              <div className="max-h-[220px] space-y-1 overflow-y-auto">
+                {intakeSlots.length === 0 ? <p className="border border-dashed border-[#CBD5E1] p-3 text-[12px] font-bold text-[#64748B]">Нет свободных окон по фильтрам.</p> : intakeSlots.map((slot) => {
                   const inst = db.instructors.byId(slot.instructorId)
                   const br = db.branches.byId(slot.branchId)
                   return (
-                    <button key={slot.id} type="button" onClick={() => setIntakeForm((f) => ({ ...f, slotId: slot.id }))} className={`flex min-h-[58px] w-full items-center justify-between gap-2 rounded-[8px] border px-3 py-2 text-left ${intakeForm.slotId === slot.id ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[#DDE3EC] bg-white text-[#111418]'}`}>
-                      <span><strong className="block text-[13px]">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</strong><span className="text-[12px] font-semibold opacity-75">{inst?.name} · {br?.name}</span></span>
-                      <span className="text-[12px] font-black">Выбрать</span>
+                    <button key={slot.id} type="button" onClick={() => setIntakeForm((f) => ({ ...f, slotId: slot.id }))} className={`grid min-h-[54px] w-full grid-cols-[1fr_auto] items-center gap-2 border px-3 text-left ${intakeForm.slotId === slot.id ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#CBD5E1] bg-white text-[#0F172A]'}`}>
+                      <span><strong className="block text-[12px]">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</strong><span className="text-[11px] font-bold opacity-70">{inst?.name} · {br?.name}</span></span>
+                      <span className="text-[11px] font-black">выбрать</span>
                     </button>
                   )
                 })}
               </div>
+              <Button onClick={handleIntakeSubmit} disabled={!intakeForm.slotId} className="w-full">Создать запись</Button>
+            </div>
+          </section>
+        </aside>
+
+        <main className="space-y-3">
+          <section className="border border-[#CBD5E1] bg-white">
+            <div className="grid gap-2 border-b border-[#CBD5E1] p-3 md:grid-cols-[minmax(0,1fr)_170px]">
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по ученику или телефону" className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[14px] font-bold outline-none focus:border-[#0F172A]" />
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none" />
+              <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none">
+                <option value="all">Все филиалы</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none">
+                <option value="all">Все инструкторы</option>{instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-1 overflow-x-auto border-b border-[#CBD5E1] p-2">
+              {[
+                ['all', 'Все'], ['active', 'Активные'], ['completed', 'Проведены'], ['cancelled', 'Отменены'],
+              ].map(([value, label]) => <button key={value} onClick={() => setStatus(value as StatusFilter)} className={`min-h-10 shrink-0 border px-3 text-[12px] font-black ${status === value ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#CBD5E1] bg-white text-[#334155]'}`}>{label}</button>)}
+              {[
+                ['today', 'Сегодня'], ['week', 'Неделя'], ['past', 'Прошлые'],
+              ].map(([value, label]) => <button key={value} onClick={() => setPeriod(period === value ? 'all' : value as PeriodFilter)} className={`min-h-10 shrink-0 border px-3 text-[12px] font-black ${period === value ? 'border-[#1D4ED8] bg-[#EFF6FF] text-[#1D4ED8]' : 'border-[#CBD5E1] bg-white text-[#334155]'}`}>{label}</button>)}
+            </div>
+
+            {overdueCount > 0 ? <div className="border-b border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-[13px] font-black text-[#DC2626]">Не закрыто прошедших занятий: {overdueCount}</div> : null}
+
+            {filtered.length === 0 ? (
+              <div className="p-5">
+                <div className="border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5">
+                  <p className="text-[17px] font-black text-[#0F172A]">Журнал пустой</p>
+                  <p className="mt-1 text-[13px] font-bold text-[#64748B]">Создайте окна в расписании или примите звонок слева.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="divide-y divide-[#E2E8F0]">
+                {filtered.map((entry) => {
+                  const pastActive = entry.booking.status === 'active' && entry.slot && isBefore(getSlotDateTime(entry.slot), new Date())
+                  return (
+                    <article key={entry.booking.id} className={`grid gap-3 px-4 py-3 md:grid-cols-[94px_minmax(0,1fr)_130px] ${pastActive ? 'bg-[#FEF2F2]' : 'bg-white'}`}>
+                      <div>
+                        <p className="text-[16px] font-black text-[#0F172A]">{entry.slot ? formatTimeRange(entry.slot) : '—'}</p>
+                        <p className="mt-1 text-[11px] font-black uppercase text-[#64748B]">{entry.slot ? formatHumanDate(entry.slot.date, false) : 'нет даты'}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <a href={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="text-[16px] font-black leading-5 text-[#0F172A]">{entry.booking.studentName}</a>
+                        <p className="mt-1 text-[13px] font-bold text-[#64748B]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор'} · {entry.branch?.name ?? 'Филиал'} · {entry.booking.studentPhone}</p>
+                        {entry.booking.comment || entry.booking.notes ? <p className="mt-2 border-l-2 border-[#CBD5E1] pl-2 text-[12px] font-bold text-[#475569]">{entry.booking.comment || entry.booking.notes}</p> : null}
+                      </div>
+                      <div className="space-y-2 md:text-right">
+                        <StatusBadge status={entry.booking.status} />
+                        {entry.booking.status === 'active' && (
+                          <div className="grid grid-cols-3 gap-1 md:grid-cols-1">
+                            <button onClick={() => openReschedule(entry.booking.id)} className="min-h-9 border border-[#CBD5E1] bg-white px-2 text-[11px] font-black text-[#1D4ED8]">Перенос</button>
+                            <button onClick={() => setCompleteId(entry.booking.id)} className="min-h-9 border border-[#CBD5E1] bg-white px-2 text-[11px] font-black text-[#0F172A]">Провести</button>
+                            <button onClick={() => setCancelId(entry.booking.id)} className="min-h-9 border border-[#FCA5A5] bg-white px-2 text-[11px] font-black text-[#DC2626]">Отмена</button>
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
             )}
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleIntakeSubmit} disabled={!intakeForm.slotId} className="flex-1">Создать запись</Button>
-            <Button variant="secondary" onClick={() => setIntakeOpen(false)} className="flex-1">Закрыть</Button>
-          </div>
-        </div>
-      </Modal>
+          </section>
+        </main>
+      </div>
+
+      <ConfirmDialog open={Boolean(cancelId)} title="Отменить запись" description="Время снова станет доступным для записи." confirmLabel="Отменить" onClose={() => setCancelId(null)} onConfirm={handleCancel} danger />
+      <ConfirmDialog open={Boolean(completeId)} title="Отметить проведённой" description="Занятие будет считаться проведённым." confirmLabel="Подтвердить" onClose={() => setCompleteId(null)} onConfirm={handleComplete} />
 
       <Modal open={Boolean(rescheduleId)} onClose={() => setRescheduleId(null)} title="Перенести запись">
         <div className="space-y-4 px-5 pb-5">
           <div className="grid grid-cols-2 gap-2">
-            <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
-              <option value="all">Все филиалы</option>
-              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none">
+              <option value="all">Все филиалы</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
-            <select value={rescheduleInstructorId} onChange={(e) => setRescheduleInstructorId(e.target.value)} className="min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]">
-              <option value="all">Все инструкторы</option>
-              {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+            <select value={rescheduleInstructorId} onChange={(e) => setRescheduleInstructorId(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none">
+              <option value="all">Все инструкторы</option>{instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
             </select>
-            <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className="col-span-2 min-h-11 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[13px] text-[#111418] outline-none focus:border-[#1F3A8A]" />
+            <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} className="col-span-2 min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none" />
           </div>
-
-          {rescheduleSlots.length === 0 ? (
-            <p className="text-sm font-semibold text-[#5F6875]">Нет свободного времени. Измените фильтры.</p>
-          ) : (
+          {rescheduleSlots.length === 0 ? <p className="text-sm font-bold text-[#64748B]">Нет свободного времени.</p> : (
             <div className="max-h-[260px] space-y-1.5 overflow-y-auto">
               {rescheduleSlots.map((slot) => {
                 const inst = db.instructors.byId(slot.instructorId)
                 const br = db.branches.byId(slot.branchId)
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => setSelectedSlotId(slot.id)}
-                    className={`flex min-h-[56px] w-full items-center gap-2 rounded-[8px] border px-3 py-2 text-left transition  ${selectedSlotId === slot.id ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white hover:border-[rgba(0,0,0,0.12)]'}`}
-                  >
-                    <span className="text-[13px] font-black">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</span>
-                    <span className={`text-[12px] font-semibold ${selectedSlotId === slot.id ? 'text-white/70' : 'text-[#5F6875]'}`}>{inst?.name} · {br?.name}</span>
-                  </button>
-                )
+                return <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className={`grid min-h-[56px] w-full grid-cols-[1fr_auto] items-center gap-2 border px-3 text-left ${selectedSlotId === slot.id ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#CBD5E1] bg-white'}`}><span><strong className="block text-[13px]">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</strong><span className="text-[12px] font-bold opacity-70">{inst?.name} · {br?.name}</span></span><span className="text-[11px] font-black">выбрать</span></button>
               })}
             </div>
           )}
-
-          <div className="flex gap-2">
-            <Button onClick={() => void handleReschedule()} disabled={!selectedSlotId} className="flex-1">Подтвердить</Button>
-            <Button variant="secondary" onClick={() => setRescheduleId(null)} className="flex-1">Закрыть</Button>
-          </div>
+          <div className="flex gap-2"><Button onClick={() => void handleReschedule()} disabled={!selectedSlotId} className="flex-1">Подтвердить</Button><Button variant="secondary" onClick={() => setRescheduleId(null)} className="flex-1">Закрыть</Button></div>
         </div>
       </Modal>
     </div>
