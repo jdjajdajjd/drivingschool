@@ -1,39 +1,72 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import {
-  Calendar03Icon,
-  ClipboardIcon,
-  DashboardSquare03Icon,
-  LinkSquare02Icon,
-  Logout03Icon,
-  Settings02Icon,
-  UserGroupIcon,
-  UserMultipleIcon,
-} from '@hugeicons/core-free-icons'
-import { AdminBottomNav, AdminTopBar } from './AdminBottomNav'
-import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 import { setDataNamespace } from '../../services/storage'
 import { seedIfNeeded } from '../../services/seed'
 import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
 import { db } from '../../services/storage'
 
-const ExternalLink = createHugeIcon(LinkSquare02Icon)
-const LogOut = createHugeIcon(Logout03Icon)
-const Home = createHugeIcon(DashboardSquare03Icon)
-const Clipboard = createHugeIcon(ClipboardIcon)
-const Calendar = createHugeIcon(Calendar03Icon)
-const Students = createHugeIcon(UserMultipleIcon)
-const Staff = createHugeIcon(UserGroupIcon)
-const Settings = createHugeIcon(Settings02Icon)
-
-const sidebar = [
-  { to: ADMIN_BASE_PATH, label: 'Сегодня', hint: 'день и задачи', icon: Home, end: true },
-  { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', hint: 'звонки и переносы', icon: Clipboard },
-  { to: `${ADMIN_BASE_PATH}/slots`, label: 'График', hint: 'окна расписания', icon: Calendar },
-  { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', hint: 'карточки и прогресс', icon: Students },
-  { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', hint: 'доступ и машины', icon: Staff },
-  { to: `${ADMIN_BASE_PATH}/settings`, label: 'Школа', hint: 'настройки и сайт', icon: Settings },
+const navItems = [
+  {
+    to: `${ADMIN_BASE_PATH}/today`,
+    label: 'Сегодня',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="18" rx="4" stroke="currentColor" strokeWidth="2"/>
+        <path d="M3 10h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: `${ADMIN_BASE_PATH}/schedule`,
+    label: 'Расписание',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: `${ADMIN_BASE_PATH}/bookings`,
+    label: 'Записи',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9 12h6M9 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: `${ADMIN_BASE_PATH}/people`,
+    label: 'Люди',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: `${ADMIN_BASE_PATH}/school`,
+    label: 'Школа',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    to: `${ADMIN_BASE_PATH}/money`,
+    label: 'Деньги',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+        <path d="M12 7v10M15 9.5a3 3 0 100 5h-3a3 3 0 010-5c0-1.5 1-2 2-1.5s1 1 0 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
 ]
 
 export function AdminLayout() {
@@ -62,70 +95,79 @@ export function AdminLayout() {
   const publicPath = school ? `/school/${school.slug}` : '/'
 
   return (
-    <div className="v-admin-shell">
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E4E7EC] bg-white/95 backdrop-blur md:hidden">
-        <div className="flex items-center gap-2 px-3 py-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-[11px] bg-[#111827] text-white">
+    <div className="v-admin-shell flex min-h-dvh flex-col">
+      {/* Top bar - always visible on mobile */}
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-surface/95 backdrop-blur-sm px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-ink text-white">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 17h14M5 17l3-8h8l3 8M9 9V6m6 3V6M4 17h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <div>
-            <span className="block text-[16px] font-black tracking-[-0.05em] text-[#111827]">vroom</span>
-            <span className="block text-[11px] font-bold text-[#667085]">кабинет школы</span>
+            <span className="block text-[16px] font-black tracking-[-0.05em] text-ink">vroom</span>
+            <span className="block text-[11px] font-bold text-text-muted">кабинет школы</span>
           </div>
         </div>
-        <button onClick={() => { if (school) window.location.href = publicPath }} className="mr-3 flex min-h-11 items-center gap-1.5 rounded-[12px] border border-[#E4E7EC] bg-white px-3 text-[12px] font-black text-[#111827]">
-          <ExternalLink size={13} />
-          Сайт
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { if (school) window.location.href = publicPath }}
+            className="flex min-h-10 items-center gap-1.5 rounded-[12px] border border-border bg-surface px-3 text-[12px] font-black text-ink"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Сайт
+          </button>
+          <button
+            onClick={() => { clearAccess('admin'); navigate('/') }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-border bg-surface text-error"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
-      <AdminTopBar />
+      {/* Main content area */}
+      <main className="flex-1 overflow-auto pb-[calc(72px+env(safe-area-inset-bottom))]">
+        <Outlet />
+      </main>
 
-      <aside className="fixed bottom-0 left-0 top-[60px] hidden w-[276px] flex-col border-r border-[#E4E7EC] bg-[#F9FAFB] p-3 md:flex">
-        <div className="rounded-[16px] border border-[#E4E7EC] bg-white p-3">
-          <p className="text-[11px] font-black uppercase tracking-[0.1em] text-[#667085]">школа</p>
-          <p className="mt-1 truncate text-[15px] font-black text-[#111827]">{school?.name ?? 'Новая автошкола'}</p>
-          <a href={publicPath} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-[12px] border border-[#E4E7EC] bg-white px-3 text-[12px] font-black text-[#111827]">
-            <ExternalLink size={14} /> Открыть сайт
-          </a>
-        </div>
-
-        <nav className="mt-3 space-y-1">
-          {sidebar.map((item) => (
+      {/* Bottom tab bar - mobile only */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-surface/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-lg items-center justify-around px-2 py-1">
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.end}
-              className={({ isActive }) => `grid min-h-[58px] grid-cols-[34px_minmax(0,1fr)] items-center gap-3 rounded-[14px] px-3 transition ${isActive ? 'bg-[#111827] text-white' : 'text-[#344054] hover:bg-white'}`}
+              end={item.to === `${ADMIN_BASE_PATH}/today`}
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-0.5 px-2 py-2 transition-colors ${
+                  isActive ? 'text-ink' : 'text-text-muted'
+                }`
+              }
             >
               {({ isActive }) => (
                 <>
-                  <span className={`grid h-9 w-9 place-items-center rounded-[11px] ${isActive ? 'bg-white/12 text-white' : 'bg-white text-[#475467]'}`}>
-                    <item.icon size={16} />
+                  <span className={`transition-colors ${isActive ? 'text-ink' : 'text-text-muted'}`}>
+                    {item.icon}
                   </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[13px] font-black">{item.label}</span>
-                    <span className={`block truncate text-[11px] font-bold ${isActive ? 'text-white/62' : 'text-[#667085]'}`}>{item.hint}</span>
+                  <span className={`text-[10px] font-bold ${isActive ? 'text-ink' : 'text-text-muted'}`}>
+                    {item.label}
                   </span>
+                  {isActive && (
+                    <span className="absolute bottom-1 h-1 w-5 rounded-full bg-ink" />
+                  )}
                 </>
               )}
             </NavLink>
           ))}
-        </nav>
-
-        <button onClick={() => { clearAccess('admin'); navigate('/') }} className="mt-auto flex min-h-11 items-center gap-2 rounded-[10px] px-3 text-[13px] font-black text-[#DC2626] transition hover:bg-[#FEF2F2]">
-          <LogOut size={14} />
-          Выйти
-        </button>
-      </aside>
-
-      <div className="pb-[calc(104px+env(safe-area-inset-bottom))] md:pb-0 md:pl-[276px]">
-        <Outlet />
-      </div>
-
-      <AdminBottomNav />
+        </div>
+      </nav>
     </div>
   )
 }
+
+export default AdminLayout

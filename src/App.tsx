@@ -21,16 +21,12 @@ const InstructorPage = lazy(() => import('./pages/InstructorPage').then((module)
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
 const AdminLayout = lazy(() => import('./components/layout/AdminLayout').then((module) => ({ default: module.AdminLayout })))
-const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then((module) => ({ default: module.AdminDashboard })))
-const AdminBookings = lazy(() => import('./pages/admin/Bookings').then((module) => ({ default: module.AdminBookings })))
-const AdminSlots = lazy(() => import('./pages/admin/Slots').then((module) => ({ default: module.AdminSlots })))
-const AdminStudents = lazy(() => import('./pages/admin/Students').then((module) => ({ default: module.AdminStudents })))
-const AdminStudentDetail = lazy(() => import('./pages/admin/StudentDetail').then((module) => ({ default: module.AdminStudentDetail })))
-const AdminInstructors = lazy(() => import('./pages/admin/Instructors').then((module) => ({ default: module.AdminInstructors })))
-const AdminBranches = lazy(() => import('./pages/admin/Branches').then((module) => ({ default: module.AdminBranches })))
-const AdminModules = lazy(() => import('./pages/admin/Modules').then((module) => ({ default: module.AdminModules })))
-const AdminModuleDetail = lazy(() => import('./pages/admin/ModuleDetail').then((module) => ({ default: module.AdminModuleDetail })))
-const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.AdminSettings })))
+const AdminToday = lazy(() => import('./pages/admin/today/TodayPage').then((module) => ({ default: module.TodayPage })))
+const AdminSchedule = lazy(() => import('./pages/admin/schedule/SchedulePage').then((module) => ({ default: module.SchedulePage })))
+const AdminBookings = lazy(() => import('./pages/admin/bookings/BookingsPage').then((module) => ({ default: module.default })))
+const AdminPeople = lazy(() => import('./pages/admin/people/PeoplePage').then((module) => ({ default: module.default })))
+const AdminSchool = lazy(() => import('./pages/admin/school/SchoolPage').then((module) => ({ default: module.AdminSchoolSettings })))
+const AdminMoney = lazy(() => import('./pages/admin/money/MoneyPage').then((module) => ({ default: module.default })))
 
 const SuperAdminLayout = lazy(() => import('./components/layout/SuperAdminLayout').then((module) => ({ default: module.SuperAdminLayout })))
 const SuperAdminOverview = lazy(() => import('./pages/SuperAdmin').then((module) => ({ default: module.SuperAdminOverview })))
@@ -92,17 +88,13 @@ function App() {
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
           <Route element={<ProtectedAccess role="admin" mode="workspace" />}>
             <Route path={ADMIN_BASE_PATH} element={<AdminLayout />}>
-              <Route path="today" element={<Navigate to={ADMIN_BASE_PATH} replace />} />
-              <Route index element={<AdminDashboard />} />
+              <Route path="today" element={<AdminToday />} />
+              <Route path="schedule" element={<AdminSchedule />} />
               <Route path="bookings" element={<AdminBookings />} />
-              <Route path="slots" element={<AdminSlots />} />
-              <Route path="students" element={<AdminStudents />} />
-              <Route path="students/:studentId" element={<AdminStudentDetail />} />
-              <Route path="instructors" element={<AdminInstructors />} />
-              <Route path="branches" element={<AdminBranches />} />
-              <Route path="modules" element={<AdminModules />} />
-              <Route path="modules/:moduleId" element={<AdminModuleDetail />} />
-              <Route path="settings" element={<AdminSettings />} />
+              <Route path="people" element={<AdminPeople />} />
+              <Route path="school" element={<AdminSchool />} />
+              <Route path="money" element={<AdminMoney />} />
+              <Route index element={<Navigate to={`${ADMIN_BASE_PATH}/today`} replace />} />
             </Route>
           </Route>
           <Route path="/instructor" element={<Navigate to="/instructor/tok-petrov-2024" replace />} />
