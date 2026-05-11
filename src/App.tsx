@@ -21,12 +21,20 @@ const InstructorPage = lazy(() => import('./pages/InstructorPage').then((module)
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
 const AdminLayout = lazy(() => import('./components/layout/AdminLayout').then((module) => ({ default: module.AdminLayout })))
-const AdminToday = lazy(() => import('./pages/admin/today/TodayPage').then((module) => ({ default: module.TodayPage })))
-const AdminSchedule = lazy(() => import('./pages/admin/schedule/SchedulePage').then((module) => ({ default: module.SchedulePage })))
-const AdminBookings = lazy(() => import('./pages/admin/bookings/BookingsPage').then((module) => ({ default: module.default })))
-const AdminPeople = lazy(() => import('./pages/admin/people/PeoplePage').then((module) => ({ default: module.default })))
-const AdminSchool = lazy(() => import('./pages/admin/school/SchoolPage').then((module) => ({ default: module.AdminSchoolSettings })))
-const AdminMoney = lazy(() => import('./pages/admin/money/MoneyPage').then((module) => ({ default: module.default })))
+const AdminToday = lazy(() => import('./pages/admin/Today').then((module) => ({ default: module.AdminToday })))
+const AdminSchedule = lazy(() => import('./pages/admin/Schedule').then((module) => ({ default: module.AdminSchedule })))
+const AdminStudents = lazy(() => import('./pages/admin/Students').then((module) => ({ default: module.AdminStudents })))
+const AdminStudentDetail = lazy(() => import('./pages/admin/StudentDetail').then((module) => ({ default: module.AdminStudentDetail })))
+const AdminInstructors = lazy(() => import('./pages/admin/Instructors').then((module) => ({ default: module.AdminInstructors })))
+const AdminInstructorDetail = lazy(() => import('./pages/admin/InstructorDetail').then((module) => ({ default: module.AdminInstructorDetail })))
+const AdminCars = lazy(() => import('./pages/admin/Cars').then((module) => ({ default: module.AdminCars })))
+const AdminBranches = lazy(() => import('./pages/admin/Branches').then((module) => ({ default: module.AdminBranches })))
+const AdminPayments = lazy(() => import('./pages/admin/Payments').then((module) => ({ default: module.AdminPayments })))
+const AdminDocuments = lazy(() => import('./pages/admin/Documents').then((module) => ({ default: module.AdminDocuments })))
+const AdminExams = lazy(() => import('./pages/admin/Exams').then((module) => ({ default: module.AdminExams })))
+const AdminReports = lazy(() => import('./pages/admin/Reports').then((module) => ({ default: module.AdminReports })))
+const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.AdminSettings })))
+const AdminUsers = lazy(() => import('./pages/admin/Users').then((module) => ({ default: module.AdminUsers })))
 
 const SuperAdminLayout = lazy(() => import('./components/layout/SuperAdminLayout').then((module) => ({ default: module.SuperAdminLayout })))
 const SuperAdminOverview = lazy(() => import('./pages/SuperAdmin').then((module) => ({ default: module.SuperAdminOverview })))
@@ -88,13 +96,25 @@ function App() {
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
           <Route element={<ProtectedAccess role="admin" mode="workspace" />}>
             <Route path={ADMIN_BASE_PATH} element={<AdminLayout />}>
+              <Route index element={<AdminToday />} />
               <Route path="today" element={<AdminToday />} />
               <Route path="schedule" element={<AdminSchedule />} />
-              <Route path="bookings" element={<AdminBookings />} />
-              <Route path="people" element={<AdminPeople />} />
-              <Route path="school" element={<AdminSchool />} />
-              <Route path="money" element={<AdminMoney />} />
-              <Route index element={<Navigate to={`${ADMIN_BASE_PATH}/today`} replace />} />
+              <Route path="students" element={<AdminStudents />} />
+              <Route path="students/:id" element={<AdminStudentDetail />} />
+              <Route path="instructors" element={<AdminInstructors />} />
+              <Route path="instructors/:id" element={<AdminInstructorDetail />} />
+              <Route path="cars" element={<AdminCars />} />
+              <Route path="branches" element={<AdminBranches />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="documents" element={<AdminDocuments />} />
+              <Route path="exams" element={<AdminExams />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="bookings" element={<Navigate to={`${ADMIN_BASE_PATH}/schedule`} replace />} />
+              <Route path="people" element={<Navigate to={`${ADMIN_BASE_PATH}/students`} replace />} />
+              <Route path="school" element={<Navigate to={`${ADMIN_BASE_PATH}/settings`} replace />} />
+              <Route path="money" element={<Navigate to={`${ADMIN_BASE_PATH}/payments`} replace />} />
             </Route>
           </Route>
           <Route path="/instructor" element={<Navigate to="/instructor/tok-petrov-2024" replace />} />

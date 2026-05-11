@@ -1,202 +1,132 @@
 import { useMemo, useState } from 'react'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { Modal } from '../../components/ui/Modal'
-import { useToast } from '../../components/ui/Toast'
-import { DRIVING_CATEGORIES } from '../../services/drivingCategories'
-import {
-  createInstructorConfirmed,
-  getInstructorsBySchool,
-  toggleInstructorActiveConfirmed,
-  updateInstructorConfirmed,
-} from '../../services/instructorService'
-import { validateRussianPhone } from '../../services/bookingService'
+import { useNavigate } from 'react-router-dom'
 import { db } from '../../services/storage'
-import { getAvailableSlots } from '../../services/slotService'
-import type { Instructor, Transmission } from '../../types'
-
-const INIT = {
-  branchId: '', name: '', phone: '', email: '', bio: '',
-  car: '', transmission: 'manual' as Transmission, categories: ['B'] as string[], isActive: true,
-}
-
-function fieldCls() {
-  return 'min-h-11 w-full rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]'
-}
+import { adminCars } from '../../services/adminStorage'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { Modal } from '../../components/ui/Modal'
 
 export function AdminInstructors() {
-  const school = db.schools.all()[0] ?? null
-  const { showToast } = useToast()
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState(INIT)
-  const [saving, setSaving] = useState(false)
-  const [toggling, setToggling] = useState<string | null>(null)
+  const school = db.schools.all()[0]
+  const [showAdd, setShowAdd] = useState(false)
+  const [search, setSearch] = useState('')
+  const navigate = useNavigate()
 
-  const branches = school ? db.branches.bySchool(school.id).filter((b) => b.isActive) : []
-  const instructors = school ? getInstructorsBySchool(school.id) : []
-
-  const rows = useMemo(() => {
-    return instructors.map((inst) => {
-      const upcoming = db.bookings.all().filter((b) => b.status === 'active' && b.instructorId === inst.id).length
-      const freeSlots = getAvailableSlots(inst.id).filter((s) => {
-        const t = new Date(`${s.date}T${s.time}:00`).getTime()
-        return t > Date.now() && t <= Date.now() + 7 * 24 * 60 * 60 * 1000
-      }).length
-      return { inst, upcoming, freeSlots }
+  const data = useMemo(() => {
+    if (!school) return []
+    return db.instructors.bySchool(school.id).map((instructor) => {
+      const slots = db.slots.byInstructor(instructor.id)
+      const bookings = db.bookings.byInstructor(instructor.id)
+      const todaySlots = slots.filter((s) => s.date === new Date().toISOString().split('T')[0])
+      const todayBooked = todaySlots.filter((s) => s.status === 'booked').length
+      const totalBookings = bookings.filter((b) => b.status === 'active').length
+      const students = new Set(bookings.map((b) => b.studentId)).size
+      const car = instructor.car ? adminCars.all(school.id).find((c) => c.id === instructor.car) : null
+      return { instructor, todayBooked, totalBookings, students, car, slots, bookings }
     })
-  }, [instructors])
+  }, [school?.id])
 
-  function openCreate() {
-    setEditingId(null)
-    setForm({ ...INIT, branchId: branches[0]?.id ?? '' })
-    setModalOpen(true)
-  }
+  const filtered = data.filter(({ instructor }) => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return instructor.name.toLowerCase().includes(q) || instructor.phone.includes(q)
+  })
 
-  function openEdit(inst: Instructor) {
-    setEditingId(inst.id)
-    setForm({
-      branchId: inst.branchId,
-      name: inst.name,
-      phone: inst.phone,
-      email: inst.email,
-      bio: inst.bio,
-      car: inst.car ?? '',
-      transmission: inst.transmission ?? 'manual',
-      categories: inst.categories?.length ? inst.categories : ['B'],
-      isActive: inst.isActive,
-    })
-    setModalOpen(true)
-  }
-
-  async function handleSubmit() {
-    if (!school || !form.name) { showToast('Введите имя', 'error'); return }
-    if (form.phone && !validateRussianPhone(form.phone)) { showToast('Неверный телефон', 'error'); return }
-    setSaving(true)
-    try {
-      const r = editingId
-        ? await updateInstructorConfirmed(editingId, form)
-        : await createInstructorConfirmed({ schoolId: school.id, ...form })
-      if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-      showToast(editingId ? 'Обновлён' : 'Создан', 'success')
-      setModalOpen(false)
-    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
-    finally { setSaving(false) }
-  }
-
-  async function handleToggle(inst: Instructor) {
-    if (toggling) return
-    setToggling(inst.id)
-    try {
-      const r = await toggleInstructorActiveConfirmed(inst.id)
-      if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-      showToast(inst.isActive ? 'Выключен' : 'Включён', 'success')
-    } catch (e) { showToast(e instanceof Error ? e.message : 'Ошибка', 'error') }
-    finally { setToggling(null) }
-  }
-
-  if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
+  const [showModal, setShowModal] = useState<string | null>(null)
 
   return (
-    <div className="v-admin-page">
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8B929C]">{school.name}</p>
-          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418] md:text-[26px]">Инструкторы</h1>
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
+        <h1 className="text-[24px] font-black text-gray-900">Инструкторы</h1>
+        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">
+          {filtered.filter((d) => d.instructor.isActive).length} активных
+        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск..."
+            className="h-10 w-[200px] rounded-xl border border-gray-200 bg-gray-50 px-4 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none"
+          />
+          <button onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
+            + Добавить
+          </button>
         </div>
-        <Button onClick={openCreate}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Добавить
-        </Button>
       </div>
 
-      {rows.length === 0 ? (
-        <div className="rounded-[8px] border border-dashed border-[#CBD5E1] bg-white px-4 py-5 text-center">
-          <p className="font-black text-[#111418]">Инструкторов пока нет</p>
-          <p className="mt-1 text-sm font-semibold text-[#5F6875]">Добавьте инструктора, чтобы ученики могли выбирать свободные окна.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {rows.map(({ inst, upcoming, freeSlots }) => (
-            <div key={inst.id} className="rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3 ">
-              <div className="flex items-start gap-3">
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[8px] bg-[#F1F2F5]">
-                  {inst.avatarInitials && (
-                    <div className="flex h-full w-full items-center justify-center text-[14px] font-black text-white" style={{ backgroundColor: inst.avatarColor ?? '#3156D4' }}>
-                      {inst.avatarInitials}
+      {/* Grid */}
+      <div className="flex-1 overflow-auto p-4 md:p-6">
+        {filtered.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-gray-400">Инструкторы не найдены</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map(({ instructor, todayBooked, totalBookings, students, car }) => (
+              <motion.div
+                key={instructor.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`cursor-pointer rounded-2xl border p-5 transition hover:border-gray-200 hover:shadow-sm ${
+                  instructor.isActive ? 'bg-white' : 'bg-gray-50 opacity-60'
+                }`}
+                onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors/${instructor.id}`)}
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl text-[16px] font-black text-white"
+                    style={{ background: instructor.avatarColor }}
+                  >
+                    {instructor.avatarInitials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-gray-900">{instructor.name}</p>
+                    <p className="text-[12px] font-semibold text-gray-400">{instructor.phone}</p>
+                  </div>
+                  <span className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                    instructor.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    {instructor.isActive ? 'Активен' : 'Неактивен'}
+                  </span>
+                </div>
+
+                <div className="mb-4 grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Сегодня', value: todayBooked },
+                    { label: 'Учеников', value: students },
+                    { label: 'Записей', value: totalBookings },
+                  ].map((stat) => (
+                    <div key={stat.label} className="rounded-xl bg-gray-50 p-2 text-center">
+                      <p className="text-[18px] font-black text-gray-900">{stat.value}</p>
+                      <p className="text-[11px] font-semibold text-gray-400">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  {instructor.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {instructor.categories.map((cat) => (
+                        <span key={cat} className="rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-600">
+                          Кат. {cat}
+                        </span>
+                      ))}
                     </div>
                   )}
+                  {car && (
+                    <p className="text-[12px] font-semibold text-gray-400">
+                      🚗 {car.brand} {car.licensePlate}
+                    </p>
+                  )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-black text-[#111418]">{inst.name}</p>
-                  <p className="truncate text-[12px] font-semibold text-[#5F6875]">
-                    {branches.find((b) => b.id === inst.branchId)?.name ?? 'Филиал'} · {inst.car || 'Машина не указана'}
-                  </p>
-                </div>
-                <Badge variant={inst.isActive ? 'success' : 'muted'}>{inst.isActive ? 'Активен' : 'Выключен'}</Badge>
-              </div>
-              <div className="mt-2 flex gap-4 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <div>
-                  <p className="text-[10px] font-bold text-[#8B929C]">Записей</p>
-                  <p className="text-[13px] font-black text-[#111418]">{upcoming}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-[#8B929C]">Окон 7д</p>
-                  <p className="text-[13px] font-black text-[#1F3A8A]">{freeSlots}</p>
-                </div>
-              </div>
-              <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                <button onClick={() => openEdit(inst)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#111418] transition hover:bg-[#F1F2F5] ">Редактировать</button>
-                <button onClick={() => void handleToggle(inst)} className="min-h-11 flex-1 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-[12px] font-black text-[#5F6875] transition hover:bg-[#F1F2F5] ">
-                  {toggling === inst.id ? '...' : inst.isActive ? 'Выключить' : 'Включить'}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Редактировать' : 'Новый инструктор'}>
-        <div className="space-y-4 px-5 pb-5">
-          <div className="grid grid-cols-2 gap-3">
-            <input className={fieldCls()} placeholder="Имя *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            <select className={fieldCls()} value={form.branchId} onChange={(e) => setForm((f) => ({ ...f, branchId: e.target.value }))}>
-              <option value="">Филиал</option>
-              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-            <input className={fieldCls()} placeholder="Телефон" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-            <input className={fieldCls()} placeholder="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-            <input className={fieldCls()} placeholder="Машина" value={form.car} onChange={(e) => setForm((f) => ({ ...f, car: e.target.value }))} />
-            <select className={fieldCls()} value={form.transmission} onChange={(e) => setForm((f) => ({ ...f, transmission: e.target.value as Transmission }))}>
-              <option value="manual">Механика</option>
-              <option value="auto">Автомат</option>
-            </select>
+              </motion.div>
+            ))}
           </div>
-          <textarea className="min-h-[88px] w-full resize-none rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5 text-[15px] font-semibold text-[#111418] outline-none focus:border-[#1F3A8A]" rows={3} placeholder="Описание (необязательно)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} />
-          <div>
-            <p className="mb-2 text-[13px] font-bold text-[#5F6875]">Категории</p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {DRIVING_CATEGORIES.map((cat) => {
-                const active = form.categories.includes(cat.code)
-                return (
-                  <button key={cat.code} type="button" onClick={() => setForm((f) => ({ ...f, categories: active ? f.categories.filter((c) => c !== cat.code) : [...f.categories, cat.code] }))}
-                    className={`min-h-11 rounded-[8px] border px-2 py-2 text-left transition  ${active ? 'border-[#1F3A8A] bg-[#1F3A8A] text-white' : 'border-[rgba(0,0,0,0.06)] bg-white text-[#5F6875]'}`}>
-                    <span className="text-[13px] font-black">{cat.code}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <label className="flex min-h-12 items-center gap-3 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[#F8FAFC] px-3">
-            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} className="h-5 w-5 accent-[#1F3A8A]" />
-            <span className="text-[14px] font-bold text-[#111418]">Активен для записи</span>
-          </label>
-          <div className="flex gap-2">
-            <Button onClick={() => void handleSubmit()} disabled={saving} className="flex-1">{saving ? '...' : editingId ? 'Сохранить' : 'Создать'}</Button>
-            <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Закрыть</Button>
-          </div>
-        </div>
-      </Modal>
+        )}
+      </div>
     </div>
   )
 }
+
+import { motion } from 'framer-motion'

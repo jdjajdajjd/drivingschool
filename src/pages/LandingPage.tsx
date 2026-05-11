@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { db, setDataNamespace } from '../services/storage'
-import { WORKSPACE_ADMIN_LOGIN_PATH } from '../services/accessControl'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
 export function LandingPage() {
@@ -42,7 +41,7 @@ export function LandingPage() {
           </div>
           <button
             className="min-h-11 rounded-[16px] bg-[#EEF0FA] px-3.5 text-[13px] font-black text-[#2442D8] transition active:scale-[0.97] md:px-5"
-            onClick={() => navigate(WORKSPACE_ADMIN_LOGIN_PATH)}
+            onClick={() => navigate('/login')}
           >
             Войти
           </button>
@@ -63,7 +62,7 @@ export function LandingPage() {
               Меньше звонков. Больше записей.
             </h1>
             <p className="mt-5 max-w-[520px] text-[16px] font-semibold leading-7 text-[#5F6672] md:text-[19px]">
-              Ученики сами выбирают свободное время. Директор видит расписание, записи, инструкторов и ссылку школы в одном понятном кабинете.
+              Ученики сами выбирают свободное время. Запись на практическое занятие доступна онлайн 24/7.
             </p>
             <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
               <button
@@ -74,9 +73,9 @@ export function LandingPage() {
               </button>
               <button
                 className="min-h-[58px] rounded-[20px] border border-[#E3E6EE] bg-white px-5 text-[15px] font-black text-[#111418] transition active:scale-[0.98]"
-                onClick={() => navigate(WORKSPACE_ADMIN_LOGIN_PATH)}
+                onClick={() => navigate('/login')}
               >
-                Открыть админку
+                Войти в кабинет
               </button>
             </div>
             <div className="mt-7 grid grid-cols-3 gap-2">
@@ -108,9 +107,9 @@ export function LandingPage() {
               </div>
               <div className="space-y-2.5">
                 {[
-                  ['01', 'Настройте школу', 'Название, телефон, филиалы, инструкторы и категории.'],
-                  ['02', 'Добавьте расписание', 'Одним действием создайте свободные окна на неделю или месяц.'],
-                  ['03', 'Дайте ссылку ученикам', 'Они записываются сами, запись появляется в админке.'],
+                  ['01', 'Выберите школу', 'Найдите свою автошколу на сайте и откройте страницу записи.'],
+                  ['02', 'Забронируйте занятие', 'Выберите удобное время и инструктора — всё онлайн, без звонков.'],
+                  ['03', 'Приходите на занятие', 'В назначенное время приходите на площадку. Остальное — наше дело.'],
                 ].map(([num, title, text]) => (
                   <div key={num} className="grid grid-cols-[42px_minmax(0,1fr)] gap-3 rounded-[22px] bg-[#F7F8FB] p-3">
                     <div className="grid h-10 w-10 place-items-center rounded-[15px] bg-[#EEF0FA] text-[13px] font-black text-[#2442D8]">{num}</div>

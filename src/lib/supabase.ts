@@ -12,7 +12,7 @@ const configured = Boolean(
   supabaseUrl &&
   supabaseAnonKey &&
   !supabaseUrl.includes('example.supabase.co') &&
-    supabaseAnonKey.length > 40,
+  supabaseAnonKey.length > 40,
 )
 
 if (!configured) {
@@ -20,8 +20,8 @@ if (!configured) {
 }
 
 export const supabase = createClient(
-  configured ? supabaseUrl! : fallbackSupabaseUrl,
-  configured ? supabaseAnonKey! : fallbackSupabaseAnonKey,
+  configured ? supabaseUrl : fallbackSupabaseUrl,
+  configured ? supabaseAnonKey : fallbackSupabaseAnonKey,
 )
 
 export function isSupabaseRemoteConfigured(): boolean {

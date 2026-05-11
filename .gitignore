@@ -4,6 +4,16 @@ dist-ssr
 *.local
 .env
 .env.local
+.env.*
+!.env.*.example
 .DS_Store
 .claude
 .playwright-mcp
+.vite
+preview.*.log
+output
+_shot.js
+check-*.cjs
+check-*.js
+find-icons.cjs
+find_icons.*

@@ -1,291 +1,382 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { StatusBadge } from '../../components/ui/Badge'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { useToast } from '../../components/ui/Toast'
-import { formatInstructorName, formatPhone } from '../../lib/utils'
-import { formatHumanDate, formatTimeRange } from '../../utils/date'
-import { cancelBooking, completeBooking, getBookingsByStudent } from '../../services/bookingService'
-import { getStudentById, getStudentStats, updateStudentAdminConfirmed } from '../../services/studentService'
+import { useMemo, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
+import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, studentProgress, getDebtForStudent, createAuditEntry } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { Modal } from '../../components/ui/Modal'
 import type { TrainingStage } from '../../types'
-import { loadStudentDocuments, loadStudentProgress, loadStudentRequests, refreshStudentDocumentsFromSupabase, refreshStudentProgressFromSupabase, refreshStudentRequestsFromSupabase, saveStudentProgressAdminConfirmed, studentDocumentLabels, studentDocumentStatusLabels, studentRequestStatusLabels, updateStudentDocumentAdminConfirmed, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
-import { isSupabaseConfigured } from '../../lib/supabase'
-import { trainingStageLabels } from '../student/studentUtils'
+import { motion } from 'framer-motion'
 
-const STAGES: TrainingStage[] = ['theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed']
+const STAGE_LABELS: Record<string, string> = {
+  new_request: 'Новая заявка',
+  awaiting_contract: 'Ожидает договора',
+  contract_signed: 'Договор подписан',
+  training_active: 'Обучение идёт',
+  no_bookings: 'Нет записей',
+  has_debt: 'Есть долг',
+  missing_documents: 'Не хватает док-в',
+  theory_completed: 'Теория завершена',
+  practice_active: 'Практика идёт',
+  practice_completed: 'Практика завершена',
+  ready_for_internal_exam: 'Готов к внутр. экзамену',
+  internal_exam_passed: 'Внутр. экзамен сдан',
+  ready_for_gibdd: 'Готов к ГИБДД',
+  training_completed: 'Обучение завершено',
+  archived: 'Архив',
+  refused: 'Отказ',
+  frozen: 'Заморозка',
+}
+
+const DOC_LABELS: Record<string, string> = {
+  contract: 'Договор',
+  passport: 'Паспорт',
+  medical_certificate: 'Медсправка',
+  consent_data_processing: 'Согласие на обработку данных',
+  application: 'Заявление',
+  parent_consent: 'Согласие родителей',
+  snils: 'СНИЛС',
+  state_fee_receipt: 'Квитанция госпошлины',
+  photo: 'Фото',
+  internal_certificate: 'Внутренний сертификат',
+  gibdd_exam_doc: 'Документы для экзамена',
+}
+
+const DOC_STATUS_COLORS: Record<string, string> = {
+  missing: 'bg-red-50 text-red-500',
+  pending: 'bg-amber-50 text-amber-600',
+  uploaded: 'bg-blue-50 text-blue-600',
+  verified: 'bg-green-50 text-green-600',
+  rejected: 'bg-red-50 text-red-500',
+  expired: 'bg-red-100 text-red-600',
+  not_required: 'bg-gray-100 text-gray-400',
+}
 
 export function AdminStudentDetail() {
-  const { studentId } = useParams<{ studentId: string }>()
+  const { id } = useParams()
   const navigate = useNavigate()
-  const { showToast } = useToast()
-  const [cancelId, setCancelId] = useState<string | null>(null)
-  const [completeId, setCompleteId] = useState<string | null>(null)
-  const [docs, setDocs] = useState<ReturnType<typeof loadStudentDocuments>>([])
-  const [prog, setProg] = useState<ReturnType<typeof loadStudentProgress> | null>(null)
-  const [requests, setRequests] = useState<ReturnType<typeof loadStudentRequests>>([])
-  const [, rerender] = useState(0)
+  const school = db.schools.all()[0]
+  const [showAddPayment, setShowAddPayment] = useState(false)
+  const [showAddDocument, setShowAddDocument] = useState(false)
+  const [note, setNote] = useState('')
 
-  const student = studentId ? getStudentById(studentId) : null
-  const school = student ? db.schools.byId(student.schoolId) : null
-  const stats = student ? getStudentStats(student.id) : null
-  const history = useMemo(() => (student ? getBookingsByStudent(student.id) : []), [student])
-  const branches = student ? db.branches.bySchool(student.schoolId).filter((b) => b.isActive) : []
-  const instructors = student ? db.instructors.bySchool(student.schoolId).filter((i) => i.isActive) : []
+  const data = useMemo(() => {
+    if (!school || !id) return null
+    const student = db.students.byId(id)
+    if (!student) return null
+    const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
+    const branch = db.branches.byId(student.assignedBranchId ?? '')
+    const bookings = db.bookings.bySchool(school.id).filter((b) => b.studentId === student.id)
+    const payments = adminPayments.byStudent(student.id)
+    const documents = adminDocuments.byStudent(student.id)
+    const internalExams = adminInternalExams.byStudent(student.id)
+    const gibddExams = adminGIBDDExams.byStudent(student.id)
+    const progress = studentProgress.get(student.id)
+    const debt = getDebtForStudent(student.id)
+    const completedHours = progress?.confirmedHours ?? 0
 
-  useEffect(() => {
-    if (!student) return
-    setDocs(loadStudentDocuments(student.id))
-    setProg(loadStudentProgress(student.id))
-    setRequests(loadStudentRequests(student.schoolId))
-    if (!isSupabaseConfigured()) return
-    void refreshStudentProgressFromSupabase(student.id).then((p) => setProg(p)).catch(() => {})
-    void refreshStudentDocumentsFromSupabase(student.id).then((d) => { if (d.length) setDocs(d) }).catch(() => {})
-    void refreshStudentRequestsFromSupabase(student.schoolId).then(setRequests).catch(() => {})
-  }, [student?.id, student?.schoolId])
+    return { student, instructor, branch, bookings, payments, documents, internalExams, gibddExams, progress, debt, completedHours }
+  }, [school?.id, id])
 
-  async function patchStudent(patch: Partial<NonNullable<typeof student>>) {
-    if (!student) return
-    const r = await updateStudentAdminConfirmed(student.id, patch)
-    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-    rerender((v) => v + 1)
-    showToast('Сохранено', 'success')
-  }
-
-  async function patchProgress(patch: Partial<NonNullable<typeof prog>>) {
-    if (!student || !prog) return
-    const r = await saveStudentProgressAdminConfirmed({ id: prog.id ?? `progress-${student.id}`, studentId: student.id, schoolId: student.schoolId, theoryTopicsTotal: prog.theoryTopicsTotal ?? 0, theoryTopicsCompleted: prog.theoryTopicsCompleted ?? 0, drivingHoursTotal: prog.drivingHoursTotal ?? 0, drivingHoursCompleted: prog.drivingHoursCompleted ?? 0, internalExamPassed: prog.internalExamPassed ?? false, internalExamDate: prog.internalExamDate ?? null, internalExamStatus: prog.internalExamStatus ?? 'not_scheduled', gaidExamDate: prog.gaidExamDate ?? null, gibddExamStatus: prog.gibddExamStatus ?? 'not_scheduled', notes: prog.notes ?? '', updatedAt: new Date().toISOString(), ...patch })
-    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-    setProg(r.progress ?? loadStudentProgress(student.id))
-    rerender((v) => v + 1)
-    showToast('Сохранено', 'success')
-  }
-
-  async function patchDoc(type: string, status: string) {
-    if (!student) return
-    const r = await updateStudentDocumentAdminConfirmed(student.id, type as any, status as any)
-    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-    setDocs(r.documents ?? loadStudentDocuments(student.id))
-    rerender((v) => v + 1)
-    showToast('Сохранено', 'success')
-  }
-
-  async function patchRequest(id: string, status: string) {
-    if (!student) return
-    const r = await updateStudentRequestStatusAdminConfirmed(student.schoolId, id, status as any)
-    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-    setRequests(r.requests ?? loadStudentRequests(student.schoolId))
-    rerender((v) => v + 1)
-    showToast('Сохранено', 'success')
-  }
-
-  function handleCancel() {
-    if (!cancelId) return
-    const r = cancelBooking(cancelId)
-    setCancelId(null)
-    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-    showToast('Отменена', 'success')
-  }
-
-  function handleComplete() {
-    if (!completeId) return
-    const r = completeBooking(completeId)
-    setCompleteId(null)
-    if (!r.ok) { showToast(r.error ?? 'Ошибка', 'error'); return }
-    showToast('Проведена', 'success')
-  }
-
-  if (!student || !stats) {
+  if (!data) {
     return (
-      <div className="px-3 py-4 md:px-6 md:py-5">
-        <button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)} className="mb-4 flex items-center gap-2 text-[13px] font-bold text-[#6F747A]">
-          ← Ученики
-        </button>
-        <div className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-8 text-center">
-          <p className="font-black text-[#111418]">Ученик не найден</p>
-        </div>
+      <div className="flex h-full items-center justify-center">
+        <p className="text-gray-400">Ученик не найден</p>
       </div>
     )
   }
 
+  const { student, instructor, branch, bookings, payments, documents, internalExams, gibddExams, progress, debt, completedHours } = data
+  const stage = student.trainingStage ?? 'new_request'
+
+  const totalHours = progress?.drivingHoursTotal ?? 56
+  const hoursPercent = Math.min((completedHours / totalHours) * 100, 100)
+
+  const canGoToGIBDD =
+    progress?.internalExamPassed === true &&
+    completedHours >= totalHours &&
+    debt === 0 &&
+    !documents.some((d) => d.type === 'medical_certificate' && d.status !== 'verified') &&
+    !documents.some((d) => d.type === 'contract' && d.status !== 'verified')
+
   return (
-    <div className="px-3 pb-24 pt-3 md:px-5 md:pt-4">
-      <button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)} className="mb-4 flex items-center gap-2 text-[13px] font-bold text-[#6F747A]">
-        ← Ученики
-      </button>
-
-      {/* Header */}
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9EA3A8]">{school?.name}</p>
-          <h1 className="mt-1 text-[22px] font-black tracking-[-0.03em] text-[#111418]">{student.name}</h1>
-          <p className="mt-0.5 text-[13px] font-semibold text-[#6F747A]">{formatPhone(student.normalizedPhone)}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[22px] font-black text-[#111418]">{stats.activeFutureBookings}</p>
-          <p className="text-[11px] font-semibold text-[#9EA3A8]">активных записей</p>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="mb-4 grid grid-cols-4 gap-2">
-        {[
-          { label: 'Всего', value: stats.totalBookings },
-          { label: 'Активных', value: stats.activeFutureBookings },
-          { label: 'Проведено', value: stats.completedBookings },
-          { label: 'Отменено', value: stats.cancelledBookings },
-        ].map((s) => (
-          <div key={s.label} className="rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-2 text-center">
-            <p className="text-[18px] font-black">{s.value}</p>
-            <p className="text-[10px] font-semibold text-[#9EA3A8]">{s.label}</p>
+    <div className="overflow-y-auto">
+      <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)} className="rounded-lg p-2 hover:bg-gray-100">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="flex-1">
+            <h1 className="text-[22px] font-black text-gray-900">{student.name}</h1>
           </div>
-        ))}
-      </div>
-
-      {/* Assignment */}
-      <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-        <h2 className="text-[15px] font-black text-[#111418]">Назначения</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Этап</p>
-            <select value={student.trainingStage ?? ''} onChange={(e) => void patchStudent({ trainingStage: (e.target.value || undefined) as TrainingStage | undefined })} className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-              <option value="">Не назначен</option>
-              {STAGES.map((s) => <option key={s} value={s}>{trainingStageLabels[s]}</option>)}
-            </select>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Инструктор</p>
-            <select value={student.assignedInstructorId ?? ''} onChange={(e) => void patchStudent({ assignedInstructorId: e.target.value || undefined })} className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-              <option value="">Не назначен</option>
-              {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Филиал</p>
-            <select value={student.assignedBranchId ?? ''} onChange={(e) => void patchStudent({ assignedBranchId: e.target.value || undefined })} className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-              <option value="">Не назначен</option>
-              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Группа</p>
-            <input value={student.groupName ?? ''} onChange={(e) => void patchStudent({ groupName: e.target.value.trim() || undefined })} placeholder="—" className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none" />
-          </div>
+          <button className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            Редактировать
+          </button>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-        <h2 className="text-[15px] font-black text-[#111418]">Прогресс</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Темы (всего/закрыто)</p>
-            <div className="flex gap-1">
-              <input type="number" value={prog?.theoryTopicsTotal ?? 0} onChange={(e) => void patchProgress({ theoryTopicsTotal: Number(e.target.value) })} className="mt-1 h-9 w-16 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 text-[13px] font-semibold outline-none" />
-              <span className="flex h-9 items-center text-[#9EA3A8]">/</span>
-              <input type="number" value={prog?.theoryTopicsCompleted ?? 0} onChange={(e) => void patchProgress({ theoryTopicsCompleted: Number(e.target.value) })} className="mt-1 h-9 w-16 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 text-[13px] font-semibold outline-none" />
+      <div className="grid gap-4 p-4 md:grid-cols-[1fr_360px] md:p-6 lg:p-8">
+        {/* Left column */}
+        <div className="space-y-4">
+          {/* Progress */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <h2 className="mb-4 text-[16px] font-bold text-gray-900">Прогресс обучения</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-gray-400">Практика</span>
+              <span className="text-[15px] font-black text-gray-900">{completedHours} / {totalHours} часов</span>
             </div>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Часы (всего/закрыто)</p>
-            <div className="flex gap-1">
-              <input type="number" value={prog?.drivingHoursTotal ?? 0} onChange={(e) => void patchProgress({ drivingHoursTotal: Number(e.target.value) })} className="mt-1 h-9 w-16 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 text-[13px] font-semibold outline-none" />
-              <span className="flex h-9 items-center text-[#9EA3A8]">/</span>
-              <input type="number" value={prog?.drivingHoursCompleted ?? 0} onChange={(e) => void patchProgress({ drivingHoursCompleted: Number(e.target.value) })} className="mt-1 h-9 w-16 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 text-[13px] font-semibold outline-none" />
+            <div className="mb-4 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all"
+                style={{ width: `${hoursPercent}%` }}
+              />
             </div>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Внутренний экзамен</p>
-            <select value={prog?.internalExamStatus ?? 'not_scheduled'} onChange={(e) => void patchProgress({ internalExamStatus: e.target.value as any })} className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-              <option value="not_scheduled">Не назначен</option>
-              <option value="scheduled">Назначен</option>
-              <option value="passed">Сдан</option>
-              <option value="failed">Не сдан</option>
-            </select>
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-[#9EA3A8]">Экзамен ГИБДД</p>
-            <select value={prog?.gibddExamStatus ?? 'not_scheduled'} onChange={(e) => void patchProgress({ gibddExamStatus: e.target.value as any })} className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-              <option value="not_scheduled">Не назначен</option>
-              <option value="scheduled">Назначен</option>
-              <option value="passed">Сдан</option>
-              <option value="failed">Не сдан</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
-      {/* Documents */}
-      {docs.length > 0 && (
-        <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Документы</h2>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {docs.map((doc) => (
-              <div key={doc.type}>
-                <p className="text-[11px] font-bold text-[#9EA3A8]">{studentDocumentLabels[doc.type]}</p>
-                <select value={doc.status} onChange={(e) => void patchDoc(doc.type, e.target.value)} className="mt-1 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-                  {['missing', 'pending', 'provided', 'approved', 'rejected'].map((s) => (
-                    <option key={s} value={s}>{studentDocumentStatusLabels[s as keyof typeof studentDocumentStatusLabels]}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Requests */}
-      {requests.filter((r) => r.studentId === student.id).length > 0 && (
-        <div className="mb-4 rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-3">
-          <h2 className="text-[15px] font-black text-[#111418]">Запросы</h2>
-          <div className="mt-3 space-y-2">
-            {requests.filter((r) => r.studentId === student.id).map((req) => (
-              <div key={req.id} className="rounded-[10px] border border-[rgba(0,0,0,0.06)] px-3 py-2">
-                <p className="text-[13px] font-black text-[#111418]">{req.type === 'reschedule' ? 'Перенос' : 'Отмена'}: {req.reason}</p>
-                <p className="mt-0.5 text-[12px] text-[#9EA3A8]">{req.comment}</p>
-                <select value={req.status} onChange={(e) => void patchRequest(req.id, e.target.value)} className="mt-2 h-9 w-full rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2.5 text-[13px] font-semibold outline-none">
-                  {['new', 'reviewing', 'resolved', 'rejected'].map((s) => (
-                    <option key={s} value={s}>{studentRequestStatusLabels[s as keyof typeof studentRequestStatusLabels]}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* History */}
-      {history.length > 0 && (
-        <div className="mb-4">
-          <h2 className="mb-2 text-[15px] font-black text-[#111418]">История записей</h2>
-          <div className="space-y-2">
-            {history.map((entry) => (
-              <div key={entry.booking.id} className="rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-white px-3 py-2.5">
-                <div className="flex items-center gap-3">
-                  <div className="shrink-0 text-center">
-                    <p className="text-[12px] font-black">{entry.slot ? formatTimeRange(entry.slot) : '—'}</p>
-                    <p className="text-[11px] font-semibold text-[#9EA3A8]">{entry.slot ? formatHumanDate(entry.slot.date, false) : '—'}</p>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-black">{entry.instructor ? formatInstructorName(entry.instructor.name) : '—'} · {entry.branch?.name ?? '—'}</p>
-                  </div>
-                  <StatusBadge status={entry.booking.status} />
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Проведено', value: bookings.filter((b) => b.status === 'completed').length },
+                { label: 'Активных', value: bookings.filter((b) => b.status === 'active').length },
+                { label: 'Отменено', value: bookings.filter((b) => b.status === 'cancelled').length },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl bg-gray-50 p-3 text-center">
+                  <p className="text-[20px] font-black text-gray-900">{item.value}</p>
+                  <p className="text-[11px] font-semibold text-gray-400">{item.label}</p>
                 </div>
-                {entry.booking.status === 'active' && (
-                  <div className="mt-2 flex gap-2 border-t border-[rgba(0,0,0,0.05)] pt-2">
-                    <button onClick={() => setCompleteId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white px-2 py-1.5 text-[12px] font-black text-[#111418]">Проведена</button>
-                    <button onClick={() => setCancelId(entry.booking.id)} className="flex-1 rounded-[10px] border border-[rgba(229,83,75,0.15)] bg-white px-2 py-1.5 text-[12px] font-black text-[#E5534B]">Отменить</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Documents */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-[16px] font-bold text-gray-900">Документы</h2>
+              <button onClick={() => setShowAddDocument(true)} className="text-[13px] font-bold text-blue-600">
+                + Добавить
+              </button>
+            </div>
+            <div className="space-y-2">
+              {documents.length === 0 ? (
+                <p className="py-4 text-center text-[13px] font-semibold text-gray-400">Документов пока нет</p>
+              ) : (
+                documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                    <div>
+                      <p className="font-semibold text-gray-900">{DOC_LABELS[doc.type] ?? doc.type}</p>
+                      {doc.uploadedAt && (
+                        <p className="text-[12px] font-semibold text-gray-400">
+                          Загружено {format(new Date(doc.uploadedAt), 'd MMM yyyy', { locale: ru })}
+                        </p>
+                      )}
+                    </div>
+                    <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${DOC_STATUS_COLORS[doc.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {doc.status === 'missing' ? 'Не загружен' :
+                       doc.status === 'pending' ? 'На проверке' :
+                       doc.status === 'uploaded' ? 'Загружен' :
+                       doc.status === 'verified' ? 'Проверен' :
+                       doc.status === 'rejected' ? 'Отклонён' :
+                       doc.status === 'expired' ? 'Просрочен' : doc.status}
+                    </span>
                   </div>
-                )}
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Booking history */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <h2 className="mb-4 text-[16px] font-bold text-gray-900">История занятий</h2>
+            {bookings.length === 0 ? (
+              <p className="py-4 text-center text-[13px] font-semibold text-gray-400">Занятий пока нет</p>
+            ) : (
+              <div className="space-y-2">
+                {bookings.slice(0, 10).map((booking) => {
+                  const slot = db.slots.byId(booking.slotId)
+                  const instr = db.instructors.byId(booking.instructorId)
+                  return (
+                    <div key={booking.id} className="flex items-center gap-3 rounded-xl border border-gray-50 bg-gray-50/50 px-4 py-3">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">
+                          {slot ? format(new Date(`${slot.date}T${slot.time}`), 'd MMM, HH:mm', { locale: ru }) : '—'}
+                        </p>
+                        <p className="text-[12px] font-semibold text-gray-400">{instr?.name ?? '—'}</p>
+                      </div>
+                      <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
+                        booking.status === 'active' ? 'bg-green-50 text-green-600' :
+                        booking.status === 'completed' ? 'bg-gray-100 text-gray-500' :
+                        booking.status === 'no_show' ? 'bg-red-50 text-red-500' :
+                        'bg-gray-100 text-gray-400'
+                      }`}>
+                        {booking.status === 'active' ? 'Активна' :
+                         booking.status === 'completed' ? 'Проведена' :
+                         booking.status === 'no_show' ? 'Неявка' : 'Отменена'}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
-            ))}
+            )}
+          </div>
+
+          {/* Exams */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <h2 className="mb-4 text-[16px] font-bold text-gray-900">Экзамены</h2>
+
+            <div className="mb-4">
+              <p className="mb-2 text-[13px] font-bold text-gray-600">Внутренний экзамен</p>
+              {internalExams.length === 0 ? (
+                <p className="text-[13px] font-semibold text-gray-400">Не назначен</p>
+              ) : (
+                internalExams.map((exam) => (
+                  <div key={exam.id} className="flex items-center gap-3 rounded-xl border border-gray-50 bg-gray-50/50 px-4 py-3">
+                    <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
+                      exam.status === 'passed' ? 'bg-green-50 text-green-600' :
+                      exam.status === 'failed' ? 'bg-red-50 text-red-500' :
+                      exam.status === 'scheduled' ? 'bg-blue-50 text-blue-600' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {exam.status === 'passed' ? 'Сдан' :
+                       exam.status === 'failed' ? 'Не сдан' :
+                       exam.status === 'scheduled' ? 'Назначен' :
+                       exam.status === 'ready' ? 'Готов' : 'Не готов'}
+                    </span>
+                    {exam.scheduledDate && (
+                      <span className="text-[13px] font-semibold text-gray-500">
+                        {format(new Date(exam.scheduledDate), 'd MMM', { locale: ru })}
+                      </span>
+                    )}
+                    <span className="ml-auto text-[12px] font-semibold text-gray-400">
+                      Попытка {exam.attemptNumber}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 text-[13px] font-bold text-gray-600">Экзамен ГИБДД</p>
+              {gibddExams.length === 0 ? (
+                <p className="text-[13px] font-semibold text-gray-400">Не назначен</p>
+              ) : (
+                gibddExams.map((exam) => (
+                  <div key={exam.id} className="flex items-center gap-3 rounded-xl border border-gray-50 bg-gray-50/50 px-4 py-3">
+                    <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
+                      exam.status === 'passed' ? 'bg-green-50 text-green-600' :
+                      exam.status === 'failed' ? 'bg-red-50 text-red-500' :
+                      exam.status === 'scheduled' ? 'bg-blue-50 text-blue-600' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {exam.status === 'passed' ? 'Сдан' :
+                       exam.status === 'failed' ? 'Не сдан' :
+                       exam.status === 'scheduled' ? 'Назначен' :
+                       exam.status === 'ready' ? 'Готов' : 'Не готов'}
+                    </span>
+                    {exam.examDate && (
+                      <span className="text-[13px] font-semibold text-gray-500">
+                        {format(new Date(exam.examDate), 'd MMM yyyy', { locale: ru })}
+                      </span>
+                    )}
+                    <span className="ml-auto text-[12px] font-semibold text-gray-400">
+                      Попытка {exam.attemptNumber}
+                    </span>
+                  </div>
+                ))
+              )}
+
+              {canGoToGIBDD && (
+                <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-4 text-center">
+                  <p className="font-bold text-green-700">✓ Ученик готов к экзамену ГИБДД</p>
+                  <button className="mt-2 rounded-lg bg-green-600 px-4 py-2 text-[13px] font-bold text-white">
+                    Записать на экзамен
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      )}
 
-      <ConfirmDialog open={Boolean(cancelId)} title="Отменить запись" description="Запись будет отменена." confirmLabel="Отменить" onClose={() => setCancelId(null)} onConfirm={handleCancel} danger />
-      <ConfirmDialog open={Boolean(completeId)} title="Отметить проведённой" description="Занятие будет считаться проведённым." confirmLabel="Подтвердить" onClose={() => setCompleteId(null)} onConfirm={handleComplete} />
+        {/* Right column — info card */}
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <h2 className="mb-4 text-[16px] font-bold text-gray-900">Карточка ученика</h2>
+
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-[18px] font-black text-gray-600">
+                {student.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">{student.name}</p>
+                <p className="text-[13px] font-semibold text-gray-400">{student.phone}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { label: 'Статус', value: STAGE_LABELS[stage] ?? stage },
+                { label: 'Категория', value: student.categoryCodes?.[0] ?? '—' },
+                { label: 'Инструктор', value: instructor?.name ?? 'Не назначен' },
+                { label: 'Филиал', value: branch?.name ?? '—' },
+                { label: 'Группа', value: student.groupName ?? '—' },
+                { label: 'Начало обучения', value: student.trainingStartDate ? format(new Date(student.trainingStartDate), 'd MMM yyyy', { locale: ru }) : '—' },
+                { label: 'Email', value: student.email || '—' },
+              ].map((row) => (
+                <div key={row.label} className="flex items-start justify-between gap-2">
+                  <span className="text-[13px] font-semibold text-gray-400">{row.label}</span>
+                  <span className="text-right text-[13px] font-semibold text-gray-900">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Debt */}
+          <div className={`rounded-2xl border p-5 ${debt > 0 ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-white'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-semibold text-gray-400">Долг</p>
+                <p className={`text-[24px] font-black ${debt > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                  {debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'Нет долга'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddPayment(true)}
+                className={`rounded-xl px-4 py-2 text-[13px] font-bold ${debt > 0 ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}`}
+              >
+                + Оплата
+              </button>
+            </div>
+
+            {payments.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {payments.slice(0, 3).map((p) => (
+                  <div key={p.id} className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                    <span className="text-[12px] font-semibold text-gray-600">{p.description}</span>
+                    <span className={`text-[12px] font-bold ${p.status === 'paid' ? 'text-green-600' : 'text-red-500'}`}>
+                      {p.paidAmount.toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <h3 className="mb-3 text-[14px] font-bold text-gray-900">Заметки</h3>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Добавьте заметку..."
+              rows={3}
+              className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-[13px] font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-900 focus:bg-white focus:outline-none"
+            />
+            <button className="mt-2 w-full rounded-xl border border-gray-200 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+              Сохранить заметку
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
