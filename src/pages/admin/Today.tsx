@@ -146,10 +146,10 @@ export function AdminToday() {
   return (
     <div className="v-admin-workspace">
       <section className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
-        <div className="v-admin-panel overflow-hidden bg-[#101418] text-white">
+        <div className="v-admin-panel overflow-hidden border-[#194A44] bg-[linear-gradient(135deg,#10201F_0%,#123043_58%,#0E7C66_135%)] text-white">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 p-5">
             <div>
-              <p className="text-[13px] font-black uppercase text-white/48">{school.name}</p>
+              <p className="text-[13px] font-black uppercase text-[#9FE0D0]">{school.name}</p>
               <h1 className="mt-2 text-[34px] font-black leading-none text-white md:text-[42px]">
                 {format(new Date(), 'EEEE, d MMMM', { locale: ru })}
               </h1>
@@ -157,7 +157,7 @@ export function AdminToday() {
                 Операционный пульт: расписание, долги, свободные окна и проблемы на сегодня.
               </p>
             </div>
-            <button className="v-admin-button bg-white text-[#101418] hover:bg-[#EEF2F5]" onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)}>
+            <button className="min-h-10 inline-flex items-center justify-center gap-2 rounded-[9px] bg-white px-4 text-[13px] font-black text-[#10201F] shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition hover:bg-[#E7F6F0]" onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)}>
               <CalendarPlus size={16} />
               Создать окна
             </button>

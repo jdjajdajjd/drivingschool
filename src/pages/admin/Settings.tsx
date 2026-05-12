@@ -33,7 +33,7 @@ export function AdminSettings() {
     <div className="overflow-y-auto">
       <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4 md:px-6">
         <h1 className="text-[24px] font-black text-gray-900">Настройки школы</h1>
-        <button onClick={handleSave} className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13px] font-bold text-white transition hover:bg-gray-800">
+        <button onClick={handleSave} className="v-admin-button px-5">
           {saved ? '✓ Сохранено' : 'Сохранить'}
         </button>
       </div>
@@ -133,7 +133,7 @@ export function AdminSettings() {
                     update('workDays', days)
                   }}
                   className={`h-10 w-12 rounded-xl text-[13px] font-semibold transition ${
-                    settings.workDays.includes(i) ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-gray-50 text-gray-500'
+                    settings.workDays.includes(i) ? 'bg-[#10201F] text-white' : 'border border-gray-200 bg-gray-50 text-gray-500'
                   }`}
                 >
                   {day}

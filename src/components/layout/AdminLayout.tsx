@@ -48,12 +48,12 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
   const school = db.schools.all()[0]
 
   return (
-    <div className="flex h-full flex-col bg-[#101418] text-white">
+    <div className="flex h-full flex-col bg-[linear-gradient(180deg,#10201F_0%,#123043_48%,#101418_100%)] text-white">
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
         <BrandMark variant="dark" size="md" className="border border-white/10 shadow-[0_14px_34px_rgba(0,0,0,0.34)]" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-black text-white">{school?.name ?? 'Автошкола'}</p>
-          <p className="text-[12px] font-semibold text-white/55">директорский пульт</p>
+          <p className="text-[12px] font-semibold text-[#9FE0D0]">директорский пульт</p>
         </div>
         {onClose ? (
           <button
@@ -81,8 +81,8 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
                 className={({ isActive }) =>
                   `flex min-h-11 items-center gap-3 rounded-lg px-3 text-[14px] font-bold transition ${
                     isActive
-                      ? 'bg-white text-[#101418] shadow-[0_14px_34px_rgba(0,0,0,0.20)]'
-                      : 'text-white/67 hover:bg-white/8 hover:text-white'
+                      ? 'bg-[#E7F6F0] text-[#10201F] shadow-[0_14px_34px_rgba(0,0,0,0.20)]'
+                      : 'text-white/72 hover:bg-white/10 hover:text-white'
                   }`
                 }
               >
@@ -129,8 +129,8 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="v-admin-shell flex h-dvh overflow-hidden bg-[#F3F5F7] text-[#111418]">
-      <aside className="hidden w-[272px] shrink-0 bg-[#101418] lg:block">
+    <div className="v-admin-shell flex h-dvh overflow-hidden bg-[var(--admin-bg)] text-[#111418]">
+      <aside className="hidden w-[272px] shrink-0 bg-[#10201F] lg:block">
         <Sidebar />
       </aside>
 
@@ -200,7 +200,7 @@ export function AdminLayout() {
                   end={item.to === ADMIN_BASE_PATH}
                   className={({ isActive }) =>
                     `flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-black transition ${
-                      isActive ? 'bg-[#101418] text-white' : 'text-[#7A8490]'
+                      isActive ? 'bg-[#10201F] text-white shadow-[0_10px_24px_rgba(14,124,102,0.18)]' : 'text-[#7A8490]'
                     }`
                   }
                 >

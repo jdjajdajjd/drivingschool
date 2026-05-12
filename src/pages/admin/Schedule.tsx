@@ -163,7 +163,7 @@ export function AdminSchedule() {
           </button>
           <div className="flex rounded-[10px] border border-[#DCE2E8] bg-white p-1">
             {(['day', 'week'] as ViewMode[]).map((mode) => (
-              <button key={mode} onClick={() => setViewMode(mode)} className={`rounded-[7px] px-3 py-2 text-[13px] font-black ${viewMode === mode ? 'bg-[#101418] text-white' : 'text-[#66717D]'}`}>
+              <button key={mode} onClick={() => setViewMode(mode)} className={`rounded-[7px] px-3 py-2 text-[13px] font-black ${viewMode === mode ? 'bg-[#10201F] text-white' : 'text-[#66717D]'}`}>
                 {mode === 'day' ? 'День' : 'Неделя'}
               </button>
             ))}
@@ -320,10 +320,20 @@ function CreateSlotForm({
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState('90')
+  const [error, setError] = useState('')
 
   const handleSubmit = () => {
     const parsedDuration = Number(duration)
-    if (!schoolId || !instructorId || !branchId || !date || !time || !Number.isFinite(parsedDuration)) return
+    setError('')
+    if (!schoolId || !instructorId || !branchId || !date || !time || !Number.isFinite(parsedDuration)) {
+      setError('Заполните инструктора, филиал, дату, время и длительность.')
+      return
+    }
+    const duplicate = db.slots.byInstructorAndDate(instructorId, date).some((slot) => slot.time === time)
+    if (duplicate) {
+      setError('У этого инструктора уже есть окно на выбранное время.')
+      return
+    }
     const slot: Slot = {
       id: `slot_${Date.now()}`,
       schoolId,
@@ -364,10 +374,11 @@ function CreateSlotForm({
           <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="v-admin-input w-full" />
         </div>
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Минут</label>
+          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность, мин</label>
           <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
         </div>
       </div>
+      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
         <button onClick={handleSubmit} className="v-admin-button flex-1">Создать</button>

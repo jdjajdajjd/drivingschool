@@ -60,6 +60,7 @@ export function AdminStudentDetail() {
   const [showAddDocument, setShowAddDocument] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  const [noteSaved, setNoteSaved] = useState(false)
 
   const data = useMemo(() => {
     if (!school || !id) return null
@@ -105,6 +106,7 @@ export function AdminStudentDetail() {
   const saveNote = () => {
     db.students.upsert({ ...student, notes: currentNote })
     createAuditEntry(school.id, 'admin', 'Администратор', 'student_note', 'student', student.id, `Обновлена заметка ученика ${student.name}`)
+    setNoteSaved(true)
   }
 
   return (
@@ -376,13 +378,13 @@ export function AdminStudentDetail() {
             <h3 className="mb-3 text-[14px] font-bold text-gray-900">Заметки</h3>
             <textarea
               value={currentNote}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(e) => { setNote(e.target.value); setNoteSaved(false) }}
               placeholder="Добавьте заметку..."
               rows={3}
               className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-[13px] font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-900 focus:bg-white focus:outline-none"
             />
             <button onClick={saveNote} className="mt-2 w-full rounded-xl border border-gray-200 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
-              Сохранить заметку
+              {noteSaved ? 'Заметка сохранена' : 'Сохранить заметку'}
             </button>
           </div>
         </div>
@@ -467,11 +469,17 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
   const [description, setDescription] = useState('Оплата обучения')
   const [status, setStatus] = useState<PaymentStatus>('paid')
   const [method, setMethod] = useState<PaymentMethod>('card')
+  const [error, setError] = useState('')
 
   const handleSubmit = () => {
     const total = Number(amount)
-    const paid = Number(paidAmount)
-    if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(paid)) return
+    const paid = Math.min(Number(paidAmount), total)
+    setError('')
+    if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(paid) || paid < 0) {
+      setError('Укажите корректную сумму и размер оплаты.')
+      return
+    }
+    const resolvedStatus: PaymentStatus = status === 'overdue' ? 'overdue' : paid >= total ? 'paid' : paid > 0 ? 'partial' : 'unpaid'
     const payment: Payment = {
       id: `pay_${Date.now()}`,
       schoolId,
@@ -479,8 +487,8 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
       amount: total,
       paidAmount: paid,
       remainingAmount: Math.max(total - paid, 0),
-      status,
-      method,
+      status: resolvedStatus,
+      method: resolvedStatus === 'unpaid' ? undefined : method,
       description,
       createdById: 'admin',
       createdAt: new Date().toISOString(),
@@ -511,6 +519,7 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
           <option value="receipt">Квитанция</option>
         </select>
       </div>
+      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
         <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>

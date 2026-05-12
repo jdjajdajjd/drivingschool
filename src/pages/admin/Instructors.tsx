@@ -48,7 +48,7 @@ export function AdminInstructors() {
             placeholder="Поиск..."
             className="h-10 w-[200px] rounded-xl border border-gray-200 bg-gray-50 px-4 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none"
           />
-          <button type="button" onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
+          <button type="button" onClick={() => setShowAdd(true)} className="v-admin-button">
             + Добавить
           </button>
         </div>

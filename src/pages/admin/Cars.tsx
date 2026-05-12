@@ -42,14 +42,14 @@ export function AdminCars() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${
-                  filter === f ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'
+                  filter === f ? 'bg-[#10201F] text-white' : 'text-gray-500 hover:bg-[#E7F6F0] hover:text-[#10201F]'
                 }`}
               >
                 {f === 'all' ? 'Все' : STATUS_COLORS[f].label}
               </button>
             ))}
           </div>
-          <button onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
+          <button onClick={() => setShowAdd(true)} className="v-admin-button">
             + Добавить
           </button>
         </div>
@@ -191,7 +191,7 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
 
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">Отмена</button>
-        <button onClick={handleSubmit} className="flex-1 rounded-xl bg-gray-900 py-2.5 text-[13px] font-bold text-white transition hover:bg-gray-800">Сохранить</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </div>
   )

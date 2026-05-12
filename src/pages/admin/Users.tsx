@@ -26,7 +26,7 @@ export function AdminUsers() {
           <h1 className="text-[24px] font-black text-gray-900">Пользователи</h1>
           <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">{users.length}</span>
         </div>
-        <button onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
+        <button onClick={() => setShowAdd(true)} className="v-admin-button">
           + Добавить сотрудника
         </button>
       </div>
@@ -36,7 +36,7 @@ export function AdminUsers() {
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <p className="text-[15px] font-semibold text-gray-400">Сотрудников пока нет</p>
-              <button onClick={() => setShowAdd(true)} className="mt-3 rounded-xl bg-gray-900 px-4 py-2 text-[13px] font-bold text-white">
+              <button onClick={() => setShowAdd(true)} className="v-admin-button mt-3">
                 + Добавить
               </button>
             </div>
@@ -136,7 +136,7 @@ function UserForm({ schoolId, user, onClose }: { schoolId: string; user: User | 
       </div>
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">Отмена</button>
-        <button onClick={handleSubmit} className="flex-1 rounded-xl bg-gray-900 py-2.5 text-[13px] font-bold text-white transition hover:bg-gray-800">Сохранить</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </div>
   )

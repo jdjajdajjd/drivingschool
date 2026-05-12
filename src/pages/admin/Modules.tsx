@@ -1,5 +1,5 @@
 import { AddTeamIcon, BellDotIcon, BookOpen01Icon, Building03Icon, ChartBarLineIcon, CodeIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ElementType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -9,6 +9,7 @@ import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { formatPrice } from '../../lib/utils'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import {
   BASE_FEATURES,
   MODULE_CATEGORY_LABELS,
@@ -19,6 +20,8 @@ import {
   getModulesCatalog,
   isModuleEnabled,
 } from '../../services/modules'
+import { db } from '../../services/storage'
+import type { Module, ModuleCategory } from '../../types'
 
 const BarChart3 = createHugeIcon(ChartBarLineIcon)
 const Bell = createHugeIcon(BellDotIcon)
@@ -32,11 +35,8 @@ const Puzzle = createHugeIcon(PuzzleIcon)
 const Send = createHugeIcon(MailSend01Icon)
 const UserPlus = createHugeIcon(AddTeamIcon)
 const Users = createHugeIcon(UserMultipleIcon)
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import { db } from '../../services/storage'
-import type { Module, ModuleCategory } from '../../types'
 
-const ICON_MAP: Record<string, React.ElementType> = {
+const ICON_MAP: Record<string, ElementType> = {
   MessageSquare,
   BookOpen,
   Send,
@@ -103,18 +103,18 @@ export function AdminModules() {
 
   if (!school || !billing) {
     return (
-      <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
+      <div className="max-w-7xl p-2.5 md:p-5">
         <EmptyState title="Школа не найдена" description="Данные школы не загружены." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl bg-[#E9EEF7] p-2.5 md:p-5">
+    <div className="max-w-7xl p-2.5 md:p-5">
       <PageHeader
         eyebrow={school.name}
         title="Дополнения"
-        description="База остаётся простой: 4 990 ₽ в месяц. Дополнительные возможности подключаются отдельно, только когда они действительно нужны."
+        description="База остается простой: 4 990 ₽ в месяц. Дополнительные возможности подключаются отдельно, только когда они действительно нужны."
       />
 
       <div className="mt-3 space-y-3">
@@ -178,7 +178,7 @@ export function AdminModules() {
           ) : (
             <p className="text-sm text-[#4B5A70]">
               Базовый пакет уже закрывает публичную запись, список записей, работу с учениками, инструкторами,
-              филиалами, времяами и личной ссылкой инструктора.
+              филиалами, свободными окнами и личной ссылкой инструктора.
             </p>
           )}
         </Section>
@@ -191,8 +191,8 @@ export function AdminModules() {
                 onClick={() => setFilter(item)}
                 className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                   filter === item
-                    ? 'border-accent bg-accent text-white'
-                    : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:rgba(246,184,77,0.20) hover:text-[#111827]'
+                    ? 'border-[#0E7C66] bg-[#10201F] text-white'
+                    : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:bg-[#FFF3D6] hover:text-[#111827]'
                 }`}
               >
                 {item === 'all' ? 'Все' : MODULE_CATEGORY_LABELS[item]}
