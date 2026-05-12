@@ -25,7 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ l
         className={cn(
           'min-h-[52px] w-full rounded-[15px] border border-[var(--border-strong,rgba(0,0,0,0.10))] bg-white px-4 text-[16px] font-extrabold leading-none text-[var(--text,#15120E)] outline-none placeholder:text-[var(--text-soft,#A09488)]',
           'shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-[border-color,box-shadow,background-color] duration-150',
-          'focus:border-[var(--accent,#111418)] focus:shadow-[0_0_0_4px_rgba(17,20,24,0.10)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
+          'focus:border-[#1F2BD8] focus:shadow-[0_0_0_4px_rgba(31,43,216,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
           error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           className,
         )}
@@ -57,7 +57,7 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
         className={cn(
           'min-h-[104px] w-full resize-none rounded-[15px] border border-[var(--border-strong,rgba(0,0,0,0.10))] bg-white px-4 py-3 text-[16px] font-bold leading-6 text-[var(--text,#15120E)] outline-none placeholder:text-[var(--text-soft,#A09488)]',
           'shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-[border-color,box-shadow,background-color] duration-150',
-          'focus:border-[var(--accent,#111418)] focus:shadow-[0_0_0_4px_rgba(17,20,24,0.10)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
+          'focus:border-[#1F2BD8] focus:shadow-[0_0_0_4px_rgba(31,43,216,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
           error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           className,
         )}

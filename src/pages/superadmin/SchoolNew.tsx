@@ -78,9 +78,9 @@ export function SuperAdminSchoolNew() {
               <p className="text-sm #9EA3A8">/{form.slug || 'school-slug'}</p>
             </div>
           </div>
-          <p className="mt-5 text-sm leading-relaxed #6F747A">{form.description || 'Описание будет видно на публичной странице школы и в потоке записи.'}</p>
+          <p className="mt-5 text-sm leading-relaxed #6F747A">{form.description || 'Описание будет видно на публичной странице школы.'}</p>
           <div className="mt-5 rounded-2xl px-4 py-3 text-center text-sm font-bold text-white" style={{ backgroundColor: form.primaryColor || '#6658F5' }}>
-            Записаться на занятие
+            Личный кабинет
           </div>
         </div>
       </div>

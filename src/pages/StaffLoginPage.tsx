@@ -25,9 +25,9 @@ const copy = {
     icon: LockKeyhole,
   },
   superadmin: {
-    title: 'Центр управления Vroom',
+    title: 'Центр управления vroom',
     subtitle: 'Служебный доступ для команды платформы.',
-    badge: 'Vroom',
+    badge: 'vroom',
     icon: ShieldCheck,
   },
 }
@@ -73,7 +73,7 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
           <div className="flex items-center gap-3">
             <BrandMark variant="light" size="md" className="bg-[#15120E]" />
             <div>
-              <p className="text-[17px] font-black leading-5 text-white">Vroom</p>
+              <p className="text-[17px] font-black leading-5 text-white">vroom</p>
               <p className="text-[12px] font-extrabold leading-4 text-white/54">рабочий пульт автошколы</p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
 import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { ProtectedAccess } from './components/layout/ProtectedAccess'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, WORKSPACE_ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
@@ -46,6 +46,11 @@ function PageFallback() {
   return <div className="min-h-screen bg-stone-50" />
 }
 
+function SchoolBookRedirect() {
+  const { slug = 'virazh' } = useParams<{ slug?: string }>()
+  return <Navigate to={`/school/${slug}/login`} replace />
+}
+
 function App() {
   const [isReady, setIsReady] = useState(false)
 
@@ -84,7 +89,7 @@ function App() {
           <Route path="/privacy" element={<LegalPage />} />
           <Route path="/school" element={<Navigate to="/school/virazh" replace />} />
           <Route path="/school/:slug" element={<SchoolPage />} />
-          <Route path="/school/:slug/book" element={<BookingFlowPage />} />
+          <Route path="/school/:slug/book" element={<SchoolBookRedirect />} />
           <Route path="/school/:slug/login" element={<StudentLoginPage />} />
           <Route path="/school/:slug/register" element={<StudentRegisterPage />} />
           <Route path="/student/register" element={<StudentRegisterPage />} />

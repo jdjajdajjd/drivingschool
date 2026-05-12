@@ -11,7 +11,7 @@ const sizeClass = {
   lg: 'h-16 w-16 rounded-[16px]',
 }
 
-export function BrandMark({ variant = 'dark', size = 'md', className = '', alt = 'Vroom' }: BrandMarkProps) {
+export function BrandMark({ variant = 'dark', size = 'md', className = '', alt = 'vroom' }: BrandMarkProps) {
   const src = variant === 'light' ? '/brand/vroom-mark-light.png' : '/brand/vroom-mark-dark.png'
 
   return (

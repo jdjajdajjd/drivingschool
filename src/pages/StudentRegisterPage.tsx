@@ -205,11 +205,11 @@ export default function StudentRegisterPage() {
   }
 
   return (
-    <div className="min-h-dvh overflow-hidden bg-[var(--page-bg)] text-[var(--text)]">
+    <div className="min-h-dvh overflow-hidden bg-[#F6F7FA] text-[var(--text)]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-5 pb-6 pt-5">
         <header className="flex items-center justify-between">
           <button className="flex items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
-            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[#1F2BD8] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
               {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={22} />}
             </div>
             <div className="min-w-0">
@@ -220,7 +220,7 @@ export default function StudentRegisterPage() {
           <div className="flex items-center gap-2">
             {existingProfile ? (
               <button
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)] active:scale-[0.97]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[#1F2BD8] shadow-[var(--shadow-card)] active:scale-[0.97]"
                 onClick={() => navigate('/student')}
               >
                 <Login size={14} /> Войти
@@ -238,7 +238,7 @@ export default function StudentRegisterPage() {
             onKeyDown={handleKeyDown}
           >
             <div className="mb-5 flex items-center justify-between gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--accent)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF0FA] px-3 py-2 text-[12px] font-extrabold text-[#1F2BD8]">
                 {step === 'success' ? <Check size={14} /> : <UserRound size={14} />}
                 {step === 'success' ? 'Готово' : `${progress}% заполнено`}
               </div>
@@ -251,13 +251,13 @@ export default function StudentRegisterPage() {
             </div>
 
             <div className="mb-6 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]" aria-label={`Прогресс регистрации ${progress}%`}>
-              <motion.div className="h-full rounded-full bg-[var(--accent)]" animate={{ width: `${progress}%` }} transition={{ duration: 0.24 }} />
+              <motion.div className="h-full rounded-full bg-[#1F2BD8]" animate={{ width: `${progress}%` }} transition={{ duration: 0.24 }} />
             </div>
 
             <AnimatePresence mode="wait">
               {step === 'lastName' ? (
                 <motion.div key="lastName" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--accent)]">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#EEF0FA] px-3 py-2 text-[12px] font-extrabold text-[#1F2BD8]">
                     <UserRound size={14} /> Регистрация ученика
                   </div>
                   <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Введите фамилию</h1>
@@ -327,9 +327,9 @@ export default function StudentRegisterPage() {
                     <Input label="Повторите пароль *" type="password" value={confirmPassword} error={password && confirmPassword && password !== confirmPassword ? 'Пароли не совпадают.' : undefined} placeholder="Ещё раз пароль" autoComplete="new-password" onChange={(event) => { setError(''); setConfirmPassword(event.target.value) }} />
                   </div>
                   <label className="mt-4 flex items-start gap-3 rounded-[18px] bg-[var(--surface-muted)] p-3 text-[12px] font-semibold leading-5 text-[var(--text-muted)]">
-                    <input className="mt-1 h-4 w-4 accent-[var(--accent)]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
+                    <input className="mt-1 h-4 w-4 accent-[#1F2BD8]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
                     <span>
-                      Согласен с <a className="font-extrabold text-[var(--accent)]" href="/terms">условиями сервиса</a> и <a className="font-extrabold text-[var(--accent)]" href="/privacy">политикой конфиденциальности</a>.
+                      Согласен с <a className="font-extrabold text-[#1F2BD8]" href="/terms">условиями сервиса</a> и <a className="font-extrabold text-[#1F2BD8]" href="/privacy">политикой конфиденциальности</a>.
                     </span>
                   </label>
                   {error ? <p className="mt-3 rounded-[16px] bg-[#FFEDEF] px-3 py-2 text-[13px] font-semibold text-[#FF3155]">{error}</p> : null}

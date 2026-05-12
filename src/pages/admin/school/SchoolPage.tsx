@@ -346,14 +346,14 @@ export function AdminSchoolSettings() {
             </a>
           </div>
           <div className="bg-surface px-3 py-4">
-            <p className="mb-2 text-[13px] font-black text-ink">Шаг записи</p>
+            <p className="mb-2 text-[13px] font-black text-ink">Вход ученика</p>
             <a
-              href={`${publicUrl}/book`}
+              href={`${publicUrl}/login`}
               target="_blank"
               rel="noopener noreferrer"
               className="block rounded-lg border border-border bg-surface-soft px-4 py-3 text-[13px] font-semibold text-info"
             >
-              {publicUrl}/book →
+              {publicUrl}/login →
             </a>
           </div>
         </div>
