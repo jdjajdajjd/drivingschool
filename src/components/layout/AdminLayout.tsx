@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Award,
   BarChart3,
@@ -45,16 +45,13 @@ const mobileNavItems = navItems.filter((item) =>
 )
 
 function Sidebar({ onClose }: { onClose?: () => void }) {
-  const school = db.schools.all()[0]
-
   return (
     <div className="flex h-full flex-col bg-[linear-gradient(180deg,#10201F_0%,#123043_48%,#101418_100%)] text-white">
-      <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-        <BrandMark variant="light" size="md" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-black text-white">{school?.name ?? 'Автошкола'}</p>
-          <p className="text-[12px] font-semibold text-[#9FE0D0]">директорский пульт</p>
-        </div>
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+        <button type="button" onClick={() => onClose?.()} className="flex min-w-0 flex-col items-start text-left">
+          <BrandMark variant="light" size="md" />
+          <span className="mt-1 text-[12px] font-semibold text-[#9FE0D0]">директорский пульт</span>
+        </button>
         {onClose ? (
           <button
             type="button"
@@ -99,6 +96,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
 export function AdminLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [ready, setReady] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -122,6 +120,11 @@ export function AdminLayout() {
 
   const school = db.schools.all()[0]
   const publicPath = school ? `/school/${school.slug}` : '/'
+  const currentNavItem = navItems
+    .slice()
+    .sort((left, right) => right.to.length - left.to.length)
+    .find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
+  const pageTitle = currentNavItem?.label ?? 'Рабочий день'
 
   const signOut = () => {
     clearAccess('admin')
@@ -162,7 +165,7 @@ export function AdminLayout() {
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <BrandMark variant="dark" size="sm" className="lg:hidden" />
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-black text-[#111418]">vroom.today</p>
+              <p className="truncate text-[14px] font-black text-[#111418]">{pageTitle}</p>
               <p className="truncate text-[11px] font-semibold text-[#66717D]">{school?.name ?? 'Рабочее пространство автошколы'}</p>
             </div>
           </div>

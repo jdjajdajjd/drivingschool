@@ -149,8 +149,7 @@ export function AdminToday() {
         <div className="v-admin-panel overflow-hidden border-[#194A44] bg-[linear-gradient(135deg,#10201F_0%,#123043_58%,#0E7C66_135%)] text-white">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 p-5">
             <div>
-              <p className="text-[13px] font-black uppercase text-[#9FE0D0]">{school.name}</p>
-              <h1 className="mt-2 text-[34px] font-black leading-none text-white md:text-[42px]">
+              <h1 className="text-[34px] font-black leading-none text-white md:text-[42px]">
                 {format(new Date(), 'EEEE, d MMMM', { locale: ru })}
               </h1>
               <p className="mt-3 max-w-2xl text-[15px] font-bold leading-6 text-white/62">
