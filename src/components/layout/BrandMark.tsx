@@ -8,9 +8,9 @@ type BrandMarkProps = {
 }
 
 const sizeClass = {
-  sm: 'h-[14px] w-[74px]',
-  md: 'h-[17px] w-[90px]',
-  lg: 'h-[25px] w-[132px]',
+  sm: 'h-[11px] w-[58px]',
+  md: 'h-[14px] w-[74px]',
+  lg: 'h-[19px] w-[100px]',
 }
 
 export function BrandMark({ variant = 'dark', size = 'md', className = '', alt = 'vroom' }: BrandMarkProps) {

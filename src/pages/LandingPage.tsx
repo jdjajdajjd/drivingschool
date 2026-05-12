@@ -37,12 +37,17 @@ export function LandingPage() {
 
         <section className="pb-6 pt-12 sm:pt-20">
           <div className="rounded-[28px] border border-[#EBECF0] bg-white p-5 shadow-[0_18px_48px_rgba(15,20,25,0.07)]">
-            <div className="grid h-14 w-14 place-items-center rounded-[20px] bg-[#EEF0FA] text-[#1F2BD8]">
-              <User size={26} />
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EEF0FA] text-[#1F2BD8]">
+                <User size={24} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="sr-only">vroom</h1>
+                <BrandMark size="md" alt="vroom" />
+                <span className="mt-1 block text-[12px] font-bold leading-4 text-[#8B8D94]">кабинет ученика и школы</span>
+              </div>
             </div>
-            <h1 className="sr-only">vroom</h1>
-            <BrandMark size="lg" className="mt-5" alt="vroom" />
-            <p className="mt-3 max-w-[320px] text-[15px] font-semibold leading-6 text-[#8B8D94]">
+            <p className="mt-5 max-w-[320px] text-[15px] font-semibold leading-6 text-[#8B8D94]">
               Личный кабинет ученика и рабочий кабинет автошколы в одном месте.
             </p>
 
