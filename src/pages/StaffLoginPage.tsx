@@ -71,7 +71,7 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
       <main className="mx-auto grid min-h-[calc(100dvh-2rem)] w-full max-w-[980px] items-center gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(390px,0.72fr)]">
         <section className="hidden rounded-[28px] border border-[rgba(21,18,14,0.08)] bg-[#15120E] p-7 text-white shadow-[0_24px_70px_rgba(21,18,14,0.18)] lg:block">
           <div className="flex items-center gap-3">
-            <BrandMark variant="dark" size="md" className="bg-[#15120E]" />
+            <BrandMark variant="light" size="md" />
             <div>
               <p className="text-[17px] font-black leading-5 text-white">vroom</p>
               <p className="text-[12px] font-extrabold leading-4 text-white/54">рабочий пульт автошколы</p>

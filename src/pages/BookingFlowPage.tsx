@@ -725,7 +725,7 @@ export function BookingFlowPage() {
             </button>
           </div>
           <div className="flex min-w-0 items-center gap-3">
-            <BrandMark variant="dark" size="sm" className="border border-[var(--border)]" />
+            <BrandMark variant="dark" size="sm" />
             <div className="min-w-0">
               <p className="truncate text-[14px] font-black text-[var(--text)]">{school.name}</p>
               <p className="text-[12px] font-bold text-[var(--text-muted)]">Выбор занятия онлайн</p>

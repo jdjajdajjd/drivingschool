@@ -50,7 +50,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-[linear-gradient(180deg,#10201F_0%,#123043_48%,#101418_100%)] text-white">
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-        <BrandMark variant="dark" size="md" className="border border-white/10 shadow-[0_14px_34px_rgba(0,0,0,0.34)]" />
+        <BrandMark variant="light" size="md" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-black text-white">{school?.name ?? 'Автошкола'}</p>
           <p className="text-[12px] font-semibold text-[#9FE0D0]">директорский пульт</p>
@@ -160,7 +160,7 @@ export function AdminLayout() {
           </button>
 
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <BrandMark variant="light" size="sm" className="border border-[#DCE2E8] lg:hidden" />
+            <BrandMark variant="dark" size="sm" className="lg:hidden" />
             <div className="min-w-0">
               <p className="truncate text-[13px] font-black text-[#111418]">vroom.today</p>
               <p className="truncate text-[11px] font-semibold text-[#66717D]">{school?.name ?? 'Рабочее пространство автошколы'}</p>
