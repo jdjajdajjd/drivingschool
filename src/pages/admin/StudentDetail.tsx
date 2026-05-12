@@ -105,7 +105,7 @@ export function AdminStudentDetail() {
 
   const saveNote = () => {
     db.students.upsert({ ...student, notes: currentNote })
-    createAuditEntry(school.id, 'admin', 'Администратор', 'student_note', 'student', student.id, `Обновлена заметка ученика ${student.name}`)
+    createAuditEntry(school.id, 'admin', 'Менеджер школы', 'student_note', 'student', student.id, `Обновлена заметка ученика ${student.name}`)
     setNoteSaved(true)
   }
 
@@ -494,7 +494,7 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
       createdAt: new Date().toISOString(),
     }
     adminPayments.upsert(payment)
-    createAuditEntry(schoolId, 'admin', 'Администратор', 'payment_added', 'payment', payment.id, `Добавлена оплата ${student.name}: ${paid} ₽`)
+    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'payment_added', 'payment', payment.id, `Добавлена оплата ${student.name}: ${paid} ₽`)
     onClose()
   }
 
@@ -544,7 +544,7 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
       createdAt: new Date().toISOString(),
     }
     adminDocuments.upsert(document)
-    createAuditEntry(schoolId, 'admin', 'Администратор', status === 'verified' ? 'document_verified' : 'document_uploaded', 'document', document.id, `Добавлен документ ${student.name}`)
+    createAuditEntry(schoolId, 'admin', 'Менеджер школы', status === 'verified' ? 'document_verified' : 'document_uploaded', 'document', document.id, `Добавлен документ ${student.name}`)
     onClose()
   }
 

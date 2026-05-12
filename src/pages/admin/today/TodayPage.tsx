@@ -216,7 +216,7 @@ export function TodayPage() {
                   <CalendarIcon />
                 </div>
                 <p className="text-[14px] font-bold text-ink">Нет занятий на сегодня</p>
-                <p className="mt-1 text-[12px] text-text-muted">Создайте слоты в разделе Расписание</p>
+                <p className="mt-1 text-[12px] text-text-muted">Добавьте свободное время в разделе Расписание</p>
               </div>
             ) : (
               sortedBookings.map((entry, idx) => {
@@ -341,7 +341,7 @@ export function TodayPage() {
             {/* Example alert items (would be populated from real data) */}
             {[
               { icon: <AlertIcon />, title: 'Неоплаченный ученик', desc: 'Иванов И.И. — долг 5000 ₽', level: 'error' as const },
-              { icon: <CalendarIcon />, title: 'Нет свободных слотов', desc: 'Петров П.П. записан, но нет окон', level: 'warning' as const },
+              { icon: <CalendarIcon />, title: 'Нет свободного времени', desc: 'Петров П.П. записан, но нет окон', level: 'warning' as const },
               { icon: <AlertIcon />, title: 'Не подтверждено', desc: '3 записи без подтверждения', level: 'warning' as const },
             ].map((alert, i) => (
               <button
@@ -375,7 +375,7 @@ export function TodayPage() {
 
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: <CalendarIcon />, label: 'Создать слот', desc: 'Новое время', color: 'info' },
+                { icon: <CalendarIcon />, label: 'Добавить время', desc: 'Новое окно', color: 'info' },
                 { icon: <UserIcon />, label: 'Добавить ученика', desc: 'Новая запись', color: 'success' },
                 { icon: <BoltIcon />, label: 'Массовое\nсоздание', desc: 'Несколько окон', color: 'accent' },
                 { icon: <PhoneIcon />, label: 'Позвонить\nклиенту', desc: 'Из записи', color: 'warning' },
@@ -455,7 +455,7 @@ export function TodayPage() {
             </div>
             
             <p className="text-[13px] text-text-muted">
-              Выберите новый слот для переноса. Текущая запись будет отменена.
+              Выберите новое время для переноса. Текущая запись будет отменена.
             </p>
 
             <button

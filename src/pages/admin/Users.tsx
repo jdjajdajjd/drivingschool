@@ -5,8 +5,8 @@ import { Modal } from '../../components/ui/Modal'
 import type { User, UserRole } from '../../types'
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  director: 'Директор', admin: 'Администратор', instructor: 'Инструктор',
-  accountant: 'Бухгалтер', superadmin: 'Суперадмин',
+  director: 'Директор', admin: 'Менеджер школы', instructor: 'Инструктор',
+  accountant: 'Бухгалтер', superadmin: 'Владелец сервиса',
 }
 
 export function AdminUsers() {
@@ -107,7 +107,7 @@ function UserForm({ schoolId, user, onClose }: { schoolId: string; user: User | 
       updatedAt: user ? new Date().toISOString() : undefined,
     }
     adminUsers.upsert(nextUser)
-    createAuditEntry(schoolId, 'admin', 'Администратор', user ? 'user_updated' : 'user_created', 'user', nextUser.id, `${user ? 'Обновлен' : 'Добавлен'} сотрудник ${nextUser.name} (${role})`)
+    createAuditEntry(schoolId, 'admin', 'Менеджер школы', user ? 'user_updated' : 'user_created', 'user', nextUser.id, `${user ? 'Обновлен' : 'Добавлен'} сотрудник ${nextUser.name} (${role})`)
     onClose()
   }
 
@@ -129,7 +129,7 @@ function UserForm({ schoolId, user, onClose }: { schoolId: string; user: User | 
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Роль</label>
         <select value={role} onChange={(e) => setRole(e.target.value as UserRole)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 transition focus:border-gray-900 focus:bg-white focus:outline-none">
           <option value="director">Директор</option>
-          <option value="admin">Администратор</option>
+          <option value="admin">Менеджер школы</option>
           <option value="accountant">Бухгалтер</option>
           <option value="instructor">Инструктор</option>
         </select>

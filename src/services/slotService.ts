@@ -89,16 +89,16 @@ export function createSlot(params: CreateSlotParams, options: { skipRemote?: boo
   }
 
   if (!instructor.isActive) {
-    return { ok: false, error: 'Нельзя создавать слоты для выключенного инструктора.' }
+    return { ok: false, error: 'Нельзя создавать время для выключенного инструктора.' }
   }
 
   const slotDate = new Date(`${params.date}T${params.startTime}:00`)
   if (isBefore(slotDate, new Date())) {
-    return { ok: false, error: 'Нельзя создать слот в прошлом.' }
+    return { ok: false, error: 'Нельзя создать время в прошлом.' }
   }
 
   if (checkSlotDuplicate(params.instructorId, params.date, params.startTime)) {
-    return { ok: false, error: 'Такой слот уже существует.' }
+    return { ok: false, error: 'Такое время уже существует.' }
   }
 
   const slot: Slot = {
@@ -179,7 +179,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
   }
 
   if (!instructor.isActive) {
-    return { ok: false, error: 'Для выключенного инструктора нельзя создать слоты.' }
+    return { ok: false, error: 'Для выключенного инструктора нельзя создать время.' }
   }
 
   const dates = eachDayOfInterval({
@@ -292,16 +292,16 @@ export function updateSlotStatus(
 ): { ok: boolean; slot?: Slot; error?: string } {
   const slot = db.slots.byId(slotId)
   if (!slot) {
-    return { ok: false, error: 'Слот не найден.' }
+    return { ok: false, error: 'Выбранное время не найдено.' }
   }
 
   const activeBooking = slot.bookingId ? db.bookings.byId(slot.bookingId) : null
   if (status === 'available' && activeBooking?.status === 'active') {
-    return { ok: false, error: 'Нельзя освободить слот с активной записью.' }
+    return { ok: false, error: 'Нельзя освободить время с активной записью.' }
   }
 
   if (status === 'cancelled' && slot.status === 'booked') {
-    return { ok: false, error: 'Нельзя отменить занятый слот без обработки записи.' }
+    return { ok: false, error: 'Нельзя отменить занятое время без обработки записи.' }
   }
 
   const nextSlot: Slot = {
@@ -322,11 +322,11 @@ export async function updateSlotStatusConfirmed(slotId: string, status: SlotStat
 export function deleteSlot(slotId: string, options: { skipRemote?: boolean } = {}): { ok: boolean; error?: string } {
   const slot = db.slots.byId(slotId)
   if (!slot) {
-    return { ok: false, error: 'Слот не найден.' }
+    return { ok: false, error: 'Выбранное время не найдено.' }
   }
 
   if (slot.status === 'booked' || slot.bookingId) {
-    return { ok: false, error: 'Нельзя удалить занятый слот без обработки записи.' }
+    return { ok: false, error: 'Нельзя удалить занятое время без обработки записи.' }
   }
 
   db.slots.remove(slotId)

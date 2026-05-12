@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useId } from 'react'
+import { cn } from '../../lib/utils'
 
 /** Converts raw 10-digit input (without country code) to Russian display format. */
 export function formatPhoneDisplay(value: string): string {
@@ -43,6 +44,8 @@ export function PhoneInput({
   placeholder = '+7 ',
   autoFocus,
 }: PhoneInputProps) {
+  const inputId = `${useId()}-phone`
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(rawPhoneDigits(e.target.value))
@@ -75,9 +78,14 @@ export function PhoneInput({
   const isComplete = value.length === 10
 
   return (
-    <div className="input-wrap">
-      {label && <label className="input-label">{label}</label>}
+    <div className="flex flex-col gap-2">
+      {label && (
+        <label htmlFor={inputId} className="text-[13px] font-extrabold leading-none text-[var(--text-muted,#6F655C)]">
+          {label}
+        </label>
+      )}
       <input
+        id={inputId}
         type="tel"
         inputMode="numeric"
         autoComplete="tel"
@@ -89,12 +97,18 @@ export function PhoneInput({
         disabled={disabled}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className={['input', error ? 'input-error' : '', disabled ? 'opacity-55' : ''].join(' ')}
-        style={{ fontSize: '16px', letterSpacing: value.length > 0 ? '0.04em' : 'normal' }}
+        className={cn(
+          'min-h-[52px] w-full rounded-[15px] border border-[var(--border-strong,rgba(0,0,0,0.10))] bg-white px-4 text-[16px] font-extrabold leading-none text-[var(--text,#15120E)] outline-none placeholder:text-[var(--text-soft,#A09488)]',
+          'shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-[border-color,box-shadow,background-color] duration-150',
+          'focus:border-[var(--accent,#111418)] focus:shadow-[0_0_0_4px_rgba(17,20,24,0.10)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
+          error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
+          disabled && 'opacity-70',
+        )}
+        style={{ letterSpacing: 0 }}
       />
-      {error && <p className="input-error-msg">{error}</p>}
+      {error && <p className="text-[12px] font-medium text-[#E5534B]">{error}</p>}
       {!disabled && !error && isComplete && (
-        <p style={{ fontSize: '11px', fontWeight: 600, color: '#15803D' }}>Номер введён верно</p>
+        <p className="text-[12px] font-bold text-[#15803D]">Номер введён верно</p>
       )}
     </div>
   )

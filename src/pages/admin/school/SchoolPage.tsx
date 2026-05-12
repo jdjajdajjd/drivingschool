@@ -282,7 +282,7 @@ export function AdminSchoolSettings() {
                 </div>
               )}
               <div>
-                <label className="mb-1 block text-[11px] font-bold text-[#6F747A]">Слотов в бронировании</label>
+                <label className="mb-1 block text-[11px] font-bold text-[#6F747A]">Времён в одной записи</label>
                 <select value={maxSlots} onChange={(e) => setMaxSlots(Number(e.target.value))} className="min-h-10 w-full rounded-lg border border-border bg-surface px-3 text-[14px] font-semibold text-ink outline-none focus:border-[#9EA3A8]">
                   {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>

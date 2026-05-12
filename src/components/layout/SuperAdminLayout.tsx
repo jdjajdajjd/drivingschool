@@ -97,7 +97,7 @@ export function SuperAdminLayout() {
             className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold #6F747A transition hover:#F4F5F6 hover:#111418"
           >
             <Building2 size={15} className="#9EA3A8" />
-            Открыть админку школы
+            Открыть кабинет школы
           </button>
           <button
             onClick={() => {
@@ -107,7 +107,7 @@ export function SuperAdminLayout() {
             className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm #E5534B transition hover:#FEF2F2"
           >
             <LogOut size={15} />
-            Выйти из суперадминки
+            Выйти из центра управления
           </button>
         </div>
       </aside>

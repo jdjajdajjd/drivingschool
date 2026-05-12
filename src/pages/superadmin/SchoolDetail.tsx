@@ -85,7 +85,7 @@ export function SuperAdminSchoolDetail() {
               </p>
             </div>
             <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
-              <p className="caption">Свободные слоты 7 дней</p>
+              <p className="caption">Свободное время на 7 дней</p>
               <p className="mt-1 text-sm font-semibold #111418">{overview.freeSlots7Days}</p>
             </div>
             <div className="rounded-2xl border rgba(0,0,0,0.06) #F4F5F6 px-4 py-4">
@@ -95,7 +95,7 @@ export function SuperAdminSchoolDetail() {
           </div>
         </Section>
 
-        <Section title="Филиалы и инструкторы" description="Быстрый срез наполнения школы без перехода в админку.">
+        <Section title="Филиалы и инструкторы" description="Быстрый срез наполнения школы без перехода в кабинет школы.">
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-3">
               {collections.branches.map((branch) => (

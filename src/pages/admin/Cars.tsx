@@ -144,7 +144,7 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
       createdAt: new Date().toISOString(),
     }
     adminCars.upsert(car)
-    createAuditEntry(schoolId, 'admin', 'Администратор', 'car_created', 'car', car.id, `Добавлена машина ${car.brand} ${car.licensePlate}`)
+    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'car_created', 'car', car.id, `Добавлена машина ${car.brand} ${car.licensePlate}`)
     onClose()
   }
 

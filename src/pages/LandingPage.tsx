@@ -1,140 +1,184 @@
-import { useEffect, useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { BrandMark } from '../components/layout/BrandMark'
 import { db, setDataNamespace } from '../services/storage'
 
+void React
+
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
+const Check = createHugeIcon(CheckmarkCircle02Icon)
+
+const demoSlug = db.schools[0]?.slug ?? 'virazh'
+
+const schoolActions = [
+  {
+    title: 'Открыть демо для школы',
+    text: 'Посмотреть рабочий пульт: день, записи, деньги и проблемы.',
+    to: '/workspace-admin',
+    primary: true,
+  },
+  {
+    title: 'Войти в кабинет школы',
+    text: 'Для директора, сотрудников и управляющего.',
+    to: '/staff-entrance-73q',
+  },
+]
+
+const studentActions = [
+  {
+    title: 'Записаться на занятие',
+    text: 'Выбор филиала, инструктора, даты и времени без звонков.',
+    to: `/school/${demoSlug}/book`,
+  },
+  {
+    title: 'Вход ученика',
+    text: 'Занятия, документы и история записей.',
+    to: `/school/${demoSlug}/login`,
+  },
+]
+
+const signals = [
+  ['Сегодня', 'видно все занятия и переносы'],
+  ['Деньги', 'понятно, кто оплатил и где долг'],
+  ['Загрузка', 'директор видит свободное время инструкторов'],
+  ['Запись', 'ученик выбирает время сам'],
+]
+
 export function LandingPage() {
   const navigate = useNavigate()
-  const [demoSchool, setDemoSchool] = useState<{ name: string; slug: string; description: string } | null>(null)
 
-  useEffect(() => {
-    setDataNamespace('demo')
-    const schools = db.schools.all().filter((s) => s.isActive)
-    setDemoSchool(schools[0] ?? { name: 'Вираж', slug: 'virazh', description: 'Профессиональная подготовка водителей с 2008 года.' })
-  }, [])
-
-  const demoSlug = demoSchool?.slug ?? 'virazh'
+  function go(to: string) {
+    if (to === '/workspace-admin') setDataNamespace('workspace')
+    navigate(to)
+  }
 
   return (
-    <div className="min-h-dvh overflow-hidden bg-[#F6F7FA] text-[#111418]">
-      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-4 pb-6 pt-4 md:max-w-6xl md:px-8 md:py-8">
-        <motion.header
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22 }}
-          className="mb-5 flex items-center justify-between rounded-[24px] border border-[#E7E9EF] bg-white px-3.5 py-3 shadow-[0_12px_34px_rgba(15,20,25,0.06)] md:mb-10"
-        >
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#EEF0FA] text-[#2442D8] shadow-[0_12px_30px_rgba(36,66,216,0.14)]">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M7 10h6M10 7l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[17px] font-black leading-5 tracking-[-0.03em]">vroom</p>
-              <p className="truncate text-[12px] font-bold leading-4 text-[#8B8D94]">запись учеников на вождение</p>
-            </div>
-          </div>
-          <button
-            className="min-h-11 rounded-[16px] bg-[#EEF0FA] px-3.5 text-[13px] font-black text-[#2442D8] transition active:scale-[0.97] md:px-5"
-            onClick={() => navigate('/login')}
-          >
-            Войти
+    <div className="min-h-dvh bg-[#F5F1EA] text-[#15120E]">
+      <main className="mx-auto flex min-h-dvh w-full max-w-[1180px] flex-col px-4 py-4 sm:px-6 lg:px-8">
+        <header className="flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(21,18,14,0.08)] bg-white/90 px-3 py-3 shadow-[0_18px_50px_rgba(63,46,28,0.08)] backdrop-blur">
+          <button className="flex min-w-0 items-center gap-3 text-left" onClick={() => go('/')}>
+            <BrandMark size="md" />
+            <span className="min-w-0">
+              <span className="block text-[17px] font-black leading-5 text-[#15120E]">Vroom</span>
+              <span className="block truncate text-[12px] font-extrabold leading-4 text-[#7C7066]">для школ и учеников</span>
+            </span>
           </button>
-        </motion.header>
+          <nav className="flex items-center gap-2">
+            <button
+              className="hidden min-h-11 rounded-[14px] border border-[rgba(21,18,14,0.10)] bg-white px-4 text-[14px] font-extrabold text-[#15120E] sm:inline-flex sm:items-center"
+              onClick={() => go(`/school/${demoSlug}/book`)}
+            >
+              Записаться
+            </button>
+            <button
+              className="inline-flex min-h-11 items-center gap-2 rounded-[14px] bg-[#15120E] px-4 text-[14px] font-extrabold text-white shadow-[0_12px_26px_rgba(21,18,14,0.18)]"
+              onClick={() => go('/workspace-admin')}
+            >
+              <span className="sm:hidden">Школе</span>
+              <span className="hidden sm:inline">Для школы</span>
+              <ArrowRight size={16} />
+            </button>
+          </nav>
+        </header>
 
-        <section className="grid gap-4 md:grid-cols-[1.05fr_0.95fr] md:items-center md:gap-8">
+        <section className="grid flex-1 items-center gap-4 py-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.8fr)] lg:gap-8 lg:py-8">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.26, delay: 0.03 }}
-            className="overflow-hidden rounded-[32px] border border-[#E3E6EE] bg-white p-5 shadow-[0_20px_58px_rgba(15,20,25,0.08)] md:p-8"
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-[28px] border border-[rgba(21,18,14,0.08)] bg-white p-5 shadow-[0_24px_70px_rgba(63,46,28,0.10)] sm:p-8 lg:p-9"
           >
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-[#EEF0FA] px-3 py-2 text-[12px] font-black text-[#2442D8] ring-1 ring-[#DDE2F7]">
-              <span className="h-2 w-2 rounded-full bg-[#2442D8]" />
-              Онлайн-запись для автошколы
+            <div className="max-w-[620px]">
+              <h1 className="text-[44px] font-black leading-[0.96] tracking-[-0.04em] text-[#15120E] sm:text-[64px] lg:text-[74px]">
+                Vroom для автошкол
+              </h1>
+              <p className="mt-5 max-w-[560px] text-[18px] font-bold leading-7 text-[#5F554C]">
+                Порядок в расписании, записях, оплатах и работе инструкторов. Директор сразу видит день, деньги и места, где нужно вмешаться.
+              </p>
             </div>
-            <h1 className="max-w-[640px] text-[42px] font-black leading-[0.95] tracking-[-0.06em] text-[#111418] md:text-[72px]">
-              Меньше звонков. Больше записей.
-            </h1>
-            <p className="mt-5 max-w-[520px] text-[16px] font-semibold leading-7 text-[#5F6672] md:text-[19px]">
-              Ученики сами выбирают свободное время. Запись на практическое занятие доступна онлайн 24/7.
-            </p>
-            <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
-              <button
-                className="min-h-[58px] rounded-[20px] bg-[#2442D8] px-5 text-[15px] font-black text-white shadow-[0_18px_40px_rgba(36,66,216,0.26)] transition active:scale-[0.98]"
-                onClick={() => navigate(`/school/${demoSlug}`)}
-              >
-                Смотреть как ученик
-              </button>
-              <button
-                className="min-h-[58px] rounded-[20px] border border-[#E3E6EE] bg-white px-5 text-[15px] font-black text-[#111418] transition active:scale-[0.98]"
-                onClick={() => navigate('/login')}
-              >
-                Войти в кабинет
-              </button>
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              {schoolActions.map((action) => (
+                <button
+                  key={action.title}
+                  className={[
+                    'group flex min-h-[104px] flex-col justify-between rounded-[18px] border p-4 text-left transition duration-150 active:scale-[0.99]',
+                    action.primary
+                      ? 'border-[#15120E] bg-[#15120E] text-white shadow-[0_18px_34px_rgba(21,18,14,0.20)]'
+                      : 'border-[rgba(21,18,14,0.10)] bg-[#FBF8F2] text-[#15120E] hover:border-[rgba(21,18,14,0.18)]',
+                  ].join(' ')}
+                  onClick={() => go(action.to)}
+                >
+                  <span>
+                    <span className="block text-[16px] font-black leading-5">{action.title}</span>
+                    <span className={['mt-2 block text-[13px] font-bold leading-5', action.primary ? 'text-white/72' : 'text-[#756B61]'].join(' ')}>
+                      {action.text}
+                    </span>
+                  </span>
+                  <ArrowRight className="mt-3 self-end transition group-hover:translate-x-0.5" size={20} />
+                </button>
+              ))}
             </div>
-            <div className="mt-7 grid grid-cols-3 gap-2">
-              {[
-                ['Ссылка', 'ученикам'],
-                ['Расписание', 'инструкторов'],
-                ['Записи', 'в кабинете'],
-              ].map(([value, label]) => (
-                <div key={value} className="rounded-[18px] bg-[#F7F8FB] px-3 py-3 ring-1 ring-[#E3E6EE]">
-                  <p className="text-[15px] font-black leading-none text-[#111418]">{value}</p>
-                  <p className="mt-1 text-[11px] font-bold leading-4 text-[#737985]">{label}</p>
-                </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {studentActions.map((action) => (
+                <button
+                  key={action.title}
+                  className="group flex min-h-[92px] flex-col justify-between rounded-[18px] border border-[rgba(21,18,14,0.10)] bg-white p-4 text-left text-[#15120E] transition duration-150 hover:bg-[#F8F3EA] active:scale-[0.99]"
+                  onClick={() => go(action.to)}
+                >
+                  <span>
+                    <span className="block text-[15px] font-black leading-5">{action.title}</span>
+                    <span className="mt-2 block text-[12px] font-bold leading-5 text-[#756B61]">{action.text}</span>
+                  </span>
+                  <ArrowRight className="mt-2 self-end transition group-hover:translate-x-0.5" size={18} />
+                </button>
               ))}
             </div>
           </motion.div>
 
-          <motion.div
+          <motion.aside
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.26, delay: 0.1 }}
-            className="space-y-3"
+            transition={{ duration: 0.34, delay: 0.04, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-[28px] border border-[rgba(21,18,14,0.08)] bg-[#15120E] p-5 text-white shadow-[0_24px_70px_rgba(21,18,14,0.18)] sm:p-6"
           >
-            <div className="rounded-[30px] border border-[#E7E9EF] bg-white p-4 shadow-[0_16px_46px_rgba(15,20,25,0.07)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#B8BABF]">как это работает</p>
-                  <h2 className="mt-1 text-[24px] font-black leading-tight tracking-[-0.04em] text-[#050609]">Три шага без лишней возни</h2>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[12px] font-black uppercase leading-4 tracking-[0.08em] text-white/46">рабочий пульт</p>
+                <h2 className="mt-2 text-[30px] font-black leading-[1.02] tracking-[-0.03em] text-white">Что видит школа</h2>
+              </div>
+              <BrandMark variant="light" size="md" className="bg-[#15120E]" />
+            </div>
+
+            <div className="mt-6 grid gap-2">
+              {signals.map(([title, text]) => (
+                <div key={title} className="grid grid-cols-[42px_minmax(0,1fr)] gap-3 rounded-[16px] border border-white/10 bg-white/[0.06] p-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-[13px] bg-white text-[#15120E]">
+                    <Check size={18} />
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block text-[15px] font-black leading-5 text-white">{title}</strong>
+                    <span className="mt-1 block text-[13px] font-bold leading-5 text-white/62">{text}</span>
+                  </span>
                 </div>
-              </div>
-              <div className="space-y-2.5">
-                {[
-                  ['01', 'Выберите школу', 'Найдите свою автошколу на сайте и откройте страницу записи.'],
-                  ['02', 'Забронируйте занятие', 'Выберите удобное время и инструктора — всё онлайн, без звонков.'],
-                  ['03', 'Приходите на занятие', 'В назначенное время приходите на площадку. Остальное — наше дело.'],
-                ].map(([num, title, text]) => (
-                  <div key={num} className="grid grid-cols-[42px_minmax(0,1fr)] gap-3 rounded-[22px] bg-[#F7F8FB] p-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-[15px] bg-[#EEF0FA] text-[13px] font-black text-[#2442D8]">{num}</div>
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-black leading-5 text-[#050609]">{title}</p>
-                      <p className="mt-0.5 text-[13px] font-semibold leading-5 text-[#8B8D94]">{text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
 
             <button
-              className="flex min-h-[76px] w-full items-center justify-between rounded-[28px] border border-[#E7E9EF] bg-white px-4 text-left shadow-[0_16px_42px_rgba(15,20,25,0.06)] transition active:scale-[0.99]"
-              onClick={() => navigate(`/school/${demoSlug}/book`)}
+              className="mt-5 flex min-h-[58px] w-full items-center justify-between rounded-[16px] bg-white px-4 text-left text-[#15120E] shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
+              onClick={() => go('/workspace-admin')}
             >
-              <div className="min-w-0">
-                <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#B8BABF]">быстрый тест</p>
-                <p className="mt-0.5 truncate text-[17px] font-black text-[#111418]">Запись ученика в демо</p>
-              </div>
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#2442D8] text-white">
-                <ArrowRight size={18} />
+              <span>
+                <span className="block text-[15px] font-black leading-5">Посмотреть демо</span>
+                <span className="block text-[12px] font-bold leading-4 text-[#756B61]">без настройки и звонков</span>
               </span>
+              <ArrowRight size={20} />
             </button>
-          </motion.div>
+          </motion.aside>
         </section>
       </main>
     </div>

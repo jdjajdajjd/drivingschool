@@ -182,7 +182,7 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
       createdAt: new Date().toISOString(),
     }
     adminPayments.upsert(payment)
-    createAuditEntry(schoolId, 'admin', 'Администратор', 'payment_added', 'payment', payment.id, `Принята оплата ${money(payment.amount)}`)
+    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'payment_added', 'payment', payment.id, `Принята оплата ${money(payment.amount)}`)
     onClose()
   }
 

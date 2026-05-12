@@ -21,7 +21,7 @@ export function AdminSettings() {
   const handleSave = () => {
     adminSettings.save(settings)
     if (school) {
-      createAuditEntry(school.id, 'admin', 'Администратор', 'settings_changed', 'school_settings', school.id, 'Изменены настройки школы')
+      createAuditEntry(school.id, 'admin', 'Менеджер школы', 'settings_changed', 'school_settings', school.id, 'Изменены настройки школы')
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)

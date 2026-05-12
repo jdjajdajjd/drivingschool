@@ -13,9 +13,9 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, helperText, className, id, ...props }, ref) {
   const inputId = id ?? label?.toLowerCase().replace(/\s/g, '-')
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {label && (
-        <label htmlFor={inputId} className="label">
+        <label htmlFor={inputId} className="text-[13px] font-extrabold leading-none text-[var(--text-muted,#6F655C)]">
           {label}
         </label>
       )}
@@ -23,8 +23,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ l
         id={inputId}
         ref={ref}
         className={cn(
-          'field',
-          error && '!border-[#E5534B] !shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
+          'min-h-[52px] w-full rounded-[15px] border border-[var(--border-strong,rgba(0,0,0,0.10))] bg-white px-4 text-[16px] font-extrabold leading-none text-[var(--text,#15120E)] outline-none placeholder:text-[var(--text-soft,#A09488)]',
+          'shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-[border-color,box-shadow,background-color] duration-150',
+          'focus:border-[var(--accent,#111418)] focus:shadow-[0_0_0_4px_rgba(17,20,24,0.10)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
+          error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           className,
         )}
         {...props}
@@ -44,18 +46,19 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 export function Textarea({ label, error, helperText, className, id, ...props }: TextareaProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s/g, '-')
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {label && (
-        <label htmlFor={inputId} className="label">
+        <label htmlFor={inputId} className="text-[13px] font-extrabold leading-none text-[var(--text-muted,#6F655C)]">
           {label}
         </label>
       )}
       <textarea
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-[15px] font-medium text-[#111418] placeholder:text-[#9EA3A8] transition-all duration-200 outline-none',
-          'focus:border-[#2436D9] focus:shadow-[0_0_0_3px_rgba(36,54,217,0.14)]',
-          error && '!border-[#E5534B] focus:shadow-[0_0_0_3px_rgba(229,83,75,0.15)]',
+          'min-h-[104px] w-full resize-none rounded-[15px] border border-[var(--border-strong,rgba(0,0,0,0.10))] bg-white px-4 py-3 text-[16px] font-bold leading-6 text-[var(--text,#15120E)] outline-none placeholder:text-[var(--text-soft,#A09488)]',
+          'shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-[border-color,box-shadow,background-color] duration-150',
+          'focus:border-[var(--accent,#111418)] focus:shadow-[0_0_0_4px_rgba(17,20,24,0.10)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
+          error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           className,
         )}
         {...props}

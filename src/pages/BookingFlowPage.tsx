@@ -566,7 +566,7 @@ export function BookingFlowPage() {
         db.instructors.byId(freshSlot.instructorId)?.isActive !== true
       ) {
         setSlotsVersion((current) => current + 1)
-        throw new Error('Этот слот только что заняли. Выберите другое время.')
+        throw new Error('Это время только что заняли. Выберите другое время.')
       }
 
       let bookingId = ''
@@ -599,7 +599,7 @@ export function BookingFlowPage() {
           !freshInstructorActive
         ) {
           setSlotsVersion((current) => current + 1)
-          throw new Error('Этот слот больше недоступен. Выберите другое время.')
+          throw new Error('Это время больше недоступно. Выберите другое время.')
         }
 
         const local = createBooking({

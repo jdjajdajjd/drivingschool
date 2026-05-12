@@ -17,7 +17,7 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
       issues.push({
         id: `booking-slot-${booking.id}`,
         level: 'error',
-        message: `У записи ${booking.studentName} не найден слот.`,
+        message: `У записи ${booking.studentName} не найдено время.`,
       })
       continue
     }
@@ -60,7 +60,7 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
       issues.push({
         id: `slot-inst-${slot.id}`,
         level: 'error',
-        message: `У слота ${slot.date} ${slot.time} не найден инструктор.`,
+        message: `У времени ${slot.date} ${slot.time} не найден инструктор.`,
       })
     }
 
@@ -68,7 +68,7 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
       issues.push({
         id: `slot-branch-${slot.id}`,
         level: 'error',
-        message: `У слота ${slot.date} ${slot.time} не найден филиал.`,
+        message: `У времени ${slot.date} ${slot.time} не найден филиал.`,
       })
     }
   }
@@ -83,7 +83,7 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
     issues.push({
       id: 'instructors-no-slots',
       level: 'warning',
-      message: `Есть инструкторы без свободных слотов: ${instructorsWithoutSlots
+      message: `Есть инструкторы без свободного времени: ${instructorsWithoutSlots
         .slice(0, 3)
         .map((item) => item.name)
         .join(', ')}.`,

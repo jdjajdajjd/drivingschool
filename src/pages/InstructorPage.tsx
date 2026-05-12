@@ -554,7 +554,7 @@ export function InstructorPage() {
           </div>
 
           {visibleRows.length === 0 ? (
-            <EmptyBlock title="В этом разделе пусто" text="Когда администратор назначит занятия, они появятся здесь с адресом, учеником и рабочими действиями." />
+            <EmptyBlock title="В этом разделе пусто" text="Когда школа назначит занятия, они появятся здесь с адресом, учеником и рабочими действиями." />
           ) : (
             <div className="space-y-3">
               {visibleRows.map((row) => (

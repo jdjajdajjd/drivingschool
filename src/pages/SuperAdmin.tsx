@@ -67,7 +67,7 @@ export function SuperAdminOverview() {
       <PageHeader
         eyebrow="vroom"
         title="Панель оператора"
-        description="Контроль автошкол: активность записей, свободные слоты, подключённые модули и проблемы, которые нужно быстро разобрать."
+        description="Контроль автошкол: активность записей, свободное время, подключённые модули и проблемы, которые нужно быстро разобрать."
         actions={
           <Button
             variant="secondary"
@@ -88,12 +88,12 @@ export function SuperAdminOverview() {
         <StatCard label="Записи сегодня" value={todayBookingsTotal} icon={<CalendarDays size={18} />} />
         <StatCard label="Оценка MRR" value={formatPrice(mrr)} icon={<BarChart3 size={18} />} />
         <StatCard label="Подключённые модули" value={enabledModulesTotal} icon={<Puzzle size={18} />} />
-        <StatCard label="Школы без слотов на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle size={18} />} />
+        <StatCard label="Школы без времени на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle size={18} />} />
         <StatCard label="Школы с предупреждениями" value={schoolsWithWarnings} icon={<AlertTriangle size={18} />} />
       </div>
 
       <div className="mt-6">
-        <Section title="Что требует внимания" description="Сначала проверьте школы без свободных слотов и школы с предупреждениями по настройкам.">
+        <Section title="Что требует внимания" description="Сначала проверьте школы без свободного времени и школы с предупреждениями по настройкам.">
           {metrics.length === 0 ? (
             <StateView title="Автошкол пока нет" description="Создайте первую автошколу в разделе школ." />
           ) : (

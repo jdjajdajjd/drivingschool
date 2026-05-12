@@ -157,16 +157,16 @@ export function acquireSlotLock(slotId: string, sessionId: string): { ok: boolea
 
   const slot = db.slots.byId(slotId)
   if (!slot) {
-    return { ok: false, error: 'Слот не найден.' }
+    return { ok: false, error: 'Выбранное время не найдено.' }
   }
 
   if (slot.status !== 'available') {
-    return { ok: false, error: 'Этот слот уже недоступен.' }
+    return { ok: false, error: 'Это время уже недоступно.' }
   }
 
   const existingLock = db.slotLocks.bySlotId(slotId)
   if (existingLock && existingLock.sessionId !== sessionId) {
-    return { ok: false, error: 'Этот слот уже выбирает другой пользователь.' }
+    return { ok: false, error: 'Это время уже выбирает другой ученик.' }
   }
 
   db.slotLocks.upsert({
@@ -230,7 +230,7 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
   const normalizedPhone = normalizePhone(params.studentPhone)
 
   if (!params.branchId || !params.instructorId || !params.slotId) {
-    return { ok: false, error: 'Выберите филиал, инструктора и слот.' }
+    return { ok: false, error: 'Выберите филиал, инструктора и время.' }
   }
 
   if (!studentName) {
@@ -263,16 +263,16 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
   }
 
   if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) {
-    return { ok: false, error: 'Данные слота изменились. Выберите другое время.' }
+    return { ok: false, error: 'Данные выбранного времени изменились. Выберите другое время.' }
   }
 
   if (slot.status !== 'available') {
-    return { ok: false, error: 'Этот слот уже занят. Выберите другое время.' }
+    return { ok: false, error: 'Это время уже занято. Выберите другое время.' }
   }
 
   const lockOwner = getSlotLockOwner(slot.id)
   if (lockOwner && lockOwner !== params.sessionId) {
-    return { ok: false, error: 'Слот уже занят другим пользователем.' }
+    return { ok: false, error: 'Это время уже занято другим учеником.' }
   }
 
   const lockResult = acquireSlotLock(slot.id, params.sessionId)
@@ -433,15 +433,15 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
   const nextSlot = db.slots.byId(params.newSlotId)
 
   if (!nextSlot) {
-    return { ok: false, error: 'Новый слот не найден.' }
+    return { ok: false, error: 'Новое время не найдено.' }
   }
 
   if (nextSlot.status !== 'available') {
-    return { ok: false, error: 'Новый слот уже занят.' }
+    return { ok: false, error: 'Новое время уже занято.' }
   }
 
   if (isSlotInPast(nextSlot)) {
-    return { ok: false, error: 'Нельзя перенести запись на слот в прошлом.' }
+    return { ok: false, error: 'Нельзя перенести запись на прошедшее время.' }
   }
 
   const school = db.schools.byId(booking.schoolId)
@@ -499,7 +499,7 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
     booking: nextBooking,
     warning:
       school && school.bookingLimitEnabled && school.maxActiveBookingsPerStudent
-        ? 'Перенос выполнен. Администратор может обходить лимит будущих записей.'
+        ? 'Перенос выполнен. Ответственный сотрудник может обходить лимит будущих записей.'
         : undefined,
   }
 }

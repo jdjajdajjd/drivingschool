@@ -68,7 +68,7 @@ type StudentRow = {
 function getAdminPassword(): string {
   const password = getAccessPassword('admin')
   if (!password) {
-    throw new Error('Войдите в админку заново.')
+    throw new Error('Войдите в кабинет школы заново.')
   }
   return password
 }

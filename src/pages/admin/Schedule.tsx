@@ -78,13 +78,13 @@ export function AdminSchedule() {
     db.bookings.upsert({
       ...selectedBooking,
       status: 'cancelled',
-      cancellationReason: cancelReason || 'Отменено администратором',
+      cancellationReason: cancelReason || 'Отменено сотрудником школы',
       cancelledBy: 'school',
     })
     createAuditEntry(
       school.id,
       'admin',
-      'Администратор',
+      'Менеджер школы',
       'booking_cancelled',
       'booking',
       selectedBooking.id,
@@ -106,7 +106,7 @@ export function AdminSchedule() {
       slot.status === 'available',
     )
     if (!newSlot) {
-      alert('Свободный слот на это время не найден. Сначала создайте окно в расписании.')
+      alert('Свободное время не найдено. Сначала добавьте окно в расписании.')
       return
     }
     db.slots.upsert({ ...newSlot, status: 'booked', bookingId: selectedBooking.id })
@@ -114,7 +114,7 @@ export function AdminSchedule() {
     createAuditEntry(
       school.id,
       'admin',
-      'Администратор',
+      'Менеджер школы',
       'booking_rescheduled',
       'booking',
       selectedBooking.id,
@@ -129,7 +129,7 @@ export function AdminSchedule() {
   const handleNoShow = () => {
     if (!school || !selectedBooking) return
     db.bookings.upsert({ ...selectedBooking, status: 'no_show' })
-    createAuditEntry(school.id, 'admin', 'Администратор', 'booking_no_show', 'booking', selectedBooking.id, `Отмечена неявка: ${selectedBooking.studentName}`)
+    createAuditEntry(school.id, 'admin', 'Менеджер школы', 'booking_no_show', 'booking', selectedBooking.id, `Отмечена неявка: ${selectedBooking.studentName}`)
     setSelectedSlotId(null)
   }
 
@@ -140,7 +140,7 @@ export function AdminSchedule() {
       status: 'completed',
       confirmedHours: (selectedBooking.confirmedHours ?? 0) + selectedSlot.duration,
     })
-    createAuditEntry(school.id, 'admin', 'Администратор', 'booking_completed', 'booking', selectedBooking.id, `Занятие засчитано: ${selectedBooking.studentName}`)
+    createAuditEntry(school.id, 'admin', 'Менеджер школы', 'booking_completed', 'booking', selectedBooking.id, `Занятие засчитано: ${selectedBooking.studentName}`)
     setSelectedSlotId(null)
   }
 
@@ -346,7 +346,7 @@ function CreateSlotForm({
       createdAt: new Date().toISOString(),
     }
     db.slots.upsert(slot)
-    createAuditEntry(schoolId, 'admin', 'Администратор', 'slot_created', 'slot', slot.id, `Создано окно ${date} ${time}`)
+    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'slot_created', 'slot', slot.id, `Создано окно ${date} ${time}`)
     onClose()
   }
 

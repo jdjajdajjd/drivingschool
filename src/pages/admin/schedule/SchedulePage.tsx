@@ -269,7 +269,7 @@ export function SchedulePage() {
                 className="flex h-9 items-center gap-1.5 rounded-[10px] bg-ink px-3 text-[12px] font-bold text-surface transition hover:bg-ink/90 active:scale-95"
               >
                 <PlusIcon />
-                Слот
+                Время
               </button>
             </div>
           </div>
@@ -391,13 +391,13 @@ export function SchedulePage() {
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-surface-soft">
               <CalendarIcon />
             </div>
-            <p className="text-[14px] font-bold text-ink">Нет слотов</p>
-            <p className="mt-1 text-[12px] text-text-muted">Создайте слоты для отображения</p>
+            <p className="text-[14px] font-bold text-ink">Нет свободного времени</p>
+            <p className="mt-1 text-[12px] text-text-muted">Добавьте окна, чтобы они появились в расписании</p>
             <button
               onClick={() => setShowCreateSheet(true)}
               className="mt-4 rounded-[10px] bg-ink px-4 py-2 text-[13px] font-bold text-surface transition hover:bg-ink/90"
             >
-              Создать слот
+              Добавить время
             </button>
           </div>
         ) : (
@@ -467,7 +467,7 @@ export function SchedulePage() {
       <BottomSheet
         open={showCreateSheet}
         onClose={() => setShowCreateSheet(false)}
-        title="Новый слот"
+        title="Новое время"
       >
         <div className="space-y-4">
           {/* Instructor */}
@@ -547,7 +547,7 @@ export function SchedulePage() {
             disabled={!newSlotInstructor}
             className="w-full rounded-[12px] bg-ink py-3 text-[14px] font-bold text-surface transition hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Создать слот
+            Добавить время
           </button>
         </div>
       </BottomSheet>
@@ -802,7 +802,7 @@ export function SchedulePage() {
             <div className="space-y-4">
               <div className="rounded-[12px] border border-success/30 bg-success-soft p-4 text-center">
                 <p className="text-[24px] font-black text-success">{bulkPreview.created}</p>
-                <p className="text-[12px] font-bold text-success">слотов будет создано</p>
+                <p className="text-[12px] font-bold text-success">окон будет создано</p>
               </div>
 
               {bulkPreview.conflicts > 0 && (
@@ -830,7 +830,7 @@ export function SchedulePage() {
                   onClick={handleBulkCreate}
                   className="flex-1 rounded-[12px] bg-success py-3 text-[14px] font-bold text-surface transition hover:bg-success/90"
                 >
-                  Создать {bulkPreview.created} слотов
+                  Создать {bulkPreview.created} окон
                 </button>
               </div>
             </div>

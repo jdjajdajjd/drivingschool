@@ -160,7 +160,7 @@ export function AdminModules() {
 
         <Section
           title="Что входит в базу"
-          description="История ученика, записи, занятия и базовая админка уже входят в 4 990 ₽."
+          description="История ученика, записи, занятия и кабинет школы уже входят в 4 990 ₽."
           actions={
             <Button variant="ghost" size="sm" onClick={() => setShowBaseFeatures((current) => !current)}>
               {showBaseFeatures ? 'Скрыть список' : 'Показать список'}

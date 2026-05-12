@@ -207,7 +207,7 @@ export function AdminSlots() {
             <div className="p-4">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">диспетчерская · {school.name}</p>
               <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.055em] text-white">Расписание</h1>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-white/62">Не витрина слотов, а производственный табель: где есть окна, где занято, что провисло.</p>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-white/62">Производственный табель: где есть свободное время, где занято, что провисло.</p>
             </div>
             <div className="grid grid-cols-2 border-t border-white/10">
               <button onClick={() => { setPeriod('today'); setStatus('all') }} className="min-h-[78px] border-r border-white/10 p-3 text-left">

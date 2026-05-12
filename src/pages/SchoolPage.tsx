@@ -91,7 +91,7 @@ export function SchoolPage() {
         <StateView
           kind="error"
           title="Автошкола не найдена"
-          description="Проверьте ссылку у администратора автошколы."
+          description="Проверьте ссылку в автошколе."
           action={<button className="btn btn-primary btn-md" onClick={() => navigate('/')}>На главную</button>}
         />
       </div>

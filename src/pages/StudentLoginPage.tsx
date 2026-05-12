@@ -61,7 +61,7 @@ export default function StudentLoginPage() {
           : verifyStudentCredentials(phone, password)
       setSubmitting(false)
       if (!result) {
-        setError('Телефон или пароль не совпадают. Если кабинета ещё нет, зарегистрируйтесь.')
+        setError('Телефон или пароль не совпадают. Если доступа ещё нет, пройдите регистрацию.')
         return
       }
       navigate('/student', { replace: true })
@@ -78,47 +78,54 @@ export default function StudentLoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--page-bg)] text-[var(--text)]">
-      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-4 pb-5 pt-4">
-        <header className="flex items-center justify-between">
-          <button className="flex items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
-            <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-[14px] bg-[var(--accent)] text-white">
+    <div className="min-h-dvh bg-[#F5F1EA] text-[#15120E]">
+      <main className="mx-auto flex min-h-dvh w-full max-w-[460px] flex-col px-4 pb-5 pt-4">
+        <header className="flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(21,18,14,0.08)] bg-white/90 px-3 py-3 shadow-[0_14px_40px_rgba(63,46,28,0.07)]">
+          <button className="flex min-w-0 items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[15px] bg-[#15120E] text-white">
               {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={22} />}
             </div>
             <div className="min-w-0">
-              <p className="max-w-[150px] truncate text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">{school.name}</p>
-              <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">кабинет ученика</p>
+              <p className="max-w-[190px] truncate text-[15px] font-black leading-4 text-[#15120E]">{school.name}</p>
+              <p className="text-[12px] font-extrabold leading-4 text-[#7C7066]">личный кабинет</p>
             </div>
           </button>
-          <div className="flex items-center gap-2">
-            <button className="min-h-9 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] font-extrabold text-[var(--accent)] active:scale-[0.97]" onClick={() => navigate(`/school/${school.slug}/register`)}>
-              Регистрация
-            </button>
-          </div>
+          <button
+            className="min-h-10 rounded-[13px] bg-[#15120E] px-3 text-[13px] font-extrabold text-white active:scale-[0.97]"
+            onClick={() => navigate(`/school/${school.slug}/register`)}
+          >
+            Регистрация
+          </button>
         </header>
 
-        <section className="flex flex-1 flex-col justify-center py-5">
-          <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-4" onKeyDown={handleKeyDown}>
-            <div className="mb-3 inline-flex rounded-[10px] bg-[var(--accent-soft)] px-2.5 py-1.5 text-[12px] font-extrabold text-[var(--accent)]">
-              Вход ученика
+        <section className="flex flex-1 flex-col justify-center py-6">
+          <div className="rounded-[26px] border border-[rgba(21,18,14,0.08)] bg-white p-5 shadow-[0_24px_70px_rgba(63,46,28,0.10)]" onKeyDown={handleKeyDown}>
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-[16px] bg-[#15120E] text-white">
+              <Building size={23} />
             </div>
-            <h1 className="text-[26px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Войдите в кабинет</h1>
-            <p className="mt-2 text-[14px] font-semibold leading-5 text-[var(--text-muted)]">
-              Записи, занятия и документы автошколы.
+            <h1 className="text-[34px] font-black leading-[1.02] tracking-[-0.03em] text-[#15120E]">Вход ученика</h1>
+            <p className="mt-3 text-[15px] font-bold leading-6 text-[#6F655C]">
+              Откройте занятия, документы и историю записей автошколы.
             </p>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-6 space-y-4">
               <PhoneInput label="Телефон" value={phone} error={error && !isValidRussianPhone(phone) ? error : ''} onChange={(value) => { setError(''); setPhone(value) }} autoFocus />
               <Input label="Пароль" type="password" value={password} error={error && isValidRussianPhone(phone) ? error : ''} placeholder="Ваш пароль" autoComplete="current-password" onChange={(event) => { setError(''); setPassword(event.target.value) }} />
             </div>
 
-            <Button size="lg" className="mt-4 w-full" disabled={submitting || !isValidRussianPhone(phone) || password.trim().length < 6} onClick={() => void submit()}>
-              {submitting ? 'Входим...' : 'Войти'}
+            <Button size="lg" className="mt-5 w-full min-h-[56px] rounded-[17px] bg-[#15120E] text-[16px] hover:bg-black" disabled={submitting || !isValidRussianPhone(phone) || password.trim().length < 6} onClick={() => void submit()}>
+              {submitting ? 'Проверяем...' : 'Войти'}
               <ArrowRight size={18} />
             </Button>
-            <button type="button" className="mt-2 w-full rounded-[12px] bg-[var(--surface-muted)] px-3 py-2.5 text-[13px] font-extrabold text-[var(--text-muted)]" onClick={() => setError('Для восстановления доступа обратитесь в автошколу.')}>Забыли пароль?</button>
-            <p className="mt-4 text-center text-[12px] font-semibold leading-5 text-[var(--text-soft)]">
-              Продолжая, вы принимаете <a className="font-extrabold text-[var(--accent)]" href="/terms">условия сервиса</a> и <a className="font-extrabold text-[var(--accent)]" href="/privacy">политику конфиденциальности</a>.
+            <button
+              type="button"
+              className="mt-3 w-full rounded-[15px] bg-[#F4EFE7] px-3 py-3 text-[13px] font-extrabold text-[#756B61]"
+              onClick={() => setError('Для восстановления доступа обратитесь в автошколу.')}
+            >
+              Забыли пароль?
+            </button>
+            <p className="mt-5 text-center text-[12px] font-semibold leading-5 text-[#9A8E82]">
+              Продолжая, вы принимаете <a className="font-extrabold text-[#15120E]" href="/terms">условия сервиса</a> и <a className="font-extrabold text-[#15120E]" href="/privacy">политику конфиденциальности</a>.
             </p>
           </div>
         </section>

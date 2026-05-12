@@ -174,7 +174,7 @@ export function AdminBookings() {
       sessionId: 'admin-intake',
     })
     if (!r.ok || !r.booking) { showToast(r.error ?? 'Не удалось записать ученика', 'error'); return }
-    if (intakeForm.comment.trim()) updateBookingComment(r.booking.id, `Админ: ${intakeForm.comment.trim()}`)
+    if (intakeForm.comment.trim()) updateBookingComment(r.booking.id, `Школа: ${intakeForm.comment.trim()}`)
     showToast('Ученик записан', 'success')
     setIntakeForm(emptyIntakeForm)
     setRefreshKey((value) => value + 1)

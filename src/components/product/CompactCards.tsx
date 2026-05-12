@@ -217,7 +217,7 @@ export function DayChipsScroller({
                 className="mt-1 text-[11px] font-bold"
                 style={{ color: active ? ui.accent : ui.textSoft }}
               >
-                {count} слотов
+                {count} окон
               </span>
             </motion.button>
           )

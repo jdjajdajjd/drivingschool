@@ -55,7 +55,7 @@ export function SuperAdminSchools() {
                         <p className="mt-1 text-sm font-bold #111418">{item.studentCount} / {item.activeBookingsCount}</p>
                       </div>
                       <div>
-                        <p className="caption">30 дней / слоты 7 дней</p>
+                        <p className="caption">30 дней / время на 7 дней</p>
                         <p className="mt-1 text-sm font-bold #111418">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
                       </div>
                       <div>
@@ -71,7 +71,7 @@ export function SuperAdminSchools() {
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate(ADMIN_BASE_PATH)}>
                         <ExternalLink size={14} />
-                        Админка
+                        Кабинет школы
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/${item.school.id}`)}>
                         <Settings2 size={14} />

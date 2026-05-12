@@ -196,7 +196,7 @@ export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBun
   if (!publicBundle) return null
 
   const adminPassword = getAccessPassword('admin')
-  if (!adminPassword) throw new Error('Войдите в админку заново.')
+  if (!adminPassword) throw new Error('Войдите в кабинет школы заново.')
 
   const [students, bookingsResult] = await Promise.all([
     getSupabaseStudentsAdmin(publicBundle.school.id),
