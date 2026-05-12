@@ -8,17 +8,23 @@ type BrandMarkProps = {
 }
 
 const sizeClass = {
-  sm: 'h-[11px] w-[58px]',
-  md: 'h-[14px] w-[74px]',
-  lg: 'h-[19px] w-[100px]',
+  sm: 'text-[15px] leading-4',
+  md: 'text-[18px] leading-5',
+  lg: 'text-[22px] leading-6',
 }
 
 export function BrandMark({ variant = 'dark', size = 'md', className = '', alt = 'vroom' }: BrandMarkProps) {
-  const src = variant === 'light' ? '/brand/vroom-wordmark-light.png' : '/brand/vroom-wordmark-dark.png'
-
   return (
-    <span className={cn(sizeClass[size], 'inline-flex shrink-0 items-center justify-center', className)}>
-      <img src={src} alt={alt} className="h-full w-full object-contain" />
+    <span
+      aria-label={alt}
+      className={cn(
+        sizeClass[size],
+        'inline-flex shrink-0 items-baseline font-black tracking-[-0.03em]',
+        variant === 'light' ? 'text-white' : 'text-[#050609]',
+        className,
+      )}
+    >
+      vroom
     </span>
   )
 }
