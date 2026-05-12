@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Calendar03Icon,
-  Car03Icon,
   ClipboardIcon,
   DashboardSquare03Icon,
   LinkSquare02Icon,
@@ -15,9 +14,9 @@ import { cn } from '../../lib/utils'
 import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 import { db } from '../../services/storage'
+import { BrandMark } from './BrandMark'
 
 const CalendarDays = createHugeIcon(Calendar03Icon)
-const Car = createHugeIcon(Car03Icon)
 const ClipboardList = createHugeIcon(ClipboardIcon)
 const ExternalLink = createHugeIcon(LinkSquare02Icon)
 const LayoutDashboard = createHugeIcon(DashboardSquare03Icon)
@@ -66,11 +65,8 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       >
         <div className="flex items-center justify-between border-b border-[#D8E0EC] px-3 py-3 md:px-4 md:py-4">
           <button onClick={() => navigate(ADMIN_BASE_PATH)} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-[10px] bg-[#10231C]">
-              <Car size={19} className="text-white" />
-            </div>
+            <BrandMark size="sm" />
             <div className="text-left">
-              <p className="text-base font-black text-[#15120E]">vroom</p>
               <p className="text-xs font-bold text-[#667085]">Панель автошколы</p>
             </div>
           </button>

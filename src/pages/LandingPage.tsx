@@ -23,12 +23,9 @@ export function LandingPage() {
     <div className="min-h-dvh bg-[#F6F7FA] text-[#050609]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-4 pb-6 pt-4">
         <header className="flex items-center justify-between rounded-[24px] border border-[#EBECF0] bg-white px-3 py-3 shadow-[0_12px_34px_rgba(15,20,25,0.06)]">
-          <button className="flex min-w-0 items-center gap-2.5 text-left" onClick={() => navigate('/')}>
+          <button className="flex min-w-0 flex-col items-start gap-1 text-left" onClick={() => navigate('/')}>
             <BrandMark size="md" alt="vroom" />
-            <span className="min-w-0">
-              <span className="block text-[17px] font-black leading-5 tracking-[-0.02em] text-[#050609]">vroom</span>
-              <span className="block truncate text-[12px] font-bold leading-4 text-[#8B8D94]">кабинет ученика и школы</span>
-            </span>
+            <span className="block max-w-[190px] truncate text-[12px] font-bold leading-4 text-[#8B8D94]">кабинет ученика и школы</span>
           </button>
           <button
             className="min-h-10 rounded-[14px] bg-[#EEF0FA] px-3 text-[13px] font-extrabold text-[#1F2BD8] active:scale-[0.97]"
@@ -43,9 +40,8 @@ export function LandingPage() {
             <div className="grid h-14 w-14 place-items-center rounded-[20px] bg-[#EEF0FA] text-[#1F2BD8]">
               <User size={26} />
             </div>
-            <h1 className="mt-5 text-[38px] font-black leading-[0.98] tracking-[-0.04em] text-[#050609]">
-              vroom
-            </h1>
+            <h1 className="sr-only">vroom</h1>
+            <BrandMark size="lg" className="mt-5" alt="vroom" />
             <p className="mt-3 max-w-[320px] text-[15px] font-semibold leading-6 text-[#8B8D94]">
               Личный кабинет ученика и рабочий кабинет автошколы в одном месте.
             </p>

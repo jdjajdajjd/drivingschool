@@ -1,12 +1,12 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft01Icon, Car03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
+import { BrandMark } from '../components/layout/BrandMark'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 
 void React
 
 const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
-const CarFront = createHugeIcon(Car03Icon)
 
 const content = {
   terms: {
@@ -44,12 +44,10 @@ export function LegalPage() {
           <button className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[var(--accent)] shadow-[var(--shadow-card)]" onClick={() => navigate(-1)}>
             <ArrowLeft size={15} /> Назад
           </button>
-          <div className="grid h-10 w-10 place-items-center rounded-[16px] bg-[var(--accent)] text-white">
-            <CarFront size={20} />
-          </div>
+          <BrandMark size="sm" />
         </header>
         <section className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
-          <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[var(--accent)]">vroom</p>
+          <BrandMark size="sm" />
           <h1 className="mt-3 text-[30px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">{data.title}</h1>
           <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">{data.lead}</p>
           <div className="mt-5 space-y-3">

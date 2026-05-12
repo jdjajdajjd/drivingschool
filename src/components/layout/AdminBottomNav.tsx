@@ -10,6 +10,7 @@ import {
 import { cn } from '../../lib/utils'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { createHugeIcon } from '../ui/HugeIcon'
+import { BrandMark } from './BrandMark'
 
 const Home = createHugeIcon(DashboardSquare03Icon)
 const Clipboard = createHugeIcon(ClipboardIcon)
@@ -79,7 +80,7 @@ export function AdminTopBar() {
   return (
     <header className="hidden border-b border-[#E4E7EC] bg-white md:block">
       <div className="flex h-[60px] items-center gap-2 px-5">
-        <span className="mr-3 text-[17px] font-black tracking-[-0.05em] text-[#111827]">vroom</span>
+        <BrandMark size="sm" className="mr-3" />
         <div className="flex flex-1 items-center gap-1">
           {TABS.map((tab) => {
             const isActive = current === tab.key

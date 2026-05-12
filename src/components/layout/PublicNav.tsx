@@ -1,9 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Car03Icon } from '@hugeicons/core-free-icons'
+import { BrandMark } from './BrandMark'
 import { Button } from '../ui/Button'
-import { createHugeIcon } from '../ui/HugeIcon'
-
-const Car = createHugeIcon(Car03Icon)
 
 interface PublicNavProps {
   transparent?: boolean
@@ -19,11 +16,8 @@ export function PublicNav({ transparent = false }: PublicNavProps) {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
-            <Car size={18} className="text-white" />
-          </div>
-          <span className="text-base font-semibold #111418">vroom</span>
+        <Link to="/" className="flex items-center">
+          <BrandMark variant={transparent ? 'light' : 'dark'} size="md" />
         </Link>
 
         <Button

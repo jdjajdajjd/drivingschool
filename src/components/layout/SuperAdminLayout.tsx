@@ -1,13 +1,13 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Add01Icon, Building03Icon, Car03Icon, Logout03Icon, Menu01Icon, Shield01Icon } from '@hugeicons/core-free-icons'
+import { Add01Icon, Building03Icon, Logout03Icon, Menu01Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { useState } from 'react'
 import { cn } from '../../lib/utils'
 import { NavLink } from 'react-router-dom'
 import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
+import { BrandMark } from './BrandMark'
 
 const Building2 = createHugeIcon(Building03Icon)
-const Car = createHugeIcon(Car03Icon)
 const LogOut = createHugeIcon(Logout03Icon)
 const Menu = createHugeIcon(Menu01Icon)
 const Plus = createHugeIcon(Add01Icon)
@@ -34,11 +34,8 @@ export function SuperAdminLayout() {
           >
             <Menu size={18} />
           </button>
-          <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
-              <Car size={16} className="text-white" />
-            </div>
-            <span className="text-sm font-bold #111418">vroom</span>
+          <button onClick={() => navigate('/')} className="flex items-center">
+            <BrandMark size="sm" />
           </button>
         </header>
       </div>
@@ -59,11 +56,8 @@ export function SuperAdminLayout() {
       >
         <div className="border-b rgba(0,0,0,0.06) px-5 py-5">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
-              <Car size={18} className="text-white" />
-            </div>
+            <BrandMark size="md" />
             <div className="text-left">
-              <p className="text-sm font-bold #111418">vroom</p>
               <p className="text-xs font-medium #9EA3A8">Superadmin</p>
             </div>
           </button>
