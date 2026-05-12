@@ -39,6 +39,7 @@ import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
 import { addDays, format, isSameDay, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { BrandMark } from '../components/layout/BrandMark'
 
 void React
 
@@ -711,8 +712,8 @@ export function BookingFlowPage() {
 
   return (
     <div className="min-h-dvh overflow-x-hidden" style={{ background: 'var(--page-bg)', color: ui.text }}>
-      <main className="mx-auto w-full max-w-[430px] overflow-x-hidden px-4 pb-8 pt-5">
-        <header className="mb-4">
+      <main className="mx-auto w-full max-w-[1040px] overflow-x-hidden px-4 pb-8 pt-5 lg:px-8">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="mb-3 flex items-center justify-between gap-3">
             <button
               onClick={goBack}
@@ -723,7 +724,14 @@ export function BookingFlowPage() {
               Назад
             </button>
           </div>
-          {step !== 'date' ? <Progress step={step} /> : null}
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandMark variant="dark" size="sm" className="border border-[var(--border)]" />
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-black text-[var(--text)]">{school.name}</p>
+              <p className="text-[12px] font-bold text-[var(--text-muted)]">Выбор занятия онлайн</p>
+            </div>
+          </div>
+          {step !== 'date' ? <div className="w-full lg:w-[360px]"><Progress step={step} /></div> : null}
         </header>
 
         <AnimatePresence mode="wait">
@@ -731,11 +739,22 @@ export function BookingFlowPage() {
 
             {/* ── Step 1: Date ── */}
             {step === 'date' && (
-              <section>
-                <h2 className="text-[30px] font-bold leading-tight tracking-[-0.02em]" style={{ color: ui.text }}>Расписание</h2>
-                <p className="mt-2 text-[15px] font-medium leading-5" style={{ color: ui.textSoft }}>Нажмите свободное время, чтобы записаться</p>
+              <section className="grid min-w-0 gap-5 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+                <div className="min-w-0 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
+                  <h2 className="text-[34px] font-bold leading-tight" style={{ color: ui.text }}>Расписание</h2>
+                  <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: ui.textSoft }}>Выберите свободное окно. Запись уйдёт автошколе сразу, без звонков и переписок.</p>
+                  <div className="mt-5 grid gap-2">
+                    <div className="rounded-[16px] bg-[var(--surface-muted)] p-4">
+                      <p className="text-[12px] font-extrabold uppercase" style={{ color: ui.textSoft }}>Доступно дней</p>
+                      <p className="mt-1 text-[26px] font-black leading-none" style={{ color: ui.text }}>{availableDays.length || 0}</p>
+                    </div>
+                    <button className="w-full rounded-[16px] px-4 py-3 text-[14px] font-extrabold active:scale-[0.98]" style={{ background: ui.accent, color: ui.surface }} onClick={() => setStep('instructor')}>
+                      Выбрать по инструктору
+                    </button>
+                  </div>
+                </div>
 
-                <div className="mt-5 space-y-4">
+                <div className="min-w-0 space-y-4 lg:mt-5">
                   <VroomSchedulerPicker
                     days={availableDays}
                     selectedDate={selectedDate}
@@ -753,9 +772,6 @@ export function BookingFlowPage() {
                   />
                 </div>
 
-                <button className="mt-4 w-full rounded-[18px] px-5 py-3.5 text-[16px] font-semibold active:scale-[0.98]" style={{ background: ui.surface, border: `1px solid ${ui.border}`, color: ui.accent }} onClick={() => setStep('instructor')}>
-                  Выбрать по инструктору
-                </button>
               </section>
             )}
 

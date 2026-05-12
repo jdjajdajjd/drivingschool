@@ -67,8 +67,8 @@ export function AdminCars() {
               return (
                 <div key={car.id} className="rounded-2xl border border-gray-100 bg-white p-5 transition hover:border-gray-200">
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-[16px] font-black text-gray-600">
-                      🚗
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-[14px] font-black text-gray-600">
+                      ТС
                     </div>
                     <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${st.bg} ${st.text}`}>
                       {st.label}
@@ -116,9 +116,6 @@ export function AdminCars() {
     </div>
   )
 }
-
-import { createHugeIcon } from '../../components/ui/HugeIcon'
-import { HugeiconsPlus } from '@hugeicons/core-free-icons'
 
 function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void }) {
   const [form, setForm] = useState({

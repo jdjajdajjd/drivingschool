@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { adminCars } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import { Modal } from '../../components/ui/Modal'
 
 export function AdminInstructors() {
   const school = db.schools.all()[0]
-  const [showAdd, setShowAdd] = useState(false)
   const [search, setSearch] = useState('')
   const navigate = useNavigate()
 
@@ -31,8 +29,6 @@ export function AdminInstructors() {
     return instructor.name.toLowerCase().includes(q) || instructor.phone.includes(q)
   })
 
-  const [showModal, setShowModal] = useState<string | null>(null)
-
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -49,7 +45,7 @@ export function AdminInstructors() {
             placeholder="Поиск..."
             className="h-10 w-[200px] rounded-xl border border-gray-200 bg-gray-50 px-4 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none"
           />
-          <button onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
+          <button type="button" className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
             + Добавить
           </button>
         </div>
@@ -116,7 +112,7 @@ export function AdminInstructors() {
                   )}
                   {car && (
                     <p className="text-[12px] font-semibold text-gray-400">
-                      🚗 {car.brand} {car.licensePlate}
+                      {car.brand} {car.licensePlate}
                     </p>
                   )}
                 </div>

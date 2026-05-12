@@ -1,561 +1,293 @@
 import { Fragment, useMemo, useState } from 'react'
-import { format, addDays, startOfWeek, startOfMonth, eachDayOfInterval, isSameDay } from 'date-fns'
+import { addDays, eachDayOfInterval, format, isSameDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { db } from '../../services/storage'
 import { getSlotDateTime } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import { createAuditEntry } from '../../services/adminStorage'
+import type { Booking, Slot } from '../../types'
 
-type ViewMode = 'day' | 'week' | 'month'
+type ViewMode = 'day' | 'week'
 
-const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => {
-  const hour = i + 7
-  return `${hour.toString().padStart(2, '0')}:00`
-})
+const HOURS = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, '0')}:00`)
+
+function statusClass(status: Slot['status']) {
+  if (status === 'available') return 'border-[#BFE7CF] bg-[#EAF7EF] text-[#157347]'
+  if (status === 'cancelled') return 'border-[#DCE2E8] bg-[#EEF2F5] text-[#66717D]'
+  return 'border-[#BFD1FF] bg-[#EEF4FF] text-[#2457C5]'
+}
 
 export function AdminSchedule() {
   const school = db.schools.all()[0]
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [showRescheduleModal, setShowRescheduleModal] = useState(false)
   const [rescheduleDate, setRescheduleDate] = useState('')
   const [rescheduleTime, setRescheduleTime] = useState('')
 
-    // Отмена занятия
+  const data = useMemo(() => {
+    if (!school) return { slots: [] as Slot[], bookings: [] as Booking[], instructors: db.instructors.all(), branches: db.branches.all() }
+    return {
+      slots: db.slots.bySchool(school.id),
+      bookings: db.bookings.bySchool(school.id),
+      instructors: db.instructors.bySchool(school.id),
+      branches: db.branches.bySchool(school.id),
+    }
+  }, [school?.id])
+
+  const viewRange = useMemo(() => {
+    if (viewMode === 'day') return [selectedDate]
+    const start = startOfWeek(selectedDate, { weekStartsOn: 1 })
+    return eachDayOfInterval({ start, end: addDays(start, 6) })
+  }, [viewMode, selectedDate])
+
+  const selectedSlot = selectedSlotId ? data.slots.find((slot) => slot.id === selectedSlotId) ?? null : null
+  const selectedBooking = selectedSlot?.bookingId ? data.bookings.find((booking) => booking.id === selectedSlot.bookingId) ?? null : null
+  const selectedInstructor = selectedSlot ? data.instructors.find((item) => item.id === selectedSlot.instructorId) ?? null : null
+  const selectedBranch = selectedSlot ? data.branches.find((item) => item.id === selectedSlot.branchId) ?? null : null
+
+  const dailySummary = viewRange.map((date) => {
+    const dateKey = format(date, 'yyyy-MM-dd')
+    const slots = data.slots.filter((slot) => slot.date === dateKey)
+    return {
+      date,
+      total: slots.length,
+      booked: slots.filter((slot) => slot.status === 'booked').length,
+      free: slots.filter((slot) => slot.status === 'available').length,
+      cancelled: slots.filter((slot) => slot.status === 'cancelled').length,
+    }
+  })
+
+  const getSlotsForCell = (date: Date, hour: string) => {
+    const key = format(date, 'yyyy-MM-dd')
+    const prefix = hour.split(':')[0]
+    return data.slots
+      .filter((slot) => slot.date === key && slot.time.startsWith(prefix))
+      .sort((left, right) => left.time.localeCompare(right.time))
+  }
+
   const handleCancel = () => {
-    if (!school || !selectedSlotData || !selectedBooking) return
-    
-    const slot = selectedSlotData
-    const booking = selectedBooking
-    
-    // Обновляем слот
-    db.slots.upsert({ ...slot, status: 'cancelled' })
-    
-    // Обновляем booking - используем правильные поля из типа
-    db.bookings.upsert({ 
-      ...booking, 
+    if (!school || !selectedSlot || !selectedBooking) return
+    db.slots.upsert({ ...selectedSlot, status: 'cancelled' })
+    db.bookings.upsert({
+      ...selectedBooking,
       status: 'cancelled',
       cancellationReason: cancelReason || 'Отменено администратором',
-      cancelledBy: 'school'
+      cancelledBy: 'school',
     })
-    
-    // Аудит
     createAuditEntry(
       school.id,
       'admin',
       'Администратор',
       'booking_cancelled',
       'booking',
-      booking.id,
-      `Отменено занятие: ${booking.studentName} на ${format(getSlotDateTime(slot), 'dd.MM.yyyy HH:mm')}. Причина: ${cancelReason || 'Не указана'}`,
-      `status: booked`,
-      `status: cancelled, reason: ${cancelReason}`
+      selectedBooking.id,
+      `Отменено занятие: ${selectedBooking.studentName} на ${format(getSlotDateTime(selectedSlot), 'dd.MM.yyyy HH:mm')}`,
+      'status: booked',
+      `status: cancelled, reason: ${cancelReason || 'Не указана'}`,
     )
-    
     setShowCancelModal(false)
-    setSelectedSlot(null)
+    setSelectedSlotId(null)
     setCancelReason('')
   }
 
-  // Перенос занятия
   const handleReschedule = () => {
-    if (!school || !selectedSlotData || !selectedBooking || !rescheduleDate || !rescheduleTime) return
-    
-    const slot = selectedSlotData
-    const booking = selectedBooking
-    const oldDateTime = format(getSlotDateTime(slot), 'dd.MM.yyyy HH:mm')
-    
-    // Находим свободный слот для переноса
-    const newDate = rescheduleDate
-    const newSlot = db.slots.bySchool(school.id).find(s => 
-      s.date === newDate && s.time === rescheduleTime && s.instructorId === slot.instructorId && s.status === 'available'
+    if (!school || !selectedSlot || !selectedBooking || !rescheduleDate || !rescheduleTime) return
+    const newSlot = data.slots.find((slot) =>
+      slot.date === rescheduleDate &&
+      slot.time === rescheduleTime &&
+      slot.instructorId === selectedSlot.instructorId &&
+      slot.status === 'available',
     )
-    
-    if (newSlot) {
-      // Используем существующий свободный слот
-      db.slots.upsert({ ...newSlot, status: 'booked', bookingId: booking.id })
-      db.slots.upsert({ ...slot, status: 'available', bookingId: undefined })
-    } else {
-      // Просто освобождаем текущий слот и добавляем комментарий - создание слотов нужно делать отдельно
+    if (!newSlot) {
       alert('Свободный слот на это время не найден. Сначала создайте окно в расписании.')
       return
     }
-    
-    // Аудит
+    db.slots.upsert({ ...newSlot, status: 'booked', bookingId: selectedBooking.id })
+    db.slots.upsert({ ...selectedSlot, status: 'available', bookingId: undefined })
     createAuditEntry(
       school.id,
       'admin',
       'Администратор',
       'booking_rescheduled',
       'booking',
-      booking.id,
-      `Перенесено занятие: ${booking.studentName} с ${oldDateTime} на ${rescheduleDate} ${rescheduleTime}`,
-      `slot: ${slot.date} ${slot.time}`,
-      `slot: ${rescheduleDate} ${rescheduleTime}`
+      selectedBooking.id,
+      `Перенесено занятие: ${selectedBooking.studentName} на ${rescheduleDate} ${rescheduleTime}`,
     )
-    
     setShowRescheduleModal(false)
-    setSelectedSlot(null)
+    setSelectedSlotId(null)
     setRescheduleDate('')
     setRescheduleTime('')
   }
 
-  // Отметить неявку
   const handleNoShow = () => {
-    if (!school || !selectedSlotData || !selectedBooking) return
-    
-    const booking = selectedBooking
-    
-    db.bookings.upsert({ 
-      ...booking, 
-      status: 'no_show'
-    })
-    
-    // Аудит
-    createAuditEntry(
-      school.id,
-      'admin',
-      'Администратор',
-      'booking_no_show',
-      'booking',
-      booking.id,
-      `Отмечена неявка: ${booking.studentName}`,
-      `status: booked`,
-      `status: no_show`
-    )
-    
-    setSelectedSlot(null)
+    if (!school || !selectedBooking) return
+    db.bookings.upsert({ ...selectedBooking, status: 'no_show' })
+    createAuditEntry(school.id, 'admin', 'Администратор', 'booking_no_show', 'booking', selectedBooking.id, `Отмечена неявка: ${selectedBooking.studentName}`)
+    setSelectedSlotId(null)
   }
 
-  // Засчитать занятие
   const handleComplete = () => {
-    if (!school || !selectedSlotData || !selectedBooking) return
-    
-    const booking = selectedBooking
-    
-    db.bookings.upsert({ 
-      ...booking, 
+    if (!school || !selectedSlot || !selectedBooking) return
+    db.bookings.upsert({
+      ...selectedBooking,
       status: 'completed',
-      confirmedHours: (booking.confirmedHours ?? 0) + selectedSlotData.duration
+      confirmedHours: (selectedBooking.confirmedHours ?? 0) + selectedSlot.duration,
     })
-    
-    // Аудит
-    createAuditEntry(
-      school.id,
-      'admin',
-      'Администратор',
-      'booking_completed',
-      'booking',
-      booking.id,
-      `Занятие засчитано: ${booking.studentName} (+${selectedSlotData.duration} мин, всего: ${(booking.confirmedHours ?? 0) + selectedSlotData.duration} мин)`,
-      `status: booked`,
-      `status: completed`
-    )
-    
-    setSelectedSlot(null)
+    createAuditEntry(school.id, 'admin', 'Администратор', 'booking_completed', 'booking', selectedBooking.id, `Занятие засчитано: ${selectedBooking.studentName}`)
+    setSelectedSlotId(null)
   }
-
-  const viewRange = useMemo(() => {
-    if (viewMode === 'day') return [selectedDate]
-    if (viewMode === 'week') {
-      const start = startOfWeek(selectedDate, { weekStartsOn: 1 })
-      return eachDayOfInterval({ start, end: addDays(start, 6) })
-    }
-    // month
-    const start = startOfMonth(selectedDate)
-    return eachDayOfInterval({ start, end: addDays(start, 27) })
-  }, [viewMode, selectedDate])
-
-  const data = useMemo(() => {
-    if (!school) return { slots: [], bookings: [], instructors: [], branches: [] }
-    const slots = db.slots.bySchool(school.id)
-    const bookings = db.bookings.bySchool(school.id)
-    const instructors = db.instructors.bySchool(school.id)
-    const branches = db.branches.bySchool(school.id)
-    return { slots, bookings, instructors, branches }
-  }, [school?.id])
-
-  const getSlotForCell = (date: Date, time: string) => {
-    return data.slots.filter((s) => {
-      const slotDate = new Date(`${s.date}T${s.time}`)
-      return isSameDay(slotDate, date) && s.time.startsWith(time.split(':')[0])
-    })
-  }
-
-  const selectedSlotData = selectedSlot
-    ? data.slots.find((s) => s.id === selectedSlot) ?? null
-    : null
-
-  const selectedBooking = selectedSlotData?.bookingId
-    ? data.bookings.find((b) => b.id === selectedSlotData.bookingId) ?? null
-    : null
-
-  const selectedInstructor = selectedSlotData
-    ? data.instructors.find((i) => i.id === selectedSlotData.instructorId)
-    : null
-
-  const navigatePrev = () => setSelectedDate((d) => addDays(d, viewMode === 'day' ? -1 : viewMode === 'week' ? -7 : -28))
-  const navigateNext = () => setSelectedDate((d) => addDays(d, viewMode === 'day' ? 1 : viewMode === 'week' ? 7 : 28))
 
   if (!school) return null
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-3 md:px-6">
-        <div className="flex items-center gap-2">
-          <button onClick={navigatePrev} className="rounded-lg p-2 hover:bg-gray-100">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 12L6 8l4-4" stroke="#6F747A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <span className="min-w-[180px] text-center text-[15px] font-bold text-gray-900">
-            {format(selectedDate, 'MMMM yyyy', { locale: ru })}
-          </span>
-          <button onClick={navigateNext} className="rounded-lg p-2 hover:bg-gray-100">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 12l4-4-4-4" stroke="#6F747A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setSelectedDate(new Date())}
-            className="rounded-lg px-3 py-1.5 text-[13px] font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
-          >
-            Сегодня
-          </button>
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Расписание</h1>
+          <p className="v-admin-note mt-1">{format(selectedDate, 'LLLL yyyy', { locale: ru })} · окна, записи и статусы занятий</p>
         </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <div className="flex rounded-xl border border-gray-200 p-0.5">
-            {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition ${
-                  viewMode === mode
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {mode === 'day' ? 'День' : mode === 'week' ? 'Неделя' : 'Месяц'}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
+            <ChevronLeft size={16} />
+          </button>
+          <button onClick={() => setSelectedDate(new Date())} className="v-admin-button-secondary">Сегодня</button>
+          <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? 1 : 7))} className="v-admin-button-secondary px-3" aria-label="Вперёд">
+            <ChevronRight size={16} />
+          </button>
+          <div className="flex rounded-[10px] border border-[#DCE2E8] bg-white p-1">
+            {(['day', 'week'] as ViewMode[]).map((mode) => (
+              <button key={mode} onClick={() => setViewMode(mode)} className={`rounded-[7px] px-3 py-2 text-[13px] font-black ${viewMode === mode ? 'bg-[#101418] text-white' : 'text-[#66717D]'}`}>
+                {mode === 'day' ? 'День' : 'Неделя'}
               </button>
             ))}
           </div>
-          <button className="rounded-xl bg-gray-900 px-4 py-2 text-[13px] font-bold text-white">
-            + Создать окна
+          <button className="v-admin-button">
+            <Plus size={16} />
+            Создать окна
           </button>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-shrink-0 gap-4 border-b border-gray-100 bg-white px-4 py-2 text-[12px] font-semibold text-gray-400 md:px-6">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-green-400" /> Свободно
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-blue-400" /> Занято
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-gray-200" /> Отменено
-        </span>
+      <div className="grid gap-3 border-b border-[#DCE2E8] bg-white p-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        {dailySummary.map((day) => (
+          <button
+            key={day.date.toISOString()}
+            onClick={() => { setSelectedDate(day.date); setViewMode('day') }}
+            className={`rounded-[10px] border p-3 text-left transition hover:border-[#B8C2CC] ${isSameDay(day.date, new Date()) ? 'border-[#101418] bg-[#F7F9FB]' : 'border-[#DCE2E8] bg-white'}`}
+          >
+            <span className="block text-[12px] font-black uppercase text-[#66717D]">{format(day.date, 'EEEEEE', { locale: ru })}</span>
+            <strong className="mt-1 block text-[22px] font-black text-[#111418]">{format(day.date, 'd MMM', { locale: ru })}</strong>
+            <span className="mt-2 flex gap-2 text-[12px] font-black">
+              <span className="text-[#2457C5]">{day.booked} занято</span>
+              <span className="text-[#157347]">{day.free} свободно</span>
+            </span>
+          </button>
+        ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="flex-1 overflow-auto">
-        {viewMode === 'month' ? (
-          <div className="min-w-[800px]">
-            {/* Month header */}
-            <div className="grid border-b border-gray-100" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-              {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day) => (
-                <div key={day} className="px-3 py-2 text-center text-[12px] font-bold text-gray-400">{day}</div>
-              ))}
-            </div>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-              {viewRange.map((date, idx) => {
-                const daySlots = data.slots.filter((s) => {
-                  const slotDate = new Date(`${s.date}T00:00`)
-                  return isSameDay(slotDate, date)
-                })
-                const booked = daySlots.filter((s) => s.status === 'booked').length
-                const available = daySlots.filter((s) => s.status === 'available').length
-                const isToday = isSameDay(date, new Date())
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => { setSelectedDate(date); setViewMode('day') }}
-                    className={`min-h-[80px] border-b border-r border-gray-100 p-2 text-left transition hover:bg-gray-50 ${
-                      isToday ? 'bg-blue-50/30' : ''
-                    }`}
-                  >
-                    <span className={`text-[13px] font-bold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-                      {format(date, 'd')}
-                    </span>
-                    {(booked > 0 || available > 0) && (
-                      <div className="mt-1 flex gap-1">
-                        {booked > 0 && <span className="text-[11px] font-bold text-blue-500">{booked}зан</span>}
-                        {available > 0 && <span className="text-[11px] font-bold text-green-500">{available}св</span>}
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="min-w-[700px]">
-            {/* Time grid */}
-            <div className="grid" style={{ gridTemplateColumns: viewMode === 'day' ? '1fr' : '60px repeat(7, 1fr)' }}>
-              {/* Day headers */}
-              {viewMode === 'week' && (
-                <>
-                  <div className="border-b border-gray-100" />
-                  {viewRange.map((date) => {
-                    const isToday = isSameDay(date, new Date())
-                    return (
-                      <div
-                        key={date.toISOString()}
-                        className={`border-b border-l border-gray-100 px-2 py-2 text-center ${isToday ? 'bg-blue-50/30' : ''}`}
-                      >
-                        <p className="text-[11px] font-semibold text-gray-400">{format(date, 'EEE', { locale: ru })}</p>
-                        <p className={`text-[18px] font-black ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>{format(date, 'd')}</p>
-                      </div>
-                    )
-                  })}
-                </>
-              )}
+      <div className="flex-1 overflow-auto bg-[#F3F5F7] p-3 md:p-5">
+        <div className="v-admin-panel min-w-[880px] overflow-hidden">
+          <div className="grid bg-[#F7F9FB]" style={{ gridTemplateColumns: viewMode === 'day' ? '80px minmax(0,1fr)' : '80px repeat(7,minmax(128px,1fr))' }}>
+            <div className="border-b border-r border-[#DCE2E8]" />
+            {viewRange.map((date) => (
+              <div key={date.toISOString()} className={`border-b border-r border-[#DCE2E8] p-3 text-center ${isSameDay(date, new Date()) ? 'bg-[#EEF4FF]' : ''}`}>
+                <p className="text-[11px] font-black uppercase text-[#66717D]">{format(date, 'EEE', { locale: ru })}</p>
+                <p className="text-[22px] font-black leading-none text-[#111418]">{format(date, 'd')}</p>
+              </div>
+            ))}
 
-              {/* Time slots */}
-              {TIME_SLOTS.map((time) => (
-                <Fragment key={time}>
-                  {/* Time label */}
-                  {viewMode === 'week' && (
-                    <div key={`time-${time}`} className="flex items-center justify-end pr-2 text-[11px] font-semibold text-gray-300">
-                      {time}
-                    </div>
-                  )}
-
-                  {/* Cells */}
-                  {viewRange.map((date) => {
-                    const cellSlots = getSlotForCell(date, time)
-                    const isToday = isSameDay(date, new Date())
-                    return (
-                      <div
-                        key={`${date.toISOString()}-${time}`}
-                        className={`relative min-h-[48px] border-b border-l border-gray-100 p-0.5 ${
-                          isToday ? 'bg-blue-50/20' : ''
-                        }`}
-                      >
+            {HOURS.map((hour) => (
+              <Fragment key={hour}>
+                <div className="flex min-h-[68px] items-start justify-end border-r border-[#DCE2E8] px-3 py-3 text-[12px] font-black text-[#8D98A4]">
+                  {hour}
+                </div>
+                {viewRange.map((date) => {
+                  const cellSlots = getSlotsForCell(date, hour)
+                  return (
+                    <div key={`${date.toISOString()}-${hour}`} className="min-h-[68px] border-r border-t border-[#EEF2F5] bg-white p-1.5">
+                      <div className="grid gap-1.5">
                         {cellSlots.map((slot) => {
-                          const instructor = data.instructors.find((i) => i.id === slot.instructorId)
-                          const booking = slot.bookingId ? data.bookings.find((b) => b.id === slot.bookingId) : null
-                          const statusColor = slot.status === 'available' ? 'bg-green-100 border-green-200 text-green-700' :
-                            slot.status === 'cancelled' ? 'bg-gray-100 border-gray-200 text-gray-400' :
-                            'bg-blue-100 border-blue-200 text-blue-700'
+                          const booking = slot.bookingId ? data.bookings.find((item) => item.id === slot.bookingId) ?? null : null
+                          const instructor = data.instructors.find((item) => item.id === slot.instructorId)
                           return (
                             <button
                               key={slot.id}
-                              onClick={() => setSelectedSlot(slot.id)}
-                              className={`mb-0.5 w-full rounded-lg border px-2 py-1 text-left text-[12px] font-semibold transition hover:scale-[1.02] active:scale-[0.98] ${statusColor}`}
+                              onClick={() => setSelectedSlotId(slot.id)}
+                              className={`rounded-[8px] border px-2.5 py-2 text-left text-[12px] font-black leading-4 transition hover:brightness-[0.98] ${statusClass(slot.status)}`}
                             >
-                              {booking ? (
-                                <>
-                                  <p className="truncate font-bold">{booking.studentName}</p>
-                                  <p className="truncate text-[11px] opacity-70">{instructor?.name}</p>
-                                </>
-                              ) : (
-                                <p className="truncate text-[11px] opacity-70">Свободно · {slot.duration}м</p>
-                              )}
+                              <span className="block truncate">{booking?.studentName ?? `Свободно · ${slot.duration} мин`}</span>
+                              <span className="mt-0.5 block truncate text-[11px] font-bold opacity-75">{format(getSlotDateTime(slot), 'HH:mm')} · {instructor?.name ?? 'Инструктор'}</span>
                             </button>
                           )
                         })}
                       </div>
-                    )
-                  })}
-                </Fragment>
-              ))}
-            </div>
+                    </div>
+                  )
+                })}
+              </Fragment>
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Slot detail modal */}
-      <Modal
-        open={!!selectedSlot}
-        onClose={() => setSelectedSlot(null)}
-        title="Занятие"
-        size="sm"
-      >
-        {selectedSlotData && (
-          <div className="p-5">
-            <div className="mb-4 rounded-xl bg-gray-50 p-4">
-              <p className="text-[24px] font-black text-gray-900">{format(getSlotDateTime(selectedSlotData), 'HH:mm')}</p>
-              <p className="mt-1 text-[14px] font-semibold text-gray-400">
-                {format(getSlotDateTime(selectedSlotData), 'EEEE, d MMMM', { locale: ru })}
-              </p>
+      <Modal open={Boolean(selectedSlot)} onClose={() => setSelectedSlotId(null)} title="Занятие" size="sm">
+        {selectedSlot ? (
+          <div className="space-y-4 p-5">
+            <div className="rounded-[12px] bg-[#F7F9FB] p-4">
+              <p className="text-[30px] font-black leading-none text-[#111418]">{format(getSlotDateTime(selectedSlot), 'HH:mm')}</p>
+              <p className="mt-1 text-[14px] font-bold text-[#66717D]">{format(getSlotDateTime(selectedSlot), 'EEEE, d MMMM', { locale: ru })}</p>
             </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-gray-400">Статус</span>
-                <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
-                  selectedSlotData.status === 'available' ? 'bg-green-100 text-green-600' :
-                  selectedSlotData.status === 'cancelled' ? 'bg-gray-100 text-gray-500' :
-                  'bg-blue-100 text-blue-600'
-                }`}>
-                  {selectedSlotData.status === 'available' ? 'Свободно' :
-                   selectedSlotData.status === 'cancelled' ? 'Отменено' : 'Занято'}
-                </span>
-              </div>
-
-              {selectedInstructor && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-gray-400">Инструктор</span>
-                  <span className="font-bold text-gray-900">{selectedInstructor.name}</span>
-                </div>
-              )}
-
-              {selectedBooking && (
+            <div className="grid gap-3 text-[14px] font-bold">
+              <div className="flex justify-between gap-4"><span className="text-[#66717D]">Статус</span><span className={`v-admin-pill ${selectedSlot.status === 'available' ? 'v-tone-ok' : selectedSlot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{selectedSlot.status === 'available' ? 'Свободно' : selectedSlot.status === 'cancelled' ? 'Отменено' : 'Занято'}</span></div>
+              <div className="flex justify-between gap-4"><span className="text-[#66717D]">Инструктор</span><span className="text-right text-[#111418]">{selectedInstructor?.name ?? 'Не назначен'}</span></div>
+              <div className="flex justify-between gap-4"><span className="text-[#66717D]">Филиал</span><span className="text-right text-[#111418]">{selectedBranch?.name ?? 'Не указан'}</span></div>
+              {selectedBooking ? (
                 <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-gray-400">Ученик</span>
-                    <span className="font-bold text-gray-900">{selectedBooking.studentName}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-gray-400">Телефон</span>
-                    <a href={`tel:${selectedBooking.studentPhone}`} className="font-bold text-blue-600">{selectedBooking.studentPhone}</a>
-                  </div>
+                  <div className="flex justify-between gap-4"><span className="text-[#66717D]">Ученик</span><span className="text-right text-[#111418]">{selectedBooking.studentName}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-[#66717D]">Телефон</span><a href={`tel:${selectedBooking.studentPhone}`} className="text-right text-[#2457C5]">{selectedBooking.studentPhone}</a></div>
                 </>
-              )}
-
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-gray-400">Длительность</span>
-                <span className="font-bold text-gray-900">{selectedSlotData.duration} минут</span>
-              </div>
+              ) : null}
+              <div className="flex justify-between gap-4"><span className="text-[#66717D]">Длительность</span><span className="text-[#111418]">{selectedSlot.duration} минут</span></div>
             </div>
-
-            <div className="mt-6 flex gap-2">
-              {selectedSlotData.status === 'booked' && selectedBooking && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {selectedSlot.status === 'booked' && selectedBooking ? (
                 <>
-                  <button 
-                    onClick={() => setShowRescheduleModal(true)}
-                    className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50"
-                  >
-                    Перенести
-                  </button>
-                  <button 
-                    onClick={() => setShowCancelModal(true)}
-                    className="flex-1 rounded-xl bg-red-500 py-2.5 text-[13px] font-bold text-white"
-                  >
-                    Отменить
-                  </button>
-                  <button 
-                    onClick={handleNoShow}
-                    className="flex-1 rounded-xl bg-amber-500 py-2.5 text-[13px] font-bold text-white"
-                  >
-                    Неявка
-                  </button>
-                  <button 
-                    onClick={handleComplete}
-                    className="flex-1 rounded-xl bg-green-600 py-2.5 text-[13px] font-bold text-white"
-                  >
-                    Засчитать
-                  </button>
+                  <button onClick={() => setShowRescheduleModal(true)} className="v-admin-button-secondary">Перенести</button>
+                  <button onClick={handleComplete} className="v-admin-button bg-[#157347] hover:bg-[#0F5D38]">Засчитать</button>
+                  <button onClick={handleNoShow} className="v-admin-button bg-[#A45A00] hover:bg-[#864900]">Неявка</button>
+                  <button onClick={() => setShowCancelModal(true)} className="v-admin-button bg-[#B42318] hover:bg-[#8F1C14]">Отменить</button>
                 </>
-              )}
-              {selectedSlotData.status === 'available' && (
-                <a
-                  href={`${ADMIN_BASE_PATH}/students`}
-                  className="flex-1 rounded-xl bg-gray-900 py-2.5 text-center text-[13px] font-bold text-white"
-                >
-                  Записать ученика
-                </a>
+              ) : (
+                <a href={`${ADMIN_BASE_PATH}/students`} className="v-admin-button sm:col-span-2">Записать ученика</a>
               )}
             </div>
           </div>
-        )}
+        ) : null}
       </Modal>
 
-      {/* Модалка отмены */}
       <Modal open={showCancelModal} onClose={() => setShowCancelModal(false)} title="Отмена занятия" size="sm">
-        <div className="p-5 space-y-4">
-          <p className="text-[14px] text-gray-600">
-            Занятие ученика <strong>{selectedBooking?.studentName}</strong> будет отменено.
-          </p>
-          <div>
-            <label className="block text-[12px] font-semibold text-gray-500 mb-1.5">Причина отмены</label>
-            <textarea
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Например: ученик предупредил заранее"
-              className="w-full rounded-xl border border-gray-200 p-3 text-[14px] resize-none"
-              rows={3}
-            />
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setShowCancelModal(false)}
-              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600"
-            >
-              Отмена
-            </button>
-            <button 
-              onClick={handleCancel}
-              className="flex-1 rounded-xl bg-red-500 py-2.5 text-[13px] font-bold text-white"
-            >
-              Подтвердить
-            </button>
-          </div>
+        <div className="space-y-4 p-5">
+          <p className="text-[14px] font-bold text-[#66717D]">Занятие ученика <strong className="text-[#111418]">{selectedBooking?.studentName}</strong> будет отменено.</p>
+          <textarea value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Причина отмены" className="v-admin-input min-h-[94px] w-full resize-none py-3" />
+          <div className="flex gap-2"><button onClick={() => setShowCancelModal(false)} className="v-admin-button-secondary flex-1">Назад</button><button onClick={handleCancel} className="v-admin-button flex-1 bg-[#B42318] hover:bg-[#8F1C14]">Подтвердить</button></div>
         </div>
       </Modal>
 
-      {/* Модалка переноса */}
       <Modal open={showRescheduleModal} onClose={() => setShowRescheduleModal(false)} title="Перенос занятия" size="sm">
-        <div className="p-5 space-y-4">
-          <p className="text-[14px] text-gray-600">
-            Перенести занятие ученика <strong>{selectedBooking?.studentName}</strong>?
-          </p>
-          <div>
-            <label className="block text-[12px] font-semibold text-gray-500 mb-1.5">Новая дата</label>
-            <input
-              type="date"
-              value={rescheduleDate}
-              onChange={(e) => setRescheduleDate(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 p-3 text-[14px]"
-              min={format(new Date(), 'yyyy-MM-dd')}
-            />
-          </div>
-          <div>
-            <label className="block text-[12px] font-semibold text-gray-500 mb-1.5">Новое время</label>
-            <select
-              value={rescheduleTime}
-              onChange={(e) => setRescheduleTime(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 p-3 text-[14px]"
-            >
-              <option value="">Выберите время</option>
-              {TIME_SLOTS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setShowRescheduleModal(false)}
-              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600"
-            >
-              Отмена
-            </button>
-            <button 
-              onClick={handleReschedule}
-              disabled={!rescheduleDate || !rescheduleTime}
-              className="flex-1 rounded-xl bg-blue-600 py-2.5 text-[13px] font-bold text-white disabled:opacity-50"
-            >
-              Перенести
-            </button>
-          </div>
+        <div className="space-y-4 p-5">
+          <p className="text-[14px] font-bold text-[#66717D]">Перенести занятие ученика <strong className="text-[#111418]">{selectedBooking?.studentName}</strong>.</p>
+          <input type="date" value={rescheduleDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={(event) => setRescheduleDate(event.target.value)} className="v-admin-input w-full" />
+          <select value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} className="v-admin-input w-full">
+            <option value="">Выберите время</option>
+            {HOURS.map((time) => <option key={time} value={time}>{time}</option>)}
+          </select>
+          <div className="flex gap-2"><button onClick={() => setShowRescheduleModal(false)} className="v-admin-button-secondary flex-1">Назад</button><button onClick={handleReschedule} className="v-admin-button flex-1">Перенести</button></div>
         </div>
       </Modal>
     </div>

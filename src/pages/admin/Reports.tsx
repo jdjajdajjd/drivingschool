@@ -2,9 +2,7 @@ import { useMemo, useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminPayments, adminCars, adminDocuments, auditLog } from '../../services/adminStorage'
-import { getSlotDateTime } from '../../services/bookingService'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { adminPayments, adminCars, auditLog } from '../../services/adminStorage'
 import type { AuditAction } from '../../types'
 
 type AuditFilter = 'all' | AuditAction
@@ -21,7 +19,6 @@ export function AdminReports() {
 
   const data = useMemo(() => {
     if (!school) return null
-    const slots = db.slots.bySchool(school.id)
     const bookings = db.bookings.bySchool(school.id)
     const students = db.students.bySchool(school.id)
     const instructors = db.instructors.bySchool(school.id)
@@ -55,7 +52,6 @@ export function AdminReports() {
 
     // Instructor stats
     const instructorStats = instructors.map((instructor) => {
-      const iSlots = slots.filter((s) => s.instructorId === instructor.id)
       const iBookings = bookings.filter((b) => b.instructorId === instructor.id)
       const completed = iBookings.filter((b) => b.status === 'completed').length
       const noShow = iBookings.filter((b) => b.status === 'no_show').length
@@ -107,21 +103,21 @@ export function AdminReports() {
   }, [data.recentAudit, auditFilter, auditSearch])
 
   const actionLabels: Record<string, string> = {
-    booking_created: '📝 Создание записи',
-    booking_cancelled: '❌ Отмена записи',
-    booking_rescheduled: '🔄 Перенос записи',
-    booking_no_show: '⚠️ Неявка',
-    booking_completed: '✅ Занятие засчитано',
-    payment_added: '💰 Оплата',
-    student_created: '👤 Новый ученик',
-    student_updated: '📝 Изменение ученика',
-    instructor_created: '🚗 Новый инструктор',
-    instructor_updated: '📝 Изменение инструктора',
-    car_created: '🚘 Новая машина',
-    car_updated: '📝 Изменение машины',
-    settings_changed: '⚙️ Настройки',
-    user_created: '👥 Новый сотрудник',
-    user_updated: '📝 Изменение сотрудника',
+    booking_created: 'Создание записи',
+    booking_cancelled: 'Отмена записи',
+    booking_rescheduled: 'Перенос записи',
+    booking_no_show: 'Неявка',
+    booking_completed: 'Занятие засчитано',
+    payment_added: 'Оплата',
+    student_created: 'Новый ученик',
+    student_updated: 'Изменение ученика',
+    instructor_created: 'Новый инструктор',
+    instructor_updated: 'Изменение инструктора',
+    car_created: 'Новая машина',
+    car_updated: 'Изменение машины',
+    settings_changed: 'Настройки',
+    user_created: 'Новый сотрудник',
+    user_updated: 'Изменение сотрудника',
   }
 
   const tabs: { id: ReportTab; label: string }[] = [
@@ -249,7 +245,7 @@ export function AdminReports() {
           <div className="space-y-3">
             {data.carStats.map(({ car, usingBookings }) => (
               <div key={car.id} className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-                <div className="text-[28px]">🚗</div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-gray-100 text-[14px] font-black text-gray-600">ТС</div>
                 <div className="flex-1">
                   <p className="font-bold text-gray-900">{car.brand} {car.model}</p>
                   <p className="text-[12px] font-semibold text-gray-400">{car.licensePlate}</p>
@@ -288,17 +284,17 @@ export function AdminReports() {
                 className="rounded-xl border border-gray-200 px-4 py-2 text-[13px]"
               >
                 <option value="all">Все действия</option>
-                <option value="booking_created">📝 Создание записи</option>
-                <option value="booking_cancelled">❌ Отмена записи</option>
-                <option value="booking_rescheduled">🔄 Перенос записи</option>
-                <option value="booking_no_show">⚠️ Неявка</option>
-                <option value="booking_completed">✅ Занятие засчитано</option>
-                <option value="payment_added">💰 Оплата</option>
-                <option value="student_created">👤 Новый ученик</option>
-                <option value="instructor_created">🚗 Новый инструктор</option>
-                <option value="car_created">🚘 Новая машина</option>
-                <option value="settings_changed">⚙️ Настройки</option>
-                <option value="user_created">👥 Новый сотрудник</option>
+                <option value="booking_created">Создание записи</option>
+                <option value="booking_cancelled">Отмена записи</option>
+                <option value="booking_rescheduled">Перенос записи</option>
+                <option value="booking_no_show">Неявка</option>
+                <option value="booking_completed">Занятие засчитано</option>
+                <option value="payment_added">Оплата</option>
+                <option value="student_created">Новый ученик</option>
+                <option value="instructor_created">Новый инструктор</option>
+                <option value="car_created">Новая машина</option>
+                <option value="settings_changed">Настройки</option>
+                <option value="user_created">Новый сотрудник</option>
               </select>
               <span className="text-[12px] text-gray-400">{filteredAudit.length} записей</span>
             </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight01Icon, Building03Icon, Login03Icon, SmartPhone01Icon, Location01Icon, Calendar02Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, Login03Icon, SmartPhone01Icon, Location01Icon, Calendar02Icon } from '@hugeicons/core-free-icons'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
@@ -12,11 +12,11 @@ import { loadPublicSchoolData, type PublicSchoolData } from '../services/publicS
 import { findSchoolNamespaceBySlug } from '../services/storage'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import type { School } from '../types'
+import { BrandMark } from '../components/layout/BrandMark'
 
 void React
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const Building2 = createHugeIcon(Building03Icon)
 const Login = createHugeIcon(Login03Icon)
 const Phone = createHugeIcon(SmartPhone01Icon)
 const Location = createHugeIcon(Location01Icon)
@@ -100,14 +100,14 @@ export function SchoolPage() {
 
   return (
     <div className="min-h-dvh bg-[var(--page-bg)] text-[var(--text)]">
-      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col pb-20 pt-5">
+      <main className="mx-auto flex min-h-dvh w-full max-w-[1180px] flex-col pb-20 pt-5">
         {/* Header */}
-        <header className="flex items-center justify-between px-5">
+        <header className="flex items-center justify-between px-5 lg:px-8">
           <button className="flex items-center gap-2.5 text-left" onClick={() => navigate('/')}>
             <SchoolLogo school={school} />
             <div>
-              <p className="max-w-[200px] truncate text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">{school.name}</p>
-              <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">онлайн-запись</p>
+              <p className="max-w-[260px] truncate text-[15px] font-black leading-4 text-[var(--text)]">{school.name}</p>
+              <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">vroom.today · онлайн-запись</p>
             </div>
           </button>
           <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export function SchoolPage() {
         </header>
 
         {/* Tab navigation */}
-        <nav className="mt-4 flex gap-1 px-5">
+        <nav className="mt-5 flex gap-1 px-5 lg:max-w-[520px] lg:px-8">
           {([
             ['home', 'Главная'],
             ['book', 'Запись'],
@@ -137,36 +137,44 @@ export function SchoolPage() {
         </nav>
 
         {/* Tab content */}
-        <div className="flex-1 px-5 pt-5">
+        <div className="flex-1 px-5 pt-5 lg:px-8 lg:pt-8">
 
           {/* ── Home tab ── */}
           {tab === 'home' && (
-            <section className="space-y-5">
+            <section className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:items-start">
               {/* Hero */}
-              <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
-                <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] lg:min-h-[360px] lg:p-8">
+                <div className="mb-5 flex items-center gap-4">
                   <SchoolLogo school={school} large />
                   <div className="min-w-0">
-                    <p className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-[var(--text-soft)]">Автошкола</p>
-                    <h1 className="mt-1 truncate text-[26px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">{school.name}</h1>
+                    <p className="text-[12px] font-extrabold uppercase text-[var(--text-soft)]">Автошкола</p>
+                    <h1 className="mt-1 text-[30px] font-black leading-[1.05] text-[var(--text)] lg:text-[52px]">{school.name}</h1>
                   </div>
                 </div>
                 {school.description && (
-                  <p className="text-[15px] font-semibold leading-6 text-[var(--text-muted)]">{school.description}</p>
+                  <p className="max-w-2xl text-[16px] font-semibold leading-7 text-[var(--text-muted)] lg:text-[18px]">{school.description}</p>
                 )}
                 {school.address && (
-                  <div className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-[var(--text-muted)]">
+                  <div className="mt-5 flex items-center gap-2 text-[14px] font-bold text-[var(--text-muted)]">
                     <Location size={14} />
                     {school.address}
                   </div>
                 )}
+                <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                  {(school.enabledCategoryCodes?.length ? school.enabledCategoryCodes : ['B']).map((cat) => (
+                    <div key={cat} className="rounded-[14px] bg-[var(--surface-muted)] px-4 py-3">
+                      <p className="text-[12px] font-extrabold uppercase text-[var(--text-soft)]">Категория</p>
+                      <p className="mt-1 text-[24px] font-black leading-none text-[var(--text)]">{cat}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* CTA cards */}
               <div className="grid gap-3">
                 <button
                   onClick={() => setTab('book')}
-                  className="flex items-center justify-between rounded-[22px] bg-[var(--accent)] p-5 text-white shadow-[0_14px_30px_rgba(36,54,217,0.22)] active:scale-[0.98]"
+                  className="flex min-h-[132px] items-center justify-between rounded-[20px] bg-[var(--accent)] p-5 text-white shadow-[0_14px_30px_rgba(0,0,0,0.18)] active:scale-[0.98]"
                 >
                   <div>
                     <p className="text-[17px] font-black tracking-[-0.02em]">Записаться на занятие</p>
@@ -176,7 +184,7 @@ export function SchoolPage() {
                 </button>
                 <button
                   onClick={() => setTab('about')}
-                  className="flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-5 active:scale-[0.98]"
+                  className="flex min-h-[112px] items-center justify-between rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-5 active:scale-[0.98]"
                 >
                   <div>
                     <p className="text-[16px] font-black text-[var(--text)]">Об автошколе</p>
@@ -187,7 +195,7 @@ export function SchoolPage() {
               </div>
 
               {/* Quick info pills */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 lg:col-span-2">
                 {school.phone && (
                   <a
                     href={`tel:${school.phone.replace(/\D/g, '')}`}
@@ -209,7 +217,7 @@ export function SchoolPage() {
 
           {/* ── Book tab ── */}
           {tab === 'book' && (
-            <section className="space-y-5">
+            <section className="mx-auto w-full max-w-[760px] space-y-5">
               {mode === 'login' ? (
                 /* Login form */
                 <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]" onKeyDown={handleKeyDown}>
@@ -292,7 +300,7 @@ export function SchoolPage() {
 
           {/* ── About tab ── */}
           {tab === 'about' && (
-            <section className="space-y-5">
+            <section className="mx-auto w-full max-w-[860px] space-y-5">
               <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
                 <h2 className="text-[24px] font-black tracking-[-0.03em] text-[var(--text)]">{school.name}</h2>
                 {school.description && (
@@ -341,7 +349,7 @@ export function SchoolPage() {
 
           {/* ── Contacts tab ── */}
           {tab === 'contacts' && (
-            <section className="space-y-4">
+            <section className="mx-auto w-full max-w-[760px] space-y-4">
               <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
                 <h2 className="text-[24px] font-black tracking-[-0.03em] text-[var(--text)]">Контакты</h2>
 
@@ -396,8 +404,8 @@ export function SchoolPage() {
 
 function SchoolLogo({ school, large = false }: { school: School; large?: boolean }) {
   return (
-    <div className={`${large ? 'h-16 w-16 rounded-[22px]' : 'h-11 w-11 rounded-[18px]'} grid shrink-0 place-items-center overflow-hidden bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]`}>
-      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building2 size={large ? 28 : 22} />}
+    <div className={`${large ? 'h-16 w-16 rounded-[16px]' : 'h-11 w-11 rounded-[12px]'} grid shrink-0 place-items-center overflow-hidden bg-[var(--accent)] text-white shadow-[0_14px_30px_rgba(0,0,0,0.18)]`}>
+      {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <BrandMark variant="dark" size={large ? 'lg' : 'md'} alt={school.name} />}
     </div>
   )
 }

@@ -99,7 +99,7 @@ export function AdminSettings() {
               <label key={opt.key} className="flex cursor-pointer items-center gap-3 rounded-xl bg-gray-50 p-3">
                 <input
                   type="checkbox"
-                  checked={Boolean((settings as Record<string, unknown>)[opt.key])}
+                  checked={Boolean((settings as unknown as Record<string, unknown>)[opt.key])}
                   onChange={(e) => update(opt.key as keyof SchoolSettingsType, e.target.checked)}
                   className="h-5 w-5 rounded border-gray-300"
                 />

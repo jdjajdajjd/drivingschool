@@ -1,51 +1,46 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Search, UserPlus } from 'lucide-react'
 import { db } from '../../services/storage'
-import { adminPayments, adminDocuments, studentProgress, getDebtForStudent } from '../../services/adminStorage'
+import { adminDocuments, adminPayments, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import type { Student, TrainingStage } from '../../types'
-import { motion, AnimatePresence } from 'framer-motion'
+import type { TrainingStage } from '../../types'
 
 type FilterTab = 'all' | 'active' | 'debt' | 'no_docs' | 'ready_exam' | 'inactive'
 
-const STAGE_LABELS: Record<TrainingStage, string> = {
+const STAGE_LABELS: Partial<Record<TrainingStage, string>> = {
   new_request: 'Новая заявка',
-  awaiting_contract: 'Ожидает договора',
-  contract_signed: 'Договор подписан',
-  training_active: 'Обучение идёт',
+  awaiting_contract: 'Ждёт договор',
+  contract_signed: 'Договор есть',
+  theory: 'Теория',
+  training_active: 'Обучается',
+  practice_ground: 'Площадка',
+  city: 'Город',
+  exam_prep: 'Подготовка',
   no_bookings: 'Нет записей',
   has_debt: 'Есть долг',
-  missing_documents: 'Не хватает док-в',
-  theory_completed: 'Теория завершена',
-  practice_active: 'Практика идёт',
-  practice_completed: 'Практика завершена',
-  ready_for_internal_exam: 'Готов к внутр. экзамену',
-  internal_exam_passed: 'Внутр. экзамен сдан',
-  ready_for_gibdd: 'Готов к ГИБДД',
-  training_completed: 'Обучение завершено',
+  missing_documents: 'Нет документов',
+  theory_completed: 'Теория сдана',
+  practice_active: 'Практика',
+  practice_completed: 'Практика готова',
+  ready_for_internal_exam: 'К внутреннему',
+  internal_exam_passed: 'Внутренний сдан',
+  ready_for_gibdd: 'К ГИБДД',
+  exam: 'Экзамен',
+  training_completed: 'Завершил',
+  completed: 'Завершил',
   archived: 'Архив',
   refused: 'Отказ',
-  frozen: 'Заморозка',
+  frozen: 'Пауза',
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  new_request: 'bg-amber-50 text-amber-600',
-  awaiting_contract: 'bg-amber-50 text-amber-600',
-  contract_signed: 'bg-blue-50 text-blue-600',
-  training_active: 'bg-green-50 text-green-600',
-  no_bookings: 'bg-gray-100 text-gray-500',
-  has_debt: 'bg-red-50 text-red-500',
-  missing_documents: 'bg-orange-50 text-orange-600',
-  theory_completed: 'bg-blue-50 text-blue-600',
-  practice_active: 'bg-green-50 text-green-600',
-  practice_completed: 'bg-green-50 text-green-600',
-  ready_for_internal_exam: 'bg-purple-50 text-purple-600',
-  internal_exam_passed: 'bg-purple-50 text-purple-600',
-  ready_for_gibdd: 'bg-purple-50 text-purple-700',
-  training_completed: 'bg-gray-100 text-gray-600',
-  archived: 'bg-gray-100 text-gray-400',
-  refused: 'bg-red-50 text-red-400',
-  frozen: 'bg-blue-50 text-blue-400',
+function stageTone(stage?: TrainingStage) {
+  if (!stage) return 'v-tone-muted'
+  if (stage === 'has_debt' || stage === 'missing_documents' || stage === 'refused') return 'v-tone-danger'
+  if (stage === 'new_request' || stage === 'awaiting_contract' || stage === 'no_bookings' || stage === 'frozen') return 'v-tone-warning'
+  if (stage === 'ready_for_internal_exam' || stage === 'ready_for_gibdd' || stage === 'exam') return 'v-tone-info'
+  if (stage === 'training_completed' || stage === 'completed' || stage === 'archived') return 'v-tone-muted'
+  return 'v-tone-ok'
 }
 
 export function AdminStudents() {
@@ -55,70 +50,52 @@ export function AdminStudents() {
   const navigate = useNavigate()
 
   const data = useMemo(() => {
-    if (!school) return { students: [], debtStudents: new Set<string>(), docs: {}, hours: {} }
-    const students = db.students.bySchool(school.id)
+    if (!school) return { rows: [], debtStudents: new Set<string>(), docs: {} as Record<string, number>, hours: {} as Record<string, number> }
+
     const debtStudents = new Set<string>()
-    adminPayments.byStatus(school.id, 'overdue').forEach((p) => debtStudents.add(p.studentId))
+    adminPayments.all(school.id).forEach((payment) => {
+      if ((payment.status === 'overdue' || payment.status === 'partial' || payment.status === 'unpaid') && payment.remainingAmount > 0) {
+        debtStudents.add(payment.studentId)
+      }
+    })
 
     const docs: Record<string, number> = {}
     const hours: Record<string, number> = {}
-    students.forEach((s) => {
-      const docList = adminDocuments.byStudent(s.id)
-      docs[s.id] = docList.filter((d) => d.status === 'missing' || d.status === 'rejected').length
-      const progress = studentProgress.get(s.id)
-      hours[s.id] = progress?.confirmedHours ?? 0
+    const rows = db.students.bySchool(school.id).map((student) => {
+      docs[student.id] = adminDocuments.byStudent(student.id).filter((doc) => doc.status === 'missing' || doc.status === 'rejected').length
+      hours[student.id] = studentProgress.get(student.id)?.confirmedHours ?? 0
+      return student
     })
 
-    return { students, debtStudents, docs, hours }
+    return { rows, debtStudents, docs, hours }
   }, [school?.id])
 
   const filtered = useMemo(() => {
-    let result = data.students
-
-    // Search
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter((s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.phone.includes(q) ||
-        s.email.toLowerCase().includes(q)
+    let result = data.rows
+    const query = search.trim().toLowerCase()
+    if (query) {
+      result = result.filter((student) =>
+        student.name.toLowerCase().includes(query) ||
+        student.phone.includes(query) ||
+        student.email.toLowerCase().includes(query),
       )
     }
 
-    // Filter tab
-    switch (filter) {
-      case 'active':
-        result = result.filter((s) =>
-          (s.trainingStage === 'training_active' || s.trainingStage === 'practice_active') &&
-          !data.debtStudents.has(s.id)
-        )
-        break
-      case 'debt':
-        result = result.filter((s) => data.debtStudents.has(s.id))
-        break
-      case 'no_docs':
-        result = result.filter((s) => (data.docs[s.id] ?? 0) > 0)
-        break
-      case 'ready_exam':
-        result = result.filter((s) =>
-          s.trainingStage === 'ready_for_gibdd' ||
-          s.trainingStage === 'ready_for_internal_exam'
-        )
-        break
-      case 'inactive':
-        result = result.filter((s) =>
-          s.trainingStage === 'no_bookings' ||
-          s.trainingStage === 'archived' ||
-          s.trainingStage === 'frozen'
-        )
-        break
+    if (filter === 'active') {
+      result = result.filter((student) =>
+        ['training_active', 'practice_active', 'practice_ground', 'city', 'theory'].includes(student.trainingStage ?? '') &&
+        !data.debtStudents.has(student.id),
+      )
     }
-
+    if (filter === 'debt') result = result.filter((student) => data.debtStudents.has(student.id))
+    if (filter === 'no_docs') result = result.filter((student) => (data.docs[student.id] ?? 0) > 0)
+    if (filter === 'ready_exam') result = result.filter((student) => student.trainingStage === 'ready_for_gibdd' || student.trainingStage === 'ready_for_internal_exam')
+    if (filter === 'inactive') result = result.filter((student) => ['no_bookings', 'archived', 'frozen', 'refused'].includes(student.trainingStage ?? ''))
     return result
   }, [data, search, filter])
 
   const tabs: { id: FilterTab; label: string; count?: number }[] = [
-    { id: 'all', label: 'Все' },
+    { id: 'all', label: 'Все', count: data.rows.length },
     { id: 'active', label: 'Активные' },
     { id: 'debt', label: 'С долгом', count: data.debtStudents.size || undefined },
     { id: 'no_docs', label: 'Без документов' },
@@ -126,171 +103,112 @@ export function AdminStudents() {
     { id: 'inactive', label: 'Неактивные' },
   ]
 
+  if (!school) return null
+
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Ученики</h1>
-        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">{filtered.length}</span>
-        <div className="ml-auto flex items-center gap-3">
-          <div className="relative">
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Ученики</h1>
+          <p className="v-admin-note mt-1">{filtered.length} в списке · долги и документы видны сразу</p>
+        </div>
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3">
+          <label className="relative min-w-[220px] flex-1 sm:w-[320px] sm:flex-none">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
             <input
-              type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по имени, телефону..."
-              className="h-10 w-[260px] rounded-xl border border-gray-200 bg-gray-50 px-4 pr-9 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Имя, телефон, email"
+              className="v-admin-input w-full pl-9"
             />
-            <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-              <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <button className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
-            + Добавить ученика
+          </label>
+          <button className="v-admin-button">
+            <UserPlus size={16} />
+            Добавить ученика
           </button>
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex flex-shrink-0 gap-1 border-b border-gray-100 bg-white px-4 md:px-6">
+      <div className="v-tab-row">
         {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id)}
-            className={`relative flex items-center gap-1.5 border-b-2 px-3 py-3 text-[13px] font-semibold transition ${
-              filter === tab.id
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
+          <button key={tab.id} onClick={() => setFilter(tab.id)} className={`v-tab ${filter === tab.id ? 'v-tab-active' : ''}`}>
             {tab.label}
-            {tab.count !== undefined && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
-                filter === tab.id ? 'bg-gray-900 text-white' : 'bg-red-100 text-red-500'
-              }`}>
-                {tab.count}
-              </span>
-            )}
+            {tab.count !== undefined ? <span className="ml-2 rounded-full bg-[#EEF2F5] px-2 py-0.5 text-[11px] text-[#59626D]">{tab.count}</span> : null}
           </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <p className="text-[15px] font-semibold text-gray-400">Ничего не найдено</p>
-              {search && (
-                <button onClick={() => setSearch('')} className="mt-2 text-[13px] font-bold text-gray-600 underline">
-                  Сбросить поиск
-                </button>
-              )}
-            </div>
+          <div className="v-admin-empty">
+            <strong>Ученики не найдены</strong>
+            <span>Сбросьте поиск или выберите другой фильтр.</span>
           </div>
         ) : (
-          <table className="w-full min-w-[800px]">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50 text-left text-[12px] font-bold uppercase tracking-wider text-gray-400">
-                <th className="px-4 py-3">Ученик</th>
-                <th className="px-4 py-3">Телефон</th>
-                <th className="px-4 py-3">Статус</th>
-                <th className="px-4 py-3">Часы</th>
-                <th className="px-4 py-3">Долг</th>
-                <th className="px-4 py-3">Документы</th>
-                <th className="px-4 py-3">Инструктор</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((student) => {
-                const hasDebt = data.debtStudents.has(student.id)
-                const missingDocs = data.docs[student.id] ?? 0
-                const debt = getDebtForStudent(student.id)
-                const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
-                const hours = data.hours[student.id] ?? 0
-                const stage = student.trainingStage ?? 'new_request'
+          <div className="v-admin-panel overflow-hidden">
+            <table className="v-admin-table min-w-[960px]">
+              <thead>
+                <tr>
+                  <th>Ученик</th>
+                  <th>Телефон</th>
+                  <th>Этап</th>
+                  <th>Практика</th>
+                  <th>Долг</th>
+                  <th>Документы</th>
+                  <th>Инструктор</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((student) => {
+                  const debt = getDebtForStudent(student.id)
+                  const missingDocs = data.docs[student.id] ?? 0
+                  const hours = data.hours[student.id] ?? 0
+                  const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
+                  const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+                  const stage = student.trainingStage
 
-                return (
-                  <motion.tr
-                    key={student.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="cursor-pointer border-b border-gray-50 transition hover:bg-gray-50/50"
-                    onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}
-                  >
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-[13px] font-bold text-gray-600">
-                          {student.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                  return (
+                    <tr key={student.id} className="cursor-pointer" onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-[#101418] text-[13px] font-black text-white">{initials}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-[15px] font-black text-[#111418]">{student.name}</span>
+                            <span className="mt-0.5 block text-[12px] font-bold text-[#66717D]">
+                              {student.categoryCodes?.length ? `Категория ${student.categoryCodes.join(', ')}` : 'Категория не выбрана'}
+                            </span>
+                          </span>
                         </div>
-                        <div>
-                          <p className="font-bold text-gray-900">{student.name}</p>
-                          {student.categoryCodes?.[0] && (
-                            <p className="text-[12px] font-semibold text-gray-400">Категория {student.categoryCodes[0]}</p>
-                          )}
+                      </td>
+                      <td>
+                        <a href={`tel:${student.phone}`} onClick={(event) => event.stopPropagation()} className="font-black text-[#26313C] hover:text-[#000]">
+                          {student.phone}
+                        </a>
+                      </td>
+                      <td><span className={`v-admin-pill ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span></td>
+                      <td>
+                        <div className="flex min-w-[110px] items-center gap-2">
+                          <span className="h-2 w-20 overflow-hidden rounded-full bg-[#EEF2F5]">
+                            <span className="block h-full rounded-full bg-[#2457C5]" style={{ width: `${Math.min((hours / 56) * 100, 100)}%` }} />
+                          </span>
+                          <span className="font-black tabular-nums text-[#26313C]">{hours}ч</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <a
-                        href={`tel:${student.phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-[13px] font-semibold text-gray-600 hover:text-gray-900"
-                      >
-                        {student.phone}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${STAGE_COLORS[stage] ?? 'bg-gray-100 text-gray-500'}`}>
-                        {STAGE_LABELS[stage] ?? stage}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-[60px] overflow-hidden rounded-full bg-gray-100">
-                          <div
-                            className="h-full rounded-full bg-blue-400"
-                            style={{ width: `${Math.min((hours / 56) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-[12px] font-semibold text-gray-500">{hours}ч</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {hasDebt ? (
-                        <span className="rounded-lg bg-red-50 px-2.5 py-1 text-[12px] font-bold text-red-500">
-                          {debt.toLocaleString('ru-RU')} ₽
-                        </span>
-                      ) : (
-                        <span className="text-[13px] font-semibold text-gray-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {missingDocs > 0 ? (
-                        <span className="rounded-lg bg-orange-50 px-2.5 py-1 text-[12px] font-bold text-orange-500">
-                          {missingDocs} не хватает
-                        </span>
-                      ) : (
-                        <span className="text-[13px] font-semibold text-green-500">✓</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-[13px] font-semibold text-gray-600">
-                        {instructor?.name ?? '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-gray-300">
-                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </td>
-                  </motion.tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td>
+                        {debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">нет</span>}
+                      </td>
+                      <td>
+                        {missingDocs > 0 ? <span className="v-admin-pill v-tone-warning">{missingDocs} не хватает</span> : <span className="v-admin-pill v-tone-ok">готово</span>}
+                      </td>
+                      <td>{instructor?.name ?? <span className="text-[#8D98A4]">не назначен</span>}</td>
+                      <td className="text-right text-[#8D98A4]">Открыть</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

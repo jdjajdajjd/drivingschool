@@ -1,385 +1,288 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { format, isSameDay, isBefore, startOfDay, addDays } from 'date-fns'
+import { Link, useNavigate } from 'react-router-dom'
+import { addDays, format, isBefore, isSameDay, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { AlertTriangle, CalendarPlus, CheckCircle2, Clock3, ExternalLink, WalletCards } from 'lucide-react'
 import { db } from '../../services/storage'
-import { adminPayments, adminCars, problemCases, adminDocuments, adminInternalExams } from '../../services/adminStorage'
+import { adminCars, adminDocuments, adminInternalExams, adminPayments, problemCases } from '../../services/adminStorage'
 import { getSlotDateTime } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import { motion } from 'framer-motion'
+
+function money(value: number) {
+  return `${value.toLocaleString('ru-RU')} ₽`
+}
 
 function useTodayData(schoolId: string) {
   return useMemo(() => {
     const now = new Date()
-    const todayStr = format(now, 'yyyy-MM-dd')
-
+    const today = format(now, 'yyyy-MM-dd')
     const slots = db.slots.bySchool(schoolId)
     const bookings = db.bookings.bySchool(schoolId)
     const instructors = db.instructors.bySchool(schoolId)
     const students = db.students.bySchool(schoolId)
     const branches = db.branches.bySchool(schoolId)
+    const payments = adminPayments.all(schoolId)
 
-    // Today's slots and bookings
-    const todaySlots = slots.filter((s) => s.date === todayStr)
-    const todayBookings = bookings.filter((b) => {
-      const slot = db.slots.byId(b.slotId)
-      if (!slot) return false
-      return isSameDay(getSlotDateTime(slot), now)
-    })
+    const todaySlots = slots.filter((slot) => slot.date === today)
+    const todayBookings = bookings
+      .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+      .filter((entry) => entry.slot && isSameDay(getSlotDateTime(entry.slot), now))
 
-    const lessonsToday = todayBookings.filter((b) => b.status === 'active').length
-    const cancelledToday = todayBookings.filter((b) => b.status === 'cancelled').length
-    const noShowsToday = todayBookings.filter((b) => b.status === 'no_show').length
-    const freeSlotsToday = todaySlots.filter((s) => s.status === 'available').length
-
-    // Debt students
-    const debtStudents = new Set<string>()
-    adminPayments.byStatus(schoolId, 'overdue').forEach((p) => debtStudents.add(p.studentId))
-    adminPayments.byStatus(schoolId, 'partial').forEach((p) => {
-      if (p.remainingAmount > 0) debtStudents.add(p.studentId)
-    })
-
-    // Cars in repair
-    const carsInRepair = adminCars.all(schoolId).filter((c) => c.status === 'repair' || c.status === 'maintenance').length
-
-    // Open problem cases
-    const openProblems = problemCases.open(schoolId).length
-
-    // Overdue (past, not closed)
-    const overdueBookings = bookings.filter((b) => {
-      const slot = db.slots.byId(b.slotId)
-      if (!slot || b.status !== 'active') return false
-      return isBefore(getSlotDateTime(slot), startOfDay(now))
-    })
-
-    // Upcoming exams (next 7 days)
-    const next7Days = addDays(now, 7)
-    const upcomingExams = adminInternalExams.all(schoolId).filter((e) => {
-      if (!e.scheduledDate || e.status !== 'scheduled') return false
-      const d = new Date(e.scheduledDate)
-      return d >= now && d <= next7Days
-    })
-
-    // Documents expiring soon (14 days)
-    const docsExpiring = adminDocuments.expiringSoon(schoolId, 14).length
-
-    // Students without recent booking (more than 14 days since last booking)
-    const studentsWithoutRecentBooking = students.filter((s) => {
-      const studentBookings = bookings.filter((b) => b.studentId === s.id && b.status === 'completed')
-      if (studentBookings.length === 0) return false
-      const lastBooking = studentBookings.sort((a, b) =>
-        new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime()
-      )[0]
-      if (!lastBooking?.updatedAt) return false
-      const lastDate = new Date(lastBooking.updatedAt)
-      return isBefore(lastDate, addDays(now, -14))
-    })
-
-    // Instructor load
-    const instructorLoads = instructors.filter((i) => i.isActive).map((instructor) => {
-      const instructorSlots = slots.filter((s) => s.instructorId === instructor.id && s.date === todayStr)
-      return { instructor, bookedCount: instructorSlots.filter((s) => s.status === 'booked').length, total: instructorSlots.length }
-    })
-    const instructorsIdle = instructorLoads.filter((l) => l.bookedCount === 0 && l.total > 0).length
-    const instructorsOverloaded = instructorLoads.filter((l) => l.bookedCount >= 5).length
-
-    // Next lesson
+    const activeToday = todayBookings.filter((entry) => entry.booking.status === 'active')
     const upcoming = bookings
-      .filter((b) => b.status === 'active' && db.slots.byId(b.slotId))
-      .map((b) => ({ booking: b, slot: db.slots.byId(b.slotId)! }))
-      .filter((e) => e.slot && getSlotDateTime(e.slot) > now)
-      .sort((a, b) => getSlotDateTime(a.slot).getTime() - getSlotDateTime(b.slot).getTime())
+      .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+      .filter((entry): entry is { booking: typeof bookings[number]; slot: NonNullable<ReturnType<typeof db.slots.byId>> } =>
+        Boolean(entry.slot && entry.booking.status === 'active' && getSlotDateTime(entry.slot) > now),
+      )
+      .sort((left, right) => getSlotDateTime(left.slot).getTime() - getSlotDateTime(right.slot).getTime())
+      .slice(0, 7)
 
-    const nextLesson = upcoming[0]
+    const debtStudents = new Set<string>()
+    payments.forEach((payment) => {
+      if ((payment.status === 'overdue' || payment.status === 'partial' || payment.status === 'unpaid') && payment.remainingAmount > 0) {
+        debtStudents.add(payment.studentId)
+      }
+    })
+
+    const overdueAmount = payments.reduce((sum, payment) => {
+      if (payment.status === 'overdue' || payment.status === 'partial' || payment.status === 'unpaid') return sum + payment.remainingAmount
+      return sum
+    }, 0)
+    const paidToday = payments
+      .filter((payment) => payment.paidAt && isSameDay(new Date(payment.paidAt), now))
+      .reduce((sum, payment) => sum + payment.paidAmount, 0)
+
+    const overdueBookings = bookings.filter((booking) => {
+      const slot = db.slots.byId(booking.slotId)
+      return Boolean(slot && booking.status === 'active' && isBefore(getSlotDateTime(slot), startOfDay(now)))
+    }).length
+
+    const instructorLoads = instructors.filter((instructor) => instructor.isActive).map((instructor) => {
+      const ownSlots = todaySlots.filter((slot) => slot.instructorId === instructor.id)
+      const booked = ownSlots.filter((slot) => slot.status === 'booked').length
+      return { instructor, booked, total: ownSlots.length }
+    })
+
+    const next7Days = addDays(now, 7)
+    const examsSoon = adminInternalExams.all(schoolId).filter((exam) => {
+      if (!exam.scheduledDate || exam.status !== 'scheduled') return false
+      const date = new Date(exam.scheduledDate)
+      return date >= now && date <= next7Days
+    }).length
 
     return {
-      lessonsToday,
-      cancelledToday,
-      noShowsToday,
-      freeSlotsToday,
-      debtStudentsCount: debtStudents.size,
-      carsInRepair,
-      openProblems,
-      overdueBookings: overdueBookings.length,
-      upcomingExams: upcomingExams.length,
-      docsExpiring,
-      studentsWithoutRecentBooking: studentsWithoutRecentBooking.length,
-      instructorsIdle,
-      instructorsOverloaded,
-      nextLesson,
-      upcoming: upcoming.slice(0, 5),
-      todaySlots,
-      todayBookings,
+      slots,
+      bookings,
       instructors,
-      branches,
       students,
+      branches,
+      todaySlots,
+      activeToday,
+      upcoming,
+      freeSlotsToday: todaySlots.filter((slot) => slot.status === 'available').length,
+      cancelledToday: todayBookings.filter((entry) => entry.booking.status === 'cancelled').length,
+      noShowsToday: todayBookings.filter((entry) => entry.booking.status === 'no_show').length,
+      debtStudentsCount: debtStudents.size,
+      overdueAmount,
+      paidToday,
+      overdueBookings,
+      carsInRepair: adminCars.all(schoolId).filter((car) => car.status === 'repair' || car.status === 'maintenance').length,
+      docsExpiring: adminDocuments.expiringSoon(schoolId, 14).length,
+      openProblems: problemCases.open(schoolId).length,
+      examsSoon,
+      idleInstructors: instructorLoads.filter((load) => load.total > 0 && load.booked === 0).length,
+      busyInstructors: instructorLoads.filter((load) => load.booked >= 5).length,
     }
   }, [schoolId])
 }
 
-type StatCardProps = {
-  label: string
-  value: number
-  to: string
-  tone?: 'default' | 'danger' | 'warning' | 'success'
-  onClick?: () => void
-}
-
-function StatCard({ label, value, to, tone = 'default', onClick }: StatCardProps) {
-  const navigate = useNavigate()
-  const colors = {
-    default: 'bg-white border-gray-100 text-gray-900',
-    danger: 'bg-red-50 border-red-100 text-red-600',
-    warning: 'bg-amber-50 border-amber-100 text-amber-600',
-    success: 'bg-green-50 border-green-100 text-green-600',
-  }
-  const valueColors = {
-    default: 'text-gray-900',
-    danger: 'text-red-600',
-    warning: 'text-amber-600',
-    success: 'text-green-600',
-  }
-
-  const handleClick = () => {
-    if (onClick) onClick()
-    else navigate(to)
-  }
+function Stat({ label, value, tone = 'muted', to }: { label: string; value: string | number; tone?: 'muted' | 'ok' | 'danger' | 'warning' | 'info'; to: string }) {
+  const toneClass = {
+    muted: '',
+    ok: 'border-[#BFE7CF] bg-[#F7FCF9]',
+    danger: 'border-[#F2B8B5] bg-[#FFF8F7]',
+    warning: 'border-[#F7D58B] bg-[#FFFDF7]',
+    info: 'border-[#BFD1FF] bg-[#F8FAFF]',
+  }[tone]
 
   return (
-    <button
-      onClick={handleClick}
-      className={`rounded-xl border p-3 text-left transition hover:scale-[1.02] active:scale-[0.99] sm:rounded-2xl sm:p-4 ${colors[tone]}`}
-    >
-      <p className={`text-[24px] font-black leading-none sm:text-[28px] ${valueColors[tone]}`}>{value}</p>
-      <p className="mt-1.5 text-[12px] font-semibold text-gray-400">{label}</p>
-    </button>
+    <Link to={to} className={`v-admin-stat transition hover:-translate-y-0.5 hover:border-[#B8C2CC] ${toneClass}`}>
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </Link>
   )
 }
 
-type AttentionItem = {
-  id: string
-  title: string
-  description: string
-  to: string
-  tone: 'danger' | 'warning' | 'info'
+function PriorityCard({ title, text, tone, to }: { title: string; text: string; tone: 'danger' | 'warning' | 'info'; to: string }) {
+  const iconClass = tone === 'danger' ? 'text-[#B42318]' : tone === 'warning' ? 'text-[#A45A00]' : 'text-[#2457C5]'
+  return (
+    <Link to={to} className="flex items-start gap-3 rounded-[10px] border border-[#DCE2E8] bg-white p-4 transition hover:border-[#B8C2CC]">
+      <AlertTriangle className={`mt-0.5 h-5 w-5 shrink-0 ${iconClass}`} />
+      <span className="min-w-0">
+        <span className="block text-[14px] font-black leading-5 text-[#111418]">{title}</span>
+        <span className="mt-1 block text-[13px] font-bold leading-5 text-[#66717D]">{text}</span>
+      </span>
+    </Link>
+  )
 }
 
 export function AdminToday() {
   const school = db.schools.all()[0]
+  const navigate = useNavigate()
 
   if (!school) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-gray-400">Школа не найдена</p>
-      </div>
-    )
+    return <div className="v-admin-empty m-4"><strong>Школа не найдена</strong><span>Проверьте рабочее пространство.</span></div>
   }
 
   const data = useTodayData(school.id)
-
-  const attention: AttentionItem[] = [
-    ...data.overdueBookings > 0 ? [{
-      id: 'overdue',
-      title: 'Прошедшие не закрыты',
-      description: `${data.overdueBookings} занятий нужно отметить проведёнными или отменёнными`,
-      to: `${ADMIN_BASE_PATH}/schedule`,
-      tone: 'danger' as const,
-    }] : [],
-    ...data.debtStudentsCount > 0 ? [{
-      id: 'debt',
-      title: 'Ученики с долгом',
-      description: `${data.debtStudentsCount} учеников с просроченной оплатой`,
-      to: `${ADMIN_BASE_PATH}/payments`,
-      tone: 'danger' as const,
-    }] : [],
-    ...data.carsInRepair > 0 ? [{
-      id: 'cars',
-      title: 'Машины в ремонте',
-      description: `${data.carsInRepair} машин недоступны для записи`,
-      to: `${ADMIN_BASE_PATH}/cars`,
-      tone: 'warning' as const,
-    }] : [],
-    ...data.openProblems > 0 ? [{
-      id: 'problems',
-      title: 'Открытые проблемы',
-      description: `${data.openProblems} ситуаций требуют решения`,
-      to: `${ADMIN_BASE_PATH}/reports`,
-      tone: 'warning' as const,
-    }] : [],
-    ...data.docsExpiring > 0 ? [{
-      id: 'docs',
-      title: 'Документы истекают',
-      description: `${data.docsExpiring} документов истекают в ближайшие 14 дней`,
-      to: `${ADMIN_BASE_PATH}/documents`,
-      tone: 'warning' as const,
-    }] : [],
-    ...data.studentsWithoutRecentBooking > 0 ? [{
-      id: 'inactive',
-      title: 'Ученики без занятий',
-      description: `${data.studentsWithoutRecentBooking} учеников не записывались более 14 дней`,
-      to: `${ADMIN_BASE_PATH}/students`,
-      tone: 'info' as const,
-    }] : [],
-  ]
-
-  const toneStyles = {
-    danger: { bg: 'bg-red-50', border: 'border-red-100', dot: 'bg-red-500', title: 'text-red-600' },
-    warning: { bg: 'bg-amber-50', border: 'border-amber-100', dot: 'bg-amber-500', title: 'text-amber-600' },
-    info: { bg: 'bg-blue-50', border: 'border-blue-100', dot: 'bg-blue-500', title: 'text-blue-600' },
-  }
+  const priorities = [
+    data.overdueBookings > 0 ? { title: 'Закрыть прошедшие занятия', text: `${data.overdueBookings} занятий уже прошли, но не отмечены`, tone: 'danger' as const, to: `${ADMIN_BASE_PATH}/schedule` } : null,
+    data.debtStudentsCount > 0 ? { title: 'Разобрать долги учеников', text: `${data.debtStudentsCount} учеников должны ${money(data.overdueAmount)}`, tone: 'danger' as const, to: `${ADMIN_BASE_PATH}/payments` } : null,
+    data.openProblems > 0 ? { title: 'Открытые проблемы', text: `${data.openProblems} ситуаций ждут решения`, tone: 'warning' as const, to: `${ADMIN_BASE_PATH}/reports` } : null,
+    data.carsInRepair > 0 ? { title: 'Машины недоступны', text: `${data.carsInRepair} машин в ремонте или обслуживании`, tone: 'warning' as const, to: `${ADMIN_BASE_PATH}/cars` } : null,
+    data.docsExpiring > 0 ? { title: 'Документы скоро истекут', text: `${data.docsExpiring} документов проверить за 14 дней`, tone: 'info' as const, to: `${ADMIN_BASE_PATH}/documents` } : null,
+  ].filter(Boolean)
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[12px] font-black uppercase tracking-wider text-gray-400">{school.name}</p>
-            <h1 className="mt-1 text-[32px] font-black tracking-tight text-gray-900 md:text-[40px]">
-              {format(new Date(), 'EEEE, d MMMM', { locale: ru })}
-            </h1>
-          </div>
-          <div className="hidden items-center gap-2 md:flex">
-            <button
-              onClick={() => window.location.href = `${ADMIN_BASE_PATH}/students`}
-              className="rounded-xl bg-gray-900 px-4 py-2.5 text-[13px] font-bold text-white shadow-lg transition hover:bg-gray-800"
-            >
-              + Записать ученика
+    <div className="v-admin-workspace">
+      <section className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+        <div className="v-admin-panel overflow-hidden bg-[#101418] text-white">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 p-5">
+            <div>
+              <p className="text-[13px] font-black uppercase text-white/48">{school.name}</p>
+              <h1 className="mt-2 text-[34px] font-black leading-none text-white md:text-[42px]">
+                {format(new Date(), 'EEEE, d MMMM', { locale: ru })}
+              </h1>
+              <p className="mt-3 max-w-2xl text-[15px] font-bold leading-6 text-white/62">
+                Операционный пульт: расписание, долги, свободные окна и проблемы на сегодня.
+              </p>
+            </div>
+            <button className="v-admin-button bg-white text-[#101418] hover:bg-[#EEF2F5]" onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)}>
+              <CalendarPlus size={16} />
+              Создать окна
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Main stats grid */}
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="занятий сегодня" value={data.lessonsToday} to={`${ADMIN_BASE_PATH}/schedule`} />
-        <StatCard label="свободных окон" value={data.freeSlotsToday} to={`${ADMIN_BASE_PATH}/schedule`} />
-        <StatCard label="неявок" value={data.noShowsToday} to={`${ADMIN_BASE_PATH}/schedule`} tone={data.noShowsToday > 0 ? 'danger' : 'default'} />
-        <StatCard label="отмен сегодня" value={data.cancelledToday} to={`${ADMIN_BASE_PATH}/schedule`} tone={data.cancelledToday > 2 ? 'warning' : 'default'} />
-      </div>
-
-      {/* Second row */}
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="учеников с долгом" value={data.debtStudentsCount} to={`${ADMIN_BASE_PATH}/payments`} tone={data.debtStudentsCount > 0 ? 'danger' : 'default'} />
-        <StatCard label="машин в ремонте" value={data.carsInRepair} to={`${ADMIN_BASE_PATH}/cars`} tone={data.carsInRepair > 0 ? 'warning' : 'default'} />
-        <StatCard label="инструкторов свободно" value={data.instructorsIdle} to={`${ADMIN_BASE_PATH}/instructors`} tone={data.instructorsIdle > 2 ? 'warning' : 'default'} />
-        <StatCard label="проблем открыто" value={data.openProblems} to={`${ADMIN_BASE_PATH}/reports`} tone={data.openProblems > 0 ? 'danger' : 'default'} />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
-        {/* Upcoming lessons */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[18px] font-black text-gray-900">Ближайшие занятия</h2>
-            <a href={`${ADMIN_BASE_PATH}/schedule`} className="text-[13px] font-semibold text-gray-400 hover:text-gray-600">
-              Все →
-            </a>
-          </div>
-
-          {data.upcoming.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
-              <p className="font-semibold text-gray-400">На ближайшие дни записей нет</p>
-              <button
-                onClick={() => window.location.href = `${ADMIN_BASE_PATH}/students`}
-                className="mt-3 text-[13px] font-bold text-gray-900 underline"
-              >
-                Записать ученика
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {data.upcoming.map((entry) => {
-                const instructor = data.instructors.find((i) => i.id === entry.booking.instructorId)
-                const slot = entry.slot
-                return (
-                  <motion.div
-                    key={entry.booking.id}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 transition hover:border-gray-200"
-                  >
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[13px] font-black text-gray-500">
-                      {format(getSlotDateTime(slot), 'HH:mm')}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-gray-900">{entry.booking.studentName}</p>
-                      <p className="text-[13px] font-semibold text-gray-400">
-                        {instructor?.name ?? '—'} · {slot.duration} мин
-                      </p>
-                    </div>
-                    <div className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
-                      entry.booking.status === 'active' ? 'bg-green-50 text-green-600' :
-                      entry.booking.status === 'no_show' ? 'bg-red-50 text-red-500' :
-                      'bg-gray-100 text-gray-500'
-                    }`}>
-                      {entry.booking.status === 'active' ? 'Активна' :
-                       entry.booking.status === 'no_show' ? 'Неявка' : entry.booking.status}
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Attention panel */}
-        <div>
-          <h2 className="mb-3 text-[18px] font-black text-gray-900">Требует внимания</h2>
-
-          {attention.length === 0 ? (
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-50">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+          <div className="grid grid-cols-2 divide-x divide-y divide-white/10 md:grid-cols-4 md:divide-y-0">
+            {[
+              ['занятий', data.activeToday.length],
+              ['свободных окон', data.freeSlotsToday],
+              ['отмен', data.cancelledToday],
+              ['неявок', data.noShowsToday],
+            ].map(([label, value]) => (
+              <div key={label} className="p-5">
+                <strong className="block text-[42px] font-black leading-none text-white">{value}</strong>
+                <span className="mt-2 block text-[12px] font-black uppercase text-white/48">{label}</span>
               </div>
-              <p className="font-bold text-gray-700">Всё в порядке</p>
-              <p className="mt-1 text-[13px] font-semibold text-gray-400">Критичных задач нет</p>
+            ))}
+          </div>
+        </div>
+
+        <aside className="v-admin-panel p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-[18px] font-black text-[#111418]">Деньги сегодня</h2>
+              <p className="v-admin-note mt-1">Оплаты и общий риск по долгам</p>
+            </div>
+            <WalletCards className="h-6 w-6 text-[#157347]" />
+          </div>
+          <div className="mt-5 grid gap-3">
+            <div className="rounded-[10px] bg-[#EAF7EF] p-4">
+              <span className="text-[12px] font-black uppercase text-[#157347]">Оплачено сегодня</span>
+              <strong className="mt-1 block text-[28px] font-black leading-none text-[#111418]">{money(data.paidToday)}</strong>
+            </div>
+            <div className="rounded-[10px] bg-[#FFF3F2] p-4">
+              <span className="text-[12px] font-black uppercase text-[#B42318]">Долг учеников</span>
+              <strong className="mt-1 block text-[28px] font-black leading-none text-[#111418]">{money(data.overdueAmount)}</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Stat label="учеников с долгом" value={data.debtStudentsCount} tone={data.debtStudentsCount ? 'danger' : 'muted'} to={`${ADMIN_BASE_PATH}/payments`} />
+        <Stat label="проблем открыто" value={data.openProblems} tone={data.openProblems ? 'warning' : 'muted'} to={`${ADMIN_BASE_PATH}/reports`} />
+        <Stat label="экзаменов за 7 дней" value={data.examsSoon} tone="info" to={`${ADMIN_BASE_PATH}/exams`} />
+        <Stat label="инструкторов без загрузки" value={data.idleInstructors} tone={data.idleInstructors > 1 ? 'warning' : 'muted'} to={`${ADMIN_BASE_PATH}/instructors`} />
+      </section>
+
+      <section className="mt-4 grid gap-4 lg:grid-cols-[1fr_390px]">
+        <div className="v-admin-panel overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-[#DCE2E8] p-4">
+            <div>
+              <h2 className="text-[18px] font-black text-[#111418]">Ближайшие занятия</h2>
+              <p className="v-admin-note mt-1">Кто, куда и во сколько едет дальше</p>
+            </div>
+            <Link to={`${ADMIN_BASE_PATH}/schedule`} className="v-admin-button-secondary">
+              Все
+              <ExternalLink size={15} />
+            </Link>
+          </div>
+          {data.upcoming.length === 0 ? (
+            <div className="v-admin-empty m-4">
+              <CheckCircle2 className="mb-2 h-8 w-8 text-[#157347]" />
+              <strong>Ближайших занятий нет</strong>
+              <span>Создайте окна или запишите ученика из расписания.</span>
             </div>
           ) : (
-            <div className="space-y-2">
-              {attention.map((item) => {
-                const style = toneStyles[item.tone]
+            <div className="divide-y divide-[#EEF2F5]">
+              {data.upcoming.map(({ booking, slot }) => {
+                const instructor = data.instructors.find((item) => item.id === booking.instructorId)
+                const branch = data.branches.find((item) => item.id === booking.branchId)
                 return (
                   <button
-                    key={item.id}
-                    onClick={() => window.location.href = item.to}
-                    className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition hover:scale-[1.01] active:scale-[0.99] ${style.bg} ${style.border}`}
+                    key={booking.id}
+                    onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)}
+                    className="grid w-full grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-4 p-4 text-left transition hover:bg-[#F8FAFC]"
                   >
-                    <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${style.dot}`} />
-                    <div>
-                      <p className={`font-bold ${style.title}`}>{item.title}</p>
-                      <p className="mt-0.5 text-[13px] font-semibold text-gray-500">{item.description}</p>
-                    </div>
+                    <span className="rounded-[10px] bg-[#EEF2F5] px-3 py-2 text-center">
+                      <span className="block text-[17px] font-black text-[#111418]">{format(getSlotDateTime(slot), 'HH:mm')}</span>
+                      <span className="block text-[11px] font-black text-[#66717D]">{format(getSlotDateTime(slot), 'dd.MM')}</span>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[15px] font-black text-[#111418]">{booking.studentName}</span>
+                      <span className="mt-1 block truncate text-[13px] font-bold text-[#66717D]">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
+                    </span>
+                    <span className="v-admin-pill v-tone-info hidden sm:inline-flex">{slot.duration} мин</span>
                   </button>
                 )
               })}
             </div>
           )}
+        </div>
 
-          {/* Quick actions */}
-          <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-4">
-            <h3 className="mb-3 text-[14px] font-bold text-gray-700">Быстрые действия</h3>
-            <div className="space-y-2">
+        <aside className="grid gap-4">
+          <div className="v-admin-panel p-4">
+            <h2 className="text-[18px] font-black text-[#111418]">Требует внимания</h2>
+            <div className="mt-3 grid gap-2">
+              {priorities.length ? priorities.map((item) => (
+                <PriorityCard key={item!.title} {...item!} />
+              )) : (
+                <div className="rounded-[10px] bg-[#EAF7EF] p-4">
+                  <strong className="block text-[15px] font-black text-[#111418]">Критичных задач нет</strong>
+                  <span className="mt-1 block text-[13px] font-bold text-[#157347]">День выглядит спокойно.</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="v-admin-panel p-4">
+            <h2 className="text-[18px] font-black text-[#111418]">Быстрые действия</h2>
+            <div className="mt-3 grid gap-2">
               {[
-                { label: 'Записать ученика', to: `${ADMIN_BASE_PATH}/students` },
-                { label: 'Создать окна', to: `${ADMIN_BASE_PATH}/schedule` },
-                { label: 'Добавить оплату', to: `${ADMIN_BASE_PATH}/payments` },
-                { label: 'Открыть журнал', to: `${ADMIN_BASE_PATH}/reports` },
-              ].map((action) => (
-                <a
-                  key={action.label}
-                  href={action.to}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
-                >
-                  <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
-                  {action.label}
-                </a>
+                ['Записать ученика', `${ADMIN_BASE_PATH}/students`],
+                ['Создать свободные окна', `${ADMIN_BASE_PATH}/schedule`],
+                ['Принять оплату', `${ADMIN_BASE_PATH}/payments`],
+                ['Открыть страницу школы', `/school/${school.slug}`],
+              ].map(([label, to]) => (
+                <Link key={label} to={to} className="v-admin-button-secondary justify-start">
+                  <Clock3 size={15} />
+                  {label}
+                </Link>
               ))}
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
+      </section>
     </div>
   )
 }

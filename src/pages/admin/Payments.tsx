@@ -1,20 +1,11 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { CreditCard, Plus } from 'lucide-react'
 import { db } from '../../services/storage'
-import { adminPayments, getDebtForStudent, createAuditEntry } from '../../services/adminStorage'
+import { adminPayments, createAuditEntry } from '../../services/adminStorage'
 import { Modal } from '../../components/ui/Modal'
-import type { Payment, PaymentStatus, PaymentMethod } from '../../types'
-
-const STATUS_COLORS: Record<PaymentStatus, string> = {
-  paid: 'bg-green-50 text-green-600',
-  partial: 'bg-amber-50 text-amber-600',
-  unpaid: 'bg-red-50 text-red-500',
-  overdue: 'bg-red-100 text-red-600',
-  refund: 'bg-purple-50 text-purple-600',
-  frozen: 'bg-blue-50 text-blue-600',
-  disputed: 'bg-orange-50 text-orange-600',
-}
+import type { Payment, PaymentMethod, PaymentStatus } from '../../types'
 
 const STATUS_LABELS: Record<PaymentStatus, string> = {
   paid: 'Оплачен',
@@ -34,145 +25,133 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   other: 'Другое',
 }
 
-type FilterTab = 'all' | 'overdue' | 'partial' | 'paid' | 'unpaid'
+type FilterTab = 'all' | 'overdue' | 'partial' | 'unpaid' | 'paid'
+
+function money(value: number) {
+  return `${value.toLocaleString('ru-RU')} ₽`
+}
+
+function statusTone(status: PaymentStatus) {
+  if (status === 'paid') return 'v-tone-ok'
+  if (status === 'partial' || status === 'frozen') return 'v-tone-warning'
+  if (status === 'refund' || status === 'disputed') return 'v-tone-info'
+  return 'v-tone-danger'
+}
 
 export function AdminPayments() {
   const school = db.schools.all()[0]
   const [filter, setFilter] = useState<FilterTab>('all')
   const [showAdd, setShowAdd] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 
-  const data = useMemo(() => {
+  const rows = useMemo(() => {
     if (!school) return []
-    return adminPayments.all(school.id).map((payment) => {
-      const student = db.students.byId(payment.studentId)
-      return { payment, student }
-    })
+    return adminPayments.all(school.id).map((payment) => ({ payment, student: db.students.byId(payment.studentId) }))
   }, [school?.id])
-
-  const filtered = useMemo(() => {
-    switch (filter) {
-      case 'overdue': return data.filter((d) => d.payment.status === 'overdue')
-      case 'partial': return data.filter((d) => d.payment.status === 'partial')
-      case 'paid': return data.filter((d) => d.payment.status === 'paid')
-      case 'unpaid': return data.filter((d) => d.payment.status === 'unpaid')
-      default: return data
-    }
-  }, [data, filter])
 
   const totals = useMemo(() => {
-    const allPayments = adminPayments.all(school?.id ?? '')
-    const totalDebt = allPayments.reduce((sum, p) => {
-      if (p.status === 'overdue' || p.status === 'partial') return sum + p.remainingAmount
+    const paid = rows.reduce((sum, row) => sum + row.payment.paidAmount, 0)
+    const debt = rows.reduce((sum, row) => {
+      if (row.payment.status === 'overdue' || row.payment.status === 'partial' || row.payment.status === 'unpaid') return sum + row.payment.remainingAmount
       return sum
     }, 0)
-    const totalPaid = allPayments.reduce((sum, p) => sum + p.paidAmount, 0)
-    const overdueCount = allPayments.filter((p) => p.status === 'overdue').length
-    return { totalDebt, totalPaid, overdueCount }
-  }, [school?.id])
+    const overdue = rows.filter((row) => row.payment.status === 'overdue')
+    const unpaid = rows.filter((row) => row.payment.status === 'unpaid')
+    return { paid, debt, overdueCount: overdue.length, unpaidCount: unpaid.length }
+  }, [rows])
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return rows
+    return rows.filter((row) => row.payment.status === filter)
+  }, [rows, filter])
 
   const tabs: { id: FilterTab; label: string; count?: number }[] = [
-    { id: 'all', label: 'Все' },
+    { id: 'all', label: 'Все', count: rows.length },
     { id: 'overdue', label: 'Просрочка', count: totals.overdueCount || undefined },
     { id: 'partial', label: 'Частично' },
+    { id: 'unpaid', label: 'Не оплачены', count: totals.unpaidCount || undefined },
     { id: 'paid', label: 'Оплаченные' },
-    { id: 'unpaid', label: 'Не оплачены' },
   ]
+
+  if (!school) return null
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Оплаты</h1>
-        <div className="ml-auto flex items-center gap-3">
-          <div className="flex gap-4">
-            <div className="text-right">
-              <p className="text-[11px] font-semibold text-gray-400">Общий долг</p>
-              <p className="text-[18px] font-black text-red-500">{totals.totalDebt.toLocaleString('ru-RU')} ₽</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] font-semibold text-gray-400">Оплачено</p>
-              <p className="text-[18px] font-black text-green-600">{totals.totalPaid.toLocaleString('ru-RU')} ₽</p>
-            </div>
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Оплаты</h1>
+          <p className="v-admin-note mt-1">Долги, частичные оплаты и поступления</p>
+        </div>
+        <div className="ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-3">
+          <div className="rounded-[10px] bg-[#EAF7EF] px-4 py-2">
+            <p className="text-[11px] font-black uppercase text-[#157347]">Оплачено</p>
+            <p className="text-[18px] font-black text-[#111418]">{money(totals.paid)}</p>
           </div>
-          <button onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
-            + Принять оплату
+          <div className="rounded-[10px] bg-[#FFF3F2] px-4 py-2">
+            <p className="text-[11px] font-black uppercase text-[#B42318]">Долг</p>
+            <p className="text-[18px] font-black text-[#111418]">{money(totals.debt)}</p>
+          </div>
+          <button onClick={() => setShowAdd(true)} className="v-admin-button">
+            <Plus size={16} />
+            Принять оплату
           </button>
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex flex-shrink-0 gap-1 border-b border-gray-100 bg-white px-4 md:px-6">
+      <div className="v-tab-row">
         {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id)}
-            className={`relative border-b-2 px-3 py-3 text-[13px] font-semibold transition ${
-              filter === tab.id ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
+          <button key={tab.id} onClick={() => setFilter(tab.id)} className={`v-tab ${filter === tab.id ? 'v-tab-active' : ''}`}>
             {tab.label}
-            {tab.count !== undefined && (
-              <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
-                filter === tab.id ? 'bg-gray-900 text-white' : 'bg-red-100 text-red-500'
-              }`}>{tab.count}</span>
-            )}
+            {tab.count !== undefined ? <span className="ml-2 rounded-full bg-[#EEF2F5] px-2 py-0.5 text-[11px] text-[#59626D]">{tab.count}</span> : null}
           </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center"><p className="text-gray-400">Записей не найдено</p></div>
+          <div className="v-admin-empty">
+            <CreditCard className="mb-2 h-8 w-8 text-[#8D98A4]" />
+            <strong>Платежей не найдено</strong>
+            <span>Поменяйте фильтр или примите новую оплату.</span>
+          </div>
         ) : (
-          <table className="w-full min-w-[700px]">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50 text-left text-[12px] font-bold uppercase tracking-wider text-gray-400">
-                <th className="px-4 py-3">Ученик</th>
-                <th className="px-4 py-3">Описание</th>
-                <th className="px-4 py-3">Сумма</th>
-                <th className="px-4 py-3">Оплачено</th>
-                <th className="px-4 py-3">Долг</th>
-                <th className="px-4 py-3">Статус</th>
-                <th className="px-4 py-3">Метод</th>
-                <th className="px-4 py-3">Дата</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(({ payment, student }) => (
-                <tr key={payment.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
-                  <td className="px-4 py-3.5">
-                    <p className="font-bold text-gray-900">{student?.name ?? '—'}</p>
-                    {student?.phone && <p className="text-[12px] font-semibold text-gray-400">{student.phone}</p>}
-                  </td>
-                  <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-600">{payment.description}</td>
-                  <td className="px-4 py-3.5 text-[14px] font-bold text-gray-900">{payment.amount.toLocaleString('ru-RU')} ₽</td>
-                  <td className="px-4 py-3.5 text-[14px] font-bold text-green-600">{payment.paidAmount.toLocaleString('ru-RU')} ₽</td>
-                  <td className="px-4 py-3.5">
-                    {payment.remainingAmount > 0 ? (
-                      <span className="text-[14px] font-bold text-red-500">{payment.remainingAmount.toLocaleString('ru-RU')} ₽</span>
-                    ) : (
-                      <span className="text-[13px] font-semibold text-gray-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${STATUS_COLORS[payment.status]}`}>
-                      {STATUS_LABELS[payment.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-500">{payment.method ? METHOD_LABELS[payment.method] : '—'}</td>
-                  <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-400">
-                    {payment.paidAt ? format(new Date(payment.paidAt), 'd MMM yyyy', { locale: ru }) : '—'}
-                  </td>
+          <div className="v-admin-panel overflow-hidden">
+            <table className="v-admin-table min-w-[940px]">
+              <thead>
+                <tr>
+                  <th>Ученик</th>
+                  <th>Назначение</th>
+                  <th>Сумма</th>
+                  <th>Оплачено</th>
+                  <th>Долг</th>
+                  <th>Статус</th>
+                  <th>Способ</th>
+                  <th>Дата</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map(({ payment, student }) => (
+                  <tr key={payment.id}>
+                    <td>
+                      <span className="block text-[15px] font-black text-[#111418]">{student?.name ?? 'Ученик не найден'}</span>
+                      {student?.phone ? <span className="mt-0.5 block text-[12px] font-bold text-[#66717D]">{student.phone}</span> : null}
+                    </td>
+                    <td>{payment.description}</td>
+                    <td className="font-black text-[#111418]">{money(payment.amount)}</td>
+                    <td className="font-black text-[#157347]">{money(payment.paidAmount)}</td>
+                    <td>{payment.remainingAmount > 0 ? <span className="v-admin-pill v-tone-danger">{money(payment.remainingAmount)}</span> : <span className="v-admin-pill v-tone-ok">нет</span>}</td>
+                    <td><span className={`v-admin-pill ${statusTone(payment.status)}`}>{STATUS_LABELS[payment.status]}</span></td>
+                    <td>{payment.method ? METHOD_LABELS[payment.method] : <span className="text-[#8D98A4]">не указан</span>}</td>
+                    <td>{payment.paidAt ? format(new Date(payment.paidAt), 'd MMM yyyy', { locale: ru }) : <span className="text-[#8D98A4]">ожидается</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Принять оплату" size="md">
-        <AddPaymentForm schoolId={school?.id ?? ''} onClose={() => setShowAdd(false)} />
+        <AddPaymentForm schoolId={school.id} onClose={() => setShowAdd(false)} />
       </Modal>
     </div>
   )
@@ -187,59 +166,65 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
   const [status, setStatus] = useState<PaymentStatus>('paid')
 
   const handleSubmit = () => {
-    if (!studentId || !amount) return
+    const parsed = Number.parseInt(amount, 10)
+    if (!studentId || !Number.isFinite(parsed) || parsed <= 0) return
     const payment: Payment = {
       id: `pay_${Date.now()}`,
       schoolId,
       studentId,
-      amount: parseInt(amount),
-      paidAmount: status === 'paid' ? parseInt(amount) : 0,
-      remainingAmount: status === 'paid' ? 0 : parseInt(amount),
+      amount: parsed,
+      paidAmount: status === 'paid' ? parsed : 0,
+      remainingAmount: status === 'paid' ? 0 : parsed,
       status,
       method,
-      description: description || 'Оплата обучения',
+      description: description.trim() || 'Оплата обучения',
       paidAt: status === 'paid' ? new Date().toISOString() : undefined,
       createdAt: new Date().toISOString(),
     }
     adminPayments.upsert(payment)
-    createAuditEntry(schoolId, 'admin', 'Администратор', 'payment_added', 'payment', payment.id, `Принята оплата ${payment.amount} ₽`)
+    createAuditEntry(schoolId, 'admin', 'Администратор', 'payment_added', 'payment', payment.id, `Принята оплата ${money(payment.amount)}`)
     onClose()
   }
 
   return (
     <div className="space-y-4 p-5">
-      <div>
-        <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Ученик</label>
-        <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 transition focus:border-gray-900 focus:bg-white focus:outline-none">
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Ученик</span>
+        <select value={studentId} onChange={(event) => setStudentId(event.target.value)} className="v-admin-input w-full">
           <option value="">Выберите ученика</option>
-          {students.map((s) => <option key={s.id} value={s.id}>{s.name} — {s.phone}</option>)}
+          {students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.phone}</option>)}
         </select>
-      </div>
-      <div>
-        <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Сумма (₽)</label>
-        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="35000" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Способ</label>
-          <select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 transition focus:border-gray-900 focus:bg-white focus:outline-none">
-            <option value="cash">Наличные</option><option value="card">Карта</option><option value="transfer">Перевод</option><option value="receipt">Квитанция</option>
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Сумма</span>
+        <input type="number" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="35000" className="v-admin-input w-full" />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Способ</span>
+          <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)} className="v-admin-input w-full">
+            <option value="cash">Наличные</option>
+            <option value="card">Карта</option>
+            <option value="transfer">Перевод</option>
+            <option value="receipt">Квитанция</option>
           </select>
-        </div>
-        <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Статус</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value as PaymentStatus)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 transition focus:border-gray-900 focus:bg-white focus:outline-none">
-            <option value="paid">Оплачен</option><option value="partial">Частично</option><option value="unpaid">Не оплачен</option>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Статус</span>
+          <select value={status} onChange={(event) => setStatus(event.target.value as PaymentStatus)} className="v-admin-input w-full">
+            <option value="paid">Оплачен</option>
+            <option value="partial">Частично</option>
+            <option value="unpaid">Не оплачен</option>
           </select>
-        </div>
+        </label>
       </div>
-      <div>
-        <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Описание</label>
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Оплата за обучение" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" />
-      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Описание</span>
+        <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Оплата за обучение" className="v-admin-input w-full" />
+      </label>
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">Отмена</button>
-        <button onClick={handleSubmit} className="flex-1 rounded-xl bg-gray-900 py-2.5 text-[13px] font-bold text-white transition hover:bg-gray-800">Сохранить</button>
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </div>
   )
