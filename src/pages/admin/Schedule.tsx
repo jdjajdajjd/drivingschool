@@ -7,7 +7,7 @@ import { getSlotDateTime } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import { createAuditEntry } from '../../services/adminStorage'
-import type { Booking, Slot } from '../../types'
+import type { Booking, Branch, Instructor, Slot } from '../../types'
 
 type ViewMode = 'day' | 'week'
 
@@ -29,6 +29,7 @@ export function AdminSchedule() {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false)
   const [rescheduleDate, setRescheduleDate] = useState('')
   const [rescheduleTime, setRescheduleTime] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const data = useMemo(() => {
     if (!school) return { slots: [] as Slot[], bookings: [] as Booking[], instructors: db.instructors.all(), branches: db.branches.all() }
@@ -167,7 +168,7 @@ export function AdminSchedule() {
               </button>
             ))}
           </div>
-          <button className="v-admin-button">
+          <button onClick={() => setShowCreateModal(true)} className="v-admin-button">
             <Plus size={16} />
             Создать окна
           </button>
@@ -236,6 +237,15 @@ export function AdminSchedule() {
         </div>
       </div>
 
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="Создать окно" size="md">
+        <CreateSlotForm
+          schoolId={school.id}
+          instructors={data.instructors}
+          branches={data.branches}
+          onClose={() => setShowCreateModal(false)}
+        />
+      </Modal>
+
       <Modal open={Boolean(selectedSlot)} onClose={() => setSelectedSlotId(null)} title="Занятие" size="sm">
         {selectedSlot ? (
           <div className="space-y-4 p-5">
@@ -290,6 +300,78 @@ export function AdminSchedule() {
           <div className="flex gap-2"><button onClick={() => setShowRescheduleModal(false)} className="v-admin-button-secondary flex-1">Назад</button><button onClick={handleReschedule} className="v-admin-button flex-1">Перенести</button></div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function CreateSlotForm({
+  schoolId,
+  instructors,
+  branches,
+  onClose,
+}: {
+  schoolId: string
+  instructors: Instructor[]
+  branches: Branch[]
+  onClose: () => void
+}) {
+  const [instructorId, setInstructorId] = useState(instructors[0]?.id ?? '')
+  const [branchId, setBranchId] = useState(branches[0]?.id ?? '')
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [time, setTime] = useState('09:00')
+  const [duration, setDuration] = useState('90')
+
+  const handleSubmit = () => {
+    const parsedDuration = Number(duration)
+    if (!schoolId || !instructorId || !branchId || !date || !time || !Number.isFinite(parsedDuration)) return
+    const slot: Slot = {
+      id: `slot_${Date.now()}`,
+      schoolId,
+      instructorId,
+      branchId,
+      date,
+      time,
+      duration: parsedDuration,
+      status: 'available',
+      createdAt: new Date().toISOString(),
+    }
+    db.slots.upsert(slot)
+    createAuditEntry(schoolId, 'admin', 'Администратор', 'slot_created', 'slot', slot.id, `Создано окно ${date} ${time}`)
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <div>
+        <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Инструктор</label>
+        <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className="v-admin-input w-full">
+          {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Филиал</label>
+        <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+        </select>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Дата</label>
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="v-admin-input w-full" />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Время</label>
+          <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="v-admin-input w-full" />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Минут</label>
+          <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Создать</button>
+      </div>
     </div>
   )
 }

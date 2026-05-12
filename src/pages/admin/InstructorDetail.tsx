@@ -5,14 +5,15 @@ import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminCars } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-
-const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+import { Modal } from '../../components/ui/Modal'
+import type { Instructor, Transmission } from '../../types'
 
 export function AdminInstructorDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const school = db.schools.all()[0]
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const [showEdit, setShowEdit] = useState(false)
 
   const data = useMemo(() => {
     if (!school || !id) return null
@@ -33,16 +34,15 @@ export function AdminInstructorDetail() {
     const weekAvailable = weekSlots.reduce((sum, day) => sum + day.filter((s) => s.status === 'available').length, 0)
     const totalCompleted = bookings.filter((b) => b.status === 'completed').length
     const totalNoShow = bookings.filter((b) => b.status === 'no_show').length
-    const totalCancelled = bookings.filter((b) => b.status === 'cancelled').length
 
-    return { instructor, car, branch, slots, bookings, students, weekSlots, weekDays, weekBooked, weekAvailable, totalCompleted, totalNoShow, totalCancelled }
+    return { instructor, car, branch, slots, bookings, students, weekSlots, weekDays, weekBooked, weekAvailable, totalCompleted, totalNoShow }
   }, [school?.id, id, weekStart])
 
   if (!data) {
     return <div className="flex h-full items-center justify-center"><p className="text-gray-400">Инструктор не найден</p></div>
   }
 
-  const { instructor, car, branch, students, weekSlots, weekDays, weekBooked, weekAvailable, totalCompleted, totalNoShow, totalCancelled } = data
+  const { instructor, car, branch, students, weekSlots, weekDays, weekBooked, weekAvailable, totalCompleted, totalNoShow } = data
 
   return (
     <div className="overflow-y-auto">
@@ -61,7 +61,7 @@ export function AdminInstructorDetail() {
             <h1 className="text-[22px] font-black text-gray-900">{instructor.name}</h1>
             <p className="text-[13px] font-semibold text-gray-400">{instructor.phone}</p>
           </div>
-          <button className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+          <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
             Редактировать
           </button>
         </div>
@@ -85,7 +85,8 @@ export function AdminInstructorDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
+          <div className="overflow-x-auto pb-1">
+          <div className="grid min-w-[720px] grid-cols-7 gap-2">
             {weekDays.map((day, idx) => {
               const daySlots = weekSlots[idx]
               const booked = daySlots.filter((s) => s.status === 'booked').length
@@ -110,9 +111,10 @@ export function AdminInstructorDetail() {
               )
             })}
           </div>
+          </div>
 
           {/* Weekly summary */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
               { label: 'Занято на неделе', value: weekBooked, color: 'text-blue-600' },
               { label: 'Свободно на неделе', value: weekAvailable, color: 'text-green-600' },
@@ -166,6 +168,69 @@ export function AdminInstructorDetail() {
             </div>
           )}
         </div>
+      </div>
+
+      <Modal open={showEdit} onClose={() => setShowEdit(false)} title="Редактировать инструктора" size="md">
+        <InstructorEditForm schoolId={school.id} instructor={instructor} onClose={() => setShowEdit(false)} />
+      </Modal>
+    </div>
+  )
+}
+
+function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: string; instructor: Instructor; onClose: () => void }) {
+  const branches = db.branches.bySchool(schoolId)
+  const [name, setName] = useState(instructor.name)
+  const [phone, setPhone] = useState(instructor.phone)
+  const [email, setEmail] = useState(instructor.email)
+  const [branchId, setBranchId] = useState(instructor.branchId)
+  const [category, setCategory] = useState(instructor.categories[0] ?? 'B')
+  const [transmission, setTransmission] = useState<Transmission>(instructor.transmission ?? 'auto')
+  const [experience, setExperience] = useState(String(instructor.experience))
+
+  const handleSubmit = () => {
+    if (!name.trim() || !phone.trim() || !branchId) return
+    const initials = name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || instructor.avatarInitials
+    db.instructors.upsert({
+      ...instructor,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      branchId,
+      categories: [category.trim() || 'B'],
+      transmission,
+      experience: Number(experience) || 0,
+      avatarInitials: initials,
+    })
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <input value={name} onChange={(event) => setName(event.target.value)} className="v-admin-input w-full" placeholder="ФИО" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} className="v-admin-input w-full" placeholder="Телефон" />
+        <input value={email} onChange={(event) => setEmail(event.target.value)} className="v-admin-input w-full" placeholder="Email" />
+      </div>
+      <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+        {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+      </select>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <input value={category} onChange={(event) => setCategory(event.target.value)} className="v-admin-input w-full" placeholder="Категория" />
+        <select value={transmission} onChange={(event) => setTransmission(event.target.value as Transmission)} className="v-admin-input w-full">
+          <option value="auto">Автомат</option>
+          <option value="manual">Механика</option>
+        </select>
+        <input type="number" min="0" value={experience} onChange={(event) => setExperience(event.target.value)} className="v-admin-input w-full" placeholder="Стаж" />
+      </div>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </div>
   )

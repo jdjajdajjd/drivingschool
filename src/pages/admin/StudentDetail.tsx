@@ -6,8 +6,7 @@ import { db } from '../../services/storage'
 import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, studentProgress, getDebtForStudent, createAuditEntry } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import type { TrainingStage } from '../../types'
-import { motion } from 'framer-motion'
+import type { Document, DocumentStatus, DocumentType, Payment, PaymentMethod, PaymentStatus, Student, TrainingStage } from '../../types'
 
 const STAGE_LABELS: Record<string, string> = {
   new_request: 'Новая заявка',
@@ -59,7 +58,8 @@ export function AdminStudentDetail() {
   const school = db.schools.all()[0]
   const [showAddPayment, setShowAddPayment] = useState(false)
   const [showAddDocument, setShowAddDocument] = useState(false)
-  const [note, setNote] = useState('')
+  const [showEdit, setShowEdit] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
 
   const data = useMemo(() => {
     if (!school || !id) return null
@@ -100,6 +100,13 @@ export function AdminStudentDetail() {
     !documents.some((d) => d.type === 'medical_certificate' && d.status !== 'verified') &&
     !documents.some((d) => d.type === 'contract' && d.status !== 'verified')
 
+  const currentNote = note ?? student.notes ?? ''
+
+  const saveNote = () => {
+    db.students.upsert({ ...student, notes: currentNote })
+    createAuditEntry(school.id, 'admin', 'Администратор', 'student_note', 'student', student.id, `Обновлена заметка ученика ${student.name}`)
+  }
+
   return (
     <div className="overflow-y-auto">
       <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
@@ -112,7 +119,7 @@ export function AdminStudentDetail() {
           <div className="flex-1">
             <h1 className="text-[22px] font-black text-gray-900">{student.name}</h1>
           </div>
-          <button className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+          <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
             Редактировать
           </button>
         </div>
@@ -288,7 +295,10 @@ export function AdminStudentDetail() {
               {canGoToGIBDD && (
                 <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-4 text-center">
                   <p className="font-bold text-green-700">✓ Ученик готов к экзамену ГИБДД</p>
-                  <button className="mt-2 rounded-lg bg-green-600 px-4 py-2 text-[13px] font-bold text-white">
+                  <button
+                    onClick={() => adminGIBDDExams.upsert({ id: `gibdd_${Date.now()}`, schoolId: school.id, studentId: student.id, attemptNumber: gibddExams.length + 1, status: 'scheduled', createdAt: new Date().toISOString() })}
+                    className="mt-2 rounded-lg bg-green-600 px-4 py-2 text-[13px] font-bold text-white"
+                  >
                     Записать на экзамен
                   </button>
                 </div>
@@ -365,17 +375,185 @@ export function AdminStudentDetail() {
           <div className="rounded-2xl border border-gray-100 bg-white p-5">
             <h3 className="mb-3 text-[14px] font-bold text-gray-900">Заметки</h3>
             <textarea
-              value={note}
+              value={currentNote}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Добавьте заметку..."
               rows={3}
               className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-[13px] font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-900 focus:bg-white focus:outline-none"
             />
-            <button className="mt-2 w-full rounded-xl border border-gray-200 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            <button onClick={saveNote} className="mt-2 w-full rounded-xl border border-gray-200 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
               Сохранить заметку
             </button>
           </div>
         </div>
+      </div>
+
+      <Modal open={showEdit} onClose={() => setShowEdit(false)} title="Редактировать ученика" size="md">
+        <StudentEditForm schoolId={school.id} student={student} onClose={() => setShowEdit(false)} />
+      </Modal>
+
+      <Modal open={showAddPayment} onClose={() => setShowAddPayment(false)} title="Добавить оплату" size="md">
+        <PaymentForm schoolId={school.id} student={student} onClose={() => setShowAddPayment(false)} />
+      </Modal>
+
+      <Modal open={showAddDocument} onClose={() => setShowAddDocument(false)} title="Добавить документ" size="md">
+        <DocumentForm schoolId={school.id} student={student} onClose={() => setShowAddDocument(false)} />
+      </Modal>
+    </div>
+  )
+}
+
+function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; student: Student; onClose: () => void }) {
+  const branches = db.branches.bySchool(schoolId)
+  const instructors = db.instructors.bySchool(schoolId)
+  const [name, setName] = useState(student.name)
+  const [phone, setPhone] = useState(student.phone)
+  const [email, setEmail] = useState(student.email)
+  const [stage, setStage] = useState<TrainingStage>(student.trainingStage ?? 'new_request')
+  const [branchId, setBranchId] = useState(student.assignedBranchId ?? branches[0]?.id ?? '')
+  const [instructorId, setInstructorId] = useState(student.assignedInstructorId ?? '')
+  const [category, setCategory] = useState(student.categoryCodes?.[0] ?? 'B')
+
+  const handleSubmit = () => {
+    if (!name.trim() || !phone.trim()) return
+    db.students.upsert({
+      ...student,
+      name: name.trim(),
+      phone: phone.trim(),
+      normalizedPhone: phone.replace(/\D/g, ''),
+      email: email.trim(),
+      trainingStage: stage,
+      assignedBranchId: branchId || undefined,
+      assignedInstructorId: instructorId || undefined,
+      categoryCodes: category ? [category] : [],
+    })
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <input value={name} onChange={(event) => setName(event.target.value)} className="v-admin-input w-full" placeholder="ФИО" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} className="v-admin-input w-full" placeholder="Телефон" />
+        <input value={email} onChange={(event) => setEmail(event.target.value)} className="v-admin-input w-full" placeholder="Email" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <select value={stage} onChange={(event) => setStage(event.target.value as TrainingStage)} className="v-admin-input w-full">
+          {Object.keys(STAGE_LABELS).map((key) => <option key={key} value={key}>{STAGE_LABELS[key]}</option>)}
+        </select>
+        <input value={category} onChange={(event) => setCategory(event.target.value)} className="v-admin-input w-full" placeholder="Категория" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+          <option value="">Без филиала</option>
+          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+        </select>
+        <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className="v-admin-input w-full">
+          <option value="">Без инструктора</option>
+          {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+        </select>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+      </div>
+    </div>
+  )
+}
+
+function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student: Student; onClose: () => void }) {
+  const [amount, setAmount] = useState('5000')
+  const [paidAmount, setPaidAmount] = useState('5000')
+  const [description, setDescription] = useState('Оплата обучения')
+  const [status, setStatus] = useState<PaymentStatus>('paid')
+  const [method, setMethod] = useState<PaymentMethod>('card')
+
+  const handleSubmit = () => {
+    const total = Number(amount)
+    const paid = Number(paidAmount)
+    if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(paid)) return
+    const payment: Payment = {
+      id: `pay_${Date.now()}`,
+      schoolId,
+      studentId: student.id,
+      amount: total,
+      paidAmount: paid,
+      remainingAmount: Math.max(total - paid, 0),
+      status,
+      method,
+      description,
+      createdById: 'admin',
+      createdAt: new Date().toISOString(),
+    }
+    adminPayments.upsert(payment)
+    createAuditEntry(schoolId, 'admin', 'Администратор', 'payment_added', 'payment', payment.id, `Добавлена оплата ${student.name}: ${paid} ₽`)
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <input value={description} onChange={(event) => setDescription(event.target.value)} className="v-admin-input w-full" placeholder="Назначение" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <input type="number" min="0" value={amount} onChange={(event) => setAmount(event.target.value)} className="v-admin-input w-full" placeholder="Сумма" />
+        <input type="number" min="0" value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} className="v-admin-input w-full" placeholder="Оплачено" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <select value={status} onChange={(event) => setStatus(event.target.value as PaymentStatus)} className="v-admin-input w-full">
+          <option value="paid">Оплачено</option>
+          <option value="partial">Частично</option>
+          <option value="unpaid">Не оплачено</option>
+          <option value="overdue">Просрочено</option>
+        </select>
+        <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)} className="v-admin-input w-full">
+          <option value="card">Карта</option>
+          <option value="cash">Наличные</option>
+          <option value="transfer">Перевод</option>
+          <option value="receipt">Квитанция</option>
+        </select>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+      </div>
+    </div>
+  )
+}
+
+function DocumentForm({ schoolId, student, onClose }: { schoolId: string; student: Student; onClose: () => void }) {
+  const [type, setType] = useState<DocumentType>('contract')
+  const [status, setStatus] = useState<DocumentStatus>('uploaded')
+
+  const handleSubmit = () => {
+    const document: Document = {
+      id: `doc_${Date.now()}`,
+      schoolId,
+      studentId: student.id,
+      type,
+      status,
+      uploadedAt: status === 'uploaded' || status === 'verified' ? new Date().toISOString() : undefined,
+      verifiedAt: status === 'verified' ? new Date().toISOString() : undefined,
+      createdAt: new Date().toISOString(),
+    }
+    adminDocuments.upsert(document)
+    createAuditEntry(schoolId, 'admin', 'Администратор', status === 'verified' ? 'document_verified' : 'document_uploaded', 'document', document.id, `Добавлен документ ${student.name}`)
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <select value={type} onChange={(event) => setType(event.target.value as DocumentType)} className="v-admin-input w-full">
+        {Object.entries(DOC_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      </select>
+      <select value={status} onChange={(event) => setStatus(event.target.value as DocumentStatus)} className="v-admin-input w-full">
+        <option value="uploaded">Загружен</option>
+        <option value="verified">Проверен</option>
+        <option value="pending">На проверке</option>
+        <option value="missing">Не загружен</option>
+        <option value="rejected">Отклонен</option>
+      </select>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </div>
   )

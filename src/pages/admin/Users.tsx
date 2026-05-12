@@ -12,6 +12,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 export function AdminUsers() {
   const school = db.schools.all()[0]
   const [showAdd, setShowAdd] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   const users = useMemo(() => {
     if (!school) return []
@@ -59,7 +60,7 @@ export function AdminUsers() {
                 }`}>
                   {user.isActive ? 'Активен' : 'Заблокирован'}
                 </span>
-                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] font-semibold text-gray-500 transition hover:bg-gray-50">
+                <button onClick={() => setEditingUser(user)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] font-semibold text-gray-500 transition hover:bg-gray-50">
                   Изменить
                 </button>
               </div>
@@ -68,35 +69,45 @@ export function AdminUsers() {
         )}
       </div>
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Добавить сотрудника" size="md">
-        <UserForm schoolId={school?.id ?? ''} onClose={() => setShowAdd(false)} />
+      <Modal
+        open={showAdd || Boolean(editingUser)}
+        onClose={() => { setShowAdd(false); setEditingUser(null) }}
+        title={editingUser ? 'Изменить сотрудника' : 'Добавить сотрудника'}
+        size="md"
+      >
+        <UserForm
+          schoolId={school?.id ?? ''}
+          user={editingUser}
+          onClose={() => { setShowAdd(false); setEditingUser(null) }}
+        />
       </Modal>
     </div>
   )
 }
 
-function UserForm({ schoolId, onClose }: { schoolId: string; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState<UserRole>('admin')
+function UserForm({ schoolId, user, onClose }: { schoolId: string; user: User | null; onClose: () => void }) {
+  const [name, setName] = useState(user?.name ?? '')
+  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [email, setEmail] = useState(user?.email ?? '')
+  const [role, setRole] = useState<UserRole>(user?.role ?? 'admin')
 
   const handleSubmit = () => {
     if (!name || !phone) return
-    const user: User = {
-      id: `user_${Date.now()}`,
-      schoolId,
+    const nextUser: User = {
+      id: user?.id ?? `user_${Date.now()}`,
+      schoolId: user?.schoolId ?? schoolId,
       name, phone, email, role,
-      isActive: true,
-      branchIds: [],
+      isActive: user?.isActive ?? true,
+      branchIds: user?.branchIds ?? [],
       canViewFinances: role === 'director' || role === 'accountant',
       canManageSettings: role === 'director',
       canDeleteData: role === 'director',
       canManageStaff: role === 'director',
-      createdAt: new Date().toISOString(),
+      createdAt: user?.createdAt ?? new Date().toISOString(),
+      updatedAt: user ? new Date().toISOString() : undefined,
     }
-    adminUsers.upsert(user)
-    createAuditEntry(schoolId, 'admin', 'Администратор', 'user_created', 'user', user.id, `Добавлен сотрудник ${user.name} (${role})`)
+    adminUsers.upsert(nextUser)
+    createAuditEntry(schoolId, 'admin', 'Администратор', user ? 'user_updated' : 'user_created', 'user', nextUser.id, `${user ? 'Обновлен' : 'Добавлен'} сотрудник ${nextUser.name} (${role})`)
     onClose()
   }
 

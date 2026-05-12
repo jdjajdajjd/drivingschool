@@ -4,7 +4,8 @@ import { Search, UserPlus } from 'lucide-react'
 import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import type { TrainingStage } from '../../types'
+import { Modal } from '../../components/ui/Modal'
+import type { Student, TrainingStage } from '../../types'
 
 type FilterTab = 'all' | 'active' | 'debt' | 'no_docs' | 'ready_exam' | 'inactive'
 
@@ -47,6 +48,7 @@ export function AdminStudents() {
   const school = db.schools.all()[0]
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterTab>('all')
+  const [showAdd, setShowAdd] = useState(false)
   const navigate = useNavigate()
 
   const data = useMemo(() => {
@@ -122,7 +124,7 @@ export function AdminStudents() {
               className="v-admin-input w-full pl-9"
             />
           </label>
-          <button className="v-admin-button">
+          <button onClick={() => setShowAdd(true)} className="v-admin-button">
             <UserPlus size={16} />
             Добавить ученика
           </button>
@@ -145,7 +147,53 @@ export function AdminStudents() {
             <span>Сбросьте поиск или выберите другой фильтр.</span>
           </div>
         ) : (
-          <div className="v-admin-panel overflow-hidden">
+          <>
+          <div className="grid gap-3 md:hidden">
+            {filtered.map((student) => {
+              const debt = getDebtForStudent(student.id)
+              const missingDocs = data.docs[student.id] ?? 0
+              const hours = data.hours[student.id] ?? 0
+              const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
+              const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+              const stage = student.trainingStage
+              return (
+                <button
+                  key={student.id}
+                  onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}
+                  className="w-full min-w-0 overflow-hidden rounded-[14px] border border-[#DCE2E8] bg-white p-4 text-left shadow-[0_10px_26px_rgba(16,20,24,0.05)]"
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] bg-[#101418] text-[13px] font-black text-white">{initials}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-black text-[#111418]">{student.name}</span>
+                      <span className="mt-0.5 block truncate text-[12px] font-bold text-[#66717D]">{student.phone}</span>
+                    </span>
+                    <span className={`v-admin-pill max-w-[118px] shrink-0 truncate ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <span className="rounded-[10px] bg-[#F7F9FB] p-2 text-center">
+                      <strong className="block text-[16px] font-black text-[#111418]">{hours}ч</strong>
+                      <span className="text-[11px] font-bold text-[#66717D]">практика</span>
+                    </span>
+                    <span className="rounded-[10px] bg-[#F7F9FB] p-2 text-center">
+                      <strong className={`block text-[16px] font-black ${debt > 0 ? 'text-[#B42318]' : 'text-[#157347]'}`}>{debt > 0 ? debt.toLocaleString('ru-RU') : 'нет'}</strong>
+                      <span className="text-[11px] font-bold text-[#66717D]">долг</span>
+                    </span>
+                    <span className="rounded-[10px] bg-[#F7F9FB] p-2 text-center">
+                      <strong className={`block text-[16px] font-black ${missingDocs > 0 ? 'text-[#A45A00]' : 'text-[#157347]'}`}>{missingDocs || 'ок'}</strong>
+                      <span className="text-[11px] font-bold text-[#66717D]">доки</span>
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-bold text-[#66717D]">
+                    <span className="truncate">{instructor?.name ?? 'Инструктор не назначен'}</span>
+                    <span className="shrink-0 text-[#111418]">Открыть</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="v-admin-panel hidden overflow-hidden md:block">
             <table className="v-admin-table min-w-[960px]">
               <thead>
                 <tr>
@@ -209,7 +257,74 @@ export function AdminStudents() {
               </tbody>
             </table>
           </div>
+          </>
         )}
+      </div>
+
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Добавить ученика" size="md">
+        <StudentForm
+          schoolId={school.id}
+          onClose={() => setShowAdd(false)}
+          onCreated={(studentId) => {
+            setShowAdd(false)
+            navigate(`${ADMIN_BASE_PATH}/students/${studentId}`)
+          }}
+        />
+      </Modal>
+    </div>
+  )
+}
+
+function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClose: () => void; onCreated: (studentId: string) => void }) {
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [category, setCategory] = useState('B')
+
+  const submit = () => {
+    const normalizedPhone = phone.replace(/\D/g, '')
+    if (!name.trim() || normalizedPhone.length < 10) return
+    const student: Student = {
+      id: `stu_${Date.now()}`,
+      schoolId,
+      name: name.trim(),
+      phone: phone.trim(),
+      normalizedPhone,
+      email: email.trim(),
+      categoryCodes: category ? [category] : [],
+      trainingStage: 'new_request',
+      createdAt: new Date().toISOString(),
+    }
+    db.students.upsert(student)
+    onCreated(student.id)
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">ФИО</span>
+        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Иванова Анна" className="v-admin-input w-full" autoFocus />
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Телефон</span>
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+7 999 123-45-67" className="v-admin-input w-full" />
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Email</span>
+        <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="student@mail.ru" className="v-admin-input w-full" />
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Категория</span>
+        <select value={category} onChange={(event) => setCategory(event.target.value)} className="v-admin-input w-full">
+          <option value="B">B</option>
+          <option value="A">A</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+        </select>
+      </label>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={submit} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </div>
   )

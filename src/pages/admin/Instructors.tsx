@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { adminCars } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { Modal } from '../../components/ui/Modal'
+import type { Instructor, Transmission } from '../../types'
 
 export function AdminInstructors() {
   const school = db.schools.all()[0]
   const [search, setSearch] = useState('')
+  const [showAdd, setShowAdd] = useState(false)
   const navigate = useNavigate()
 
   const data = useMemo(() => {
@@ -45,7 +48,7 @@ export function AdminInstructors() {
             placeholder="Поиск..."
             className="h-10 w-[200px] rounded-xl border border-gray-200 bg-gray-50 px-4 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none"
           />
-          <button type="button" className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
+          <button type="button" onClick={() => setShowAdd(true)} className="h-10 rounded-xl bg-gray-900 px-4 text-[13px] font-bold text-white">
             + Добавить
           </button>
         </div>
@@ -58,18 +61,18 @@ export function AdminInstructors() {
             <p className="text-gray-400">Инструкторы не найдены</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(({ instructor, todayBooked, totalBookings, students, car }) => (
               <motion.div
                 key={instructor.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`cursor-pointer rounded-2xl border p-5 transition hover:border-gray-200 hover:shadow-sm ${
+                className={`min-w-0 cursor-pointer overflow-hidden rounded-2xl border p-5 transition hover:border-gray-200 hover:shadow-sm ${
                   instructor.isActive ? 'bg-white' : 'bg-gray-50 opacity-60'
                 }`}
                 onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors/${instructor.id}`)}
               >
-                <div className="mb-4 flex items-center gap-3">
+                <div className="mb-4 flex min-w-0 items-center gap-3">
                   <div
                     className="flex h-12 w-12 items-center justify-center rounded-2xl text-[16px] font-black text-white"
                     style={{ background: instructor.avatarColor }}
@@ -80,7 +83,7 @@ export function AdminInstructors() {
                     <p className="truncate font-bold text-gray-900">{instructor.name}</p>
                     <p className="text-[12px] font-semibold text-gray-400">{instructor.phone}</p>
                   </div>
-                  <span className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                  <span className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold ${
                     instructor.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'
                   }`}>
                     {instructor.isActive ? 'Активен' : 'Неактивен'}
@@ -121,8 +124,115 @@ export function AdminInstructors() {
           </div>
         )}
       </div>
+
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Добавить инструктора" size="md">
+        <InstructorForm
+          schoolId={school?.id ?? ''}
+          onClose={() => setShowAdd(false)}
+          onCreated={(instructorId) => {
+            setShowAdd(false)
+            navigate(`${ADMIN_BASE_PATH}/instructors/${instructorId}`)
+          }}
+        />
+      </Modal>
     </div>
   )
 }
 
 import { motion } from 'framer-motion'
+
+function InstructorForm({
+  schoolId,
+  onClose,
+  onCreated,
+}: {
+  schoolId: string
+  onClose: () => void
+  onCreated: (instructorId: string) => void
+}) {
+  const branches = schoolId ? db.branches.bySchool(schoolId) : []
+  const defaultBranchId = branches[0]?.id ?? ''
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [branchId, setBranchId] = useState(defaultBranchId)
+  const [category, setCategory] = useState('B')
+  const [transmission, setTransmission] = useState<Transmission>('auto')
+  const [car, setCar] = useState('')
+
+  const handleSubmit = () => {
+    if (!schoolId || !name.trim() || !phone.trim() || !branchId) return
+    const initials = name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'ИН'
+    const instructor: Instructor = {
+      id: `inst_${Date.now()}`,
+      schoolId,
+      branchId,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      token: `tok_${Date.now()}`,
+      bio: '',
+      experience: 0,
+      isActive: true,
+      categories: [category.trim() || 'B'],
+      avatarInitials: initials,
+      avatarColor: '#101418',
+      car: car.trim() || undefined,
+      transmission,
+    }
+    db.instructors.upsert(instructor)
+    onCreated(instructor.id)
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <div>
+        <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Имя</label>
+        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Иванов Иван" className="v-admin-input w-full" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Телефон</label>
+          <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+7 999 123-45-67" className="v-admin-input w-full" />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Email</label>
+          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="instructor@school.ru" className="v-admin-input w-full" />
+        </div>
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Филиал</label>
+        <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+        </select>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Категория</label>
+          <input value={category} onChange={(event) => setCategory(event.target.value)} className="v-admin-input w-full" />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">КПП</label>
+          <select value={transmission} onChange={(event) => setTransmission(event.target.value as Transmission)} className="v-admin-input w-full">
+            <option value="auto">Автомат</option>
+            <option value="manual">Механика</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Машина</label>
+          <input value={car} onChange={(event) => setCar(event.target.value)} placeholder="Solaris" className="v-admin-input w-full" />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+      </div>
+    </div>
+  )
+}

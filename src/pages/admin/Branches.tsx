@@ -6,6 +6,7 @@ import type { Branch } from '../../types'
 export function AdminBranches() {
   const school = db.schools.all()[0]
   const [showAdd, setShowAdd] = useState(false)
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
 
   const branches = useMemo(() => {
     if (!school) return []
@@ -54,7 +55,7 @@ export function AdminBranches() {
                     <p className="mt-1 text-[13px] font-semibold text-gray-400">{branch.address}</p>
                     {branch.phone && <p className="mt-0.5 text-[13px] font-semibold text-gray-400">{branch.phone}</p>}
                   </div>
-                  <button className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+                  <button onClick={() => setEditingBranch(branch)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
                     Редактировать
                   </button>
                 </div>
@@ -75,29 +76,38 @@ export function AdminBranches() {
         )}
       </div>
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Добавить филиал" size="md">
-        <BranchForm schoolId={school?.id ?? ''} onClose={() => setShowAdd(false)} />
+      <Modal
+        open={showAdd || Boolean(editingBranch)}
+        onClose={() => { setShowAdd(false); setEditingBranch(null) }}
+        title={editingBranch ? 'Редактировать филиал' : 'Добавить филиал'}
+        size="md"
+      >
+        <BranchForm
+          schoolId={school?.id ?? ''}
+          branch={editingBranch}
+          onClose={() => { setShowAdd(false); setEditingBranch(null) }}
+        />
       </Modal>
     </div>
   )
 }
 
-function BranchForm({ schoolId, onClose }: { schoolId: string; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [address, setAddress] = useState('')
-  const [phone, setPhone] = useState('')
+function BranchForm({ schoolId, branch, onClose }: { schoolId: string; branch: Branch | null; onClose: () => void }) {
+  const [name, setName] = useState(branch?.name ?? '')
+  const [address, setAddress] = useState(branch?.address ?? '')
+  const [phone, setPhone] = useState(branch?.phone ?? '')
 
   const handleSubmit = () => {
     if (!name || !address) return
-    const branch: Branch = {
-      id: `branch_${Date.now()}`,
+    const nextBranch: Branch = {
+      id: branch?.id ?? `branch_${Date.now()}`,
       schoolId,
       name,
       address,
       phone,
-      isActive: true,
+      isActive: branch?.isActive ?? true,
     }
-    db.branches.upsert(branch)
+    db.branches.upsert(nextBranch)
     onClose()
   }
 

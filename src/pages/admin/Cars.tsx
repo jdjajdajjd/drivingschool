@@ -35,8 +35,8 @@ export function AdminCars() {
         <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">
           {data.filter((d) => d.car.status === 'working').length}/{data.length}
         </span>
-        <div className="ml-auto flex items-center gap-2">
-          <div className="flex gap-1 rounded-xl border border-gray-200 p-0.5">
+        <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+          <div className="no-scrollbar flex max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-200 p-0.5">
             {(['all', 'working', 'maintenance', 'repair', 'reserved'] as const).map((f) => (
               <button
                 key={f}
