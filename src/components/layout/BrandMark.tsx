@@ -1,3 +1,5 @@
+import { cn } from '../../lib/utils'
+
 type BrandMarkProps = {
   variant?: 'dark' | 'light'
   size?: 'sm' | 'md' | 'lg'
@@ -13,10 +15,11 @@ const sizeClass = {
 
 export function BrandMark({ variant = 'dark', size = 'md', className = '', alt = 'vroom' }: BrandMarkProps) {
   const src = variant === 'light' ? '/brand/vroom-mark-light.png' : '/brand/vroom-mark-dark.png'
+  const surfaceClass = variant === 'light' ? 'bg-white' : 'bg-[#050609]'
 
   return (
-    <span className={`${sizeClass[size]} grid shrink-0 place-items-center overflow-hidden bg-white ${className}`}>
-      <img src={src} alt={alt} className="h-full w-full object-cover" />
+    <span className={cn(sizeClass[size], 'grid shrink-0 place-items-center overflow-hidden', surfaceClass, className)}>
+      <img src={src} alt={alt} className="h-[76%] w-[76%] object-contain" />
     </span>
   )
 }
