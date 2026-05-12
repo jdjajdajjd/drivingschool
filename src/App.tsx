@@ -4,6 +4,7 @@ import { ProtectedAccess } from './components/layout/ProtectedAccess'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH, WORKSPACE_ADMIN_LOGIN_PATH, SUPERADMIN_BASE_PATH, SUPERADMIN_LOGIN_PATH } from './services/accessControl'
 import { setDataNamespace } from './services/storage'
 import { seedIfNeeded } from './services/seed'
+import { LoadingScreen } from './components/ui/loader'
 
 void React
 
@@ -43,7 +44,9 @@ const SuperAdminSchoolNew = lazy(() => import('./pages/superadmin/SchoolNew').th
 const SuperAdminSchoolDetail = lazy(() => import('./pages/superadmin/SchoolDetail').then((module) => ({ default: module.SuperAdminSchoolDetail })))
 
 function PageFallback() {
-  return <div className="min-h-screen bg-stone-50" />
+  const path = window.location.pathname
+  const isAdmin = path.startsWith(ADMIN_BASE_PATH) || path.startsWith(SUPERADMIN_BASE_PATH) || path === WORKSPACE_ADMIN_LOGIN_PATH
+  return <LoadingScreen tone={isAdmin ? 'admin' : 'student'} label={isAdmin ? 'Загрузка кабинета' : 'Загрузка'} />
 }
 
 function SchoolBookRedirect() {
@@ -68,7 +71,7 @@ function App() {
   }, [])
 
   if (!isReady) {
-    return <div className="min-h-screen" style={{ background: '#F2F3F4' }} />
+    return <LoadingScreen tone="student" />
   }
 
   return (

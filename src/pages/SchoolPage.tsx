@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight01Icon, Building05Icon, Location01Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { LoadingScreen } from '../components/ui/loader'
 import { StateView } from '../components/ui/StateView'
 import { findSchoolNamespaceBySlug } from '../services/storage'
 import { loadPublicSchoolData, type PublicSchoolData } from '../services/publicSchoolData'
@@ -32,7 +33,7 @@ export function SchoolPage() {
       .finally(() => setLoading(false))
   }, [slug])
 
-  if (loading) return <div className="min-h-dvh bg-[#F6F7FA]" />
+  if (loading) return <LoadingScreen tone="student" />
 
   if (!school) {
     return (

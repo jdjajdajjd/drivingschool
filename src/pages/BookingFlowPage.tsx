@@ -7,6 +7,7 @@ import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
+import { LoadingScreen } from '../components/ui/loader'
 import { useToast } from '../components/ui/Toast'
 import { StickyActionBar } from '../components/ui/StickyActionBar'
 import { Avatar } from '../components/ui/Avatar'
@@ -695,7 +696,7 @@ export function BookingFlowPage() {
     showToast('Файл календаря готов.', 'success')
   }
 
-  if (loading) return <div className="shell" />
+  if (loading) return <LoadingScreen tone="student" />
   if (!school) {
     return (
       <div className="shell flex items-center justify-center px-4">

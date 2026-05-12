@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Award,
@@ -24,6 +24,7 @@ import { seedIfNeeded } from '../../services/seed'
 import { syncSupabaseSchoolToLocalDb } from '../../services/supabaseSync'
 import { db } from '../../services/storage'
 import { BrandMark } from './BrandMark'
+import { AdminContentLoader, LoadingScreen } from '../ui/loader'
 
 const navItems = [
   { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard },
@@ -116,7 +117,7 @@ export function AdminLayout() {
     }
   }, [])
 
-  if (!ready) return <div className="v-admin-shell min-h-dvh" />
+  if (!ready) return <LoadingScreen tone="admin" label="Загрузка кабинета" />
 
   const school = db.schools.all()[0]
   const publicPath = school ? `/school/${school.slug}` : '/'
@@ -189,7 +190,9 @@ export function AdminLayout() {
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
-          <Outlet />
+          <Suspense fallback={<AdminContentLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
 
         <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#DCE2E8] bg-white/96 backdrop-blur lg:hidden">
