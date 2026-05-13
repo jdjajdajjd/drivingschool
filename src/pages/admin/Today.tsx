@@ -24,6 +24,8 @@ function useTodayData(schoolId: string) {
     const payments = adminPayments.all(schoolId)
 
     const todaySlots = slots.filter((slot) => slot.date === today)
+    const availableFutureSlots = slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) > now).length
+    const activeInstructors = instructors.filter((instructor) => instructor.isActive).length
     const todayBookings = bookings
       .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
       .filter((entry) => entry.slot && isSameDay(getSlotDateTime(entry.slot), now))
@@ -74,9 +76,11 @@ function useTodayData(schoolId: string) {
       slots,
       bookings,
       instructors,
+      activeInstructors,
       students,
       branches,
       todaySlots,
+      availableFutureSlots,
       activeToday,
       upcoming,
       freeSlotsToday: todaySlots.filter((slot) => slot.status === 'available').length,
@@ -123,6 +127,86 @@ function PriorityCard({ title, text, tone, to }: { title: string; text: string; 
         <span className="mt-1 block text-[13px] font-bold leading-5 text-[#66717D]">{text}</span>
       </span>
     </Link>
+  )
+}
+
+function LaunchChecklist({
+  schoolName,
+  schoolPhone,
+  branchCount,
+  instructorCount,
+  availableFutureSlots,
+  studentCount,
+}: {
+  schoolName: string
+  schoolPhone: string
+  branchCount: number
+  instructorCount: number
+  availableFutureSlots: number
+  studentCount: number
+}) {
+  const items = [
+    {
+      title: 'Данные школы',
+      text: schoolName && schoolPhone ? 'Название и телефон заполнены' : 'Заполните название и телефон школы',
+      done: Boolean(schoolName && schoolPhone),
+      to: `${ADMIN_BASE_PATH}/settings`,
+    },
+    {
+      title: 'Филиалы',
+      text: branchCount > 0 ? `${branchCount} филиалов добавлено` : 'Добавьте хотя бы один филиал',
+      done: branchCount > 0,
+      to: `${ADMIN_BASE_PATH}/branches`,
+    },
+    {
+      title: 'Инструкторы',
+      text: instructorCount > 0 ? `${instructorCount} инструкторов в работе` : 'Добавьте инструкторов',
+      done: instructorCount > 0,
+      to: `${ADMIN_BASE_PATH}/instructors`,
+    },
+    {
+      title: 'Свободное время',
+      text: availableFutureSlots > 0 ? `${availableFutureSlots} вариантов доступно ученикам` : 'Создайте время для занятий',
+      done: availableFutureSlots > 0,
+      to: `${ADMIN_BASE_PATH}/schedule`,
+    },
+    {
+      title: 'Ученики',
+      text: studentCount > 0 ? `${studentCount} учеников в базе` : 'Добавьте первого ученика или отправьте ссылку на вход',
+      done: studentCount > 0,
+      to: `${ADMIN_BASE_PATH}/students`,
+    },
+  ]
+  const doneCount = items.filter((item) => item.done).length
+  const isReady = doneCount === items.length
+
+  return (
+    <section className={`v-admin-panel mt-4 overflow-hidden ${isReady ? 'border-[#BFE7CF]' : 'border-[#F7D58B]'}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#DCE2E8] p-4">
+        <div>
+          <h2 className="text-[18px] font-black text-[#111418]">Готовность к работе</h2>
+          <p className="v-admin-note mt-1">
+            {isReady ? 'Основные настройки на месте. Можно вести день и принимать учеников.' : 'Закройте базовые шаги перед запуском школы.'}
+          </p>
+        </div>
+        <span className={`v-admin-pill ${isReady ? 'v-tone-ok' : 'v-tone-warning'}`}>
+          {doneCount}/{items.length}
+        </span>
+      </div>
+      <div className="grid gap-0 divide-y divide-[#EEF2F5] lg:grid-cols-5 lg:divide-x lg:divide-y-0">
+        {items.map((item) => (
+          <Link key={item.title} to={item.to} className="flex min-h-[116px] flex-col gap-3 p-4 transition hover:bg-[#F8FAFC]">
+            <span className={`grid h-9 w-9 place-items-center rounded-[10px] ${item.done ? 'bg-[#EAF7EF] text-[#157347]' : 'bg-[#FFF7E0] text-[#A45A00]'}`}>
+              {item.done ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+            </span>
+            <span>
+              <strong className="block text-[14px] font-black leading-5 text-[#111418]">{item.title}</strong>
+              <span className="mt-1 block text-[12px] font-bold leading-4 text-[#66717D]">{item.text}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -203,6 +287,15 @@ export function AdminToday() {
         <Stat label="экзаменов за 7 дней" value={data.examsSoon} tone="info" to={`${ADMIN_BASE_PATH}/exams`} />
         <Stat label="инструкторов без загрузки" value={data.idleInstructors} tone={data.idleInstructors > 1 ? 'warning' : 'muted'} to={`${ADMIN_BASE_PATH}/instructors`} />
       </section>
+
+      <LaunchChecklist
+        schoolName={school.name}
+        schoolPhone={school.phone}
+        branchCount={data.branches.length}
+        instructorCount={data.activeInstructors}
+        availableFutureSlots={data.availableFutureSlots}
+        studentCount={data.students.length}
+      />
 
       <section className="mt-4 grid gap-4 lg:grid-cols-[1fr_390px]">
         <div className="v-admin-panel overflow-hidden">
