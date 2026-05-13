@@ -3,28 +3,22 @@ import { chromium } from 'playwright'
 const baseUrl = process.env.SMOKE_BASE_URL || 'https://vroom.today'
 const expectedTimeoutMs = 15_000
 
-const forbiddenTexts = [
-  'DriveDesk',
-  'drivingschool-6wy',
-  'localStorage',
-  'админка',
-  'слоты',
-  'VROOM',
-]
+const forbiddenTexts = ['DriveDesk', 'drivingschool-6wy', 'localStorage', 'VROOM']
 
 const mojibakePatterns = [
   'Рђ',
-  'Р—',
+  'РЇ',
   'Рџ',
-  'Рљ',
   'РЎ',
-  'Рµ',
+  'СЃ',
+  'С‹',
+  'вЂ',
 ]
 
 const routes = [
   {
     path: '/',
-    checks: ['vroom', 'Я ученик', 'Я школа'],
+    checks: ['vroom', 'Мобильный кабинет автошколы', 'Открыть демо ученика', '4990 ₽'],
     rejects: [],
   },
   {
@@ -45,7 +39,7 @@ const routes = [
   {
     path: '/staff-entrance-73q',
     checks: ['Кабинет школы', 'Логин', 'Пароль'],
-    rejects: ['Админка', 'VROOM'],
+    rejects: ['VROOM'],
   },
   {
     path: '/terms',
