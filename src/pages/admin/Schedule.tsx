@@ -6,6 +6,7 @@ import { db } from '../../services/storage'
 import { getSlotDateTime } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
+import { useToast } from '../../components/ui/Toast'
 import { createAuditEntry } from '../../services/adminStorage'
 import type { Booking, Branch, Instructor, Slot } from '../../types'
 
@@ -20,6 +21,7 @@ function statusClass(status: Slot['status']) {
 }
 
 export function AdminSchedule() {
+  const { showToast } = useToast()
   const school = db.schools.all()[0]
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -106,7 +108,7 @@ export function AdminSchedule() {
       slot.status === 'available',
     )
     if (!newSlot) {
-      alert('Свободное время не найдено. Сначала добавьте окно в расписании.')
+      showToast('Свободное время не найдено. Сначала добавьте окно в расписании.', 'error')
       return
     }
     db.slots.upsert({ ...newSlot, status: 'booked', bookingId: selectedBooking.id })

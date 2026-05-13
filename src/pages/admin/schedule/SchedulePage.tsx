@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { format, addDays, subDays, parseISO, isSameDay, addMinutes } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomSheet } from '../../../components/admin/core/BottomSheet'
+import { useToast } from '../../../components/ui/Toast'
 import { db } from '../../../services/storage'
 import { getSlotsBySchool, createSlot, createBulkSlots, getSlotsByInstructor, type CreateSlotParams } from '../../../services/slotService'
 import type { SlotStatus, ResolvedSlot } from '../../../types'
@@ -76,6 +77,7 @@ const DURATIONS = [45, 60, 90, 120]
 const TIME_OPTIONS = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00']
 
 export function SchedulePage() {
+  const { showToast } = useToast()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [selectedBranch, setSelectedBranch] = useState<string>('')
   const [selectedInstructor, setSelectedInstructor] = useState<string>('')
@@ -216,7 +218,7 @@ export function SchedulePage() {
       setNewSlotInstructor('')
       refresh()
     } else {
-      alert(result.error || 'Ошибка')
+      showToast(result.error || 'Ошибка', 'error')
     }
   }
 
@@ -242,7 +244,7 @@ export function SchedulePage() {
       setBulkStep(1)
       refresh()
     } else {
-      alert(result.error || 'Ошибка')
+      showToast(result.error || 'Ошибка', 'error')
     }
   }
 
