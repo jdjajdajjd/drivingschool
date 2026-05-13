@@ -8,6 +8,7 @@ import { getStudentsBySchool, getStudentStats, getStudentHistory } from '../../.
 import { getInstructorsBySchool } from '../../../services/instructorService'
 import { getBookingsByInstructor, getSlotDateTime } from '../../../services/bookingService'
 import { db } from '../../../services/storage'
+import { trainingStageLabels } from '../../student/studentUtils'
 
 /* ─── STUDENTS ─── */
 function StudentsTab() {
@@ -57,7 +58,7 @@ function StudentsTab() {
           </div>
         ) : (
           rows.map(({ student, stats }) => {
-            const next = student.trainingStage ? { theory: 'Теория', practice_ground: 'Площадка', city: 'Город', exam_prep: 'Экзамен', exam: 'Экзамен', completed: 'Завершено' }[student.trainingStage] : null
+            const next = student.trainingStage ? trainingStageLabels[student.trainingStage] : null
             return (
               <button
                 key={student.id}

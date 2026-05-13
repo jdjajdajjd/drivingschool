@@ -246,6 +246,7 @@ export async function getSupabaseStudentProgressAdmin(studentId: string): Promis
     theoryTopicsCompleted: row.theory_topics_completed,
     drivingHoursTotal: row.driving_hours_total,
     drivingHoursCompleted: row.driving_hours_completed,
+    confirmedHours: row.driving_hours_completed,
     internalExamPassed: row.internal_exam_passed,
     internalExamDate: row.internal_exam_date,
     internalExamStatus: row.internal_exam_status,

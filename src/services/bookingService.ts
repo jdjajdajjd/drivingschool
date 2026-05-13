@@ -403,6 +403,7 @@ export function completeBooking(bookingId: string, options: { skipRemote?: boole
       theoryTopicsCompleted: progress?.theoryTopicsCompleted ?? 0,
       drivingHoursTotal: progress?.drivingHoursTotal ?? 0,
       drivingHoursCompleted: progress?.drivingHoursTotal ? Math.min(progress.drivingHoursTotal, (progress.drivingHoursCompleted ?? 0) + hours) : (progress?.drivingHoursCompleted ?? 0) + hours,
+      confirmedHours: progress?.drivingHoursTotal ? Math.min(progress.drivingHoursTotal, (progress.confirmedHours ?? progress.drivingHoursCompleted ?? 0) + hours) : (progress?.confirmedHours ?? progress?.drivingHoursCompleted ?? 0) + hours,
       internalExamPassed: progress?.internalExamPassed ?? false,
       internalExamDate: progress?.internalExamDate ?? null,
       gaidExamDate: progress?.gaidExamDate ?? null,

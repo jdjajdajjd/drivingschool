@@ -16,21 +16,34 @@ const ACCESS_PASSWORD_KEYS: Record<AccessRole, string> = {
   superadmin: 'dd:access_password:superadmin',
 }
 
+function envValue(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function accessValue(value: unknown): string {
+  return envValue(value)
+}
+
 const ACCESS: Record<AccessRole, { login: string; password: string; redirect: string }> = {
   admin: {
-    login: import.meta.env.VITE_ADMIN_LOGIN || 'virazh-admin',
-    password: import.meta.env.VITE_ADMIN_PASSWORD || 'drivedesk-admin-2026',
+    login: accessValue(import.meta.env.VITE_ADMIN_LOGIN),
+    password: accessValue(import.meta.env.VITE_ADMIN_PASSWORD),
     redirect: ADMIN_BASE_PATH,
   },
   superadmin: {
-    login: import.meta.env.VITE_SUPERADMIN_LOGIN || 'drivedesk-root',
-    password: import.meta.env.VITE_SUPERADMIN_PASSWORD || 'drivedesk-root-2026',
+    login: accessValue(import.meta.env.VITE_SUPERADMIN_LOGIN),
+    password: accessValue(import.meta.env.VITE_SUPERADMIN_PASSWORD),
     redirect: SUPERADMIN_BASE_PATH,
   },
 }
 
 export function getAccessConfig(role: AccessRole) {
   return ACCESS[role]
+}
+
+export function isAccessConfigured(role: AccessRole): boolean {
+  const config = getAccessConfig(role)
+  return Boolean(config.login && config.password)
 }
 
 export function isAccessGranted(role: AccessRole): boolean {

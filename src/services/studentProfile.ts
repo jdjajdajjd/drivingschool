@@ -304,6 +304,11 @@ export const studentDocumentLabels: Record<StudentDocumentType, string> = {
   contract: 'Договор',
   photo: 'Фото',
   state_fee: 'Госпошлина',
+  consent_data_processing: 'Согласие на обработку данных',
+  application: 'Заявление',
+  parent_consent: 'Согласие родителя',
+  internal_certificate: 'Свидетельство школы',
+  gibdd_exam_doc: 'Документ для ГИБДД',
 }
 
 export const studentDocumentStatusLabels: Record<StudentDocumentStatus, string> = {

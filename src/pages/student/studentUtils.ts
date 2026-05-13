@@ -50,6 +50,23 @@ export const trainingStageLabels: Record<TrainingStage, string> = {
   exam_prep: 'Подготовка к экзамену',
   exam: 'Экзамен',
   completed: 'Завершено',
+  new_request: 'Новая заявка',
+  awaiting_contract: 'Ждет договор',
+  contract_signed: 'Договор подписан',
+  training_active: 'Обучение идет',
+  no_bookings: 'Нет занятий',
+  has_debt: 'Есть долг',
+  missing_documents: 'Не хватает документов',
+  theory_completed: 'Теория завершена',
+  practice_active: 'Практика идет',
+  practice_completed: 'Практика завершена',
+  ready_for_internal_exam: 'Готов к внутреннему экзамену',
+  internal_exam_passed: 'Внутренний экзамен сдан',
+  ready_for_gibdd: 'Готов к ГИБДД',
+  training_completed: 'Обучение завершено',
+  archived: 'В архиве',
+  refused: 'Отказ',
+  frozen: 'Пауза',
 }
 
 export function lessonTypeLabel(slot: Slot | null) {

@@ -7,10 +7,8 @@ Vroom is a React + Supabase product for driving schools. The current focus is no
 - Product hub: `/`
 - Student cabinet: `/student`
 - Student registration: `/student/register`
-- Student booking flow: `/student/book`
-- Student booking from slot: `/student/book?slot=<slotId>`
 - Public school page: `/school/virazh`
-- Public school booking: `/school/virazh/book`
+- Public school booking redirect: `/school/virazh/book`
 - Booking confirmation: `/booking/<bookingId>`
 - School staff login: `/staff-entrance-73q`
 - School admin panel after login: `/virazh-office-73q`
@@ -18,7 +16,7 @@ Vroom is a React + Supabase product for driving schools. The current focus is no
 - Super-admin panel after login: `/drivedesk-root-91x`
 - Instructor public schedule: `/instructor/tok-petrov-2024`
 
-Default access credentials are defined in `src/services/accessControl.ts` and can be overridden with Vite environment variables.
+School and platform access credentials must be provided through Vite environment variables. The app does not ship production fallback passwords.
 
 ## Stack
 

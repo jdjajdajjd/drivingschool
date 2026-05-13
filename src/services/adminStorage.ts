@@ -4,15 +4,14 @@
  * Uses the same namespace as the base db.
  */
 import type {
-  Car, CarStatus,
-  Payment, PaymentStatus, PaymentMethod,
-  Document, DocumentStatus, DocumentType,
+  Car,
+  Payment, PaymentStatus,
+  Document, DocumentType,
   InternalExam, GIBDDExam,
   User, UserRole,
   AuditLogEntry, AuditAction,
-  ProblemCase, ProblemType,
+  ProblemCase,
   SchoolSettings,
-  PricingPlan,
 } from '../types'
 
 const ADMIN_KEYS = {

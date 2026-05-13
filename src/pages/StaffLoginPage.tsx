@@ -5,7 +5,7 @@ import { BrandMark } from '../components/layout/BrandMark'
 import { Button } from '../components/ui/Button'
 import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
-import { AccessRole, getAccessConfig, grantAccess, isAccessGranted } from '../services/accessControl'
+import { AccessRole, getAccessConfig, grantAccess, isAccessConfigured, isAccessGranted } from '../services/accessControl'
 import { setDataNamespace } from '../services/storage'
 
 const ArrowRight = createHugeIcon(ArrowRight01Icon)
@@ -35,6 +35,7 @@ const copy = {
 export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
   const navigate = useNavigate()
   const config = getAccessConfig(role)
+  const accessConfigured = isAccessConfigured(role)
   const Icon = copy[role].icon
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
@@ -47,7 +48,7 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
   }
 
   function openDemo(): void {
-    if (role !== 'admin') return
+    if (role !== 'admin' || !accessConfigured) return
     setDataNamespace(mode)
     grantAccess(role, config.password)
     navigate(config.redirect, { replace: true })
@@ -55,6 +56,10 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!accessConfigured) {
+      setError('Доступ не настроен. Добавьте логин и пароль в переменные окружения.')
+      return
+    }
     if (login.trim() !== config.login || password !== config.password) {
       setError('Проверьте логин и пароль.')
       return
@@ -87,7 +92,9 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
 
           <p className="mt-4 text-[15px] font-bold leading-6 text-[#8B8D94]">
             {isWorkspaceDemo
-              ? 'Можно сразу открыть кабинет и посмотреть день, учеников и оплаты.'
+              ? accessConfigured
+                ? 'Можно сразу открыть кабинет и посмотреть день, учеников и оплаты.'
+                : 'Доступ школы нужно настроить через переменные окружения перед запуском.'
               : copy[role].subtitle}
           </p>
 
@@ -116,7 +123,7 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
             />
           </div>
 
-          {role === 'admin' ? (
+          {role === 'admin' && accessConfigured ? (
             <Button type="button" size="lg" className="mt-6 w-full min-h-[56px] rounded-[17px] bg-[#1F2BD8] text-[16px] shadow-[0_16px_34px_rgba(31,43,216,0.20)] hover:bg-[#1722C2]" onClick={openDemo}>
               Открыть кабинет школы
               <ArrowRight size={20} />

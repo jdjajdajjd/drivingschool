@@ -26,11 +26,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_ADMIN_LOGIN: ${{ secrets.VITE_ADMIN_LOGIN }}
+          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
+          VITE_SUPERADMIN_LOGIN: ${{ secrets.VITE_SUPERADMIN_LOGIN }}
+          VITE_SUPERADMIN_PASSWORD: ${{ secrets.VITE_SUPERADMIN_PASSWORD }}
+
+      - name: Smoke local build
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/vroom-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
+          READY=0
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/vroom-preview.log
+            exit 1
+          fi
+          SMOKE_BASE_URL=http://127.0.0.1:4173 npm run smoke:vroom
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1

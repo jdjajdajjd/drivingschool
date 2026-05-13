@@ -357,6 +357,7 @@ function seedDemoProgress(): void {
       theoryTopicsCompleted: theoryCompleted,
       drivingHoursTotal: 0,
       drivingHoursCompleted: hoursCompleted,
+      confirmedHours: hoursCompleted,
       internalExamPassed: idx % 3 !== 0,
       internalExamDate: idx % 3 !== 0 ? format(addDays(new Date(), -7 + idx), 'yyyy-MM-dd') : null,
       gaidExamDate: format(addDays(new Date(), 30 + idx * 7), 'yyyy-MM-dd'),

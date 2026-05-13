@@ -1,15 +1,11 @@
-import fs from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 
-const source = fs.readFileSync('src/lib/supabase.ts', 'utf8')
-const defaultUrl = source.match(/const defaultSupabaseUrl = '([^']+)'/)?.[1]
-const defaultKey = source.match(/const defaultSupabaseAnonKey = '([^']+)'/)?.[1]
-const url = process.env.VITE_SUPABASE_URL || defaultUrl
-const key = process.env.VITE_SUPABASE_ANON_KEY || defaultKey
-const password = process.env.VROOM_ADMIN_PASSWORD || 'drivedesk-admin-2026'
+const url = process.env.VITE_SUPABASE_URL
+const key = process.env.VITE_SUPABASE_ANON_KEY
+const password = process.env.VROOM_ADMIN_PASSWORD
 
-if (!url || !key) {
-  console.error('Missing Supabase URL/key')
+if (!url || !key || !password) {
+  console.error('Missing VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY or VROOM_ADMIN_PASSWORD')
   process.exit(1)
 }
 

@@ -28,6 +28,10 @@ export function getStudentStats(studentId: string): StudentStats {
   )
   const completedBookings = bookings.filter((entry) => entry.booking.status === 'completed')
   const cancelledBookings = bookings.filter((entry) => entry.booking.status === 'cancelled')
+  const confirmedHours = completedBookings.reduce((total, entry) => {
+    if (typeof entry.booking.confirmedHours === 'number') return total + entry.booking.confirmedHours
+    return total + (entry.slot ? Math.max(1, Math.round(entry.slot.duration / 60)) : 0)
+  }, 0)
 
   const sortedByDate = [...bookings].sort((left, right) => {
     const leftTime = left.slot ? getSlotDateTime(left.slot).getTime() : 0
@@ -49,6 +53,7 @@ export function getStudentStats(studentId: string): StudentStats {
     completedBookings: completedBookings.length,
     cancelledBookings: cancelledBookings.length,
     cancellationsCount: cancelledBookings.length,
+    confirmedHours,
     lastBooking,
     nextBooking,
     limitReached:
