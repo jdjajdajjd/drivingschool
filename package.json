@@ -10,6 +10,8 @@
     "telegram:opencode": "node scripts/telegram-opencode-bot.mjs",
     "typecheck": "tsc --noEmit",
     "smoke:vroom": "node scripts/smoke-vroom.mjs",
+    "qa:product": "node scripts/qa-product-flows.mjs",
+    "qa:local": "node scripts/run-local-qa.mjs",
     "supabase:apply": "node scripts/apply-supabase-sql.mjs",
     "deploy": "npm run build && bash node_modules/.bin/wrangler pages deploy dist"
   },

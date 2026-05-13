@@ -40,9 +40,22 @@ Before shipping:
 npm run typecheck
 npm run build
 npm run smoke:vroom
+npm run qa:local
 ```
 
 The smoke command checks production by default. To smoke another deployment, set `SMOKE_BASE_URL`, for example `SMOKE_BASE_URL=http://localhost:4173 npm run smoke:vroom`.
+
+For product work, use the local QA command:
+
+```bash
+npm run qa:local
+```
+
+It builds the production bundle, starts a local preview, checks the public entry, student cabinet on mobile and desktop, admin workspace routes on mobile and desktop, bottom navigation alignment, and horizontal overflow. To point the product QA at an already running URL:
+
+```bash
+QA_BASE_URL=http://localhost:4173 npm run qa:product
+```
 
 ## Environment
 
