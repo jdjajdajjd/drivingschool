@@ -32,9 +32,9 @@ export function AdminInfoTile({
         'rounded-2xl border px-3.5 py-3',
         {
           default: 'border-black/10 bg-[#F4F5F6]',
-          primary: 'border-[#F6B84D]/20 bg-[#F6B84D]/10',
+          primary: 'border-[#0A84FF]/20 bg-[#0A84FF]/10',
           success: 'border-[#15803D]/15 bg-[#F0FDF4]',
-          warning: 'border-[#B45309]/15 bg-[#FFFBEB]',
+          warning: 'border-[#315A7C]/15 bg-[#EAF3FF]',
           danger: 'border-[#E5534B]/15 bg-[#FEF2F2]',
         }[tone],
         className,

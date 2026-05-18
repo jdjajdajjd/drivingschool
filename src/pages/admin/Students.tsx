@@ -313,7 +313,7 @@ export function AdminStudents() {
                       <span className="text-[11px] font-medium text-[#667085]">долг</span>
                     </span>
                     <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
-                      <strong className={`block text-[16px] font-semibold ${missingDocs > 0 ? 'text-[#9A5A00]' : 'text-[#1F8F3F]'}`}>{missingDocs || 'ок'}</strong>
+                      <strong className={`block text-[16px] font-semibold ${missingDocs > 0 ? 'text-[#315A7C]' : 'text-[#1F8F3F]'}`}>{missingDocs || 'ок'}</strong>
                       <span className="text-[11px] font-medium text-[#667085]">доки</span>
                     </span>
                   </div>
@@ -472,7 +472,7 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
           <option value="D">D</option>
         </select>
       </label>
-      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>

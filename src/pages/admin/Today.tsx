@@ -111,7 +111,7 @@ function useTodayData(schoolId: string) {
 }
 
 function PriorityCard({ title, text, tone, to }: { title: string; text: string; tone: 'danger' | 'warning' | 'info'; to: string }) {
-  const iconClass = tone === 'danger' ? 'text-[#FF3B30]' : tone === 'warning' ? 'text-[#B86A00]' : 'text-[#0A84FF]'
+  const iconClass = tone === 'danger' ? 'text-[#FF3B30]' : tone === 'warning' ? 'text-[#315A7C]' : 'text-[#0A84FF]'
   return (
     <Link to={to} className="flex items-start gap-3 rounded-[20px] border border-[rgba(15,23,42,0.07)] bg-[#F9FAFB] p-4 transition hover:border-[rgba(15,23,42,0.14)] hover:bg-white">
       <AlertTriangle className={`mt-0.5 h-5 w-5 shrink-0 ${iconClass}`} />
@@ -128,7 +128,7 @@ function TodayMetric({ label, value, tone = 'muted', to }: { label: string; valu
     blue: 'bg-[#EAF4FF] text-[#075EBC]',
     green: 'bg-[rgba(52,199,89,0.12)] text-[#1F8F3F]',
     red: 'bg-[rgba(255,59,48,0.10)] text-[#C92820]',
-    amber: 'bg-[rgba(255,176,32,0.16)] text-[#9A5A00]',
+    amber: 'bg-[rgba(10,132,255,0.16)] text-[#315A7C]',
     muted: 'bg-[#F2F4F7] text-[#667085]',
   }[tone]
   return (
@@ -190,7 +190,7 @@ function LaunchChecklist({
   const isReady = doneCount === items.length
 
   return (
-    <section className={`v-admin-panel mt-4 overflow-hidden ${isReady ? 'border-[#BFE7CF]' : 'border-[#F7D58B]'}`}>
+    <section className={`v-admin-panel mt-4 overflow-hidden ${isReady ? 'border-[#BFE7CF]' : 'border-[#BFD7F1]'}`}>
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#DCE2E8] p-4">
         <div>
           <h2 className="text-[18px] font-black text-[#111418]">Готовность к работе</h2>
@@ -205,7 +205,7 @@ function LaunchChecklist({
       <div className="grid gap-0 divide-y divide-[#EEF2F5] lg:grid-cols-5 lg:divide-x lg:divide-y-0">
         {items.map((item) => (
           <Link key={item.title} to={item.to} className="flex min-h-[116px] flex-col gap-3 p-4 transition hover:bg-[#F8FAFC]">
-            <span className={`grid h-9 w-9 place-items-center rounded-[10px] ${item.done ? 'bg-[#EAF7EF] text-[#157347]' : 'bg-[#FFF7E0] text-[#A45A00]'}`}>
+            <span className={`grid h-9 w-9 place-items-center rounded-[10px] ${item.done ? 'bg-[#EAF7EF] text-[#157347]' : 'bg-[#EAF3FF] text-[#315A7C]'}`}>
               {item.done ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
             </span>
             <span>

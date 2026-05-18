@@ -15,13 +15,13 @@ const DOC_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<DocumentStatus, string> = {
   missing: 'bg-red-50 text-red-500',
-  pending: 'bg-amber-50 text-amber-600',
+  pending: 'bg-[#EAF3FF] text-[#315A7C]',
   uploaded: 'bg-blue-50 text-blue-600',
   verified: 'bg-green-50 text-green-600',
   rejected: 'bg-red-50 text-red-500',
   expired: 'bg-red-100 text-red-600',
   not_required: 'bg-gray-100 text-gray-400',
-  required: 'bg-amber-50 text-amber-600',
+  required: 'bg-[#EAF3FF] text-[#315A7C]',
 }
 
 type FilterTab = 'all' | 'missing' | 'pending' | 'verified' | 'expired'

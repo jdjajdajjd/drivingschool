@@ -29,9 +29,9 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <div className="space-y-5 px-5 pb-5 pt-2">
-        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${danger ? 'border-[#E5534B]/15 bg-[#FEF2F2]' : 'border-[#B45309]/15 bg-[#FFFBEB]'}`}>
+        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${danger ? 'border-[#E5534B]/15 bg-[#FEF2F2]' : 'border-[#315A7C]/15 bg-[#EAF3FF]'}`}>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">
-            <AlertTriangle size={16} className={danger ? 'text-[#E5534B]' : 'text-[#B45309]'} />
+            <AlertTriangle size={16} className={danger ? 'text-[#E5534B]' : 'text-[#315A7C]'} />
           </div>
           <p className="text-[14px] leading-relaxed text-[#6F747A]">{description}</p>
         </div>

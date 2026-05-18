@@ -499,7 +499,7 @@ export function AdminSchedule() {
                 <>
                   <button onClick={() => setShowRescheduleModal(true)} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">Перенести</button>
                   <button onClick={handleComplete} disabled={actionPending} className="v-admin-button bg-[#247A4B] hover:bg-[#1C623C] disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Засчитать'}</button>
-                  <button onClick={handleNoShow} disabled={actionPending} className="v-admin-button bg-[#A15C07] hover:bg-[#7E4706] disabled:opacity-50">Неявка</button>
+                  <button onClick={handleNoShow} disabled={actionPending} className="v-admin-button bg-[#315A7C] hover:bg-[#7E4706] disabled:opacity-50">Неявка</button>
                   <button onClick={() => setShowCancelModal(true)} disabled={actionPending} className="v-admin-button bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">Отменить</button>
                 </>
               ) : (
@@ -737,7 +737,7 @@ function CreateSlotForm({
           <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
         </div>
       </div>
-      {error ? <p className="rounded-[16px] bg-[#FFF4DC] px-3 py-2 text-[13px] font-medium text-[#A15C07]">{error}</p> : null}
+      {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаем...' : 'Создать'}</button>

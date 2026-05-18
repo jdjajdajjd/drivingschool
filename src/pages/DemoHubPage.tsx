@@ -98,7 +98,7 @@ export function DemoHubPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[17px] bg-[#FFF3D8] text-[#7A5A26]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[17px] bg-[#EAF3FF] text-[#315A7C]">
               <RotateCcw size={21} />
             </span>
             <div>

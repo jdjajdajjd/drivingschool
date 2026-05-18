@@ -8,7 +8,7 @@ import { assertAdminPermission } from '../../services/adminAccess'
 
 const STATUS_COLORS: Record<CarStatus, { bg: string; text: string; label: string }> = {
   working: { bg: 'bg-green-50', text: 'text-green-600', label: 'Работает' },
-  maintenance: { bg: 'bg-amber-50', text: 'text-amber-600', label: 'На обслуживании' },
+  maintenance: { bg: 'bg-[#EAF3FF]', text: 'text-[#315A7C]', label: 'На обслуживании' },
   repair: { bg: 'bg-red-50', text: 'text-red-500', label: 'В ремонте' },
   reserved: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Резерв' },
   written_off: { bg: 'bg-gray-100', text: 'text-gray-400', label: 'Списана' },
@@ -208,7 +208,7 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
         <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" placeholder="..." />
       </div>
 
-      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>

@@ -37,7 +37,7 @@ const toneByKind: Record<StateKind, { bg: string; color: string }> = {
   loading: { bg: '#F2F6FA', color: '#111315' },
   error: { bg: '#FEF2F2', color: '#D1433C' },
   success: { bg: '#EAF6EE', color: '#247A4B' },
-  locked: { bg: '#FFF4DC', color: '#A15C07' },
+  locked: { bg: '#EAF3FF', color: '#315A7C' },
 }
 
 export function StateView({ kind = 'empty', title, description, action, className }: StateViewProps) {

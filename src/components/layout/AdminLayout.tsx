@@ -349,7 +349,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
                       <button
                         key={step.label}
                         onClick={() => navigate(step.to)}
-                        className={`rounded-full border px-2.5 py-1.5 text-[12px] font-medium ${step.done ? 'border-[#247A4B]/15 bg-[#EAF6EE] text-[#247A4B]' : 'border-[#A15C07]/15 bg-[#FFF4DC] text-[#A15C07]'}`}
+                        className={`rounded-full border px-2.5 py-1.5 text-[12px] font-medium ${step.done ? 'border-[#247A4B]/15 bg-[#EAF6EE] text-[#247A4B]' : 'border-[#315A7C]/15 bg-[#EAF3FF] text-[#315A7C]'}`}
                       >
                         {step.done ? '✓' : '•'} {step.label}
                       </button>

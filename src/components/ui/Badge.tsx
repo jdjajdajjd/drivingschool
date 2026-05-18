@@ -19,7 +19,7 @@ export function Badge({
   const variants: Record<string, { bg: string; color: string; border: string }> = {
     default: { bg: '#F2F6FA', color: '#667381', border: 'rgba(17,24,39,0.07)' },
     success: { bg: '#EAF6EE', color: '#247A4B', border: 'rgba(36,122,75,0.16)' },
-    warning: { bg: '#FFF4DC', color: '#A15C07', border: 'rgba(161,92,7,0.16)' },
+    warning: { bg: '#EAF3FF', color: '#315A7C', border: 'rgba(161,92,7,0.16)' },
     error: { bg: '#FEF2F2', color: '#D1433C', border: 'rgba(209,67,60,0.16)' },
     accent: { bg: '#EAF3FF', color: '#111827', border: 'rgba(17,24,39,0.08)' },
     outline: { bg: 'rgba(255,255,255,0.62)', color: '#667381', border: 'rgba(17,24,39,0.10)' },

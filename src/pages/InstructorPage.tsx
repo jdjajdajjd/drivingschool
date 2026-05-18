@@ -199,9 +199,9 @@ function WorkdayRow({
         </div>
 
         {issues.length > 0 ? (
-          <div className="mt-3 rounded-[8px] border border-[#F6D99D] bg-[#FFF8E6] px-3 py-3">
-            <p className="text-[13px] font-black text-[#684500]">Что мешает нормальному статусу</p>
-            <ul className="mt-1.5 space-y-1 text-[12px] font-semibold leading-5 text-[#7A5607]">
+          <div className="mt-3 rounded-[8px] border border-[#BFD7F1] bg-[#EAF3FF] px-3 py-3">
+            <p className="text-[13px] font-black text-[#315A7C]">Что мешает нормальному статусу</p>
+            <ul className="mt-1.5 space-y-1 text-[12px] font-semibold leading-5 text-[#315A7C]">
               {issues.map((issue) => <li key={issue}>• {issue}</li>)}
             </ul>
           </div>
@@ -529,9 +529,9 @@ export function InstructorPage() {
         ) : null}
 
         {grouped.issues > 0 ? (
-          <section className="mt-4 rounded-[12px] border border-[#F6D99D] bg-[#FFF8E6] px-4 py-3">
-            <p className="text-[14px] font-black text-[#684500]">В расписании есть незаполненные поля</p>
-            <p className="mt-1 text-[13px] font-semibold leading-5 text-[#7A5607]">Откройте занятие и проверьте, что именно мешает нормальному статусу: адрес, телефон, автомобиль или карточка ученика.</p>
+          <section className="mt-4 rounded-[12px] border border-[#BFD7F1] bg-[#EAF3FF] px-4 py-3">
+            <p className="text-[14px] font-black text-[#315A7C]">В расписании есть незаполненные поля</p>
+            <p className="mt-1 text-[13px] font-semibold leading-5 text-[#315A7C]">Откройте занятие и проверьте, что именно мешает нормальному статусу: адрес, телефон, автомобиль или карточка ученика.</p>
           </section>
         ) : null}
 

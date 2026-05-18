@@ -207,9 +207,9 @@ export function BookingConfirmation() {
         </div>
 
         {!isCancelled ? (
-          <div className="rounded-[24px] border border-[rgba(196,147,90,0.18)] bg-[#FFF8EA] p-4 shadow-[var(--shadow-card)]">
+          <div className="rounded-[24px] border border-[rgba(196,147,90,0.18)] bg-[#EAF3FF] p-4 shadow-[var(--shadow-card)]">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#9B7034]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#315A7C]">
                 <UserRound size={18} />
               </span>
               <div className="min-w-0 flex-1">

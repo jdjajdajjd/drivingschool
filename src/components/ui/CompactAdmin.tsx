@@ -106,7 +106,7 @@ export function SmallEmptyState({ title, description, action, className }: { tit
 }
 
 export function WarningRow({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('rounded-[12px] border border-[#FEDF89] bg-[#FFFAEB] px-3 py-2 text-[13px] font-semibold leading-5 text-[#92400E]', className)}>{children}</div>
+  return <div className={cn('rounded-[12px] border border-[#BFD7F1] bg-[#EAF3FF] px-3 py-2 text-[13px] font-semibold leading-5 text-[#315A7C]', className)}>{children}</div>
 }
 
 export function FilterBar({ children, more, className }: { children: ReactNode; more?: ReactNode; className?: string }) {

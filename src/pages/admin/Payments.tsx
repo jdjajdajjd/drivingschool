@@ -241,7 +241,7 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Описание</span>
         <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Оплата за обучение" className="v-admin-input w-full" />
       </label>
-      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>

@@ -257,7 +257,7 @@ export function AdminReports() {
                 <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
                   car.status === 'working' ? 'bg-green-50 text-green-600' :
                   car.status === 'repair' ? 'bg-red-50 text-red-500' :
-                  car.status === 'maintenance' ? 'bg-amber-50 text-amber-600' :
+                  car.status === 'maintenance' ? 'bg-[#EAF3FF] text-[#315A7C]' :
                   'bg-gray-100 text-gray-400'
                 }`}>
                   {car.status === 'working' ? 'Работает' : car.status === 'repair' ? 'Ремонт' : car.status === 'maintenance' ? 'Обслуживание' : car.status}

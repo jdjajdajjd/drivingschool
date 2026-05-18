@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
                 'pointer-events-auto flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-[14px] font-medium shadow-[0_8px_24px_rgba(15,20,25,0.12)] sm:min-w-[260px] sm:max-w-[380px]',
-                toast.type === 'success' && 'rgba(0,0,0,0.06) bg-warm-main text-white',
+                toast.type === 'success' && 'rgba(0,0,0,0.06) bg-[#111827] text-white',
                 toast.type === 'error' && 'rgba(229,83,75,0.15) bg-error text-white',
                 toast.type === 'info' && 'border-info-border bg-info text-white',
               )}

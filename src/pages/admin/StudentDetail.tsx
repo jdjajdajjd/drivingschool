@@ -49,7 +49,7 @@ const DOC_LABELS: Record<string, string> = {
 
 const DOC_STATUS_COLORS: Record<string, string> = {
   missing: 'bg-red-50 text-red-500',
-  pending: 'bg-amber-50 text-amber-600',
+  pending: 'bg-[#EAF3FF] text-[#315A7C]',
   uploaded: 'bg-blue-50 text-blue-600',
   verified: 'bg-green-50 text-green-600',
   rejected: 'bg-red-50 text-red-500',
@@ -174,7 +174,7 @@ export function AdminStudentDetail() {
         </div>
         <div className="rounded-xl bg-gray-50 p-3">
           <p className="text-[11px] font-black uppercase text-gray-400">Документы</p>
-          <p className={`mt-1 text-[14px] font-black ${missingDocs > 0 ? 'text-amber-700' : 'text-green-700'}`}>{missingDocs > 0 ? `${missingDocs} не хватает` : 'готово'}</p>
+          <p className={`mt-1 text-[14px] font-black ${missingDocs > 0 ? 'text-[#315A7C]' : 'text-green-700'}`}>{missingDocs > 0 ? `${missingDocs} не хватает` : 'готово'}</p>
         </div>
         <div className="rounded-xl bg-gray-50 p-3">
           <p className="text-[11px] font-black uppercase text-gray-400">Практика</p>
@@ -547,7 +547,7 @@ function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; stu
           {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
         </select>
       </div>
-      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
@@ -624,7 +624,7 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
           <option value="receipt">Квитанция</option>
         </select>
       </div>
-      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
@@ -679,7 +679,7 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
         <option value="missing">Не загружен</option>
         <option value="rejected">Отклонен</option>
       </select>
-      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
