@@ -7,34 +7,41 @@ const { Client } = pg
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
 const sqlPath = path.join(rootDir, 'supabase', 'DRIVEDESK_FULL_SETUP.sql')
-const envPath = path.join(rootDir, '.env.local')
+const envPaths = [path.join(rootDir, '.env.supabase'), path.join(rootDir, '.env.local')]
+const safeMigrationPaths = [
+  path.join(rootDir, 'supabase', 'migrations', '003_school_admin_credentials.sql'),
+  path.join(rootDir, 'supabase', 'migrations', '004_school_staff_roles.sql'),
+  path.join(rootDir, 'supabase', 'migrations', '005_superadmin_delete_school.sql'),
+]
 
 function loadLocalEnv() {
-  if (!fs.existsSync(envPath)) return
+  for (const envPath of envPaths) {
+    if (!fs.existsSync(envPath)) continue
 
-  const content = fs.readFileSync(envPath, 'utf8')
-  for (const line of content.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
+    const content = fs.readFileSync(envPath, 'utf8')
+    for (const line of content.split(/\r?\n/)) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
 
-    const separator = trimmed.indexOf('=')
-    if (separator === -1) continue
+      const separator = trimmed.indexOf('=')
+      if (separator === -1) continue
 
-    const key = trimmed.slice(0, separator).trim()
-    const value = trimmed.slice(separator + 1).trim().replace(/^['"]|['"]$/g, '')
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value
+      const key = trimmed.slice(0, separator).trim()
+      const value = trimmed.slice(separator + 1).trim().replace(/^['"]|['"]$/g, '')
+      if (key && process.env[key] === undefined) {
+        process.env[key] = value
+      }
     }
   }
 }
 
 loadLocalEnv()
 
-const connectionString = process.env.SUPABASE_DATABASE_URL
+const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
 
 if (!connectionString) {
-  console.error('Missing SUPABASE_DATABASE_URL.')
-  console.error('Example: $env:SUPABASE_DATABASE_URL="postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres?sslmode=require"; npm run supabase:apply')
+  console.error('Missing SUPABASE_DATABASE_URL, SUPABASE_DB_URL, DATABASE_URL or POSTGRES_URL.')
+  console.error('Example: SUPABASE_DATABASE_URL="postgresql://postgres.<ref>:<password>@aws-1-eu-central-1.pooler.supabase.com:6543/postgres" npm run supabase:apply')
   process.exit(1)
 }
 
@@ -61,7 +68,12 @@ if (applyMode === 'full' && !destructiveFullSetupAllowed) {
   )
 }
 
-const sql = applyMode === 'full' ? sourceSql : extractSafePatch(sourceSql)
+const sql = applyMode === 'full'
+  ? sourceSql
+  : [
+      extractSafePatch(sourceSql),
+      ...safeMigrationPaths.filter((filePath) => fs.existsSync(filePath)).map((filePath) => fs.readFileSync(filePath, 'utf8')),
+    ].join('\n\n')
 const client = new Client({
   connectionString,
   ssl: { rejectUnauthorized: false },
