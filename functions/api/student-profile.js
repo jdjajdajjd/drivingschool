@@ -22,6 +22,11 @@ function normalizePhone(value) {
   return digits
 }
 
+function cleanSlug(value, fallback) {
+  const slug = clean(value || fallback).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+  return slug || `school-${crypto.randomUUID().slice(0, 8)}`
+}
+
 function bytesToBase64(bytes) {
   let binary = ''
   for (const byte of bytes) binary += String.fromCharCode(byte)
@@ -89,6 +94,31 @@ async function supabaseFetch(env, path, init = {}) {
   return data
 }
 
+async function ensureSchool(env, body) {
+  const schoolId = clean(body.schoolId)
+  if (!schoolId) return
+
+  const schoolName = clean(body.schoolName) || 'Автошкола'
+  const schoolSlug = cleanSlug(body.schoolSlug, schoolId.replace(/^school-/, ''))
+
+  await supabaseFetch(env, '/rest/v1/schools?on_conflict=id', {
+    method: 'POST',
+    headers: { prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({
+      id: schoolId,
+      name: schoolName,
+      slug: schoolSlug,
+      description: clean(body.schoolDescription),
+      phone: clean(body.schoolPhone),
+      email: clean(body.schoolEmail),
+      address: clean(body.schoolAddress),
+      logo_url: clean(body.schoolLogoUrl) || null,
+      primary_color: clean(body.schoolPrimaryColor) || '#4455C4',
+      is_active: true,
+    }),
+  })
+}
+
 async function updateProfile(env, body) {
   const schoolId = clean(body.schoolId)
   const name = clean(body.name)
@@ -97,6 +127,8 @@ async function updateProfile(env, body) {
   if (!schoolId || name.length < 2 || !/^7\d{10}$/.test(phone) || password.length < 6) {
     return json({ error: 'Некорректные данные ученика.' }, { status: 400 })
   }
+
+  await ensureSchool(env, body)
 
   const payload = {
     id: `stu-${crypto.randomUUID().replace(/-/g, '')}`,

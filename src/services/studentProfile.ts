@@ -35,6 +35,17 @@ export interface StudentProfileForm {
   avatarUrl?: string
 }
 
+export interface StudentProfileSchoolContext {
+  name?: string
+  slug?: string
+  description?: string
+  phone?: string
+  email?: string
+  address?: string
+  logoUrl?: string
+  primaryColor?: string
+}
+
 export function getProfileKey(schoolId: string): string {
   return `dd:student_profile:${schoolId}`
 }
@@ -186,6 +197,58 @@ export async function saveStudentProfileToSupabase(schoolId: string, form: Stude
   try {
     result = await updateStudentProfileInSupabase({
       schoolId,
+      name: normalizePersonName(form.name),
+      phone: form.phone,
+      email: form.email ?? '',
+      password: form.password ?? '',
+      avatarUrl: form.avatarUrl ?? '',
+      categoryCodes: extra?.categoryCodes,
+      trainingStage: extra?.trainingStage,
+      groupName: extra?.groupName,
+      trainingStartDate: extra?.trainingStartDate,
+      drivingStartDate: extra?.drivingStartDate,
+      trainingEndDate: extra?.trainingEndDate,
+      drivingEndDate: extra?.drivingEndDate,
+    })
+  } catch (error) {
+    if (!isMissingStudentProfileRpcError(error)) throw error
+    if (isSupabaseConfigured()) throw new Error('Кабинет ученика не сохранен в Supabase. Проверьте SQL-функции public_update_student_profile и public_login_student.')
+
+    return saveStudentProfile(schoolId, form, extra)
+  }
+
+  const profile: StudentProfile = {
+    name: normalizePersonName(form.name),
+    phone: result.normalizedPhone,
+    email: form.email?.trim() ?? '',
+    avatarUrl: form.avatarUrl?.trim() ?? '',
+    passwordSet: Boolean(form.password?.trim() || extra?.passwordSet),
+    updatedAt: new Date().toISOString(),
+    createdByConsent: true,
+    ...extra,
+  }
+  saveStudentSessionProfile(schoolId, profile)
+  return profile
+}
+
+export async function saveStudentProfileToSupabaseWithSchool(
+  schoolId: string,
+  school: StudentProfileSchoolContext,
+  form: StudentProfileForm,
+  extra?: Partial<StudentProfile>,
+): Promise<StudentProfile> {
+  let result: Awaited<ReturnType<typeof updateStudentProfileInSupabase>> | null = null
+  try {
+    result = await updateStudentProfileInSupabase({
+      schoolId,
+      schoolName: school.name,
+      schoolSlug: school.slug,
+      schoolDescription: school.description,
+      schoolPhone: school.phone,
+      schoolEmail: school.email,
+      schoolAddress: school.address,
+      schoolLogoUrl: school.logoUrl,
+      schoolPrimaryColor: school.primaryColor,
       name: normalizePersonName(form.name),
       phone: form.phone,
       email: form.email ?? '',

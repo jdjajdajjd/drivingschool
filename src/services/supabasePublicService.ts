@@ -443,6 +443,14 @@ export async function getBookingGroupFromSupabase(bookingId: string): Promise<Su
 
 export async function updateStudentProfileInSupabase(params: {
   schoolId: string
+  schoolName?: string
+  schoolSlug?: string
+  schoolDescription?: string
+  schoolPhone?: string
+  schoolEmail?: string
+  schoolAddress?: string
+  schoolLogoUrl?: string
+  schoolPrimaryColor?: string
   name: string
   phone: string
   email: string
@@ -482,6 +490,14 @@ export async function updateStudentProfileInSupabase(params: {
       return callStudentProfileApi<{ studentId: string; normalizedPhone: string }>({
         action: 'update',
         schoolId: params.schoolId,
+        schoolName: params.schoolName,
+        schoolSlug: params.schoolSlug,
+        schoolDescription: params.schoolDescription,
+        schoolPhone: params.schoolPhone,
+        schoolEmail: params.schoolEmail,
+        schoolAddress: params.schoolAddress,
+        schoolLogoUrl: params.schoolLogoUrl,
+        schoolPrimaryColor: params.schoolPrimaryColor,
         name: params.name,
         phone: params.phone,
         email: params.email,

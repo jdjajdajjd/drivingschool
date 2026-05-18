@@ -200,9 +200,13 @@ async function cleanupStudent({ schoolId, normalizedPhone }) {
   await supabaseFetch(`/rest/v1/students?${query}`, { method: 'DELETE' })
 }
 
+async function cleanupSchool(schoolId) {
+  await supabaseFetch(`/rest/v1/schools?id=eq.${encodeURIComponent(schoolId)}`, { method: 'DELETE' })
+}
+
 async function checkStudentProfile() {
   const suffix = String(Date.now()).slice(-8)
-  const schoolId = 'school-virazh'
+  const schoolId = `school-launch-check-${suffix}`
   const phone = `+7 910 ${suffix.slice(0, 3)}-${suffix.slice(3, 5)}-${suffix.slice(5, 7)}`
   const normalizedPhone = normalizePhone(phone)
   const password = `Launch${suffix}!`
@@ -211,6 +215,8 @@ async function checkStudentProfile() {
   const updatePayload = {
     action: 'update',
     schoolId,
+    schoolName: `Launch School ${suffix}`,
+    schoolSlug: `launch-check-${suffix}`,
     name,
     phone,
     password,
@@ -228,6 +234,7 @@ async function checkStudentProfile() {
   expect(update.body?.studentId, '/api/student-profile update: missing studentId')
   expect(update.body?.normalizedPhone === normalizedPhone, '/api/student-profile update: normalized phone mismatch')
   cleanupTasks.push(() => cleanupStudent({ schoolId, normalizedPhone }))
+  cleanupTasks.push(() => cleanupSchool(schoolId))
 
   const login = await appFetch('/api/student-profile', {
     method: 'POST',

@@ -32,7 +32,7 @@ import {
   releaseSessionLocks,
   releaseSlotLock,
 } from '../services/bookingService'
-import { findAnyStudentProfile, saveStudentProfile, saveStudentProfileToSupabase } from '../services/studentProfile'
+import { findAnyStudentProfile, saveStudentProfile, saveStudentProfileToSupabaseWithSchool } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
@@ -655,7 +655,7 @@ export function BookingFlowPage() {
     try {
       const profilePayload = { passwordSet: true, assignedBranchId: selectedBranch?.id, assignedInstructorId: selectedInstructor?.id, categoryCodes: ['B'], trainingStage: 'theory' as const, groupName: '' }
       if (isSupabaseConfigured()) {
-        await saveStudentProfileToSupabase(school.id, form, profilePayload)
+        await saveStudentProfileToSupabaseWithSchool(school.id, school, form, profilePayload)
       } else {
         saveStudentProfile(school.id, form, profilePayload)
       }

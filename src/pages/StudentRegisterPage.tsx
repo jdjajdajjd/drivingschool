@@ -7,7 +7,7 @@ import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { isValidRussianPhone } from '../services/bookingService'
 import { findSchoolBySlugAcrossNamespaces } from '../services/storage'
-import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabase, type StudentProfile } from '../services/studentProfile'
+import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabaseWithSchool, type StudentProfile } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import type { School } from '../types'
@@ -178,7 +178,7 @@ export default function StudentRegisterPage() {
     setSubmitting(true)
     try {
       if (isSupabaseConfigured()) {
-        await saveStudentProfileToSupabase(school.id, { name: fullName, phone, password }, { passwordSet: true })
+        await saveStudentProfileToSupabaseWithSchool(school.id, school, { name: fullName, phone, password }, { passwordSet: true })
       } else {
         saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
         saveStudentCredentials(phone, password, school.id)
