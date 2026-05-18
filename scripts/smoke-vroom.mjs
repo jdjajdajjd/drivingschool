@@ -18,6 +18,13 @@ const mojibakePatterns = [
   '�',
 ]
 
+const staticAssets = [
+  { path: '/favicon.svg', contentType: 'image/svg+xml', rejects: ['<!doctype html>', '<div id="root">'] },
+  { path: '/robots.txt', contentType: 'text/plain', checks: ['Sitemap: https://vroom.today/sitemap.xml'], rejects: ['<!doctype html>'] },
+  { path: '/sitemap.xml', contentType: 'xml', checks: ['https://vroom.today/'], rejects: ['<!doctype html>'] },
+  { path: '/site.webmanifest', contentType: 'application/manifest+json', checks: ['vroom'], rejects: ['<!doctype html>'] },
+]
+
 const routes = [
   {
     path: '/',
@@ -93,6 +100,39 @@ let browser
 
 try {
   browser = await chromium.launch({ headless: true })
+
+  for (const asset of staticAssets) {
+    const url = new URL(asset.path, baseUrl).toString()
+    try {
+      const response = await fetch(url)
+      const text = await response.text()
+      const contentType = response.headers.get('content-type') ?? ''
+      if (!response.ok) failures.push(`${asset.path} (${url}): HTTP ${response.status}`)
+      if (!contentType.includes(asset.contentType)) failures.push(`${asset.path} (${url}): expected content-type containing "${asset.contentType}", got "${contentType}"`)
+      for (const expected of asset.checks ?? []) {
+        if (!text.includes(expected)) failures.push(`${asset.path} (${url}): missing expected text "${expected}"`)
+      }
+      for (const rejected of asset.rejects ?? []) {
+        if (text.includes(rejected)) failures.push(`${asset.path} (${url}): contains forbidden text "${rejected}"`)
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      failures.push(`${asset.path} (${url}): static asset smoke failed: ${message}`)
+    }
+  }
+
+  if (baseUrl.startsWith('https://vroom.today')) {
+    try {
+      const url = new URL('/api/health', baseUrl).toString()
+      const response = await fetch(url)
+      const data = await response.json().catch(() => null)
+      if (!response.ok || data?.ok !== true) failures.push(`/api/health (${url}): unhealthy response ${response.status}`)
+      if (data?.checks?.supabaseUrl !== true || data?.checks?.supabaseServiceRole !== true) failures.push(`/api/health (${url}): Supabase launch checks are not ready`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      failures.push(`/api/health: health smoke failed: ${message}`)
+    }
+  }
 
   for (const route of routes) {
     const url = new URL(route.path, baseUrl).toString()
