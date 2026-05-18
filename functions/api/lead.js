@@ -22,19 +22,35 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
 }
 
-function buildTelegramMessage(payload) {
+function formatDateTime(value) {
+  try {
+    return new Intl.DateTimeFormat('ru-RU', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Europe/Moscow',
+    }).format(value)
+  } catch {
+    return value.toISOString()
+  }
+}
+
+function buildTelegramMessage(payload, meta = {}) {
+  const createdAt = meta.createdAt instanceof Date ? meta.createdAt : new Date()
   const lines = [
-    '<b>Новая заявка vroom.today</b>',
+    '<b>Новая заявка с vroom.today</b>',
     '',
-    `<b>Имя:</b> ${escapeHtml(payload.name)}`,
-    `<b>Телефон:</b> ${escapeHtml(payload.phone)}`,
+    `<b>Клиент:</b> ${escapeHtml(payload.name)}`,
+    `<b>Телефон:</b> <code>${escapeHtml(payload.phone)}</code>`,
     `<b>Автошкола:</b> ${escapeHtml(payload.schoolName)}`,
   ]
 
   if (payload.city) lines.push(`<b>Город:</b> ${escapeHtml(payload.city)}`)
   if (payload.comment) {
-    lines.push('', '<b>Комментарий:</b>', escapeHtml(payload.comment))
+    lines.push('', '<b>Комментарий</b>', escapeHtml(payload.comment))
   }
+
+  lines.push('', `<b>Время:</b> ${escapeHtml(formatDateTime(createdAt))}`)
+  if (meta.pageUrl) lines.push(`<b>Страница:</b> ${escapeHtml(meta.pageUrl)}`)
 
   return lines.join('\n')
 }
@@ -153,7 +169,7 @@ async function sendLeadToTelegram(env, payload) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       chat_id: chatId,
-      text: buildTelegramMessage(payload),
+      text: buildTelegramMessage(payload, { createdAt: new Date(), pageUrl: payload.pageUrl }),
       parse_mode: 'HTML',
       disable_web_page_preview: true,
     }),
@@ -184,6 +200,7 @@ export async function onRequest({ request, env }) {
     schoolName: clean(body.schoolName),
     city: clean(body.city),
     comment: clean(body.comment),
+    pageUrl: clean(request.headers.get('referer') || new URL(request.url).origin),
   }
 
   if (!payload.name || !payload.phone || !payload.schoolName) {

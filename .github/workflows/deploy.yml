@@ -70,11 +70,15 @@ jobs:
         run: |
           printf '%s' "$SUPABASE_URL" | npx wrangler@latest pages secret put SUPABASE_URL --project-name=drivingschool
           printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler@latest pages secret put SUPABASE_SERVICE_ROLE_KEY --project-name=drivingschool
+          printf '%s' "$TELEGRAM_BOT_TOKEN" | npx wrangler@latest pages secret put TELEGRAM_BOT_TOKEN --project-name=drivingschool
+          printf '%s' "$TELEGRAM_LEADS_CHAT_ID" | npx wrangler@latest pages secret put TELEGRAM_LEADS_CHAT_ID --project-name=drivingschool
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_LEADS_CHAT_ID: ${{ secrets.TELEGRAM_LEADS_CHAT_ID }}
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler@latest pages deploy dist --project-name=drivingschool --branch=main
