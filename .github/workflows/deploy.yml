@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
@@ -66,11 +66,7 @@ jobs:
           SMOKE_BASE_URL=http://127.0.0.1:4173 npm run smoke:vroom
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Infrastructure-only legacy Cloudflare Pages project; vroom.today is attached to it.
-          projectName: drivingschool
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+        run: npx wrangler@latest pages deploy dist --project-name=drivingschool --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
