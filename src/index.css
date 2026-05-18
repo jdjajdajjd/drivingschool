@@ -44,20 +44,23 @@
 
 @layer components {
   .landing-shell {
-    --landing-ink: #15130F;
-    --landing-rubber: #0B1210;
-    --landing-road: #24211B;
-    --landing-cream: #FFF7E8;
-    --landing-paper: #FFFCF5;
-    --landing-line: rgba(21,19,15,0.12);
-    --landing-warm-muted: #766C5D;
-    --landing-signal: #F7C948;
-    --landing-green: #1D7A55;
+    --landing-ink: #111315;
+    --landing-panel: rgba(255,255,255,0.76);
+    --landing-panel-strong: rgba(255,255,255,0.88);
+    --landing-line: rgba(17,24,39,0.08);
+    --landing-line-strong: rgba(17,24,39,0.14);
+    --landing-muted: #687381;
+    --landing-soft: #EEF4F9;
+    --landing-blue: #0A84FF;
+    --landing-blue-deep: #111827;
+    --landing-green: #247A4B;
     position: relative;
     overflow: hidden;
     background:
-      linear-gradient(90deg, rgba(21,19,15,0.045) 1px, transparent 1px) 0 0 / 62px 62px,
-      linear-gradient(180deg, #FFF9EC 0%, #F3EFE4 38%, #EAF1F4 100%) !important;
+      radial-gradient(920px 420px at 50% -12%, rgba(191,214,234,0.34), transparent 62%),
+      radial-gradient(740px 420px at 92% 6%, rgba(10,132,255,0.10), transparent 58%),
+      radial-gradient(640px 360px at 8% 20%, rgba(234,243,255,0.72), transparent 64%),
+      linear-gradient(180deg, #F8FBFD 0%, #EEF4F9 100%) !important;
     color: var(--landing-ink);
   }
 
@@ -67,12 +70,12 @@
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.42;
+    opacity: 0.56;
     background:
-      repeating-linear-gradient(135deg, rgba(21,19,15,0.055) 0 1px, transparent 1px 11px),
-      radial-gradient(620px 320px at 78% 7%, rgba(247,201,72,0.22), transparent 64%),
-      radial-gradient(620px 420px at 8% 26%, rgba(29,122,85,0.13), transparent 66%);
-    mix-blend-mode: multiply;
+      linear-gradient(90deg, rgba(17,24,39,0.035) 1px, transparent 1px) 0 0 / 56px 56px,
+      linear-gradient(180deg, rgba(17,24,39,0.026) 1px, transparent 1px) 0 0 / 56px 56px,
+      radial-gradient(520px 280px at 78% 4%, rgba(10,132,255,0.12), transparent 62%);
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.78) 54%, transparent 100%);
   }
 
   .landing-header,
@@ -83,8 +86,8 @@
 
   .landing-header [aria-label="vroom"] {
     position: relative;
-    color: var(--landing-rubber) !important;
-    font-weight: 900;
+    color: var(--landing-blue-deep) !important;
+    font-weight: 820;
   }
 
   .landing-header [aria-label="vroom"]::after {
@@ -95,14 +98,22 @@
     bottom: -7px;
     height: 4px;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--landing-signal) 0 42%, var(--landing-rubber) 42% 100%);
+    background: linear-gradient(90deg, #0A84FF, #34C759);
+    opacity: 0.86;
   }
 
   .landing-nav-button,
   .landing-secondary {
-    border-color: rgba(21,19,15,0.13) !important;
-    background: rgba(255,252,245,0.86) !important;
-    color: var(--landing-road) !important;
+    border-color: var(--landing-line) !important;
+    background: rgba(255,255,255,0.76) !important;
+    color: #2A2D2F !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+
+  .landing-nav-button:hover,
+  .landing-secondary:hover {
+    border-color: rgba(10,132,255,0.22) !important;
+    background: #fff !important;
   }
 
   .landing-hero-grid {
@@ -112,84 +123,74 @@
   .landing-hero-card {
     isolation: isolate;
     overflow: hidden;
-    border-color: rgba(21,19,15,0.16) !important;
+    border-color: rgba(255,255,255,0.72) !important;
     background:
-      linear-gradient(90deg, rgba(255,255,255,0.52) 1px, transparent 1px) 0 0 / 42px 42px,
-      linear-gradient(180deg, rgba(255,252,245,0.96), rgba(255,247,232,0.88)) !important;
-    box-shadow: 0 34px 90px rgba(52,44,31,0.18) !important;
+      linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.62)) !important;
+    box-shadow: var(--shadow-card) !important;
   }
 
   .landing-hero-card::before {
     content: '';
     position: absolute;
-    inset: auto -7% 22px auto;
-    width: min(420px, 72vw);
-    height: 84px;
+    inset: -1px -1px auto -1px;
+    height: 6px;
     z-index: -1;
-    border-radius: 999px;
-    background: repeating-linear-gradient(90deg, var(--landing-rubber) 0 34px, var(--landing-signal) 34px 58px);
-    opacity: 0.11;
-    transform: rotate(-5deg);
+    background: linear-gradient(90deg, #111827 0%, #0A84FF 52%, #34C759 100%);
+    opacity: 0.82;
   }
 
   .landing-hero-card::after {
     content: '';
     position: absolute;
-    right: 32px;
-    top: 34px;
-    width: 74px;
-    height: 74px;
+    right: -90px;
+    top: -110px;
+    width: 310px;
+    height: 310px;
     z-index: -1;
-    border: 1px solid rgba(21,19,15,0.12);
     border-radius: 50%;
-    background:
-      radial-gradient(circle, transparent 0 32%, rgba(21,19,15,0.13) 33% 38%, transparent 39%),
-      conic-gradient(from 0deg, rgba(21,19,15,0.18) 0 10deg, transparent 10deg 28deg, rgba(21,19,15,0.18) 28deg 38deg, transparent 38deg 56deg);
-    opacity: 0.38;
+    background: radial-gradient(circle, rgba(10,132,255,0.16), transparent 66%);
+    opacity: 0.9;
   }
 
   .landing-pill {
-    border: 1px solid rgba(29,122,85,0.14);
-    background: rgba(231,246,236,0.92) !important;
-    color: #176645 !important;
+    border: 1px solid rgba(10,132,255,0.14);
+    background: #EAF3FF !important;
+    color: #315A7C !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
   }
 
   .landing-title {
     max-width: 11.5ch !important;
-    color: var(--landing-rubber) !important;
-    font-weight: 860 !important;
+    color: var(--landing-blue-deep) !important;
+    font-weight: 760 !important;
     letter-spacing: 0 !important;
     text-wrap: balance;
   }
 
   .landing-title::first-line {
-    color: #241E16;
+    color: #111315;
   }
 
   .landing-copy {
-    color: var(--landing-warm-muted) !important;
-    font-weight: 520 !important;
+    color: var(--landing-muted) !important;
+    font-weight: 500 !important;
   }
 
   .landing-primary {
-    border: 1px solid rgba(21,19,15,0.12) !important;
-    background:
-      linear-gradient(90deg, rgba(255,255,255,0.11) 1px, transparent 1px) 0 0 / 10px 10px,
-      var(--landing-rubber) !important;
-    box-shadow: 0 20px 44px rgba(21,19,15,0.20), inset 0 1px 0 rgba(255,255,255,0.16) !important;
+    border: 1px solid rgba(17,24,39,0.10) !important;
+    background: #111827 !important;
+    box-shadow: var(--shadow-btn) !important;
   }
 
   .landing-primary:hover {
-    background:
-      linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px) 0 0 / 10px 10px,
-      #000 !important;
+    background: #050607 !important;
     transform: translateY(-2px);
+    box-shadow: var(--shadow-btn-hover) !important;
   }
 
   .landing-proof-chip {
-    border-color: rgba(21,19,15,0.10) !important;
-    background: rgba(255,252,245,0.64) !important;
+    border-color: rgba(255,255,255,0.72) !important;
+    background: rgba(255,255,255,0.68) !important;
   }
 
   .landing-benefit-card,
@@ -198,9 +199,10 @@
   .landing-lead-card {
     position: relative;
     overflow: hidden;
-    border-color: rgba(21,19,15,0.13) !important;
-    background: rgba(255,252,245,0.92) !important;
-    box-shadow: 0 22px 54px rgba(52,44,31,0.13) !important;
+    border-color: rgba(255,255,255,0.72) !important;
+    background: rgba(255,255,255,0.76) !important;
+    box-shadow: var(--shadow-card) !important;
+    backdrop-filter: blur(20px);
   }
 
   .landing-benefit-card::before,
@@ -212,55 +214,57 @@
     left: 0;
     right: 0;
     top: 0;
-    height: 5px;
-    background: linear-gradient(90deg, var(--landing-signal), #F08A4B 38%, var(--landing-green));
-    opacity: 0.86;
+    height: 4px;
+    background: linear-gradient(90deg, #111827, #0A84FF 56%, #34C759);
+    opacity: 0.76;
   }
 
-  .landing-benefit-card:nth-child(2)::before { background: linear-gradient(90deg, var(--landing-green), #6FAF7A); }
-  .landing-benefit-card:nth-child(3)::before { background: linear-gradient(90deg, #2E4057, var(--landing-signal)); }
+  .landing-benefit-card:nth-child(2)::before { background: linear-gradient(90deg, #0A84FF, #34C759); }
+  .landing-benefit-card:nth-child(3)::before { background: linear-gradient(90deg, #315A7C, #0A84FF); }
 
   .landing-benefit-card:hover,
   .landing-step-card:hover,
   .landing-feature-card:hover {
-    transform: translateY(-3px) rotate(-0.25deg);
-    border-color: rgba(21,19,15,0.22) !important;
+    transform: translateY(-3px);
+    border-color: rgba(10,132,255,0.20) !important;
+    box-shadow: var(--shadow-card-hover) !important;
   }
 
   .landing-step-card,
   .landing-feature-card {
-    border-color: rgba(21,19,15,0.11) !important;
-    background: rgba(255,255,255,0.62) !important;
-    transition: transform 220ms var(--ease), border-color 220ms var(--ease), box-shadow 220ms var(--ease);
+    border-color: rgba(17,24,39,0.07) !important;
+    background: rgba(248,251,254,0.82) !important;
+    transition: transform 220ms var(--ease), border-color 220ms var(--ease), box-shadow 220ms var(--ease), background-color 220ms var(--ease);
   }
 
   .landing-admin-card {
     background:
-      linear-gradient(135deg, rgba(21,19,15,0.035) 0 25%, transparent 25% 50%, rgba(21,19,15,0.035) 50% 75%, transparent 75%) 0 0 / 32px 32px,
-      rgba(255,252,245,0.92) !important;
+      linear-gradient(90deg, rgba(17,24,39,0.028) 1px, transparent 1px) 0 0 / 34px 34px,
+      rgba(255,255,255,0.76) !important;
   }
 
   .landing-lead-card {
     background:
-      radial-gradient(circle at 0 0, rgba(247,201,72,0.18), transparent 36%),
-      rgba(255,252,245,0.94) !important;
+      radial-gradient(circle at 0 0, rgba(10,132,255,0.10), transparent 36%),
+      rgba(255,255,255,0.80) !important;
   }
 
   .landing-input {
-    border-color: rgba(21,19,15,0.14) !important;
-    background: rgba(255,255,255,0.72) !important;
+    border-color: rgba(17,24,39,0.08) !important;
+    background: rgba(255,255,255,0.78) !important;
   }
 
   .landing-input:focus {
-    border-color: rgba(21,19,15,0.34) !important;
-    box-shadow: 0 0 0 4px rgba(247,201,72,0.20) !important;
+    border-color: rgba(10,132,255,0.34) !important;
+    box-shadow: 0 0 0 4px rgba(10,132,255,0.12) !important;
   }
 
   @media (max-width: 767px) {
     .landing-shell {
       background:
-        linear-gradient(90deg, rgba(21,19,15,0.04) 1px, transparent 1px) 0 0 / 38px 38px,
-        linear-gradient(180deg, #FFF9EC 0%, #EFF3F2 100%) !important;
+        radial-gradient(420px 240px at 88% 0%, rgba(10,132,255,0.14), transparent 64%),
+        linear-gradient(90deg, rgba(17,24,39,0.032) 1px, transparent 1px) 0 0 / 38px 38px,
+        linear-gradient(180deg, #F8FBFD 0%, #EEF4F9 100%) !important;
     }
 
     .landing-hero-card {
