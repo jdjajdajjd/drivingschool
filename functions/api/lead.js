@@ -67,7 +67,7 @@ async function discoverSupabaseConfigFromAssets(request) {
     const keys = Array.from(source.matchAll(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g), (match) => match[0]).filter(isJwt)
     const url = urls.at(-1)
     const anonKey = keys.at(-1)
-    return url && anonKey ? { url, anonKey } : null
+    return url && anonKey ? { url, anonKey, serviceRoleKey: null } : null
   } catch {
     return null
   } finally {
@@ -78,13 +78,25 @@ async function discoverSupabaseConfigFromAssets(request) {
 async function resolveSupabaseConfig(request, env) {
   const envUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL
   const envAnonKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY
-  if (isSupabaseUrl(envUrl) && isJwt(envAnonKey)) return { url: envUrl, anonKey: envAnonKey }
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
+  if (isSupabaseUrl(envUrl) && isJwt(envAnonKey)) return { url: envUrl, anonKey: envAnonKey, serviceRoleKey }
   return discoverSupabaseConfigFromAssets(request)
 }
 
 async function saveLeadToSupabase(request, env, payload) {
   const config = await resolveSupabaseConfig(request, env)
   if (!config) return false
+
+  const leadRecord = {
+    name: payload.name,
+    phone: payload.phone,
+    school_name: payload.schoolName,
+    city: payload.city,
+    comment: payload.comment,
+    source: 'landing',
+    page_url: request.headers.get('referer') || new URL(request.url).origin,
+    user_agent: clean(request.headers.get('user-agent')),
+  }
 
   const response = await fetch(`${config.url}/rest/v1/lead_requests`, {
     method: 'POST',
@@ -94,19 +106,29 @@ async function saveLeadToSupabase(request, env, payload) {
       'content-type': 'application/json',
       prefer: 'return=minimal',
     },
+    body: JSON.stringify(leadRecord),
+  })
+
+  if (response.ok) return true
+  if (!config.serviceRoleKey) return false
+
+  const fallbackResponse = await fetch(`${config.url}/rest/v1/admin_records`, {
+    method: 'POST',
+    headers: {
+      apikey: config.serviceRoleKey,
+      authorization: `Bearer ${config.serviceRoleKey}`,
+      'content-type': 'application/json',
+      prefer: 'return=minimal',
+    },
     body: JSON.stringify({
-      name: payload.name,
-      phone: payload.phone,
-      school_name: payload.schoolName,
-      city: payload.city,
-      comment: payload.comment,
-      source: 'landing',
-      page_url: request.headers.get('referer') || new URL(request.url).origin,
-      user_agent: clean(request.headers.get('user-agent')),
+      id: `lead-${crypto.randomUUID()}`,
+      school_id: env.LEAD_INBOX_SCHOOL_ID || 'school-virazh',
+      kind: 'audit_log',
+      payload: { type: 'landing_lead', ...leadRecord },
     }),
   })
 
-  return response.ok
+  return fallbackResponse.ok
 }
 
 async function sendLeadToTelegram(env, payload) {
