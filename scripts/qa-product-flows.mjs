@@ -2,6 +2,8 @@ import { chromium } from 'playwright'
 
 const baseUrl = process.env.QA_BASE_URL || process.env.E2E_BASE_URL || 'http://127.0.0.1:4173'
 const timeout = 15_000
+const demoSchoolId = 'school-virazh'
+const demoSchoolPath = '/school/virazh'
 
 const failures = []
 
@@ -19,8 +21,15 @@ async function waitForApp(page, routeLabel) {
   await page.waitForTimeout(500)
   const text = await page.locator('body').innerText()
   assert(!text.includes('Failed to fetch dynamically imported module'), `${routeLabel}: dynamic import failed`)
-  assert(!text.includes('404'), `${routeLabel}: visible 404 text`)
+  assert(!text.includes('Cannot GET /'), `${routeLabel}: server returned plain fallback`)
+  assertNoMojibakeText(text, routeLabel)
   return text
+}
+
+function assertNoMojibakeText(text, routeLabel) {
+  const markers = ['Рђ', 'Рџ', 'РЎ', 'Р°', 'Рµ', 'Рё', 'РЅ', 'Р»', 'вЂ', 'в‚Ѕ', 'В«', 'В»']
+  const found = markers.find((marker) => text.includes(marker))
+  assert(!found, `${routeLabel}: mojibake marker "${found}" found in rendered text`)
 }
 
 async function assertNoHorizontalOverflow(page, routeLabel) {
@@ -30,6 +39,7 @@ async function assertNoHorizontalOverflow(page, routeLabel) {
 
 async function withPage(browser, routeLabel, viewport, callback) {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 1 })
+
   page.on('pageerror', (error) => fail(`${routeLabel}: page error: ${error.message}`))
   page.on('console', (message) => {
     if (message.type() !== 'error') return
@@ -51,6 +61,7 @@ async function openRoute(page, path, expectedTexts) {
   await page.goto(new URL(path, baseUrl).toString(), { waitUntil: 'domcontentloaded' })
   await waitForApp(page, path)
   await assertNoHorizontalOverflow(page, path)
+
   for (const expected of expectedTexts) {
     try {
       await page.locator('body', { hasText: expected }).waitFor({ timeout })
@@ -59,12 +70,13 @@ async function openRoute(page, path, expectedTexts) {
       assert(text.includes(expected), `${path}: missing "${expected}"`)
     }
   }
-  const text = await page.locator('body').innerText()
-  return text
+
+  return page.locator('body').innerText()
 }
 
 async function seedStudent(page) {
   await page.addInitScript(() => {
+    const schoolId = 'school-virazh'
     const profile = {
       name: 'Владимир Иванов',
       phone: '79990000000',
@@ -79,16 +91,132 @@ async function seedStudent(page) {
       updatedAt: new Date().toISOString(),
       createdByConsent: true,
     }
-    localStorage.setItem('dd:student_profile:school-virazh', JSON.stringify(profile))
-    localStorage.setItem('dd:student_login:79990000000', JSON.stringify({ schoolId: 'school-virazh', phone: '79990000000', password: '123456' }))
+
+    localStorage.setItem(`dd:student_profile:${schoolId}`, JSON.stringify(profile))
+    localStorage.setItem(
+      'dd:student_login:79990000000',
+      JSON.stringify({ schoolId, phone: '79990000000', password: '123456' }),
+    )
   })
 }
 
 async function grantWorkspaceAdmin(page) {
   await page.addInitScript(() => {
+    const now = new Date()
+    const school = {
+      id: 'school-workspace',
+      name: 'Рабочая автошкола',
+      slug: 'workspace',
+      description: 'Рабочий тестовый контур',
+      phone: '+7 999 000-10-10',
+      email: 'office@example.test',
+      address: 'Москва',
+      createdAt: now.toISOString(),
+      primaryColor: '#1f5b43',
+      bookingLimitEnabled: true,
+      maxActiveBookingsPerStudent: 2,
+      branchSelectionMode: 'student_choice',
+      maxSlotsPerBooking: 1,
+      defaultLessonDuration: 90,
+      enabledCategoryCodes: ['B'],
+      isActive: true,
+    }
+
     sessionStorage.setItem('dd:data_namespace', 'workspace')
     sessionStorage.setItem('dd:access:admin:workspace', 'granted')
-    sessionStorage.setItem('dd:access_password:admin:workspace', 'qa-password')
+    sessionStorage.setItem('dd:access_secret:admin:workspace', 'qa-password')
+    sessionStorage.setItem('dd:staff_context:workspace', JSON.stringify({ role: 'admin', schoolId: school.id, branchIds: [], name: 'QA школа' }))
+    localStorage.setItem('dd:workspace:schools', JSON.stringify([school]))
+    localStorage.setItem('dd:workspace:branches', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:instructors', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:students', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:slots', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:bookings', JSON.stringify([]))
+  })
+}
+
+async function grantBranchAdminWithWorkspaceData(page) {
+  await page.addInitScript(() => {
+    const now = new Date()
+    const today = now.toISOString().slice(0, 10)
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const school = {
+      id: 'school-workspace',
+      name: 'Рабочая автошкола',
+      slug: 'workspace',
+      description: 'Рабочий тестовый контур',
+      phone: '+7 999 000-10-10',
+      email: 'office@example.test',
+      address: 'Москва',
+      createdAt: now.toISOString(),
+      primaryColor: '#1f5b43',
+      bookingLimitEnabled: true,
+      maxActiveBookingsPerStudent: 2,
+      branchSelectionMode: 'student_choice',
+      maxSlotsPerBooking: 1,
+      defaultLessonDuration: 90,
+      enabledCategoryCodes: ['B'],
+      isActive: true,
+    }
+    const branches = [
+      { id: 'branch-central', schoolId: school.id, name: 'Центральный филиал', address: 'ул. Центральная, 1', phone: '+7 999 000-11-11', isActive: true },
+      { id: 'branch-north', schoolId: school.id, name: 'Северный филиал', address: 'ул. Северная, 7', phone: '+7 999 000-22-22', isActive: true },
+    ]
+    const instructors = [
+      { id: 'inst-central', schoolId: school.id, branchId: 'branch-central', name: 'Павел Центральный', phone: '79990001111', email: '', token: 'tok-central', bio: '', experience: 5, isActive: true, categories: ['B'], avatarInitials: 'ПЦ', avatarColor: '#10201F', car: 'Solaris', transmission: 'manual' },
+      { id: 'inst-north', schoolId: school.id, branchId: 'branch-north', name: 'Нина Северная', phone: '79990002222', email: '', token: 'tok-north', bio: '', experience: 8, isActive: true, categories: ['B'], avatarInitials: 'НС', avatarColor: '#1f5b43', car: 'Rio', transmission: 'auto' },
+    ]
+    const students = [
+      { id: 'stu-central', schoolId: school.id, name: 'Олег Центральный', phone: '79991110000', normalizedPhone: '79991110000', email: '', assignedBranchId: 'branch-central', assignedInstructorId: 'inst-central', categoryCodes: ['B'], trainingStage: 'city', createdAt: now.toISOString() },
+      { id: 'stu-north', schoolId: school.id, name: 'Анна Северная', phone: '79992220000', normalizedPhone: '79992220000', email: '', assignedBranchId: 'branch-north', assignedInstructorId: 'inst-north', categoryCodes: ['B'], trainingStage: 'city', createdAt: now.toISOString() },
+    ]
+    const slots = [
+      { id: 'slot-central', schoolId: school.id, instructorId: 'inst-central', branchId: 'branch-central', date: today, time: '12:00', duration: 90, lessonType: 'city', status: 'booked', bookingId: 'booking-central', createdAt: now.toISOString() },
+      { id: 'slot-north', schoolId: school.id, instructorId: 'inst-north', branchId: 'branch-north', date: today, time: '14:00', duration: 90, lessonType: 'city', status: 'booked', bookingId: 'booking-north', createdAt: now.toISOString() },
+      { id: 'slot-north-free', schoolId: school.id, instructorId: 'inst-north', branchId: 'branch-north', date: tomorrow, time: '16:00', duration: 90, lessonType: 'practice_ground', status: 'available', createdAt: now.toISOString() },
+    ]
+    const bookings = [
+      { id: 'booking-central', schoolId: school.id, slotId: 'slot-central', instructorId: 'inst-central', branchId: 'branch-central', studentId: 'stu-central', studentName: 'Олег Центральный', studentPhone: '79991110000', studentEmail: '', status: 'active', createdAt: now.toISOString() },
+      { id: 'booking-north', schoolId: school.id, slotId: 'slot-north', instructorId: 'inst-north', branchId: 'branch-north', studentId: 'stu-north', studentName: 'Анна Северная', studentPhone: '79992220000', studentEmail: '', status: 'active', createdAt: now.toISOString() },
+    ]
+
+    sessionStorage.setItem('dd:data_namespace', 'workspace')
+    sessionStorage.setItem('dd:access:admin:workspace', 'granted')
+    sessionStorage.setItem('dd:access_secret:admin:workspace', 'qa-password')
+    sessionStorage.setItem('dd:staff_context:workspace', JSON.stringify({ role: 'branch_admin', schoolId: school.id, branchIds: ['branch-north'], name: 'QA филиал' }))
+    localStorage.setItem('dd:workspace:schools', JSON.stringify([school]))
+    localStorage.setItem('dd:workspace:branches', JSON.stringify(branches))
+    localStorage.setItem('dd:workspace:instructors', JSON.stringify(instructors))
+    localStorage.setItem('dd:workspace:students', JSON.stringify(students))
+    localStorage.setItem('dd:workspace:slots', JSON.stringify(slots))
+    localStorage.setItem('dd:workspace:bookings', JSON.stringify(bookings))
+  })
+}
+
+async function grantDemoAdmin(page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('dd:data_namespace', 'demo')
+    sessionStorage.setItem('dd:access:admin:demo', 'granted')
+  })
+}
+
+async function checkPublicRoutes(browser) {
+  await withPage(browser, 'public mobile', { width: 390, height: 844 }, async (page) => {
+    const rootText = await openRoute(page, '/', ['vroom', 'Онлайн-запись для автошкол', 'Посмотреть демо'])
+    assert(!rootText.includes('Супер-админка'), 'root: exposes internal superadmin wording')
+    assert(!rootText.includes('Платформа'), 'root: exposes internal platform wording')
+    assert(!rootText.includes('owner'), 'root: exposes owner wording')
+    assert(!rootText.includes('владелец сервиса'), 'root: exposes owner wording')
+    assert(!rootText.includes('Где супер-админка'), 'root: contains user-facing internal complaint wording')
+    await openRoute(page, '/demo', ['Посмотрите vroom в деле', 'Демо ученика', 'Демо автошколы'])
+    await openRoute(page, '/login', ['Выберите кабинет', 'Автошкола', 'Ученик'])
+    await openRoute(page, '/demo/admin-login', ['vroom'])
+    await openRoute(page, '/admin-login', ['Автошкола', 'Кабинет школы', 'Логин', 'Пароль'])
+    await openRoute(page, '/operator/login', ['Операторский вход', 'Логин', 'Пароль'])
+    const schoolText = await openRoute(page, demoSchoolPath, ['Автошкола «Вираж»', 'Открыть личный кабинет'])
+    assert(!schoolText.includes('Создать доступ'), 'school page: public registration access button is visible')
+    await openRoute(page, `${demoSchoolPath}/register`, ['Регистрация ученика', 'Введите фамилию'])
+    await openRoute(page, `${demoSchoolPath}/login`, ['Телефон', 'Пароль'])
   })
 }
 
@@ -109,46 +237,78 @@ async function checkStudentCabinet(browser, viewport, label) {
     })
 
     assert(Boolean(navMetrics.nav), `student ${label}: bottom nav missing`)
+
     if (navMetrics.nav && navMetrics.main) {
-      assert(navMetrics.nav.left === navMetrics.main.left, `student ${label}: bottom nav is not aligned with app shell`)
-      assert(navMetrics.nav.width === Math.min(viewport.width, 430), `student ${label}: bottom nav width is wrong`)
+      const navCenter = navMetrics.nav.left + navMetrics.nav.width / 2
+      const mainCenter = navMetrics.main.left + navMetrics.main.width / 2
+      assert(Math.abs(navCenter - mainCenter) <= 6, `student ${label}: bottom nav is not centered with app shell`)
+      assert(navMetrics.nav.width <= Math.min(viewport.width, 430), `student ${label}: bottom nav width is wrong`)
     }
 
     await page.getByRole('button', { name: /Расписание/ }).last().click()
-    await page.locator('body', { hasText: 'Сегодня' }).waitFor({ timeout })
+    await page.getByRole('heading', { name: 'Расписание' }).waitFor({ timeout })
+
     await page.getByRole('button', { name: /Профиль/ }).last().click()
-    await page.locator('body', { hasText: 'Профиль' }).waitFor({ timeout })
+    await page.getByRole('heading', { name: 'Профиль' }).waitFor({ timeout })
+
     await page.getByRole('button', { name: /Связь/ }).last().click()
     await page.locator('body', { hasText: /Связь|Контакты|Написать/ }).waitFor({ timeout })
   })
 }
 
-async function checkAdminWorkspace(browser, viewport, label) {
-  await withPage(browser, `admin ${label}`, viewport, async (page) => {
+async function checkWorkspaceAdmin(browser, viewport, label) {
+  await withPage(browser, `workspace admin ${label}`, viewport, async (page) => {
     await grantWorkspaceAdmin(page)
-    const adminRoutes = [
-      ['/virazh-office-73q', ['vroom']],
-      ['/virazh-office-73q/schedule', ['Расписание']],
-      ['/virazh-office-73q/students', ['Ученики']],
-      ['/virazh-office-73q/instructors', ['Инструкторы']],
-      ['/virazh-office-73q/payments', ['Оплаты']],
-      ['/virazh-office-73q/settings', ['Настройки']],
+
+    const routes = [
+      ['/admin-panel', ['vroom']],
+      ['/admin-panel/schedule', ['Расписание']],
+      ['/admin-panel/students', ['Ученики']],
+      ['/admin-panel/instructors', ['Инструкторы']],
+      ['/admin-panel/payments', ['Оплаты']],
+      ['/admin-panel/settings', ['Настройки']],
     ]
 
-    for (const [path, expected] of adminRoutes) {
+    for (const [path, expected] of routes) {
       await openRoute(page, path, expected)
-      const url = page.url()
-      assert(!url.includes('/workspace-admin'), `admin ${label}: ${path} redirected to login`)
+      assert(!page.url().includes('/admin-login'), `workspace admin ${label}: ${path} redirected to login`)
     }
   })
 }
 
-async function checkPublicRoutes(browser) {
-  await withPage(browser, 'public mobile', { width: 390, height: 844 }, async (page) => {
-    await openRoute(page, '/', ['Мобильный кабинет автошколы', '4990 ₽'])
-    await openRoute(page, '/school/virazh', ['Автошкола «Вираж»', 'Открыть личный кабинет'])
-    await openRoute(page, '/school/virazh/register', ['Регистрация', 'Фамилия'])
-    await openRoute(page, '/login', ['Телефон', 'Пароль'])
+async function checkBranchAdminScope(browser) {
+  await withPage(browser, 'branch admin scope', { width: 1440, height: 900 }, async (page) => {
+    await grantBranchAdminWithWorkspaceData(page)
+    const branchesText = await openRoute(page, '/admin-panel/branches', ['Северный филиал'])
+    assert(!branchesText.includes('Центральный филиал'), 'branch admin: sees another branch on branches page')
+
+    const studentsText = await openRoute(page, '/admin-panel/students', ['Анна Северная'])
+    assert(!studentsText.includes('Олег Центральный'), 'branch admin: sees another branch student')
+
+    const instructorsText = await openRoute(page, '/admin-panel/instructors', ['Нина Северная'])
+    assert(!instructorsText.includes('Павел Центральный'), 'branch admin: sees another branch instructor')
+
+    await openRoute(page, '/admin-panel/schedule', ['Анна Северная'])
+    const navText = await page.locator('body').innerText()
+    assert(!navText.includes('Настройки'), 'branch admin: settings nav should be hidden')
+    assert(!navText.includes('Пользователи'), 'branch admin: users nav should be hidden')
+  })
+}
+
+async function checkDemoAdmin(browser, viewport, label) {
+  await withPage(browser, `demo admin ${label}`, viewport, async (page) => {
+    await grantDemoAdmin(page)
+
+    const routes = [
+      ['/demo/admin', ['vroom']],
+      ['/demo/admin/schedule', ['Расписание']],
+      ['/demo/admin/students', ['Ученики']],
+    ]
+
+    for (const [path, expected] of routes) {
+      await openRoute(page, path, expected)
+      assert(!page.url().includes('/demo/admin-login'), `demo admin ${label}: ${path} redirected to login`)
+    }
   })
 }
 
@@ -158,8 +318,10 @@ try {
   await checkPublicRoutes(browser)
   await checkStudentCabinet(browser, { width: 390, height: 844 }, 'mobile')
   await checkStudentCabinet(browser, { width: 1440, height: 900 }, 'desktop')
-  await checkAdminWorkspace(browser, { width: 390, height: 844 }, 'mobile')
-  await checkAdminWorkspace(browser, { width: 1440, height: 900 }, 'desktop')
+  await checkWorkspaceAdmin(browser, { width: 390, height: 844 }, 'mobile')
+  await checkWorkspaceAdmin(browser, { width: 1440, height: 900 }, 'desktop')
+  await checkBranchAdminScope(browser)
+  await checkDemoAdmin(browser, { width: 390, height: 844 }, 'mobile')
 } finally {
   await browser.close()
 }

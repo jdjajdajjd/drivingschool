@@ -40,6 +40,7 @@ if (!connectionString) {
 
 const sourceSql = fs.readFileSync(sqlPath, 'utf8')
 const applyMode = process.env.DRIVEDESK_APPLY_MODE ?? 'safe'
+const destructiveFullSetupAllowed = process.env.DRIVEDESK_ALLOW_DESTRUCTIVE_FULL_SETUP === 'true'
 
 function extractSafePatch(sql) {
   const startMarker = '-- BEGIN DRIVEDESK_SAFE_PATCH'
@@ -52,6 +53,12 @@ function extractSafePatch(sql) {
   }
 
   return sql.slice(start + startMarker.length, end).trim()
+}
+
+if (applyMode === 'full' && !destructiveFullSetupAllowed) {
+  throw new Error(
+    'DRIVEDESK_APPLY_MODE=full is destructive and disabled by default. Use the safe mode, or set DRIVEDESK_ALLOW_DESTRUCTIVE_FULL_SETUP=true only for a disposable database.',
+  )
 }
 
 const sql = applyMode === 'full' ? sourceSql : extractSafePatch(sourceSql)

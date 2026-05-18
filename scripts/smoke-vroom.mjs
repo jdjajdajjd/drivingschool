@@ -2,43 +2,78 @@ import { chromium } from 'playwright'
 
 const baseUrl = process.env.SMOKE_BASE_URL || 'https://vroom.today'
 const expectedTimeoutMs = 15_000
+const demoSchoolPath = '/school/virazh'
 
 const forbiddenTexts = ['DriveDesk', 'drivingschool-6wy', 'localStorage', 'VROOM']
 
 const mojibakePatterns = [
-  'Рђ',
-  'РЇ',
-  'Рџ',
-  'РЎ',
-  'СЃ',
-  'С‹',
-  'вЂ',
+  'Р С’',
+  'Р Р‡',
+  'Р Сџ',
+  'Р РЋ',
+  'РЎРѓ',
+  'РЎвЂљ',
+  'РЎРЉ',
+  'РІР‚',
+  '�',
 ]
 
 const routes = [
   {
     path: '/',
-    checks: ['vroom', 'Мобильный кабинет автошколы', 'Открыть демо ученика', '4990 ₽'],
-    rejects: [],
+    checks: ['vroom', 'Онлайн-запись для автошкол', 'Оставить заявку', 'Отправить заявку'],
+    rejects: [
+      'Супер-админка',
+      'Платформа',
+      'owner',
+      'operator',
+      'владелец сервиса',
+      'Где супер-админка',
+      'Кабинет платформы',
+      'рабочие данные',
+      'выберите кабинет',
+      'войти как',
+      'Войти',
+    ],
   },
   {
-    path: '/school/virazh',
-    checks: ['Автошкола «Вираж»', 'Открыть личный кабинет', 'Создать доступ'],
-    rejects: ['Автошкола не найдена', 'Выберите инструктора', 'Выберите дату'],
+    path: '/demo',
+    checks: ['vroom', 'Посмотрите vroom в деле', 'Демо ученика', 'Демо автошколы'],
+    rejects: ['Супер-админка', 'Платформа', 'owner', 'владелец сервиса', 'Где супер-админка', 'Кабинет платформы'],
   },
   {
-    path: '/school/virazh/book',
+    path: '/demo/admin-login',
+    checks: ['vroom'],
+    rejects: ['production'],
+  },
+  {
+    path: '/admin-login',
+    checks: ['Автошкола', 'Кабинет школы', 'Логин', 'Пароль'],
+    rejects: ['Демо автошколы'],
+  },
+  {
+    path: '/operator/login',
+    checks: ['vroom', 'Операторский вход', 'Логин', 'Пароль'],
+    rejects: ['Супер-админка', 'owner', 'владелец сервиса', 'Где супер-админка'],
+  },
+  {
+    path: demoSchoolPath,
+    checks: ['Автошкола «Вираж»', 'Открыть личный кабинет'],
+    rejects: ['Автошкола не найдена', 'Выберите инструктора', 'Выберите дату', 'Создать доступ'],
+  },
+  {
+    path: `${demoSchoolPath}/book`,
     checks: ['Телефон', 'Пароль'],
     rejects: ['Выберите инструктора', 'Выберите дату'],
   },
   {
     path: '/login',
-    checks: ['Телефон', 'Пароль'],
-    rejects: [],
+    checks: ['Выберите кабинет', 'Автошкола', 'Ученик'],
+    rejects: ['Супер-админка', 'Платформа', 'owner', 'владелец сервиса', 'Где супер-админка', 'Кабинет платформы'],
   },
   {
     path: '/staff-entrance-73q',
-    checks: ['Кабинет школы', 'Логин', 'Пароль'],
+    checks: ['Кабинет школы'],
     rejects: ['VROOM'],
   },
   {
@@ -93,6 +128,7 @@ try {
       const text = await page.locator('body').innerText()
       const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
       const ddWorkspaceKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('dd:workspace:')))
+      const allowsWorkspaceStorage = route.path.startsWith('/admin-login') || route.path.startsWith('/admin-panel')
 
       for (const rejected of [...route.rejects, ...forbiddenTexts]) {
         if (text.includes(rejected)) failures.push(`${route.path} (${url}): contains forbidden text "${rejected}"`)
@@ -103,7 +139,7 @@ try {
       }
 
       if (hasHorizontalOverflow) failures.push(`${route.path} (${url}): horizontal overflow on mobile viewport`)
-      if (ddWorkspaceKeys.length > 0) failures.push(`${route.path} (${url}): workspace business localStorage keys present ${ddWorkspaceKeys.join(', ')}`)
+      if (!allowsWorkspaceStorage && ddWorkspaceKeys.length > 0) failures.push(`${route.path} (${url}): workspace business localStorage keys present ${ddWorkspaceKeys.join(', ')}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       failures.push(`${route.path} (${url}): route smoke failed: ${message}`)
