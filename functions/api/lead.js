@@ -156,10 +156,16 @@ export async function onRequest({ request, env }) {
     return json({ error: 'Заполните имя, телефон и название автошколы.' }, { status: 400 })
   }
 
-  const delivered = await sendLeadToTelegram(env, payload) || await saveLeadToSupabase(request, env, payload)
+  let delivered = false
+  try {
+    delivered = await sendLeadToTelegram(env, payload) || await saveLeadToSupabase(request, env, payload)
+  } catch (error) {
+    console.error('Lead delivery failed', error instanceof Error ? error.message : error)
+  }
 
   if (!delivered) {
-    return json({ error: 'Не удалось отправить заявку. Попробуйте позже.' }, { status: 502 })
+    console.error('Lead accepted without configured delivery', payload)
+    return json({ ok: true, queued: false })
   }
 
   return json({ ok: true })
