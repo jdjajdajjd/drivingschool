@@ -1,4 +1,4 @@
-const HASH_ITERATIONS = 160000
+const HASH_ITERATIONS = 100000
 const MAX_FIELD_LENGTH = 700
 
 function json(body, init = {}) {
@@ -162,6 +162,6 @@ export async function onRequest({ request, env }) {
     return json({ error: 'Unknown action.' }, { status: 400 })
   } catch (error) {
     console.error('Student profile API failed', error instanceof Error ? error.message : error)
-    return json({ error: 'Не удалось обработать кабинет ученика.', reason: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
+    return json({ error: 'Не удалось обработать кабинет ученика.' }, { status: 500 })
   }
 }
