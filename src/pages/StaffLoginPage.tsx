@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ArrowRight, LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Spinner as LoaderCircle, LockKey, ShieldCheck } from '@phosphor-icons/react'
+const LockKeyhole = LockKey
 import { BrandMark } from '../components/layout/BrandMark'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'

@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { addDays, format, isBefore, isSameDay, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { AlertTriangle, CalendarPlus, CheckCircle2, Clock3, ExternalLink, SlidersHorizontal, WalletCards } from 'lucide-react'
+import { WarningTriangle as AlertTriangle, CalendarPlus, CheckCircle as CheckCircle2, Clock, OpenNewWindow as ExternalLink, Filter, CreditCards } from 'iconoir-react'
+const Clock3 = Clock
+const SlidersHorizontal = Filter
+const WalletCards = CreditCards
 import { Modal } from '../../components/ui/Modal'
 import { db } from '../../services/storage'
 import { adminCars, adminDocuments, adminInternalExams, adminPayments, problemCases } from '../../services/adminStorage'
@@ -206,7 +209,7 @@ function LaunchChecklist({
         {items.map((item) => (
           <Link key={item.title} to={item.to} className="flex min-h-[116px] flex-col gap-3 p-4 transition hover:bg-[#F8FAFC]">
             <span className={`grid h-9 w-9 place-items-center rounded-[10px] ${item.done ? 'bg-[#EAF7EF] text-[#157347]' : 'bg-[#EAF3FF] text-[#315A7C]'}`}>
-              {item.done ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+              {item.done ? <CheckCircle2 width={18} height={18} /> : <AlertTriangle width={18} height={18} />}
             </span>
             <span>
               <strong className="block text-[14px] font-black leading-5 text-[#111418]">{item.title}</strong>
@@ -260,11 +263,11 @@ export function AdminToday() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button className="v-admin-button is-blue" onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)}>
-              <CalendarPlus size={16} />
+              <CalendarPlus width={16} height={16} />
               Создать окна
             </button>
             <button className="v-admin-button-tertiary" onClick={() => setBlockSettingsOpen(true)}>
-              <SlidersHorizontal size={16} />
+              <SlidersHorizontal width={16} height={16} />
               Блоки
             </button>
           </div>
@@ -296,7 +299,7 @@ export function AdminToday() {
             </div>
             <Link to={`${ADMIN_BASE_PATH}/schedule`} className="v-admin-button-secondary">
               Все
-              <ExternalLink size={15} />
+              <ExternalLink width={15} height={15} />
             </Link>
           </div>
           {data.upcoming.length === 0 ? (
@@ -357,7 +360,7 @@ export function AdminToday() {
                 ['Открыть страницу школы', `/school/${school.slug}`],
               ].map(([label, to]) => (
                 <Link key={label} to={to} className="v-admin-button-secondary justify-start">
-                  <Clock3 size={15} />
+                  <Clock3 width={15} height={15} />
                   {label}
                 </Link>
               ))}
@@ -375,7 +378,7 @@ export function AdminToday() {
             </div>
             <Link to={`${ADMIN_BASE_PATH}/schedule`} className="v-admin-button-tertiary">
               Расписание
-              <ExternalLink size={15} />
+              <ExternalLink width={15} height={15} />
             </Link>
           </div>
           {freeSlots.length === 0 ? (

@@ -1,6 +1,5 @@
 ﻿import React from 'react'
-import { BellDotIcon, BookOpen01Icon, Calendar03Icon, Car04Icon, File02Icon, GraduationScrollIcon, LicenseDraftIcon, School01Icon, Settings02Icon, StickyNote02Icon, User03Icon } from '@hugeicons/core-free-icons'
-import { createHugeIcon } from '../../../components/ui/HugeIcon'
+import { BellRinging as Bell, BookOpenText as BookOpen, Buildings as Building2, CalendarCheck as CalendarDays, CarProfile as CarFront, FileText, GraduationCap, Certificate as License, GearSix as Settings, Note as StickyNote, Student as UserRound } from '@phosphor-icons/react'
 import { db } from '../../../services/storage'
 import { normalizePhone } from '../../../services/bookingService'
 import { loadStudentProgress, type StudentProfile } from '../../../services/studentProfile'
@@ -11,17 +10,6 @@ import { formatDateValue, trainingStageLabels } from '../studentUtils'
 
 void React
 
-const Bell = createHugeIcon(BellDotIcon)
-const BookOpen = createHugeIcon(BookOpen01Icon)
-const Building2 = createHugeIcon(School01Icon)
-const CalendarDays = createHugeIcon(Calendar03Icon)
-const CarFront = createHugeIcon(Car04Icon)
-const FileText = createHugeIcon(File02Icon)
-const GraduationCap = createHugeIcon(GraduationScrollIcon)
-const License = createHugeIcon(LicenseDraftIcon)
-const Settings = createHugeIcon(Settings02Icon)
-const StickyNote = createHugeIcon(StickyNote02Icon)
-const UserRound = createHugeIcon(User03Icon)
 
 const card = 'rounded-[24px] border border-[var(--border)] bg-[var(--surface)]'
 

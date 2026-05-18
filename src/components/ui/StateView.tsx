@@ -1,16 +1,7 @@
-﻿import type { ReactNode } from 'react'
-import React from 'react'
-import { AlertCircleIcon, CheckmarkCircle02Icon, Loading03Icon, Search01Icon, ShieldQuestionMarkIcon } from '@hugeicons/core-free-icons'
+import type { ReactNode } from 'react'
+import { WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Search, ShieldAlert } from 'iconoir-react'
+import { Spinner as Loader2 } from '@phosphor-icons/react'
 import { cn } from '../../lib/utils'
-import { createHugeIcon } from './HugeIcon'
-
-void React
-
-const AlertCircle = createHugeIcon(AlertCircleIcon)
-const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
-const Loader2 = createHugeIcon(Loading03Icon)
-const Search = createHugeIcon(Search01Icon)
-const ShieldAlert = createHugeIcon(ShieldQuestionMarkIcon)
 
 type StateKind = 'empty' | 'no-results' | 'loading' | 'error' | 'success' | 'locked'
 
@@ -23,12 +14,12 @@ interface StateViewProps {
 }
 
 const iconByKind: Record<StateKind, ReactNode> = {
-  empty: <Search size={22} />,
-  'no-results': <Search size={22} />,
-  loading: <Loader2 size={22} className="animate-spin" />,
-  error: <AlertCircle size={22} />,
-  success: <CheckCircle2 size={22} />,
-  locked: <ShieldAlert size={22} />,
+  empty: <Search width={22} height={22} />,
+  'no-results': <Search width={22} height={22} />,
+  loading: <Loader2 width={22} height={22} className="animate-spin" />,
+  error: <AlertCircle width={22} height={22} />,
+  success: <CheckCircle2 width={22} height={22} />,
+  locked: <ShieldAlert width={22} height={22} />,
 }
 
 const toneByKind: Record<StateKind, { bg: string; color: string }> = {

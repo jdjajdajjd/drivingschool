@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Copy, ExternalLink, KeyRound, MessageSquareText, Pencil, Save, X } from 'lucide-react'
+import { Copy, OpenNewWindow as ExternalLink, Key, MessageText, EditPencil, FloppyDiskArrowIn, Xmark } from 'iconoir-react'
+const KeyRound = Key
+const MessageSquareText = MessageText
+const Pencil = EditPencil
+const Save = FloppyDiskArrowIn
+const X = Xmark
 import { Button } from '../../components/ui/Button'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
@@ -278,11 +283,11 @@ export function SuperAdminSchoolDetail() {
         actions={
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" onClick={() => window.open(schoolPublicPath, '_blank')}>
-              <ExternalLink size={15} />
+              <ExternalLink width={15} height={15} />
               Публичная страница
             </Button>
             <Button variant="secondary" onClick={() => window.open(adminLoginPath, '_blank')}>
-              <ExternalLink size={15} />
+              <ExternalLink width={15} height={15} />
               Вход администратора
             </Button>
           </div>
@@ -335,15 +340,15 @@ export function SuperAdminSchoolDetail() {
                     Сгенерировать пароль
                   </Button>
                   <Button variant="secondary" size="sm" onClick={resetSchoolAccess} disabled={accessPending || accessLogin.length < 3}>
-                    <KeyRound size={15} />
+                    <KeyRound width={15} height={15} />
                     Сбросить и проверить
                   </Button>
                   <Button size="sm" onClick={saveSchoolAccess} disabled={accessPending}>
-                    <Save size={15} />
+                    <Save width={15} height={15} />
                     {accessPending ? 'Проверяем...' : 'Сохранить'}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => setAccessEditing(false)} disabled={accessPending}>
-                    <X size={15} />
+                    <X width={15} height={15} />
                     Отмена
                   </Button>
                 </div>
@@ -352,7 +357,7 @@ export function SuperAdminSchoolDetail() {
                   setAccessEditing(true)
                   setAccessForm((current) => ({ ...current, password: current.password || generateStaffPassword() }))
                 }}>
-                  <Pencil size={15} />
+                  <Pencil width={15} height={15} />
                   Редактировать доступ
                 </Button>
               )}
@@ -395,26 +400,26 @@ export function SuperAdminSchoolDetail() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={copyDirectorLaunchMessage} disabled={!verifiedAccessLogin}>
-                  <MessageSquareText size={15} />
+                  <MessageSquareText width={15} height={15} />
                   Текст директору
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => window.open(adminLoginPath, '_blank')}>
-                  <ExternalLink size={15} />
+                  <ExternalLink width={15} height={15} />
                   Открыть вход
                 </Button>
               </div>
             </div>
             <div className="mt-3 grid gap-2">
-              <AccessValueRow label="Логин" value={accessLogin} actionLabel="Копировать" icon={<Copy size={15} />} onAction={() => copyAccessValue(accessLogin)} />
+              <AccessValueRow label="Логин" value={accessLogin} actionLabel="Копировать" icon={<Copy width={15} height={15} />} onAction={() => copyAccessValue(accessLogin)} />
               <AccessValueRow
                 label="Пароль"
                 value={hasSavedPassword ? accessPassword : 'Не задан. Нажмите «Редактировать доступ» и сохраните новый пароль.'}
                 actionLabel="Копировать"
-                icon={<Copy size={15} />}
+                icon={<Copy width={15} height={15} />}
                 onAction={() => copyAccessValue(accessPassword)}
                 disabled={!hasSavedPassword}
               />
-              <AccessValueRow label="Вход администратора" value={adminLoginUrl} actionLabel="Открыть" icon={<ExternalLink size={15} />} onAction={() => window.open(adminLoginPath, '_blank')} />
+              <AccessValueRow label="Вход администратора" value={adminLoginUrl} actionLabel="Открыть" icon={<ExternalLink width={15} height={15} />} onAction={() => window.open(adminLoginPath, '_blank')} />
             </div>
           </div>
 

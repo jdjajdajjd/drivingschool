@@ -1,4 +1,6 @@
-import { AddTeamIcon, ArrowLeft01Icon, BellDotIcon, BookOpen01Icon, Building03Icon, ChartBarLineIcon, CodeIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { UserPlus, BellNotification as Bell, Book, Building as Building2, GraphUp as BarChart3, Code, Reports as FileSpreadsheet, SendMail as Send, MessageText as MessageSquare, Palette, Puzzle, Group as Users, NavArrowLeft as ArrowLeft } from 'iconoir-react'
+const BookOpen = Book
+const Code2 = Code
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -6,25 +8,11 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { formatPrice } from '../../lib/utils'
 import { MODULE_CATEGORY_LABELS, disableModule, enableModule, getModuleById, isModuleEnabled } from '../../services/modules'
 import { db } from '../../services/storage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 
-const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
-const BarChart3 = createHugeIcon(ChartBarLineIcon)
-const Bell = createHugeIcon(BellDotIcon)
-const BookOpen = createHugeIcon(BookOpen01Icon)
-const Building2 = createHugeIcon(Building03Icon)
-const Code2 = createHugeIcon(CodeIcon)
-const FileSpreadsheet = createHugeIcon(FileSpreadsheetIcon)
-const MessageSquare = createHugeIcon(Message01Icon)
-const Palette = createHugeIcon(PaintBoardIcon)
-const Puzzle = createHugeIcon(PuzzleIcon)
-const Send = createHugeIcon(MailSend01Icon)
-const UserPlus = createHugeIcon(AddTeamIcon)
-const Users = createHugeIcon(UserMultipleIcon)
 
 const ICON_MAP: Record<string, React.ElementType> = {
   MessageSquare,
@@ -94,7 +82,7 @@ export function AdminModuleDetail() {
         onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}
         className="mb-4 inline-flex items-center gap-2 text-sm text-[#667085] transition hover:text-[#111827]"
       >
-        <ArrowLeft size={15} />
+        <ArrowLeft width={15} height={15} />
         Назад к каталогу
       </button>
 
@@ -113,7 +101,7 @@ export function AdminModuleDetail() {
         <Section title="Что даёт дополнение" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
           <div className="flex items-start gap-4 rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.72)] px-5 py-5 shadow-[var(--shadow-card)] backdrop-blur-2xl">
             <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#EAF3FF] text-[#111827] shadow-[inset_0_0_0_1px_rgba(17,24,39,0.06)]">
-              <Icon size={20} />
+              <Icon width={20} height={20} />
             </div>
             <div>
               <div className="flex flex-wrap gap-2">

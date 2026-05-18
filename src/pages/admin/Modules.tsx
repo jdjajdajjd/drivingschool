@@ -1,4 +1,6 @@
-import { AddTeamIcon, BellDotIcon, BookOpen01Icon, Building03Icon, ChartBarLineIcon, CodeIcon, FileSpreadsheetIcon, MailSend01Icon, Message01Icon, PaintBoardIcon, PuzzleIcon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import { UserPlus, BellNotification as Bell, Book, Building as Building2, GraphUp as BarChart3, Code, Reports as FileSpreadsheet, SendMail as Send, MessageText as MessageSquare, Palette, Puzzle, Group as Users } from 'iconoir-react'
+const BookOpen = Book
+const Code2 = Code
 import { useMemo, useState, type ElementType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
@@ -7,7 +9,6 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { formatPrice } from '../../lib/utils'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import {
@@ -23,18 +24,6 @@ import {
 import { db } from '../../services/storage'
 import type { Module, ModuleCategory } from '../../types'
 
-const BarChart3 = createHugeIcon(ChartBarLineIcon)
-const Bell = createHugeIcon(BellDotIcon)
-const BookOpen = createHugeIcon(BookOpen01Icon)
-const Building2 = createHugeIcon(Building03Icon)
-const Code2 = createHugeIcon(CodeIcon)
-const FileSpreadsheet = createHugeIcon(FileSpreadsheetIcon)
-const MessageSquare = createHugeIcon(Message01Icon)
-const Palette = createHugeIcon(PaintBoardIcon)
-const Puzzle = createHugeIcon(PuzzleIcon)
-const Send = createHugeIcon(MailSend01Icon)
-const UserPlus = createHugeIcon(AddTeamIcon)
-const Users = createHugeIcon(UserMultipleIcon)
 
 const ICON_MAP: Record<string, ElementType> = {
   MessageSquare,
@@ -213,7 +202,7 @@ export function AdminModules() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="text-[#667085]">
-                          <Icon size={18} />
+                          <Icon width={18} height={18} />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-[#667085]">{MODULE_CATEGORY_LABELS[module.category]}</p>

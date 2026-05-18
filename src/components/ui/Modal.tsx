@@ -1,9 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Cancel01Icon } from '@hugeicons/core-free-icons'
+import { Xmark as X } from 'iconoir-react'
 import type { ReactNode } from 'react'
-import { createHugeIcon } from './HugeIcon'
-
-const X = createHugeIcon(Cancel01Icon)
 
 interface ModalProps {
   open: boolean
@@ -55,7 +52,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
                     onMouseEnter={(e) => { e.currentTarget.style.background = '#F4F5F6'; e.currentTarget.style.color = '#111418' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9EA3A8' }}
                   >
-                    <X size={15} />
+                    <X width={15} height={15} />
                   </button>
                 </div>
               )}

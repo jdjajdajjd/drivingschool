@@ -1,26 +1,18 @@
 import { Suspense, useEffect, useState } from 'react'
+import type { ComponentType, SVGProps } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import {
-  Award,
-  BarChart3,
-  Building2,
-  CalendarDays,
-  Car,
-  ExternalLink,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Settings,
-  ShieldCheck,
-  SlidersHorizontal,
-  Search,
-  UserCog,
-  Users,
-  Wallet,
-  X,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Filter, Search, UserBadgeCheck, Group, Wallet, Xmark } from 'iconoir-react'
+const Award = Medal
+const BarChart3 = GraphUp
+const Building2 = Building
+const CalendarDays = Calendar
+const ExternalLink = OpenNewWindow
+const FileText = Page
+const LayoutDashboard = Dashboard
+const SlidersHorizontal = Filter
+const UserCog = UserBadgeCheck
+const Users = Group
+const X = Xmark
 import { ADMIN_BASE_PATH, clearAccess, getAccessSecret } from '../../services/accessControl'
 import { closeSupabaseStaffSession } from '../../services/staffSessionService'
 import { setDataNamespace } from '../../services/storage'
@@ -49,7 +41,7 @@ function permission(value: StaffPermission): StaffPermission {
 
 type AdminNavItem = AdminNavDefinition & {
   to: string
-  icon: LucideIcon
+  icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
 function buildNavItems(basePath: string): AdminNavItem[] {
@@ -86,7 +78,7 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
             className="grid h-9 w-9 place-items-center rounded-full text-[#8A96A3] hover:bg-[#EEF6FF] hover:text-[#111315] lg:hidden"
             aria-label="Закрыть меню"
           >
-            <X size={18} />
+            <X width={18} height={18} />
           </button>
         ) : null}
       </div>
@@ -110,7 +102,7 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
                   }`
                 }
               >
-                <Icon size={19} strokeWidth={2.1} />
+                <Icon width={19} height={19} strokeWidth={2.1} />
                 <span className="truncate">{item.label}</span>
               </NavLink>
             )
@@ -123,7 +115,7 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
           onClick={() => { onCustomize(); onClose?.() }}
           className="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-[14px] font-medium text-[#667381] hover:bg-white/70 hover:text-[#111315]"
         >
-          <SlidersHorizontal size={18} />
+          <SlidersHorizontal width={18} height={18} />
           Настроить меню
         </button>
       </div>
@@ -261,7 +253,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             className="grid h-10 w-10 place-items-center rounded-full border border-[#111827]/[0.07] bg-white/70 text-[#667381] hover:bg-white hover:text-[#111315] lg:hidden"
             aria-label="Открыть меню"
           >
-            <Menu size={20} />
+            <Menu width={20} height={20} />
           </button>
 
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -279,7 +271,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             onClick={() => { if (school) window.open(publicPath, '_blank') }}
             className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white xl:inline-flex"
           >
-            <ExternalLink size={16} />
+            <ExternalLink width={16} height={16} />
             Сайт
           </button>
           <button
@@ -287,7 +279,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             onClick={() => setMenuSettingsOpen(true)}
             className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white lg:inline-flex"
           >
-            <SlidersHorizontal size={16} />
+            <SlidersHorizontal width={16} height={16} />
             Меню
           </button>
           <div className="relative hidden min-w-[220px] max-w-[360px] flex-[0_1_360px] md:block">
@@ -334,7 +326,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             className="grid h-10 w-10 place-items-center rounded-full border border-[#111827]/[0.07] bg-white/70 text-[#D1433C] hover:border-[#D1433C]/20 hover:bg-[#FEF2F2]"
             aria-label="Выйти"
           >
-            <LogOut size={18} />
+            <LogOut width={18} height={18} />
           </button>
         </header>
 
@@ -384,7 +376,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
                     }`
                   }
                 >
-                  <Icon size={20} strokeWidth={2.4} />
+                  <Icon width={20} height={20} strokeWidth={2.4} />
                   <span className="max-w-full truncate">{item.label}</span>
                 </NavLink>
               )
@@ -394,7 +386,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
               onClick={() => setMenuSettingsOpen(true)}
               className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[10px] font-medium text-[#7A8490]"
             >
-              <SlidersHorizontal size={20} strokeWidth={2.4} />
+              <SlidersHorizontal width={20} height={20} strokeWidth={2.4} />
               <span className="max-w-full truncate">Разделы</span>
             </button>
           </div>

@@ -1,23 +1,18 @@
 import { addDays, isAfter, isSameDay } from 'date-fns'
-import { Alert02Icon, Building03Icon, Calendar03Icon, ChartBarLineIcon, PuzzleIcon, Refresh03Icon } from '@hugeicons/core-free-icons'
+import { WarningTriangle as AlertTriangle, Building as Building2, Calendar, GraphUp as BarChart3, Puzzle, Refresh } from 'iconoir-react'
+const CalendarDays = Calendar
+const RefreshCw = Refresh
 import { PageHeader } from '../components/ui/PageHeader'
 import { Section } from '../components/ui/Section'
 import { StatCard } from '../components/ui/StatCard'
 import { StateView } from '../components/ui/StateView'
 import { DataRow } from '../components/ui/DataList'
 import { Button } from '../components/ui/Button'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Badge } from '../components/ui/Badge'
 import { formatPrice } from '../lib/utils'
 import { getBillingSummary } from '../services/modules'
 import { resetProductData } from '../services/schoolService'
 
-const AlertTriangle = createHugeIcon(Alert02Icon)
-const BarChart3 = createHugeIcon(ChartBarLineIcon)
-const Building2 = createHugeIcon(Building03Icon)
-const CalendarDays = createHugeIcon(Calendar03Icon)
-const Puzzle = createHugeIcon(PuzzleIcon)
-const RefreshCw = createHugeIcon(Refresh03Icon)
 import { db } from '../services/storage'
 import { validateDataIntegrity } from '../services/integrityService'
 import { SUPERADMIN_BASE_PATH } from '../services/accessControl'
@@ -76,20 +71,20 @@ export function SuperAdminOverview() {
               window.location.href = SUPERADMIN_BASE_PATH
             }}
           >
-            <RefreshCw size={15} />
+            <RefreshCw width={15} height={15} />
             Обновить данные
           </Button>
         }
       />
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Всего автошкол" value={schools.length} icon={<Building2 size={18} />} />
-        <StatCard label="Активные школы" value={activeSchools.length} icon={<Building2 size={18} />} />
-        <StatCard label="Записи сегодня" value={todayBookingsTotal} icon={<CalendarDays size={18} />} />
-        <StatCard label="Оценка MRR" value={formatPrice(mrr)} icon={<BarChart3 size={18} />} />
-        <StatCard label="Подключённые модули" value={enabledModulesTotal} icon={<Puzzle size={18} />} />
-        <StatCard label="Школы без времени на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle size={18} />} />
-        <StatCard label="Школы с предупреждениями" value={schoolsWithWarnings} icon={<AlertTriangle size={18} />} />
+        <StatCard label="Всего автошкол" value={schools.length} icon={<Building2 width={18} height={18} />} />
+        <StatCard label="Активные школы" value={activeSchools.length} icon={<Building2 width={18} height={18} />} />
+        <StatCard label="Записи сегодня" value={todayBookingsTotal} icon={<CalendarDays width={18} height={18} />} />
+        <StatCard label="Оценка MRR" value={formatPrice(mrr)} icon={<BarChart3 width={18} height={18} />} />
+        <StatCard label="Подключённые модули" value={enabledModulesTotal} icon={<Puzzle width={18} height={18} />} />
+        <StatCard label="Школы без времени на 7 дней" value={schoolsWithoutSlots} icon={<AlertTriangle width={18} height={18} />} />
+        <StatCard label="Школы с предупреждениями" value={schoolsWithWarnings} icon={<AlertTriangle width={18} height={18} />} />
       </div>
 
       <div className="mt-6">

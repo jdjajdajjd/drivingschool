@@ -1,7 +1,4 @@
-import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
-import { createHugeIcon } from './HugeIcon'
-
-const Check = createHugeIcon(CheckmarkCircle02Icon)
+import { CheckCircle as Check } from 'iconoir-react'
 import { cn } from '../../lib/utils'
 
 interface StepperProps {
@@ -28,7 +25,7 @@ export function Stepper({ current, total, label }: StepperProps) {
 export function SelectionMark({ active }: { active: boolean }) {
   return (
     <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition', active ? 'border-accent bg-accent text-white' : 'border-black/10 bg-white text-transparent')}>
-      <Check size={14} strokeWidth={3} />
+      <Check width={14} height={14} strokeWidth={3} />
     </span>
   )
 }

@@ -1,7 +1,4 @@
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
-import { createHugeIcon } from './HugeIcon'
-
-const ChevronRight = createHugeIcon(ArrowRight01Icon)
+import { NavArrowRight as ChevronRight } from 'iconoir-react'
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 
@@ -27,7 +24,7 @@ export function Breadcrumbs({ steps, onStepClick, className }: BreadcrumbsProps)
         return (
           <div key={step.label} className="flex items-center gap-1">
             {i > 0 && (
-              <ChevronRight size={14} className="shrink-0" style={{ color: '#D1D5DB' }} />
+              <ChevronRight width={14} height={14} className="shrink-0" style={{ color: '#D1D5DB' }} />
             )}
             <button
               type="button"

@@ -1,13 +1,10 @@
-import { Compass01Icon, Home05Icon } from '@hugeicons/core-free-icons'
+import { Compass, House as Home } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { PublicNav } from '../components/layout/PublicNav'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { DEMO_SCHOOL_PATH } from '../services/schoolRoutes'
 
-const Compass = createHugeIcon(Compass01Icon)
-const Home = createHugeIcon(Home05Icon)
 
 export function NotFoundPage() {
   const navigate = useNavigate()

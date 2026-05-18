@@ -1,4 +1,4 @@
-﻿import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, Location01Icon, Logout03Icon, MapsIcon, Settings02Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
+﻿import { ArrowRight, CalendarCheck, CheckCircle, GearSix, MapPin, MapTrifold, Phone, SignOut, Student } from '@phosphor-icons/react'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'
@@ -6,7 +6,6 @@ import { cn, formatDuration, formatInstructorName, formatPhone } from '../../lib
 import { getInstructorPhoto } from '../../services/instructorPhotos'
 import { loadLessonDescription } from '../../services/studentProfile'
 import { useToast } from '../ui/Toast'
-import { createHugeIcon } from '../ui/HugeIcon'
 import type { Branch, Booking, Instructor, School, Slot } from '../../types'
 import { lessonTypeLabel } from '../../pages/student/studentUtils'
 import {
@@ -21,15 +20,14 @@ import {
 
 void React
 
-const CalendarDays = createHugeIcon(Calendar03Icon)
-const Check = createHugeIcon(CheckmarkCircle02Icon)
-const ChevronRight = createHugeIcon(ArrowRight01Icon)
-const Location = createHugeIcon(Location01Icon)
-const LogOut = createHugeIcon(Logout03Icon)
-const Maps = createHugeIcon(MapsIcon)
-const Phone = createHugeIcon(SmartPhone01Icon)
-const Settings = createHugeIcon(Settings02Icon)
-const UserRound = createHugeIcon(User03Icon)
+const CalendarDays = CalendarCheck
+const Check = CheckCircle
+const ChevronRight = ArrowRight
+const Location = MapPin
+const LogOut = SignOut
+const Maps = MapTrifold
+const Settings = GearSix
+const UserRound = Student
 
 const ui = {
   surface: 'var(--surface)',

@@ -1,9 +1,8 @@
 ﻿import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CalendarAdd01Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { CalendarPlus, Student as UserRound } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { StateView } from '../components/ui/StateView'
 import { useToast } from '../components/ui/Toast'
 import { BookingDetailsCard, SuccessHeader } from '../components/product/CompactCards'
@@ -13,8 +12,6 @@ import { saveStudentProfile } from '../services/studentProfile'
 import { getBookingGroupFromSupabase } from '../services/supabasePublicService'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 
-const CalendarPlus = createHugeIcon(CalendarAdd01Icon)
-const UserRound = createHugeIcon(User03Icon)
 
 interface BookingBundle {
   booking: Booking

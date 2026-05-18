@@ -1,12 +1,10 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft } from '@phosphor-icons/react'
 import { BrandMark } from '../components/layout/BrandMark'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 
 void React
 
-const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
 
 const content = {
   terms: {

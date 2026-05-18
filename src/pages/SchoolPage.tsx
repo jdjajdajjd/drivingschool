@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight01Icon, Building05Icon, Location01Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
-import { createHugeIcon } from '../components/ui/HugeIcon'
+import { ArrowRight, BuildingOffice as Building, MapPin as Location, Phone, Student as User } from '@phosphor-icons/react'
 import { LoadingScreen } from '../components/ui/loader'
 import { StateView } from '../components/ui/StateView'
 import { findSchoolNamespaceBySlug } from '../services/storage'
@@ -11,11 +10,6 @@ import type { School } from '../types'
 
 void React
 
-const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const Building = createHugeIcon(Building05Icon)
-const Location = createHugeIcon(Location01Icon)
-const Phone = createHugeIcon(SmartPhone01Icon)
-const User = createHugeIcon(User03Icon)
 
 export function SchoolPage() {
   const { slug = 'virazh' } = useParams<{ slug: string }>()

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { LinkSquare02Icon, Settings02Icon, Delete02Icon } from '@hugeicons/core-free-icons'
+import { OpenNewWindow as ExternalLink, Settings as Settings2, Trash } from 'iconoir-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { createHugeIcon } from '../../components/ui/HugeIcon'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -16,9 +15,6 @@ import { deleteSupabaseSchool, listSupabaseSchools } from '../../services/supaba
 import { db } from '../../services/storage'
 import type { School } from '../../types'
 
-const ExternalLink = createHugeIcon(LinkSquare02Icon)
-const Settings2 = createHugeIcon(Settings02Icon)
-const Trash = createHugeIcon(Delete02Icon)
 import { SUPERADMIN_BASE_PATH, WORKSPACE_ADMIN_LOGIN_PATH } from '../../services/accessControl'
 
 type LaunchStep = { label: string; done: boolean }
@@ -148,15 +144,15 @@ export function SuperAdminSchools() {
 
                     <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[460px] xl:grid-cols-4">
                       <Button variant="secondary" size="sm" onClick={() => window.open(`/school/${item.school.slug}`, '_blank')}>
-                        <ExternalLink size={14} />
+                        <ExternalLink width={14} height={14} />
                         Страница
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => window.open(WORKSPACE_ADMIN_LOGIN_PATH, '_blank')}>
-                        <ExternalLink size={14} />
+                        <ExternalLink width={14} height={14} />
                         Вход админа
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools/${item.school.id}`)}>
-                        <Settings2 size={14} />
+                        <Settings2 width={14} height={14} />
                         Открыть
                       </Button>
                       <Button
@@ -165,7 +161,7 @@ export function SuperAdminSchools() {
                         disabled={item.school.slug === 'virazh' || item.school.id === 'school-virazh'}
                         onClick={() => setDeleteTarget(item.school)}
                       >
-                        <Trash size={14} />
+                        <Trash width={14} height={14} />
                         Удалить
                       </Button>
                     </div>

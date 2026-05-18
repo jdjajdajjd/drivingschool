@@ -1,13 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Cancel01Icon, CancelCircleIcon, CheckmarkCircle02Icon, InformationCircleIcon } from '@hugeicons/core-free-icons'
+import { CheckCircle as CheckCircle2, XmarkCircle as XCircle, InfoCircle as Info, Xmark as X } from 'iconoir-react'
 import { cn } from '../../lib/utils'
-import { createHugeIcon } from './HugeIcon'
-
-const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
-const XCircle = createHugeIcon(CancelCircleIcon)
-const Info = createHugeIcon(InformationCircleIcon)
-const X = createHugeIcon(Cancel01Icon)
 
 type ToastType = 'success' | 'error' | 'info'
 
@@ -69,13 +63,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               )}
             >
               {toast.type === 'success' && (
-                <CheckCircle2 size={15} className="shrink-0 text-green-400" />
+                <CheckCircle2 width={15} height={15} className="shrink-0 text-green-400" />
               )}
               {toast.type === 'error' && (
-                <XCircle size={15} className="shrink-0 text-red-200" />
+                <XCircle width={15} height={15} className="shrink-0 text-red-200" />
               )}
               {toast.type === 'info' && (
-                <Info size={15} className="shrink-0 text-blue-200" />
+                <Info width={15} height={15} className="shrink-0 text-blue-200" />
               )}
               <span className="flex-1 leading-snug">{toast.message}</span>
               <button
@@ -83,7 +77,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 className="ml-1 shrink-0 rounded-xl p-1 text-white/40 transition-colors hover:text-white hover:bg-white/10"
                 aria-label="Закрыть"
               >
-                <X size={12} />
+                <X width={12} height={12} />
               </button>
             </motion.div>
           ))}

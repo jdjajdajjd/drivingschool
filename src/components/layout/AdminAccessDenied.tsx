@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react'
+import { ShieldAlert } from 'iconoir-react'
 import { Link } from 'react-router-dom'
 
 export function AdminAccessDenied({ to }: { to: string }) {
@@ -6,7 +6,7 @@ export function AdminAccessDenied({ to }: { to: string }) {
     <div className="grid min-h-full place-items-center bg-[#F3F7FB] p-4">
       <div className="w-full max-w-[460px] rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.76)] p-6 text-center shadow-[var(--shadow-card)] backdrop-blur-2xl">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-[18px] bg-[#EAF3FF] text-[#315A7C]">
-          <ShieldAlert size={24} />
+          <ShieldAlert width={24} height={24} />
         </div>
         <h1 className="mt-4 text-xl font-semibold text-[#111315]">Недостаточно прав</h1>
         <p className="mt-2 text-sm leading-6 text-[#687381]">

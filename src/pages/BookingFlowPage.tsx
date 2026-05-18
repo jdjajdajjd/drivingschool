@@ -1,9 +1,8 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Refresh03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft, CalendarPlus, CarProfile as Car, CheckCircle as CheckCircle2, Clock as Clock3, ArrowCounterClockwise as RefreshCw } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { StateView } from '../components/ui/StateView'
@@ -47,12 +46,6 @@ import { BrandMark } from '../components/layout/BrandMark'
 
 void React
 
-const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
-const CalendarPlus = createHugeIcon(CalendarAdd01Icon)
-const Car = createHugeIcon(Car03Icon)
-const CheckCircle2 = createHugeIcon(CheckmarkCircle02Icon)
-const Clock3 = createHugeIcon(Clock01Icon)
-const RefreshCw = createHugeIcon(Refresh03Icon)
 
 const ui = {
   surface: 'var(--surface)',

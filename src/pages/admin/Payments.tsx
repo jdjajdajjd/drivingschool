@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { CreditCard, Plus } from 'lucide-react'
+import { CreditCard, Plus } from 'iconoir-react'
 import { db } from '../../services/storage'
 import { adminPayments, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
@@ -94,7 +94,7 @@ export function AdminPayments() {
           </div>
           {canManageFinance ? (
             <button onClick={() => setShowAdd(true)} className="v-admin-button">
-              <Plus size={16} />
+              <Plus width={16} height={16} />
               Принять оплату
             </button>
           ) : null}

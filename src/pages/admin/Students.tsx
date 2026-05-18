@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Archive, ChevronRight, Search, UserPlus } from 'lucide-react'
+import { Archive, NavArrowRight as ChevronRight, Search, UserPlus } from 'iconoir-react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
@@ -223,7 +223,7 @@ export function AdminStudents() {
             ) : null}
           </label>
           <button onClick={() => setShowAdd(true)} className="v-admin-button">
-            <UserPlus size={16} />
+            <UserPlus width={16} height={16} />
             Добавить ученика
           </button>
         </div>
@@ -263,7 +263,7 @@ export function AdminStudents() {
               <button type="button" disabled={!canManageStudents || !bulkInstructorId} onClick={() => updateSelectedStudents({ assignedInstructorId: bulkInstructorId }, 'Назначен инструктор')} className="v-admin-button-secondary disabled:opacity-50">Назначить</button>
               <input value={bulkGroupName} onChange={(event) => setBulkGroupName(event.target.value)} disabled={!canManageStudents} placeholder="Группа" className="v-admin-input w-full" />
               <button type="button" disabled={!canManageStudents || !bulkGroupName.trim()} onClick={() => updateSelectedStudents({ groupName: bulkGroupName.trim() }, 'Назначена группа')} className="v-admin-button-secondary disabled:opacity-50">Группа</button>
-              <button type="button" disabled={!canManageStudents} onClick={() => updateSelectedStudents({ trainingStage: 'archived' }, 'Перенесены в архив')} className="v-admin-button-secondary disabled:opacity-50"><Archive size={15} /> Архив</button>
+              <button type="button" disabled={!canManageStudents} onClick={() => updateSelectedStudents({ trainingStage: 'archived' }, 'Перенесены в архив')} className="v-admin-button-secondary disabled:opacity-50"><Archive width={15} height={15} /> Архив</button>
             </div>
           </div>
         ) : null}
@@ -319,7 +319,7 @@ export function AdminStudents() {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-medium text-[#667085]">
                     {instructor ? <span className="truncate">{instructor.name}</span> : <span className="v-admin-pill v-tone-warning">нет инструктора</span>}
-                    <ChevronRight className="shrink-0 text-[#98A2B3]" size={17} />
+                    <ChevronRight className="shrink-0 text-[#98A2B3]" width={17} height={17} />
                   </div>
                 </button>
               )
@@ -378,7 +378,7 @@ export function AdminStudents() {
                           <span className="font-semibold tabular-nums text-[#111827]">{hours}ч</span>
                         </span>
                       </span>
-                      <ChevronRight className="justify-self-end text-[#98A2B3]" size={18} />
+                      <ChevronRight className="justify-self-end text-[#98A2B3]" width={18} height={18} />
                     </button>
                   )
                 })}

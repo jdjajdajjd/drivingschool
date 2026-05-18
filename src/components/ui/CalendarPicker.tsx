@@ -1,11 +1,7 @@
 import { useState } from 'react'
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from 'iconoir-react'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { createHugeIcon } from './HugeIcon'
-
-const ChevronLeft = createHugeIcon(ArrowLeft01Icon)
-const ChevronRight = createHugeIcon(ArrowRight01Icon)
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -53,7 +49,7 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
           className="btn btn-sm btn-secondary"
           aria-label="Предыдущий месяц"
         >
-          <ChevronLeft size={16} strokeWidth={2.5} />
+          <ChevronLeft width={16} height={16} strokeWidth={2.5} />
         </button>
         <h3 className="t-subheading" style={{ textTransform: 'capitalize' }}>
           {format(viewMonth, 'LLLL yyyy', { locale: ru })}
@@ -63,7 +59,7 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
           className="btn btn-sm btn-secondary"
           aria-label="Следующий месяц"
         >
-          <ChevronRight size={16} strokeWidth={2.5} />
+          <ChevronRight width={16} height={16} strokeWidth={2.5} />
         </button>
       </div>
 

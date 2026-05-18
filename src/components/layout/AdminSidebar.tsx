@@ -1,30 +1,18 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import {
-  Calendar03Icon,
-  ClipboardIcon,
-  DashboardSquare03Icon,
-  LinkSquare02Icon,
-  Location01Icon,
-  Settings02Icon,
-  User03Icon,
-  UserMultipleIcon,
-  Cancel01Icon,
-} from '@hugeicons/core-free-icons'
+import { Calendar, ClipboardCheck, Dashboard, OpenNewWindow, MapPin, Settings, User, Group, Xmark as X } from 'iconoir-react'
 import { cn } from '../../lib/utils'
-import { createHugeIcon } from '../ui/HugeIcon'
 import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 import { db } from '../../services/storage'
 import { BrandMark } from './BrandMark'
 
-const CalendarDays = createHugeIcon(Calendar03Icon)
-const ClipboardList = createHugeIcon(ClipboardIcon)
-const ExternalLink = createHugeIcon(LinkSquare02Icon)
-const LayoutDashboard = createHugeIcon(DashboardSquare03Icon)
-const Location = createHugeIcon(Location01Icon)
-const Settings2 = createHugeIcon(Settings02Icon)
-const UserRound = createHugeIcon(User03Icon)
-const Users = createHugeIcon(UserMultipleIcon)
-const X = createHugeIcon(Cancel01Icon)
+const CalendarDays = Calendar
+const ClipboardList = ClipboardCheck
+const ExternalLink = OpenNewWindow
+const LayoutDashboard = Dashboard
+const Location = MapPin
+const Settings2 = Settings
+const UserRound = User
+const Users = Group
 
 const NAV = [
   { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true, color: 'bg-[#EAF7EE] text-[#188447]' },
@@ -75,7 +63,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             className="flex h-9 w-9 items-center justify-center rounded-2xl #9EA3A8 transition hover:bg-white hover:text-[#1026D8] md:hidden"
             aria-label="Закрыть меню"
           >
-            <X size={18} />
+            <X width={18} height={18} />
           </button>
         </div>
 
@@ -103,7 +91,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             >
               {({ isActive }) => (
                 <>
-                  <span className={`grid h-8 w-8 place-items-center rounded-[10px] ${isActive ? color : 'bg-white text-[#667085]'}`}><Icon size={17} /></span>
+                  <span className={`grid h-8 w-8 place-items-center rounded-[10px] ${isActive ? color : 'bg-white text-[#667085]'}`}><Icon width={17} height={17} /></span>
                   <span>{label}</span>
                 </>
               )}
@@ -119,7 +107,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             }}
             className="flex w-full min-h-11 items-center gap-3 rounded-[12px] px-3 py-2 text-[14px] font-black text-[#1F2937] transition hover:bg-white hover:text-[#1026D8]"
           >
-            <ExternalLink size={17} className="text-[#667085]" />
+            <ExternalLink width={17} height={17} className="text-[#667085]" />
             Страница школы
           </button>
           <button
@@ -130,7 +118,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             }}
             className="flex w-full min-h-11 items-center gap-3 rounded-[12px] px-3 py-2 text-[14px] font-black text-[#D94A38] transition hover:bg-[#FFECEA]"
           >
-            <X size={17} />
+            <X width={17} height={17} />
             Выйти
           </button>
         </div>

@@ -1,10 +1,9 @@
 ﻿import React, { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight01Icon, Building05Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight, BuildingOffice as Building } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { isValidRussianPhone } from '../services/bookingService'
 import { loginStudentProfileFromSupabase, verifyStudentCredentials } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -14,8 +13,6 @@ import type { School } from '../types'
 
 void React
 
-const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const Building = createHugeIcon(Building05Icon)
 
 const fallbackSchool: School = {
   id: 'school-virazh',

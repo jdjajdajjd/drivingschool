@@ -1,28 +1,19 @@
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import {
-  Calendar03Icon,
-  ClipboardIcon,
-  DashboardSquare03Icon,
-  Settings02Icon,
-  UserMultipleIcon,
-} from '@hugeicons/core-free-icons'
+import { Calendar, ClipboardCheck, Dashboard, Group, Settings } from 'iconoir-react'
 import { cn } from '../../lib/utils'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
-import { createHugeIcon } from '../ui/HugeIcon'
 import { BrandMark } from './BrandMark'
 
-const Home = createHugeIcon(DashboardSquare03Icon)
-const Clipboard = createHugeIcon(ClipboardIcon)
-const Calendar = createHugeIcon(Calendar03Icon)
-const Users = createHugeIcon(UserMultipleIcon)
-const Settings = createHugeIcon(Settings02Icon)
+const Home = Dashboard
+const Clipboard = ClipboardCheck
+const Users = Group
 
 interface Tab {
   key: string
   to: string
   label: string
-  icon: ReturnType<typeof createHugeIcon>
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
 }
 
 const TABS: Tab[] = [
@@ -62,7 +53,7 @@ export function AdminBottomNav() {
               )}
             >
               <span className="grid h-7 w-7 place-items-center rounded-[8px]">
-                <tab.icon size={16} />
+                <tab.icon width={16} height={16} />
               </span>
               <span className="text-[10px] font-black leading-none tracking-tight">{tab.label}</span>
             </NavLink>
@@ -94,7 +85,7 @@ export function AdminTopBar() {
                   isActive ? 'bg-[#111827] text-white' : 'text-[#667085] hover:bg-[#F9FAFB] hover:text-[#111827]',
                 )}
               >
-                <tab.icon size={14} />
+                <tab.icon width={14} height={14} />
                 {tab.label}
               </NavLink>
             )

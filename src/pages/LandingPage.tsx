@@ -1,4 +1,7 @@
-import { ArrowRight, CalendarCheck, CheckCircle2, Clock3, GraduationCap, LayoutDashboard, Loader2, Send, Sparkles, UserCheck } from 'lucide-react'
+import { ArrowRight, CalendarCheck, CheckCircle as CheckCircle2, Clock, GraduationCap, ChartLineUp, PaperPlaneTilt as Send, Sparkle, UserCheck, Spinner as Loader2 } from '@phosphor-icons/react'
+const Clock3 = Clock
+const LayoutDashboard = ChartLineUp
+const Sparkles = Sparkle
 import { FormEvent, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/layout/BrandMark'

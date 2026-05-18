@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react'
+import { LogOut } from 'iconoir-react'
 
 export function SchoolRequiredState({ onSignOut }: { onSignOut: () => void }) {
   return (
@@ -15,7 +15,7 @@ export function SchoolRequiredState({ onSignOut }: { onSignOut: () => void }) {
           onClick={onSignOut}
           className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#111827] px-4 text-sm font-medium text-white"
         >
-          <LogOut size={17} />
+          <LogOut width={17} height={17} />
           Выйти
         </button>
       </div>

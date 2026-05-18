@@ -1,18 +1,12 @@
-import { Outlet, useNavigate } from 'react-router-dom'
-import { Add01Icon, Building03Icon, Logout03Icon, Menu01Icon, Shield01Icon } from '@hugeicons/core-free-icons'
 import { useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Building, LogOut, Menu, Plus, ShieldCheck as Shield } from 'iconoir-react'
 import { cn } from '../../lib/utils'
-import { NavLink } from 'react-router-dom'
-import { createHugeIcon } from '../ui/HugeIcon'
 import { SUPERADMIN_BASE_PATH, WORKSPACE_ADMIN_LOGIN_PATH, clearAccess, getAccessSecret } from '../../services/accessControl'
 import { closeSupabaseStaffSession } from '../../services/staffSessionService'
 import { BrandMark } from './BrandMark'
 
-const Building2 = createHugeIcon(Building03Icon)
-const LogOut = createHugeIcon(Logout03Icon)
-const Menu = createHugeIcon(Menu01Icon)
-const Plus = createHugeIcon(Add01Icon)
-const Shield = createHugeIcon(Shield01Icon)
+const Building2 = Building
 
 const NAV = [
   { to: SUPERADMIN_BASE_PATH, label: 'Обзор', icon: Shield, end: true },
@@ -33,7 +27,7 @@ export function SuperAdminLayout() {
             className="flex h-10 w-10 items-center justify-center rounded-full border border-[#111827]/[0.07] bg-white/75 text-[#667381] shadow-[var(--shadow-card)]"
             aria-label="Открыть меню"
           >
-            <Menu size={18} />
+            <Menu width={18} height={18} />
           </button>
           <button onClick={() => navigate('/')} className="flex items-center">
             <BrandMark size="sm" />
@@ -79,7 +73,7 @@ export function SuperAdminLayout() {
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? 'text-[#111315]' : 'text-[#9AA6B2]'} />
+                  <Icon width={16} height={16} className={isActive ? 'text-[#111315]' : 'text-[#9AA6B2]'} />
                   <span>{label}</span>
                 </>
               )}
@@ -91,7 +85,7 @@ export function SuperAdminLayout() {
             onClick={() => window.open(WORKSPACE_ADMIN_LOGIN_PATH, '_blank')}
             className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium text-[#667381] transition hover:bg-white/70 hover:text-[#111315]"
           >
-            <Building2 size={15} className="text-[#9AA6B2]" />
+            <Building2 width={15} height={15} className="text-[#9AA6B2]" />
             Вход админа
           </button>
           <button
@@ -103,7 +97,7 @@ export function SuperAdminLayout() {
             }}
             className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-[#D1433C] transition hover:bg-[#FEF2F2]"
           >
-            <LogOut size={15} />
+            <LogOut width={15} height={15} />
             Выйти
           </button>
         </div>

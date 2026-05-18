@@ -1,20 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-  ArrowLeft01Icon,
-  Calendar03Icon,
-  Call02Icon,
-  CancelCircleIcon,
-  Car03Icon,
-  Clock01Icon,
-  Message02Icon,
-  Note03Icon,
-  UserAccountIcon,
-} from '@hugeicons/core-free-icons'
+import { ArrowLeft, XCircle, Clock, Calendar, PhoneCall as Call, ChatCircleText as Message, Note, CarProfile as Car, UserCircle as UserAccount } from '@phosphor-icons/react'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge, StatusBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { pluralize } from '../lib/utils'
 import { cancelBooking, completeBooking, getSlotDateTime, updateBookingComment } from '../services/bookingService'
 import { getInstructorPhoto } from '../services/instructorPhotos'
@@ -25,15 +14,6 @@ import { loadLessonDescription, loadStudentProgress } from '../services/studentP
 import type { Booking, Branch, Instructor, LessonType, Slot, Student, StudentProgress } from '../types'
 import { formatDateFull, formatDayOfWeek, formatHumanDate, formatTimeRange } from '../utils/date'
 
-const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
-const XCircle = createHugeIcon(CancelCircleIcon)
-const Clock = createHugeIcon(Clock01Icon)
-const Calendar = createHugeIcon(Calendar03Icon)
-const Call = createHugeIcon(Call02Icon)
-const Message = createHugeIcon(Message02Icon)
-const Note = createHugeIcon(Note03Icon)
-const Car = createHugeIcon(Car03Icon)
-const UserAccount = createHugeIcon(UserAccountIcon)
 
 interface BookingRow {
   booking: Booking

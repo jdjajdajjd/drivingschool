@@ -1,32 +1,11 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  BellDotIcon,
-  Calendar03Icon,
-  Camera02Icon,
-  CheckmarkCircle02Icon,
-  Car04Icon,
-  Comment01Icon,
-  File02Icon,
-  FilterHorizontalIcon,
-  Home07Icon,
-  Logout03Icon,
-  PencilEdit02Icon,
-  School01Icon,
-  SmartPhone01Icon,
-  SparklesIcon,
-  Settings02Icon,
-  User03Icon,
-  ZapIcon,
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
-} from '@hugeicons/core-free-icons'
+import { ArrowLeft as ChevronLeft, ArrowRight as ChevronRight, BellRinging as Bell, Buildings as Building2, CalendarCheck as CalendarDays, Camera, CarProfile as CarFront, CheckCircle, FileText, Funnel as Filter, Gift, House as Home, SignOut as LogOut, ChatCircleText as MessageCircle, PencilSimple as Pencil, Phone, GearSix as Settings, Student as UserRound, Lightning as Zap } from '@phosphor-icons/react'
 import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomNav } from '../components/ui/BottomNav'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { db, findSchoolByIdAcrossNamespaces, findSchoolNamespaceById, setDataNamespace } from '../services/storage'
@@ -58,25 +37,6 @@ import { InfoSheetPanel } from './student/components/InfoSheetPanel'
 
 void React
 
-const Bell = createHugeIcon(BellDotIcon)
-const Building2 = createHugeIcon(School01Icon)
-const CalendarDays = createHugeIcon(Calendar03Icon)
-const Camera = createHugeIcon(Camera02Icon)
-const CarFront = createHugeIcon(Car04Icon)
-const CheckCircle = createHugeIcon(CheckmarkCircle02Icon)
-const ChevronLeft = createHugeIcon(ArrowLeft01Icon)
-const ChevronRight = createHugeIcon(ArrowRight01Icon)
-const FileText = createHugeIcon(File02Icon)
-const Filter = createHugeIcon(FilterHorizontalIcon)
-const Gift = createHugeIcon(SparklesIcon)
-const Home = createHugeIcon(Home07Icon)
-const LogOut = createHugeIcon(Logout03Icon)
-const MessageCircle = createHugeIcon(Comment01Icon)
-const Pencil = createHugeIcon(PencilEdit02Icon)
-const Phone = createHugeIcon(SmartPhone01Icon)
-const Settings = createHugeIcon(Settings02Icon)
-const UserRound = createHugeIcon(User03Icon)
-const Zap = createHugeIcon(ZapIcon)
 
 const fallbackSchool: School = {
   id: 'school-virazh',

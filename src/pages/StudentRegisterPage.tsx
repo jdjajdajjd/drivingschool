@@ -1,9 +1,8 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft01Icon, ArrowRight01Icon, Building05Icon, CheckmarkCircle02Icon, Login03Icon, User03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft, ArrowRight, BuildingOffice as Building, CheckCircle as Check, SignIn as Login, Student as UserRound } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { isValidRussianPhone } from '../services/bookingService'
@@ -16,12 +15,6 @@ import { normalizeNamePart, normalizePersonName } from '../lib/nameFormat'
 
 void React
 
-const ArrowLeft = createHugeIcon(ArrowLeft01Icon)
-const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const Building = createHugeIcon(Building05Icon)
-const Check = createHugeIcon(CheckmarkCircle02Icon)
-const Login = createHugeIcon(Login03Icon)
-const UserRound = createHugeIcon(User03Icon)
 
 type RegisterStep = 'lastName' | 'firstName' | 'middleName' | 'phone' | 'password' | 'success'
 

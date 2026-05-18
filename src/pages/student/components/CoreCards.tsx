@@ -1,7 +1,6 @@
 ﻿import React from 'react'
-import { Cancel01Icon, ListViewIcon, Male02Icon, School01Icon } from '@hugeicons/core-free-icons'
+import { X, ListChecks, Student as Male, Buildings as Building2 } from '@phosphor-icons/react'
 import { Button } from '../../../components/ui/Button'
-import { createHugeIcon } from '../../../components/ui/HugeIcon'
 import { cn, formatInstructorName } from '../../../lib/utils'
 import { getInstructorPhoto } from '../../../services/instructorPhotos'
 import { loadLessonDescription } from '../../../services/studentProfile'
@@ -11,10 +10,6 @@ import { initials, lessonTime, lessonTypeLabel, slotTimeRange } from '../student
 
 void React
 
-const X = createHugeIcon(Cancel01Icon)
-const Building2 = createHugeIcon(School01Icon)
-const ListChecks = createHugeIcon(ListViewIcon)
-const Male = createHugeIcon(Male02Icon)
 
 const card = 'rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.72)] shadow-[var(--shadow-card)] backdrop-blur-2xl'
 

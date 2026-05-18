@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { addDays, eachDayOfInterval, format, isSameDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus } from 'iconoir-react'
 import { db } from '../../services/storage'
 import { cancelBookingConfirmed, completeBookingConfirmed, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
 import { createBulkSlotsConfirmed, createSlotConfirmed, updateSlotStatusConfirmed } from '../../services/slotService'
@@ -279,11 +279,11 @@ export function AdminSchedule() {
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
-            <ChevronLeft size={16} />
+            <ChevronLeft width={16} height={16} />
           </button>
           <button onClick={() => setSelectedDate(new Date())} className="v-admin-button-secondary">Сегодня</button>
           <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? 1 : 7))} className="v-admin-button-secondary px-3" aria-label="Вперёд">
-            <ChevronRight size={16} />
+            <ChevronRight width={16} height={16} />
           </button>
           <div className="flex rounded-full border border-[#111827]/[0.07] bg-white/70 p-1">
             {(['day', 'week'] as ViewMode[]).map((mode) => (
@@ -293,7 +293,7 @@ export function AdminSchedule() {
             ))}
           </div>
           <button onClick={() => setShowCreateModal(true)} className="v-admin-button is-blue">
-            <Plus size={16} />
+            <Plus width={16} height={16} />
             Создать окна
           </button>
           <button onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
@@ -396,7 +396,7 @@ export function AdminSchedule() {
                           </span>
                           <span className="v-route-meta">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
                         </span>
-                        <span className="text-[#98A2B3]"><ChevronRight size={16} /></span>
+                        <span className="text-[#98A2B3]"><ChevronRight width={16} height={16} /></span>
                       </button>
                     )
                   })}

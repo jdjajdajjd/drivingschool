@@ -1,4 +1,5 @@
-import { ArrowRight, GraduationCap, LayoutDashboard, PlayCircle, RotateCcw, ShieldCheck } from 'lucide-react'
+import { ArrowRight, GraduationCap, ChartLineUp, PlayCircle, ArrowCounterClockwise as RotateCcw, ShieldCheck } from '@phosphor-icons/react'
+const LayoutDashboard = ChartLineUp
 import { useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/layout/BrandMark'
 import { setDataNamespace } from '../services/storage'
