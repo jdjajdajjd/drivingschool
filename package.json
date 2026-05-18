@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "telegram:opencode": "node scripts/telegram-opencode-bot.mjs",
     "typecheck": "tsc --noEmit",
+    "launch:check": "node scripts/launch-live-check.mjs",
     "smoke:vroom": "node scripts/smoke-vroom.mjs",
     "smoke:multitenant": "node scripts/smoke-multitenant-local.mjs",
     "qa:product": "node scripts/qa-product-flows.mjs",

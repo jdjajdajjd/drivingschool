@@ -92,6 +92,7 @@ try {
   preview = spawn(previewCommand.command, previewCommand.args, {
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: false,
+    detached: !isWindows,
   })
 
   preview.stdout.on('data', (chunk) => process.stdout.write(chunk))
@@ -111,7 +112,11 @@ try {
     if (isWindows) {
       spawnSync('taskkill', ['/PID', String(preview.pid), '/T', '/F'], { stdio: 'ignore' })
     } else {
-      preview.kill()
+      try {
+        process.kill(-preview.pid, 'SIGTERM')
+      } catch {
+        preview.kill()
+      }
     }
   }
 }
