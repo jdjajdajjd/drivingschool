@@ -2085,6 +2085,118 @@
     box-shadow: 0 16px 36px rgba(15,23,42,0.06);
   }
 
+  /* Legacy admin routes still use older utility-heavy markup. This layer pulls them into the same launch UI system. */
+  .vroom-admin-shell main > .flex.h-full.flex-col > .flex-shrink-0.bg-white,
+  .vroom-admin-shell main > .flex.h-full.flex-col > .flex.flex-shrink-0 {
+    margin: 14px 14px 0;
+    border: 1px solid rgba(255,255,255,0.72) !important;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.74) !important;
+    padding: 14px !important;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(20px);
+  }
+
+  .vroom-admin-shell main > .flex.h-full.flex-col > .flex-shrink-0.bg-white + .flex-shrink-0,
+  .vroom-admin-shell main > .flex.h-full.flex-col > .flex.flex-shrink-0 + .flex-shrink-0 {
+    margin: 8px 14px 0;
+    border: 1px solid rgba(255,255,255,0.72) !important;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.68) !important;
+    padding: 0 10px !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.035);
+  }
+
+  .vroom-admin-shell main > .flex.h-full.flex-col > .flex-1.overflow-auto {
+    padding: 14px !important;
+  }
+
+  .vroom-admin-shell main h1.text-gray-900,
+  .vroom-admin-shell main h1.text-ink {
+    color: #111827 !important;
+    font-size: 25px !important;
+    font-weight: 620 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .vroom-admin-shell main .rounded-2xl.bg-white,
+  .vroom-admin-shell main .rounded-2xl.border.bg-white,
+  .vroom-admin-shell main .rounded-xl.bg-gray-50,
+  .vroom-admin-shell main .rounded-xl.bg-gray-100,
+  .vroom-admin-shell main .rounded-lg.bg-gray-100,
+  .vroom-admin-shell main .rounded-lg.bg-\[\#F9FAFB\],
+  .vroom-admin-shell main .rounded-\[14px\].bg-white,
+  .vroom-admin-shell main .rounded-\[16px\].bg-\[\#F8FAFE\],
+  .vroom-admin-shell main .rounded-\[14px\].bg-\[\#F8FAFC\] {
+    border-color: rgba(15,23,42,0.08) !important;
+    background: rgba(255,255,255,0.78) !important;
+    box-shadow: 0 12px 30px rgba(15,23,42,0.045);
+  }
+
+  .vroom-admin-shell main .rounded-2xl.bg-white:hover,
+  .vroom-admin-shell main .rounded-2xl.border.bg-white:hover {
+    border-color: rgba(10,132,255,0.20) !important;
+    transform: translateY(-1px);
+  }
+
+  .vroom-admin-shell main input:not([type='checkbox']):not([type='radio']),
+  .vroom-admin-shell main select,
+  .vroom-admin-shell main textarea {
+    border-color: rgba(17,24,39,0.08) !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,0.78) !important;
+    font-weight: 520 !important;
+    box-shadow: none !important;
+  }
+
+  .vroom-admin-shell main input:not([type='checkbox']):not([type='radio']):focus,
+  .vroom-admin-shell main select:focus,
+  .vroom-admin-shell main textarea:focus {
+    border-color: rgba(10,132,255,0.32) !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 4px rgba(10,132,255,0.10) !important;
+  }
+
+  .vroom-admin-shell main table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .vroom-admin-shell main table thead tr {
+    background: rgba(248,250,252,0.88) !important;
+  }
+
+  .vroom-admin-shell main table th {
+    color: #687381 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .vroom-admin-shell main table td {
+    color: #2A2D2F !important;
+    font-weight: 460 !important;
+  }
+
+  .vroom-admin-shell main .text-gray-400,
+  .vroom-admin-shell main .text-\[\#9EA3A8\],
+  .vroom-admin-shell main .text-\[\#94A3B8\] {
+    color: #667085 !important;
+  }
+
+  .vroom-admin-shell main .text-gray-900,
+  .vroom-admin-shell main .text-ink,
+  .vroom-admin-shell main .text-\[\#111418\],
+  .vroom-admin-shell main .text-\[\#111827\] {
+    color: #111827 !important;
+  }
+
+  .vroom-admin-shell main .bg-green-50,
+  .vroom-admin-shell main .bg-\[\#EAF7EF\] { background: rgba(52,199,89,0.12) !important; }
+  .vroom-admin-shell main .bg-red-50,
+  .vroom-admin-shell main .bg-\[\#FFF3F2\] { background: rgba(255,59,48,0.10) !important; }
+  .vroom-admin-shell main .bg-blue-50,
+  .vroom-admin-shell main .bg-\[\#EAF3FF\] { background: rgba(10,132,255,0.11) !important; }
+
   .v-mobile-day-group {
     border: 1px solid rgba(15,23,42,0.10);
     border-radius: 18px;
@@ -2150,5 +2262,8 @@
     .v-mobile-day-group > div:first-child { padding: 12px; }
     .v-mobile-day-group h2 { font-size: 18px !important; }
     .v-mobile-slot-row .v-admin-pill { max-width: 86px; padding-inline: 7px; font-size: 10px; }
+    .vroom-admin-shell main > .flex.h-full.flex-col > .flex-shrink-0.bg-white,
+    .vroom-admin-shell main > .flex.h-full.flex-col > .flex.flex-shrink-0 { margin: 8px 8px 0; border-radius: 18px; }
+    .vroom-admin-shell main > .flex.h-full.flex-col > .flex-1.overflow-auto { padding: 10px 8px 88px !important; }
   }
 }
