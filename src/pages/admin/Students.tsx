@@ -326,7 +326,7 @@ export function AdminStudents() {
             })}
           </div>
 
-          <div className="v-admin-panel hidden overflow-hidden md:block">
+          <div className="v-admin-panel v-admin-table-sticky v-admin-table-compact hidden overflow-hidden md:block">
             <div className="grid grid-cols-[40px_minmax(240px,1.2fr)_minmax(150px,.75fr)_minmax(160px,.8fr)_minmax(150px,.7fr)_minmax(130px,.55fr)_40px] items-center gap-14 border-b border-[rgba(15,23,42,0.07)] bg-[#F8FAFC] px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
               <span className="text-center"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} className="accent-[#0A84FF]" /></span>
               <span>Ученик</span>
