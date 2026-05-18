@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BellDotIcon,
@@ -33,6 +33,7 @@ import { db, findSchoolByIdAcrossNamespaces, findSchoolNamespaceById, setDataNam
 import { cancelBooking, createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
 import { useToast } from '../components/ui/Toast'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
+import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import {
   findAnyStudentProfile,
   loadStudentDocuments,
@@ -49,6 +50,7 @@ import {
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import type { Booking, Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
+import { normalizePersonName } from '../lib/nameFormat'
 import type { InfoSheet, LessonFilter, ProfileField, ResolvedStudentBooking, StudentView } from './student/studentTypes'
 import { compactStudentName, filterSlots, formatDateValue, imageFileToDataUrl, lessonTime, resolveBookings, safePercent, selectedDayTitle, selectedInstructorStorageKey, weekdayShort } from './student/studentUtils'
 import { AvailableSlotCard, BookingLessonCard, LessonDetailsCard, SchoolLogo, StatusPill, StudentAvatar } from './student/components/CoreCards'
@@ -79,7 +81,7 @@ const Zap = createHugeIcon(ZapIcon)
 const fallbackSchool: School = {
   id: 'school-virazh',
   name: 'Автошкола «Вираж»',
-  slug: 'virazh',
+  slug: DEMO_SCHOOL_SLUG,
   description: '',
   phone: '',
   email: '',
@@ -88,9 +90,9 @@ const fallbackSchool: School = {
   isActive: true,
 }
 
-const card = 'rounded-[24px] bg-white border border-[#EBECF0]'
-const pageTitle = 'text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
-const sectionTitle = 'text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#050609]'
+const card = 'rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.72)] shadow-[var(--shadow-card)] backdrop-blur-2xl'
+const pageTitle = 'text-[24px] font-medium leading-tight text-[var(--text)]'
+const sectionTitle = 'text-[19px] font-medium leading-tight text-[var(--text)]'
 
 function HorizontalScroller({ children, className, contentClassName, step = 280 }: { children: React.ReactNode; className?: string; contentClassName?: string; step?: number }) {
   const ref = useRef<HTMLDivElement | null>(null)
@@ -123,7 +125,7 @@ function HorizontalScroller({ children, className, contentClassName, step = 280 
   return (
     <div className={cn('relative', className)}>
       {canScrollLeft ? (
-        <button type="button" className="absolute left-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-[#E6E8EE] bg-white/90 text-[#1F2BD8] shadow-[0_8px_24px_rgba(15,20,25,0.10)] backdrop-blur active:scale-[0.96]" onClick={() => scrollByDirection(-1)} aria-label="Прокрутить влево">
+        <button type="button" className="absolute left-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-[rgba(255,255,255,0.76)] text-[var(--text)] shadow-[0_8px_24px_rgba(15,20,25,0.06)] backdrop-blur-xl active:scale-[0.96]" onClick={() => scrollByDirection(-1)} aria-label="Прокрутить влево">
           <ChevronLeft size={17} />
         </button>
       ) : null}
@@ -131,7 +133,7 @@ function HorizontalScroller({ children, className, contentClassName, step = 280 
         {children}
       </div>
       {canScrollRight ? (
-        <button type="button" className="absolute right-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-[#E6E8EE] bg-white/90 text-[#1F2BD8] shadow-[0_8px_24px_rgba(15,20,25,0.10)] backdrop-blur active:scale-[0.96]" onClick={() => scrollByDirection(1)} aria-label="Прокрутить вправо">
+        <button type="button" className="absolute right-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-[rgba(255,255,255,0.76)] text-[var(--text)] shadow-[0_8px_24px_rgba(15,20,25,0.06)] backdrop-blur-xl active:scale-[0.96]" onClick={() => scrollByDirection(1)} aria-label="Прокрутить вправо">
           <ChevronRight size={17} />
         </button>
       ) : null}
@@ -148,8 +150,8 @@ function FilterChips({ value, onChange }: { value: LessonFilter; onChange: (valu
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
       {items.map((item, index) => (
-        <button key={item.value} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#050609] active:scale-[0.98]" style={{ borderColor: value === item.value ? '#050609' : '#E1E3EB' }} onClick={() => onChange(item.value)}>
-          {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#35C45A]' : 'bg-[#7259C7]')} /> : null}
+        <button key={item.value} className="inline-flex min-h-9 shrink-0 items-center rounded-full border px-4 text-[14px] font-semibold text-[#111315] active:scale-[0.98]" style={{ borderColor: value === item.value ? '#111315' : '#E1E2DE' }} onClick={() => onChange(item.value)}>
+          {index > 0 ? <span className={cn('mr-2 h-2 w-2 rounded-full', index === 1 ? 'bg-[#247A4B]' : 'bg-[#C4935A]')} /> : null}
           {item.label}
         </button>
       ))}
@@ -165,10 +167,10 @@ function InstructorChips({ instructors, selectedId, assignedId, onChange }: { in
         const active = instructor.id === selectedId
         const assigned = instructor.id === assignedId
         return (
-          <button key={instructor.id} className={cn('inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold active:scale-[0.98]', active ? 'border-[#1F2BD8] bg-[#EEF0FA] text-[#1F2BD8]' : 'border-[#E1E3EB] bg-white text-[#050609]')} onClick={() => onChange(instructor.id)}>
+          <button key={instructor.id} className={cn('inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-medium active:scale-[0.98]', active ? 'border-[rgba(17,19,21,0.08)] bg-[rgba(255,255,255,0.86)] text-[var(--text)] shadow-[0_8px_24px_rgba(15,20,25,0.06)]' : 'border-white/60 bg-[rgba(255,255,255,0.52)] text-[var(--text)]')} onClick={() => onChange(instructor.id)}>
             <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={24} fallback="male" />
             {formatInstructorName(instructor.name)}
-            {assigned ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold text-[#1F2BD8]">Ваш</span> : null}
+            {assigned ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium text-[var(--text)]">Ваш</span> : null}
           </button>
         )
       })}
@@ -179,12 +181,12 @@ function InstructorChips({ instructors, selectedId, assignedId, onChange }: { in
 function ScheduleEmptyState({ onShowAll, onChangeInstructor }: { onShowAll: () => void; onChangeInstructor: () => void }) {
   return (
     <section className={cn(card, 'p-4')}>
-      <div className="mb-3 h-1 w-12 rounded-full bg-[#1F2BD8]" />
-      <h3 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">На этот день окон нет</h3>
-      <p className="mt-2 text-[14px] font-semibold leading-5 text-[#8B8D94]">Можно показать все типы занятий или быстро сменить инструктора.</p>
+      <div className="mb-3 h-1 w-10 rounded-full bg-[var(--text)]/80" />
+      <h3 className="text-[18px] font-semibold text-[var(--text)]">На этот день окон нет</h3>
+      <p className="mt-2 text-[14px] font-medium leading-5 text-[var(--text-muted)]">Можно показать все типы занятий или быстро сменить инструктора.</p>
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <button className="min-h-11 rounded-[16px] bg-[#EEF0FA] text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={onShowAll}>Показать все</button>
-        <button className="min-h-11 rounded-[16px] bg-[#F5F6FA] text-[14px] font-bold text-[#050609] active:scale-[0.98]" onClick={onChangeInstructor}>Инструктор</button>
+        <button className="min-h-11 rounded-[16px] border border-white/60 bg-[rgba(255,255,255,0.64)] text-[14px] font-medium text-[var(--text)] shadow-[0_6px_20px_rgba(20,24,32,0.03)] active:scale-[0.98]" onClick={onShowAll}>Показать все</button>
+        <button className="min-h-11 rounded-[16px] border border-white/60 bg-[rgba(255,255,255,0.5)] text-[14px] font-medium text-[var(--text)] shadow-[0_6px_20px_rgba(20,24,32,0.03)] active:scale-[0.98]" onClick={onChangeInstructor}>Инструктор</button>
       </div>
     </section>
   )
@@ -195,21 +197,21 @@ function InstructorSheet({ open, instructors, selectedId, assignedId, onSelect, 
   const ordered = [...instructors].sort((left, right) => Number(right.id === selectedId) - Number(left.id === selectedId) || Number(right.id === assignedId) - Number(left.id === assignedId))
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-3 py-5" onClick={onClose}>
-      <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
+      <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] border border-white/60 bg-[rgba(255,255,255,0.84)] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.12)] backdrop-blur-2xl" onClick={(event) => event.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Выберите инструктора</h2>
-          <button className="rounded-full px-3 py-2 text-[14px] font-semibold text-[#8B8D94]" onClick={onClose}>Закрыть</button>
+          <h2 className="text-[19px] font-semibold text-[var(--text)]">Выберите инструктора</h2>
+          <button className="rounded-full px-3 py-2 text-[14px] font-medium text-[var(--text-muted)]" onClick={onClose}>Закрыть</button>
         </div>
         <div className="max-h-[55vh] space-y-2 overflow-y-auto">
           {ordered.map((instructor) => {
             const active = instructor.id === selectedId
             const assigned = instructor.id === assignedId
             return (
-              <button key={instructor.id} className={cn('flex min-h-[58px] w-full items-center gap-3 rounded-[18px] px-3 text-left active:scale-[0.99]', active ? 'bg-[#EEF0FA]' : 'bg-[#F7F8FA]')} onClick={() => { onSelect(instructor.id); onClose() }}>
+              <button key={instructor.id} className={cn('flex min-h-[58px] w-full items-center gap-3 rounded-[18px] border border-white/60 px-3 text-left shadow-[0_6px_20px_rgba(20,24,32,0.03)] active:scale-[0.99]', active ? 'bg-[rgba(255,255,255,0.82)]' : 'bg-[rgba(255,255,255,0.54)]')} onClick={() => { onSelect(instructor.id); onClose() }}>
                 <StudentAvatar name={instructor.name} src={getInstructorPhoto(instructor)} size={38} fallback="male" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[16px] font-bold text-[#050609]">{formatInstructorName(instructor.name)}</span>
-                  <span className="mt-0.5 block truncate text-[13px] font-medium text-[#8B8D94]">{assigned ? 'Закреплен за вами' : instructor.car ?? 'Учебный автомобиль'}</span>
+                  <span className="block truncate text-[15px] font-semibold text-[var(--text)]">{formatInstructorName(instructor.name)}</span>
+                  <span className="mt-0.5 block truncate text-[13px] font-medium text-[#74787D]">{assigned ? 'Закреплен за вами' : instructor.car ?? 'Учебный автомобиль'}</span>
                 </span>
                 {active ? <StatusPill tone="blue">{assigned ? 'Ваш' : 'Выбран'}</StatusPill> : null}
               </button>
@@ -227,20 +229,20 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
   return (
     <div className={cn(card, 'p-4')}>
       <div className="mb-3 flex items-center justify-between px-1">
-        <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">Расписание автошколы</h3>
-        <button className="grid h-9 w-9 place-items-center rounded-full text-[#B8BABF] active:scale-[0.97]" onClick={onOpen} aria-label="Открыть расписание"><ChevronRight size={22} /></button>
+        <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[#111315]">Расписание автошколы</h3>
+        <button className="grid h-9 w-9 place-items-center rounded-full text-[#A0A5A8] active:scale-[0.97]" onClick={onOpen} aria-label="Открыть расписание"><ChevronRight size={22} /></button>
       </div>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <button className="inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full bg-[#EEF0FA] px-3 text-[13px] font-semibold text-[#1F2BD8] active:scale-[0.98]" onClick={onInstructorClick}>
+        <button className="inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full bg-[#ECEFF1] px-3 text-[13px] font-semibold text-[#111315] active:scale-[0.98]" onClick={onInstructorClick}>
           <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={24} fallback="male" />
           <span className="truncate">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выбрать инструктора'}</span>
         </button>
-        <button className="shrink-0 text-[13px] font-semibold text-[#8B8D94]" onClick={onInstructorClick}>Сменить</button>
+        <button className="shrink-0 text-[13px] font-semibold text-[#74787D]" onClick={onInstructorClick}>Сменить</button>
       </div>
       <div className="mb-3"><FilterChips value={lessonFilter} onChange={onLessonFilterChange} /></div>
       <div className="mb-3 flex items-center justify-between px-1">
         <button onClick={() => onSelect(addDays(selectedDate, -7))} aria-label="Предыдущая неделя"><ChevronLeft size={22} /></button>
-        <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
+        <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#111315]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
         <button onClick={() => onSelect(addDays(selectedDate, 7))} aria-label="Следующая неделя"><ChevronRight size={22} /></button>
       </div>
       <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={336}>
@@ -249,10 +251,10 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
             const active = isSameDay(date, selectedDate)
             const hasSlots = slots.some((slot) => isSameDay(parseISO(slot.date), date))
             return (
-              <button key={date.toISOString()} className={cn('grid shrink-0 place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#1F2BD8] text-white' : 'text-[#050609]')} style={{ flexBasis: 'calc((100% - 24px) / 7)', minHeight: 68, minWidth: 44 }} onClick={() => onSelect(date)}>
+              <button key={date.toISOString()} className={cn('grid shrink-0 place-items-center rounded-[18px] text-center active:scale-[0.98]', active ? 'bg-[#111315] text-white' : 'text-[#111315]')} style={{ flexBasis: 'calc((100% - 24px) / 7)', minHeight: 68, minWidth: 44 }} onClick={() => onSelect(date)}>
                 <span className="text-[12px] font-semibold uppercase">{weekdayShort(date)}</span>
                 <span className="text-[20px] font-bold leading-6">{format(date, 'd')}</span>
-                <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#35C45A]' : 'bg-transparent')} />
+                <span className={cn('h-1.5 w-1.5 rounded-full', hasSlots ? active ? 'bg-white' : 'bg-[#247A4B]' : 'bg-transparent')} />
               </button>
             )
           })}
@@ -260,7 +262,7 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
       </HorizontalScroller>
       <HorizontalScroller className="-mx-4 mt-3" contentClassName="px-4 pb-1" step={272}>
         <div className="flex gap-2">
-          {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[260px] rounded-[20px] bg-[#F7F8FA] p-4 text-[14px] font-semibold text-[#8B8D94]">Нет окон по фильтру. Попробуйте другой тип занятия или инструктора.</div>}
+          {daySlots.length > 0 ? daySlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={selectedInstructor} onBook={() => onBook(slot)} compact />) : <div className="min-w-[260px] rounded-[20px] bg-[#F7FAFD] p-4 text-[14px] font-medium text-[#6D7A88]">Нет окон по фильтру. Попробуйте другой тип занятия или инструктора.</div>}
         </div>
       </HorizontalScroller>
     </div>
@@ -282,14 +284,14 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-[22px] font-bold capitalize tracking-[-0.02em] text-[#050609]">{format(monthStart, 'LLLL yyyy', { locale: ru })}</h2>
+        <h2 className="text-[22px] font-bold capitalize tracking-[-0.02em] text-[#111315]">{format(monthStart, 'LLLL yyyy', { locale: ru })}</h2>
         <div className="flex gap-5">
-          <button className={cn('active:scale-[0.97]', hasPreviousMonthSlots ? 'text-[#050609]' : 'text-[#C4C7CE]')} disabled={!hasPreviousMonthSlots} onClick={() => onSelect(previousMonth)} aria-label="Предыдущий месяц"><ChevronLeft size={24} /></button>
-          <button className={cn('active:scale-[0.97]', hasNextMonthSlots ? 'text-[#050609]' : 'text-[#C4C7CE]')} disabled={!hasNextMonthSlots} onClick={() => onSelect(nextMonth)} aria-label="Следующий месяц"><ChevronRight size={24} /></button>
+          <button className={cn('active:scale-[0.97]', hasPreviousMonthSlots ? 'text-[#111315]' : 'text-[#C8CDC9]')} disabled={!hasPreviousMonthSlots} onClick={() => onSelect(previousMonth)} aria-label="Предыдущий месяц"><ChevronLeft size={24} /></button>
+          <button className={cn('active:scale-[0.97]', hasNextMonthSlots ? 'text-[#111315]' : 'text-[#C8CDC9]')} disabled={!hasNextMonthSlots} onClick={() => onSelect(nextMonth)} aria-label="Следующий месяц"><ChevronRight size={24} /></button>
         </div>
       </div>
       <div className="grid grid-cols-7 gap-y-2 rounded-[22px] bg-white px-3 py-4">
-        {weekdays.map((day, index) => <div key={day} className={cn('text-center text-[13px] font-bold', index > 4 ? 'text-[#1F2BD8]' : 'text-[#8F9197]')}>{day}</div>)}
+        {weekdays.map((day, index) => <div key={day} className={cn('text-center text-[13px] font-bold', index > 4 ? 'text-[#111315]' : 'text-[#74787D]')}>{day}</div>)}
         {days.map((date) => {
           const active = isSameDay(date, selectedDate)
           const currentMonth = isSameMonth(date, selectedDate)
@@ -297,8 +299,8 @@ function MonthCalendar({ selectedDate, onSelect, slots }: { selectedDate: Date; 
           const weekend = [0, 6].includes(date.getDay())
           return (
             <button key={date.toISOString()} className="grid min-h-[38px] place-items-center text-center active:scale-[0.96]" onClick={() => onSelect(date)}>
-              <span className={cn('grid h-8 w-8 place-items-center rounded-full text-[17px] font-bold', active ? 'bg-[#050609] text-white' : currentMonth ? weekend ? 'text-[#1F2BD8]' : 'text-[#050609]' : 'text-[#D6D8DD]')}>{format(date, 'd')}</span>
-              <span className={cn('mt-0.5 h-1.5 w-1.5 rounded-full', hasSlots ? 'bg-[#35C45A]' : 'bg-transparent')} />
+              <span className={cn('grid h-8 w-8 place-items-center rounded-full text-[17px] font-bold', active ? 'bg-[#111315] text-white' : currentMonth ? weekend ? 'text-[#111315]' : 'text-[#111315]' : 'text-[#C8CDC9]')}>{format(date, 'd')}</span>
+              <span className={cn('mt-0.5 h-1.5 w-1.5 rounded-full', hasSlots ? 'bg-[#247A4B]' : 'bg-transparent')} />
             </button>
           )
         })}
@@ -312,7 +314,7 @@ function EditableTextField({ label, value, type = 'text', locked, onEdit, onChan
     <div className="relative">
       <Input label={label} type={type} value={value} disabled={locked} onChange={(event) => onChange(event.target.value)} className={cn(locked && 'pr-12 text-[#6F747A]')} />
       {locked ? (
-        <button type="button" className="absolute right-2 top-[30px] grid h-9 w-9 place-items-center rounded-full text-[#8B8D94]/70 active:scale-[0.94]" onClick={onEdit} aria-label={`Изменить ${label}`}>
+        <button type="button" className="absolute right-2 top-[30px] grid h-9 w-9 place-items-center rounded-full text-[#74787D]/70 active:scale-[0.94]" onClick={onEdit} aria-label={`Изменить ${label}`}>
           <Pencil size={16} />
         </button>
       ) : null}
@@ -325,7 +327,7 @@ function EditablePhoneField({ label, value, locked, onEdit, onChange }: { label:
     <div className="relative">
       <PhoneInput label={label} value={value} disabled={locked} onChange={onChange} />
       {locked ? (
-        <button type="button" className="absolute right-2 top-[30px] grid h-9 w-9 place-items-center rounded-full text-[#8B8D94]/70 active:scale-[0.94]" onClick={onEdit} aria-label={`Изменить ${label}`}>
+        <button type="button" className="absolute right-2 top-[30px] grid h-9 w-9 place-items-center rounded-full text-[#74787D]/70 active:scale-[0.94]" onClick={onEdit} aria-label={`Изменить ${label}`}>
           <Pencil size={16} />
         </button>
       ) : null}
@@ -333,17 +335,17 @@ function EditablePhoneField({ label, value, locked, onEdit, onChange }: { label:
   )
 }
 
-function ProgressBar({ value, tone = '#1F2BD8' }: { value: number; tone?: string }) {
+function ProgressBar({ value, tone = '#111315' }: { value: number; tone?: string }) {
   return <div className="h-2 overflow-hidden rounded-full bg-[#EEF0F2]"><div className="h-full rounded-full transition-[width] duration-500 ease-out" style={{ width: `${value}%`, background: tone }} /></div>
 }
 
 function StatCard({ title, value, subtitle, tone = 'blue' }: { title: string; value: string; subtitle: string; tone?: 'blue' | 'green' }) {
   return (
     <article className={cn(card, 'min-h-[128px] p-4')}>
-      <p className="text-[15px] font-bold leading-5 text-[#050609]">{title}</p>
+      <p className="text-[15px] font-bold leading-5 text-[#111315]">{title}</p>
       <div className="mt-4 flex items-end justify-between gap-3">
-        <span className={cn('grid h-12 w-12 place-items-center rounded-full text-[18px] font-bold text-white', tone === 'green' ? 'bg-[#14934A]' : 'bg-[#1F2BD8]')}>{value}</span>
-        <p className="text-right text-[13px] font-semibold leading-4 text-[#8B8D94]">{subtitle}</p>
+        <span className={cn('grid h-12 w-12 place-items-center rounded-full text-[18px] font-bold text-white', tone === 'green' ? 'bg-[#247A4B]' : 'bg-[#111315]')}>{value}</span>
+        <p className="text-right text-[13px] font-semibold leading-4 text-[#74787D]">{subtitle}</p>
       </div>
     </article>
   )
@@ -353,12 +355,12 @@ function RoadmapStep({ title, text, done, active }: { title: string; text: strin
   return (
     <div className="flex gap-3">
       <div className="flex flex-col items-center">
-        <span className={cn('grid h-8 w-8 place-items-center rounded-full border text-[13px] font-bold', done ? 'border-[#14934A] bg-[#14934A] text-white' : active ? 'border-[#1F2BD8] bg-[#EEF0FA] text-[#1F2BD8]' : 'border-[#E2E4EA] bg-white text-[#B8BABF]')}>{done ? '✓' : active ? '•' : ''}</span>
-        <span className="mt-1 h-8 w-px bg-[#E2E4EA] last:hidden" />
+        <span className={cn('grid h-8 w-8 place-items-center rounded-full border text-[13px] font-bold', done ? 'border-[#247A4B] bg-[#247A4B] text-white' : active ? 'border-[#111315] bg-[#ECEFF1] text-[#111315]' : 'border-[#E1E2DE] bg-white text-[#A0A5A8]')}>{done ? '✓' : active ? '•' : ''}</span>
+        <span className="mt-1 h-8 w-px bg-[#E1E2DE] last:hidden" />
       </div>
       <div className="min-w-0 pb-4">
-        <p className="text-[16px] font-bold leading-5 text-[#050609]">{title}</p>
-        <p className="mt-1 text-[13px] font-semibold leading-4 text-[#8B8D94]">{text}</p>
+        <p className="text-[16px] font-bold leading-5 text-[#111315]">{title}</p>
+        <p className="mt-1 text-[13px] font-semibold leading-4 text-[#74787D]">{text}</p>
       </div>
     </div>
   )
@@ -489,10 +491,11 @@ export function StudentPage() {
     localStorage.setItem(selectedInstructorStorageKey(school.id), selectedInstructorId)
   }, [school, selectedInstructorId])
 
-  if (!school || !profile) return <div className="min-h-dvh bg-[#F5F6F8]" />
+  if (!school || !profile) return <div className="min-h-dvh bg-[#F3F7FB]" />
 
 
   function cancelStudentBooking(item: ResolvedStudentBooking) {
+    if (!school) return
     if (!item.booking.id) return
 
     const latest = db.bookings.byId(item.booking.id)
@@ -502,7 +505,8 @@ export function StudentPage() {
       return
     }
 
-    const result = cancelBooking(item.booking.id, { skipRemote: school?.id === 'school-virazh' })
+    const isDemoSchool = findSchoolNamespaceById(school.id) === 'demo'
+    const result = cancelBooking(item.booking.id, { skipRemote: isDemoSchool })
     if (!result.ok) {
       showToast(result.error ?? 'Не удалось отменить занятие.', 'error')
       return
@@ -518,7 +522,7 @@ export function StudentPage() {
 
     let bookingId = ''
     try {
-      if (school.id === 'school-virazh') throw new Error('Demo uses local booking')
+      if (findSchoolNamespaceById(school.id) === 'demo') throw new Error('Demo uses local booking')
       const remote = await createSupabaseBooking({
         schoolId: school.id,
         studentName: profile.name,
@@ -578,7 +582,8 @@ export function StudentPage() {
     const email = form.email.trim()
     const phoneChanged = normalizePhone(form.phone) !== normalizePhone(profile.phone)
 
-    if (!form.name.trim()) {
+    const normalizedName = normalizePersonName(form.name)
+    if (!normalizedName) {
       setProfileError('Введите ФИО ученика.')
       return
     }
@@ -599,7 +604,7 @@ export function StudentPage() {
     }
 
     const nextAvatarUrl = pendingAvatarUrl || profile.avatarUrl || ''
-    const saved = saveStudentProfile(school.id, { name: form.name, phone: form.phone, email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email })
+    const saved = saveStudentProfile(school.id, { name: normalizedName, phone: form.phone, email, avatarUrl: nextAvatarUrl }, { ...profile, avatarUrl: nextAvatarUrl, email })
     setProfile(saved)
     setForm({ name: saved.name, phone: normalizePhone(saved.phone).replace(/^7/, '').slice(0, 10), email: saved.email ?? '' })
     setProfileError('')
@@ -671,16 +676,16 @@ export function StudentPage() {
   }
 
   return (
-    <div className="student-animated min-h-dvh overflow-x-hidden bg-[#F5F6F8] text-[#050609]">
-      <main className="mx-auto w-full max-w-[430px] px-4 pb-[180px] pt-5">
+    <div className="student-animated student-lite vroom-student-shell min-h-dvh overflow-x-hidden bg-[#F3F7FB] text-[#111315]">
+      <main className="vroom-student-main mx-auto w-full max-w-[430px] px-4 pb-[180px] pt-5">
         {view === 'home' ? (
           <section className="space-y-6">
-            <header className="flex items-center justify-between gap-3 pt-1">
+            <header className="vroom-student-header flex items-center justify-between gap-3 pt-1">
               <button className="flex min-w-0 flex-1 items-center gap-3 rounded-[22px] text-left active:scale-[0.98]" onClick={() => setView('profile')}>
                 <StudentAvatar name={profile.name} src={pendingAvatarUrl || profile.avatarUrl} size={48} />
                 <div className="min-w-0">
-                  <p className="truncate text-[18px] font-bold leading-5 text-[#050609]">{compactStudentName(profile.name)}</p>
-                  <p className="mt-1 text-[14px] font-medium leading-5 text-[#8B8D94]">Категория B</p>
+                  <p className="truncate text-[18px] font-bold leading-5 text-[#111315]">{compactStudentName(profile.name)}</p>
+                  <p className="mt-1 text-[14px] font-medium leading-5 text-[#74787D]">Категория B</p>
                 </div>
               </button>
               <div className="flex shrink-0 items-center gap-2">
@@ -692,10 +697,10 @@ export function StudentPage() {
 
             {justBooked ? <JustBookedBanner item={justBooked} /> : null}
 
-            <section>
+            <section className="vroom-student-section">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className={sectionTitle}>Мои записи</h2>
-                <button className="grid h-10 w-10 place-items-center rounded-full text-[#B8BABF]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
+                <button className="grid h-10 w-10 place-items-center rounded-full text-[#A0A5A8]" onClick={() => setView('schedule')}><ChevronRight size={24} /></button>
               </div>
               <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={312}>
                 <div className="flex gap-3">
@@ -704,7 +709,9 @@ export function StudentPage() {
               </HorizontalScroller>
             </section>
 
-            <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => void bookSlotNow(slot)} />
+            <div className="vroom-student-calendar-wrap">
+              <MiniCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={futureSlots} selectedInstructor={selectedInstructor} lessonFilter={lessonFilter} onLessonFilterChange={setLessonFilter} onInstructorClick={() => setInstructorSheetOpen(true)} onOpen={() => setView('schedule')} onBook={(slot) => void bookSlotNow(slot)} />
+            </div>
           </section>
         ) : null}
 
@@ -720,10 +727,10 @@ export function StudentPage() {
               <div className="flex items-center gap-3">
                 <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={44} fallback="male" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[17px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
-                  <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{selectedInstructor?.id === assignedInstructorId ? 'Закреплен за вами' : selectedInstructor?.car ?? 'Выбранный инструктор сохранится'}</p>
+                  <p className="truncate text-[17px] font-bold text-[#111315]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
+                  <p className="mt-1 truncate text-[13px] font-semibold text-[#74787D]">{selectedInstructor?.id === assignedInstructorId ? 'Закреплен за вами' : selectedInstructor?.car ?? 'Выбранный инструктор сохранится'}</p>
                 </div>
-                <button className="rounded-full bg-[#EEF0FA] px-3 py-2 text-[13px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
+                <button className="rounded-full bg-[#ECEFF1] px-3 py-2 text-[13px] font-bold text-[#111315] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
               </div>
             </section>
             <div className="space-y-3">
@@ -732,7 +739,7 @@ export function StudentPage() {
             </div>
             <MonthCalendar selectedDate={selectedDate} onSelect={setSelectedDate} slots={filterSlots(futureSlots, selectedInstructor?.id ?? '', lessonFilter)} />
             <div>
-              <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#050609]">{selectedDayTitle(selectedDate)}</h2>
+              <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#111315]">{selectedDayTitle(selectedDate)}</h2>
               <div className="mt-4 space-y-3">
                 {availableSlotsForDate.slice(0, 8).map((slot) => <AvailableSlotCard key={slot.id} slot={slot} instructor={db.instructors.byId(slot.instructorId)} onBook={() => void bookSlotNow(slot)} />)}
                 {availableSlotsForDate.length === 0 ? <ScheduleEmptyState onShowAll={() => setLessonFilter('all')} onChangeInstructor={() => setInstructorSheetOpen(true)} /> : null}
@@ -745,7 +752,7 @@ export function StudentPage() {
           <section className="space-y-5 pt-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <button className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#050609] active:scale-[0.96]" onClick={() => setView('profile')} aria-label="Назад"><ChevronLeft size={23} /></button>
+                <button className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#111315] active:scale-[0.96]" onClick={() => setView('profile')} aria-label="Назад"><ChevronLeft size={23} /></button>
                 <h1 className={pageTitle}>Вождение</h1>
               </div>
               </div>
@@ -758,24 +765,24 @@ export function StudentPage() {
             <section className={cn(card, 'p-4')}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[16px] bg-[#EEF0FA] text-[#1F2BD8]"><Zap size={21} /></span>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[16px] bg-[#ECEFF1] text-[#111315]"><Zap size={21} /></span>
                   <div className="min-w-0">
-                    <h2 className="truncate text-[18px] font-bold tracking-[-0.02em] text-[#050609]">Прогресс навыков</h2>
-                    <p className="mt-0.5 text-[13px] font-semibold text-[#8B8D94]">{drivingCompleted} из {drivingTotal} часов освоено</p>
+                    <h2 className="truncate text-[18px] font-bold tracking-[-0.02em] text-[#111315]">Прогресс навыков</h2>
+                    <p className="mt-0.5 text-[13px] font-semibold text-[#74787D]">{drivingCompleted} из {drivingTotal} часов освоено</p>
                   </div>
                 </div>
-                <span className="text-[18px] font-bold text-[#050609]">{drivingPercent}%</span>
+                <span className="text-[18px] font-bold text-[#111315]">{drivingPercent}%</span>
               </div>
-              <div className="mt-4"><ProgressBar value={drivingPercent} tone="#14934A" /></div>
+              <div className="mt-4"><ProgressBar value={drivingPercent} tone="#247A4B" /></div>
             </section>
 
             <section className={cn(card, 'overflow-hidden p-4')}>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#050609]">Маршрут обучения</h2>
-                  <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Что уже пройдено и что дальше</p>
+                  <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#111315]">Маршрут обучения</h2>
+                  <p className="mt-1 text-[13px] font-semibold text-[#74787D]">Что уже пройдено и что дальше</p>
                 </div>
-                <span className="rounded-full bg-[#EEF0FA] px-3 py-1.5 text-[13px] font-bold text-[#1F2BD8]">{drivingPercent}%</span>
+                <span className="rounded-full bg-[#ECEFF1] px-3 py-1.5 text-[13px] font-bold text-[#111315]">{drivingPercent}%</span>
               </div>
               <div className="mt-4">
                 <RoadmapStep title="Теория" text="Модуль появится позже" active={false} />
@@ -786,25 +793,25 @@ export function StudentPage() {
             </section>
 
             <button className={cn(card, 'flex w-full items-center gap-3 p-4 text-left active:scale-[0.99]')} onClick={() => setView('schedule')}>
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#F5F6FA] text-[#1F2BD8]"><CalendarDays size={23} /></span>
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EAF4FF] text-[#35485A]"><CalendarDays size={23} /></span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[18px] font-bold text-[#050609]">Мои записи</span>
-                <span className="mt-1 block truncate text-[14px] font-semibold text-[#8B8D94]">{nextLesson?.slot ? `Ближайшая: ${lessonTime(nextLesson.slot)}` : 'Выберите удобное окно в расписании'}</span>
+                <span className="block text-[18px] font-bold text-[#111315]">Мои записи</span>
+                <span className="mt-1 block truncate text-[14px] font-semibold text-[#74787D]">{nextLesson?.slot ? `Ближайшая: ${lessonTime(nextLesson.slot)}` : 'Выберите удобное окно в расписании'}</span>
               </span>
-              <ChevronRight className="text-[#B8BABF]" size={22} />
+              <ChevronRight className="text-[#A0A5A8]" size={22} />
             </button>
 
             <LessonDetailsCard title="Ближайшее занятие" item={nextLesson} />
             {nextLesson?.booking ? (
               <button className={cn(card, 'flex w-full items-center justify-between gap-3 p-4 text-left active:scale-[0.99]')} onClick={() => setRequestSheetOpen(true)}>
                 <span className="min-w-0">
-                  <span className="block text-[16px] font-bold text-[#050609]">Нужно перенести?</span>
-                  <span className="mt-1 block text-[13px] font-semibold text-[#8B8D94]">Отправьте запрос администратору, запись не отменится автоматически.</span>
+                  <span className="block text-[16px] font-bold text-[#111315]">Нужно перенести?</span>
+                  <span className="mt-1 block text-[13px] font-semibold text-[#74787D]">Отправьте запрос администратору, запись не отменится автоматически.</span>
                 </span>
-                <ChevronRight className="text-[#B8BABF]" size={22} />
+                <ChevronRight className="text-[#A0A5A8]" size={22} />
               </button>
             ) : null}
-            {requestMessage ? <p className="rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-semibold text-[#1F2BD8]">{requestMessage}</p> : null}
+            {requestMessage ? <p className="rounded-[16px] bg-[#ECEFF1] px-3 py-2 text-[13px] font-semibold text-[#111315]">{requestMessage}</p> : null}
 
             <section>
               <h2 className={sectionTitle}>История занятий</h2>
@@ -815,14 +822,14 @@ export function StudentPage() {
                     <article key={item.booking.id} className={cn(card, 'p-4')}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-[16px] font-bold text-[#050609]">{description?.theme ?? 'Занятие по вождению'}</p>
-                          <p className="mt-1 truncate text-[13px] font-semibold text-[#8B8D94]">{item.slot ? lessonTime(item.slot) : 'Время не найдено'}</p>
+                          <p className="truncate text-[16px] font-bold text-[#111315]">{description?.theme ?? 'Занятие по вождению'}</p>
+                          <p className="mt-1 truncate text-[13px] font-semibold text-[#74787D]">{item.slot ? lessonTime(item.slot) : 'Время не найдено'}</p>
                         </div>
                         <StatusPill>Пройдено</StatusPill>
                       </div>
                     </article>
                   )
-                }) : <article className={cn(card, 'p-4 text-[14px] font-semibold leading-5 text-[#8B8D94]')}>Пройденные занятия появятся после отметки автошколы.</article>}
+                }) : <article className={cn(card, 'p-4 text-[14px] font-semibold leading-5 text-[#74787D]')}>Пройденные занятия появятся после отметки автошколы.</article>}
               </div>
             </section>
 
@@ -832,8 +839,8 @@ export function StudentPage() {
                 {documents.map((document) => (
                   <article key={document.type} className={cn(card, 'flex items-center justify-between gap-3 p-4')}>
                     <div className="min-w-0">
-                      <p className="truncate text-[16px] font-bold text-[#050609]">{studentDocumentLabels[document.type]}</p>
-                      <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">{studentDocumentStatusLabels[document.status]}</p>
+                      <p className="truncate text-[16px] font-bold text-[#111315]">{studentDocumentLabels[document.type]}</p>
+                      <p className="mt-1 text-[13px] font-semibold text-[#74787D]">{studentDocumentStatusLabels[document.status]}</p>
                     </div>
                     <StatusPill tone={document.status === 'approved' ? 'green' : document.status === 'rejected' ? 'red' : 'blue'}>{document.status === 'approved' ? 'Ок' : 'Статус'}</StatusPill>
                   </article>
@@ -844,10 +851,10 @@ export function StudentPage() {
             <section>
               <h2 className={sectionTitle}>Учебное авто</h2>
               <article className={cn(card, 'mt-3 flex items-center gap-3 p-4')}>
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EEF0FA] text-[#1F2BD8]"><CarFront size={24} /></span>
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#ECEFF1] text-[#111315]"><CarFront size={24} /></span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[18px] font-bold text-[#050609]">{selectedInstructor?.car ?? 'Автомобиль назначит автошкола'}</p>
-                  <p className="mt-1 truncate text-[14px] font-semibold text-[#8B8D94]">Категория B</p>
+                  <p className="truncate text-[18px] font-bold text-[#111315]">{selectedInstructor?.car ?? 'Автомобиль назначит автошкола'}</p>
+                  <p className="mt-1 truncate text-[14px] font-semibold text-[#74787D]">Категория B</p>
                 </div>
               </article>
             </section>
@@ -858,13 +865,13 @@ export function StudentPage() {
                 <div className="flex items-center gap-3">
                   <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={52} fallback="male" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[18px] font-bold text-[#050609]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
-                    <p className="mt-1 truncate text-[14px] font-semibold text-[#8B8D94]">Закреплён для расписания</p>
+                    <p className="truncate text-[18px] font-bold text-[#111315]">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Инструктор не выбран'}</p>
+                    <p className="mt-1 truncate text-[14px] font-semibold text-[#74787D]">Закреплён для расписания</p>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button className="min-h-11 rounded-[16px] bg-[#EEF0FA] text-[14px] font-bold text-[#1F2BD8] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
-                  <button className="min-h-11 rounded-[16px] bg-[#F5F6FA] text-[14px] font-bold text-[#050609] active:scale-[0.98]" onClick={() => setView('chat')}>Написать</button>
+                  <button className="min-h-11 rounded-[16px] bg-[#ECEFF1] text-[14px] font-bold text-[#111315] active:scale-[0.98]" onClick={() => setInstructorSheetOpen(true)}>Сменить</button>
+                  <button className="min-h-11 rounded-[16px] bg-[#F7FAFD] text-[14px] font-bold text-[#111315] active:scale-[0.98]" onClick={() => setView('chat')}>Написать</button>
                 </div>
               </article>
             </section>
@@ -883,12 +890,12 @@ export function StudentPage() {
               { title: 'Уведомления', text: 'Напоминания пока не подключены', icon: Bell, action: '' },
             ].map((contact) => (
               <button key={contact.title} className="flex min-h-[78px] w-full items-center gap-3 border-b border-[#DDE0E5] text-left" onClick={() => { if (contact.action) window.location.href = contact.action }}>
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-[#1F2BD8]"><contact.icon size={24} /></span>
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-[#111315]"><contact.icon size={24} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[20px] font-bold text-[#050609]">{contact.title}</span>
-                  <span className="mt-1 block truncate text-[15px] font-medium text-[#8B8D94]">{contact.text}</span>
+                  <span className="block truncate text-[20px] font-bold text-[#111315]">{contact.title}</span>
+                  <span className="mt-1 block truncate text-[15px] font-medium text-[#74787D]">{contact.text}</span>
                 </span>
-                {contact.action ? <Phone size={18} className="text-[#B8BABF]" /> : null}
+                {contact.action ? <Phone size={18} className="text-[#A0A5A8]" /> : null}
               </button>
             ))}
           </section>
@@ -900,34 +907,34 @@ export function StudentPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h1 className={pageTitle}>Профиль</h1>
-                <p className="mt-1 text-[13px] font-semibold text-[#8B8D94]">Личные данные и обучение</p>
+                <p className="mt-1 text-[13px] font-semibold text-[#74787D]">Личные данные и обучение</p>
               </div>
               <div className="flex items-center gap-2">
-                    <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1F2BD8] active:scale-[0.96]" onClick={() => setInfoSheet('settings')} aria-label="Настройки"><Settings size={20} /></button>
+                    <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#111315] active:scale-[0.96]" onClick={() => setInfoSheet('settings')} aria-label="Настройки"><Settings size={20} /></button>
               </div>
             </div>
             <div className={cn(card, 'p-4 text-center')}>
               <button className="relative mx-auto block" onClick={() => photoInputRef.current?.click()}>
                 <StudentAvatar name={profile.name} src={pendingAvatarUrl || profile.avatarUrl} size={76} />
-                <span className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-[#1F2BD8] text-white"><Camera size={15} /></span>
+                <span className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-[#111315] text-white"><Camera size={15} /></span>
               </button>
-              {pendingAvatarUrl ? <p className="mt-2 text-[13px] font-semibold text-[#1F2BD8]">Новое фото применится после сохранения</p> : null}
-              <h2 className="mt-3 text-[24px] font-bold tracking-[-0.03em] text-[#050609]">{compactStudentName(profile.name)}</h2>
-              <p className="mt-1 text-[14px] font-semibold text-[#8B8D94]">Категория {(student?.categoryCodes?.join(', ') || 'B')}</p>
+              {pendingAvatarUrl ? <p className="mt-2 text-[13px] font-semibold text-[#111315]">Новое фото применится после сохранения</p> : null}
+              <h2 className="mt-3 text-[24px] font-bold tracking-[-0.03em] text-[#111315]">{compactStudentName(profile.name)}</h2>
+              <p className="mt-1 text-[14px] font-semibold text-[#74787D]">Категория {(student?.categoryCodes?.join(', ') || 'B')}</p>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               {[
                 { label: 'Вождение', icon: CarFront, onClick: () => setView('driving') },
                 { label: 'Запись', icon: CalendarDays, onClick: () => setView('schedule') },
                 { label: 'Инфо', icon: Building2, onClick: () => setInfoSheet('student') },
-              ].map((item) => <button key={item.label} className={cn(card, 'grid place-items-center gap-2 p-3 text-[15px] font-bold text-[#050609] active:scale-[0.98]')} style={{ minHeight: 82 }} onClick={item.onClick}><span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF0FA] text-[#1F2BD8]"><item.icon size={21} /></span>{item.label}</button>)}
+              ].map((item) => <button key={item.label} className={cn(card, 'grid place-items-center gap-2 p-3 text-[15px] font-bold text-[#111315] active:scale-[0.98]')} style={{ minHeight: 82 }} onClick={item.onClick}><span className="grid h-10 w-10 place-items-center rounded-full bg-[#ECEFF1] text-[#111315]"><item.icon size={21} /></span>{item.label}</button>)}
             </div>
             <section className={cn(card, 'space-y-3.5 p-4')}>
               <EditableTextField label="ФИО" value={form.name} locked={Boolean(profile.name) && !editingFields.name} onEdit={() => setEditingFields((current) => ({ ...current, name: true }))} onChange={(value) => setForm((current) => ({ ...current, name: value }))} />
               <EditablePhoneField label="Телефон" value={form.phone} locked={Boolean(profile.phone) && !editingFields.phone} onEdit={() => setEditingFields((current) => ({ ...current, phone: true }))} onChange={(value) => setForm((current) => ({ ...current, phone: value }))} />
               <EditableTextField label="Email, если понадобится" type="email" value={form.email} locked={Boolean(profile.email) && !editingFields.email} onEdit={() => setEditingFields((current) => ({ ...current, email: true }))} onChange={(value) => setForm((current) => ({ ...current, email: value }))} />
-              {profileError ? <p className="rounded-[16px] bg-[#FFEDEF] px-3 py-2 text-[13px] font-semibold text-[#FF3155]">{profileError}</p> : null}
-              {profileDirty ? <p className="rounded-[16px] bg-[#EEF0FA] px-3 py-2 text-[13px] font-semibold text-[#1F2BD8]">Есть несохранённые изменения</p> : null}
+              {profileError ? <p className="rounded-[16px] bg-[#FEF2F2] px-3 py-2 text-[13px] font-semibold text-[#E5534B]">{profileError}</p> : null}
+              {profileDirty ? <p className="rounded-[16px] bg-[#ECEFF1] px-3 py-2 text-[13px] font-semibold text-[#111315]">Есть несохранённые изменения</p> : null}
               <Button size="lg" className="w-full rounded-[18px] text-[16px]" disabled={!profileDirty} onClick={() => void saveProfileData()}>Сохранить</Button>
             </section>
             <section className="space-y-2.5">
@@ -936,9 +943,9 @@ export function StudentPage() {
                 { label: 'Данные ученика', icon: FileText, onClick: () => setInfoSheet('profileData') },
                 { label: 'Советы', icon: Gift, onClick: () => setInfoSheet('tips') },
                 { label: 'Настройки', icon: Settings, onClick: () => setInfoSheet('settings') },
-              ].map((item) => <button key={item.label} className={cn(card, 'flex w-full items-center gap-3 px-4 text-left')} style={{ minHeight: 64 }} onClick={item.onClick}><item.icon className="text-[#1F2BD8]" size={22} /><span className="min-w-0 flex-1 text-[18px] font-semibold text-[#050609]">{item.label}</span><ChevronRight className="text-[#B8BABF]" size={21} /></button>)}
+              ].map((item) => <button key={item.label} className={cn(card, 'flex w-full items-center gap-3 px-4 text-left')} style={{ minHeight: 64 }} onClick={item.onClick}><item.icon className="text-[#111315]" size={22} /><span className="min-w-0 flex-1 text-[18px] font-semibold text-[#111315]">{item.label}</span><ChevronRight className="text-[#A0A5A8]" size={21} /></button>)}
             </section>
-            <button className="flex items-center gap-3 px-2 text-[16px] font-semibold text-[#8B8D94]" style={{ minHeight: 48 }} onClick={logout}><LogOut size={20} />Выйти из профиля</button>
+            <button className="flex items-center gap-3 px-2 text-[16px] font-semibold text-[#74787D]" style={{ minHeight: 48 }} onClick={logout}><LogOut size={20} />Выйти из профиля</button>
           </section>
         ) : null}
       </main>
@@ -954,8 +961,8 @@ export function StudentPage() {
       {requestSheetOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-3 py-5" onClick={() => setRequestSheetOpen(false)}>
           <section className="mx-auto max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-[28px] bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]" onClick={(event) => event.stopPropagation()}>
-            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#050609]">Запросить перенос</h2>
-            <p className="mt-1 text-[14px] font-semibold leading-5 text-[#8B8D94]">Администратор увидит запрос и подберёт новое время.</p>
+            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-[#111315]">Запросить перенос</h2>
+            <p className="mt-1 text-[14px] font-semibold leading-5 text-[#74787D]">Администратор увидит запрос и подберёт новое время.</p>
             <div className="mt-4 space-y-3">
               <Input label="Причина" value={requestReason} onChange={(event) => setRequestReason(event.target.value)} placeholder="Например, не успеваю после работы" />
               <Input label="Желаемое время" value={requestPreferredTime} onChange={(event) => setRequestPreferredTime(event.target.value)} placeholder="Завтра после 18:00" />
