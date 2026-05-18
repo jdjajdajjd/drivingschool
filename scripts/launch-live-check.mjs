@@ -133,6 +133,12 @@ async function checkStaffAuth() {
     const session = Array.isArray(rows) ? rows[0] : null
     expect(Boolean(session?.session_token), 'staff auth: admin session token is missing')
     expect(Boolean(session?.school_id), 'staff auth: admin session is not bound to a school')
+    if (session?.school_id) {
+      await supabaseRpc('public_admin_list_student_requests', {
+        p_school_id: session.school_id,
+        p_staff_password: session.session_token,
+      })
+    }
     if (session?.session_token) {
       const staffRole = session.role === 'branch_admin' ? 'branch_admin' : 'admin'
       const verified = await supabaseRpc('public_verify_staff_session', {
