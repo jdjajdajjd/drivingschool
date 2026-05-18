@@ -194,32 +194,18 @@ function LaunchChecklist({
   ]
   const doneCount = items.filter((item) => item.done).length
   const isReady = doneCount === items.length
+  const nextItem = items.find((item) => !item.done)
+  if (isReady) return null
 
   return (
-    <section className={`v-admin-panel mt-4 overflow-hidden ${isReady ? 'border-[#BFE7CF]' : 'border-[#BFD7F1]'}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#DCE2E8] p-4">
-        <div>
-          <h2 className="text-[18px] font-black text-[#111418]">Готовность к работе</h2>
-          <p className="v-admin-note mt-1">
-            {isReady ? 'Основные настройки на месте. Можно вести день и принимать учеников.' : 'Закройте базовые шаги перед запуском школы.'}
-          </p>
+    <section className="v-admin-panel v-launch-compact mt-4 p-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="v-admin-pill v-tone-warning">Настройка {doneCount}/{items.length}</span>
+        <div className="min-w-0 flex-1">
+          <strong className="block truncate text-[14px] font-semibold text-[#111827]">Следующий шаг: {nextItem?.title}</strong>
+          <span className="block truncate text-[12px] font-medium text-[#667085]">{nextItem?.text}</span>
         </div>
-        <span className={`v-admin-pill ${isReady ? 'v-tone-ok' : 'v-tone-warning'}`}>
-          {doneCount}/{items.length}
-        </span>
-      </div>
-      <div className="grid gap-0 divide-y divide-[#EEF2F5] lg:grid-cols-5 lg:divide-x lg:divide-y-0">
-        {items.map((item) => (
-          <Link key={item.title} to={item.to} className="flex min-h-[116px] flex-col gap-3 p-4 transition hover:bg-[#F8FAFC]">
-            <span className={`grid h-9 w-9 place-items-center rounded-[10px] ${item.done ? 'bg-[#EAF7EF] text-[#157347]' : 'bg-[#EAF3FF] text-[#315A7C]'}`}>
-              {item.done ? <CheckCircle2 width={18} height={18} /> : <AlertTriangle width={18} height={18} />}
-            </span>
-            <span>
-              <strong className="block text-[14px] font-black leading-5 text-[#111418]">{item.title}</strong>
-              <span className="mt-1 block text-[12px] font-bold leading-4 text-[#66717D]">{item.text}</span>
-            </span>
-          </Link>
-        ))}
+        {nextItem ? <Link to={nextItem.to} className="v-admin-button-secondary h-9 min-h-9 px-3">Открыть</Link> : null}
       </div>
     </section>
   )

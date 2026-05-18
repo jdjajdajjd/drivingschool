@@ -116,7 +116,7 @@ export function AdminSchedule() {
     .filter((entry) => entry.booking)
     .sort((left, right) => getSlotDateTime(left.slot).getTime() - getSlotDateTime(right.slot).getTime())
     .slice(0, 8)
-  const mobileDays = viewRange.map((date) => {
+  const mobileDays = (viewMode === 'day' ? [selectedDate] : viewRange).map((date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
     const slots = filteredSlots
       .filter((slot) => slot.date === dateKey)
@@ -302,7 +302,7 @@ export function AdminSchedule() {
         </div>
       </div>
 
-      <div className="vroom-schedule-filter mx-3 mt-3 flex flex-wrap items-center gap-2 rounded-[24px] border border-[rgba(15,23,42,0.07)] bg-white px-3 py-3 shadow-[0_10px_26px_rgba(15,23,42,0.035)] md:mx-5 md:px-4">
+      <div className="vroom-schedule-filter mx-3 mt-3 hidden flex-wrap items-center gap-2 rounded-[24px] border border-[rgba(15,23,42,0.07)] bg-white px-3 py-3 shadow-[0_10px_26px_rgba(15,23,42,0.035)] md:mx-5 md:flex md:px-4">
         <div className="flex overflow-x-auto rounded-full border border-[rgba(15,23,42,0.07)] bg-[#F8FAFC] p-1">
           {(Object.keys(FILTER_LABELS) as ScheduleFilter[]).map((filter) => (
             <button
@@ -365,12 +365,12 @@ export function AdminSchedule() {
             </div>
           </div>
         ) : null}
-        <div className="grid gap-3 lg:hidden">
+        <div className="v-mobile-schedule-list grid gap-2 lg:hidden">
           {mobileDays.map(({ date, slots }) => {
             const booked = slots.filter((entry) => entry.slot.status === 'booked').length
             const free = slots.filter((entry) => entry.slot.status === 'available').length
             return (
-            <section key={date.toISOString()} className="v-admin-panel overflow-hidden">
+            <section key={date.toISOString()} className="v-mobile-day-group overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] px-4 py-3">
                 <div>
                   <p className="text-[12px] font-medium text-[#667085]">{format(date, 'EEEE', { locale: ru })}</p>
@@ -386,7 +386,7 @@ export function AdminSchedule() {
                   {slots.map(({ slot, booking, instructor, branch }) => {
                     const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
                     return (
-                      <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className="v-route-item w-full hover:bg-[#F8FAFC]">
+                      <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className="v-mobile-slot-row w-full hover:bg-[#F8FAFC]">
                         <span className={`v-route-dot ${slot.status === 'available' ? 'is-free' : slot.status === 'cancelled' ? 'is-warning' : ''}`} />
                         <span className="v-route-time">{format(getSlotDateTime(slot), 'HH:mm')}</span>
                         <span className="min-w-0">
@@ -396,7 +396,7 @@ export function AdminSchedule() {
                           </span>
                           <span className="v-route-meta">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
                         </span>
-                        <span className="text-[#98A2B3]"><ChevronRight width={16} height={16} /></span>
+                        <span className="v-mobile-slot-action">Открыть</span>
                       </button>
                     )
                   })}

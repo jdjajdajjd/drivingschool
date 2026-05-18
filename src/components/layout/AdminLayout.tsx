@@ -274,6 +274,16 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             <ExternalLink width={16} height={16} />
             Сайт
           </button>
+          {school && nextSetupStep ? (
+            <button
+              type="button"
+              onClick={() => navigate(nextSetupStep.to)}
+              className="hidden min-h-10 items-center gap-2 rounded-full border border-[#315A7C]/15 bg-[#EAF3FF]/80 px-3 text-[13px] font-medium text-[#315A7C] hover:bg-white lg:inline-flex"
+              title="Открыть следующий шаг настройки"
+            >
+              {setupSteps.filter((step) => step.done).length}/{setupSteps.length} · {nextSetupStep.label}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setMenuSettingsOpen(true)}
@@ -331,29 +341,6 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
-          {school && nextSetupStep ? (
-            <div className="border-b border-white/70 bg-[rgba(255,255,255,0.58)] px-3 py-3 backdrop-blur-2xl lg:px-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-[#111315]">Запуск: {setupSteps.filter((step) => step.done).length}/{setupSteps.length}</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {setupSteps.map((step) => (
-                      <button
-                        key={step.label}
-                        onClick={() => navigate(step.to)}
-                        className={`rounded-full border px-2.5 py-1.5 text-[12px] font-medium ${step.done ? 'border-[#247A4B]/15 bg-[#EAF6EE] text-[#247A4B]' : 'border-[#315A7C]/15 bg-[#EAF3FF] text-[#315A7C]'}`}
-                      >
-                        {step.done ? '✓' : '•'} {step.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button onClick={() => navigate(nextSetupStep.to)} className="v-admin-button-secondary bg-white">
-                  {nextSetupStep.label}
-                </button>
-              </div>
-            </div>
-          ) : null}
           <Suspense fallback={<AdminContentLoader />}>
             <div key={location.pathname} className="admin-route-stage">
               {accessDenied ? <AdminAccessDenied to={fallbackPath} /> : <Outlet />}

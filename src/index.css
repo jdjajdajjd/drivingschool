@@ -1911,3 +1911,131 @@
     background: linear-gradient(135deg, #2563FF, #1E5EFF) !important;
   }
 }
+
+
+@layer components {
+  /* Launch-readiness pass: calmer admin controls, denser mobile schedule, cleaner states. */
+  .vroom-admin-shell .v-admin-button {
+    min-height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(10,132,255,0.20);
+    background: #0A84FF;
+    color: #fff;
+    font-weight: 650;
+    box-shadow: 0 10px 22px rgba(10,132,255,0.16);
+  }
+
+  .vroom-admin-shell .v-admin-button:hover {
+    background: #0876E5;
+    box-shadow: 0 14px 28px rgba(10,132,255,0.20);
+  }
+
+  .vroom-admin-shell .v-admin-button-secondary {
+    min-height: 38px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.82);
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  .vroom-admin-shell .v-admin-button-tertiary {
+    min-height: 38px;
+    border-radius: 12px;
+    font-weight: 560;
+  }
+
+  .vroom-admin-shell .v-tone-ok { background: rgba(52,199,89,0.12) !important; color: #1F8F3F !important; }
+  .vroom-admin-shell .v-tone-info { background: rgba(10,132,255,0.11) !important; color: #075EBC !important; }
+  .vroom-admin-shell .v-tone-warning { background: rgba(255,204,0,0.18) !important; color: #8A5A00 !important; }
+  .vroom-admin-shell .v-tone-danger { background: rgba(255,59,48,0.10) !important; color: #C92820 !important; }
+  .vroom-admin-shell .v-tone-muted { background: #F2F4F7 !important; color: #667085 !important; }
+
+  .v-launch-compact::before { display: none; }
+  .v-launch-compact {
+    border-style: dashed !important;
+    background: rgba(255,255,255,0.68) !important;
+  }
+
+  .vroom-admin-shell .v-admin-empty {
+    min-height: 132px;
+    border: 1px dashed rgba(15,23,42,0.14) !important;
+    border-radius: 18px;
+    background:
+      linear-gradient(135deg, rgba(10,132,255,0.045), transparent 42%),
+      rgba(255,255,255,0.74) !important;
+    padding: 18px;
+  }
+
+  .vroom-admin-shell .v-admin-empty::before {
+    content: '';
+    display: block;
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(10,132,255,0.16), rgba(52,199,89,0.12));
+    box-shadow: inset 0 0 0 1px rgba(10,132,255,0.10);
+  }
+
+  .v-mobile-day-group {
+    border: 1px solid rgba(15,23,42,0.10);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.84);
+    box-shadow: 0 10px 24px rgba(15,23,42,0.045);
+  }
+
+  .v-mobile-slot-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 54px minmax(0,1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 64px;
+    border-bottom: 1px solid rgba(15,23,42,0.07);
+    padding: 10px 12px;
+    text-align: left;
+  }
+
+  .v-mobile-slot-row:last-child { border-bottom: 0; }
+  .v-mobile-slot-row .v-route-dot { left: 62px; }
+  .v-mobile-slot-row .v-route-time {
+    min-height: 38px;
+    border-radius: 12px;
+    background: #F8FAFC;
+    font-size: 13px;
+    font-weight: 680;
+  }
+
+  .v-mobile-slot-row .v-route-title { font-size: 14px; font-weight: 660; }
+  .v-mobile-slot-row .v-route-meta { margin-top: 2px; font-size: 11.5px; }
+  .v-mobile-slot-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    border-radius: 999px;
+    background: #F2F4F7;
+    padding: 0 9px;
+    color: #667085;
+    font-size: 11px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .vroom-admin-shell main { padding-bottom: calc(62px + env(safe-area-inset-bottom)) !important; }
+    .admin-mobile-nav .admin-mobile-nav-item { min-height: 50px !important; border-radius: 14px !important; font-size: 9.5px !important; }
+    .vroom-schedule-toolbar { margin: 8px; border-radius: 18px; padding: 12px !important; }
+    .vroom-schedule-toolbar h1 { font-size: 24px !important; }
+    .vroom-schedule-toolbar p { display: none; }
+    .vroom-schedule-toolbar > div:last-child { width: 100%; margin-left: 0 !important; gap: 6px; }
+    .vroom-schedule-toolbar > div:last-child .v-admin-button-secondary:last-child { display: none; }
+    .vroom-schedule-toolbar > div:last-child > div { display: none; }
+    .vroom-schedule-toolbar .v-admin-button,
+    .vroom-schedule-toolbar .v-admin-button-secondary { min-height: 36px; padding-inline: 10px; font-size: 12px; }
+    .v-mobile-schedule-list { padding-bottom: 8px; }
+    .v-mobile-day-group > div:first-child { padding: 12px; }
+    .v-mobile-day-group h2 { font-size: 18px !important; }
+    .v-mobile-slot-row .v-admin-pill { max-width: 86px; padding-inline: 7px; font-size: 10px; }
+  }
+}
