@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Copy, ExternalLink, Pencil, Save, X } from 'lucide-react'
+import { Copy, ExternalLink, KeyRound, MessageSquareText, Pencil, Save, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { StateView } from '../../components/ui/StateView'
 import { DataRow } from '../../components/ui/DataList'
@@ -147,15 +147,16 @@ export function SuperAdminSchoolDetail() {
     )
   }
 
-  const accessLogin = accessForm.login.trim() || `${overview.school.slug}-admin`
+  const school = overview.school
+  const accessLogin = accessForm.login.trim() || `${school.slug}-admin`
   const accessPassword = accessForm.password.trim()
   const hasSavedPassword = Boolean(verifiedAccessLogin && accessPassword)
   const adminLoginPath = '/admin-login'
-  const schoolPublicPath = `/school/${overview.school.slug}`
-  const studentLoginPath = `/school/${overview.school.slug}/login`
+  const schoolPublicPath = `/school/${school.slug}`
+  const studentLoginPath = `/school/${school.slug}/login`
   const adminLoginUrl = absolutePath(adminLoginPath)
   const launchSteps: LaunchStep[] = [
-    { label: 'Школа активна', done: overview.school.isActive !== false },
+    { label: 'Школа активна', done: school.isActive !== false },
     { label: 'Доступ админа', done: Boolean(verifiedAccessLogin) },
     { label: 'Филиал', done: overview.branchCount > 0 },
     { label: 'Инструктор', done: overview.instructorCount > 0 },
@@ -176,8 +177,41 @@ export function SuperAdminSchoolDetail() {
     }
   }
 
+  async function persistSchoolAccess(loginValue: string, passwordValue: string, staffNameValue: string): Promise<string> {
+    const saveAccess = () => upsertSupabaseSchoolStaffCredential({
+      schoolId: school.id,
+      login: loginValue,
+      password: passwordValue,
+      staffName: staffNameValue || school.name,
+      isActive: true,
+    })
+
+    let login: string
+    try {
+      login = await saveAccess()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      if (!message.includes('School not found')) throw error
+      await createSupabaseSchool(school)
+      login = await saveAccess()
+    }
+
+    const session = await openSupabaseStaffSession('admin', login, passwordValue)
+    if (session.staffContext?.schoolId !== school.id) {
+      throw new Error('Доступ сохранился не для этой школы.')
+    }
+    await closeSupabaseStaffSession(session.staffContext.role, session.sessionToken)
+    setAccessForm((current) => ({ ...current, login, password: passwordValue, staffName: staffNameValue }))
+    setAccessEditing(false)
+    sessionStorage.setItem(
+      `dd:superadmin:created_access:${school.id}`,
+      JSON.stringify({ login, password: passwordValue }),
+    )
+    setVerifiedAccessLogin(login)
+    return login
+  }
+
   async function saveSchoolAccess(): Promise<void> {
-    if (!overview) return
     if (!accessLogin || accessLogin.length < 3) {
       showToast('Логин должен быть не короче 3 символов.', 'error')
       return
@@ -190,36 +224,7 @@ export function SuperAdminSchoolDetail() {
 
     try {
       setAccessPending(true)
-      const saveAccess = () => upsertSupabaseSchoolStaffCredential({
-        schoolId: overview.school.id,
-        login: accessLogin,
-        password: normalizedPassword,
-        staffName: accessForm.staffName || overview.school.name,
-        isActive: true,
-      })
-
-      let login: string
-      try {
-        login = await saveAccess()
-      } catch (error) {
-        const message = error instanceof Error ? error.message : ''
-        if (!message.includes('School not found')) throw error
-        await createSupabaseSchool(overview.school)
-        login = await saveAccess()
-      }
-
-      const session = await openSupabaseStaffSession('admin', login, normalizedPassword)
-      if (session.staffContext?.schoolId !== overview.school.id) {
-        throw new Error('Доступ сохранился не для этой школы.')
-      }
-      await closeSupabaseStaffSession(session.staffContext.role, session.sessionToken)
-      setAccessForm((current) => ({ ...current, login, password: normalizedPassword }))
-      setAccessEditing(false)
-      sessionStorage.setItem(
-        `dd:superadmin:created_access:${overview.school.id}`,
-        JSON.stringify({ login, password: normalizedPassword }),
-      )
-      setVerifiedAccessLogin(login)
+      const login = await persistSchoolAccess(accessLogin, normalizedPassword, accessForm.staffName || school.name)
       showToast(`Доступ сохранён и проверен: ${login}`, 'success')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось сохранить доступ.', 'error')
@@ -228,12 +233,48 @@ export function SuperAdminSchoolDetail() {
     }
   }
 
+  async function resetSchoolAccess(): Promise<void> {
+    const nextPassword = generateStaffPassword()
+    try {
+      setAccessPending(true)
+      const login = await persistSchoolAccess(accessLogin, nextPassword, accessForm.staffName || school.name)
+      showToast(`Новый пароль сохранён и проверен: ${login}`, 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось сбросить пароль.', 'error')
+    } finally {
+      setAccessPending(false)
+    }
+  }
+
+  function buildDirectorLaunchMessage(): string {
+    return [
+      `Здравствуйте! Доступ к vroom.today для ${school.name} готов.`,
+      '',
+      `Вход администратора: ${adminLoginUrl}`,
+      `Логин: ${accessLogin}`,
+      `Пароль: ${hasSavedPassword ? accessPassword : 'зададим новым сообщением после сброса'}`,
+      '',
+      'Что сделать в первый день:',
+      '1. Войти в кабинет школы.',
+      '2. Проверить филиалы и контакты.',
+      '3. Добавить инструкторов и автомобили.',
+      '4. Создать свободные окна в расписании.',
+      `5. Отправить ученикам ссылку записи: ${absolutePath(schoolPublicPath)}`,
+      '',
+      `Вход ученика: ${absolutePath(studentLoginPath)}`,
+    ].join('\n')
+  }
+
+  async function copyDirectorLaunchMessage(): Promise<void> {
+    await copyAccessValue(buildDirectorLaunchMessage())
+  }
+
   return (
     <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
         eyebrow="Платформа"
-        title={overview.school.name}
-        description={`/${overview.school.slug} · ${overview.school.description || 'Описание пока не заполнено.'}`}
+        title={school.name}
+        description={`/${school.slug} · ${school.description || 'Описание пока не заполнено.'}`}
         actions={
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" onClick={() => window.open(schoolPublicPath, '_blank')}>
@@ -293,6 +334,10 @@ export function SuperAdminSchoolDetail() {
                   <Button variant="secondary" size="sm" onClick={() => setAccessForm((current) => ({ ...current, password: generateStaffPassword() }))} disabled={accessPending}>
                     Сгенерировать пароль
                   </Button>
+                  <Button variant="secondary" size="sm" onClick={resetSchoolAccess} disabled={accessPending || accessLogin.length < 3}>
+                    <KeyRound size={15} />
+                    Сбросить и проверить
+                  </Button>
                   <Button size="sm" onClick={saveSchoolAccess} disabled={accessPending}>
                     <Save size={15} />
                     {accessPending ? 'Проверяем...' : 'Сохранить'}
@@ -317,14 +362,14 @@ export function SuperAdminSchoolDetail() {
                 label="Логин"
                 value={accessForm.login}
                 disabled={!accessEditing || accessPending}
-                placeholder={`${overview.school.slug}-admin`}
+                placeholder={`${school.slug}-admin`}
                 onChange={(event) => setAccessForm((current) => ({ ...current, login: event.target.value.trim().toLowerCase() }))}
               />
               <Input
                 label="Имя администратора"
                 value={accessForm.staffName}
                 disabled={!accessEditing || accessPending}
-                placeholder={overview.school.name}
+                placeholder={school.name}
                 onChange={(event) => setAccessForm((current) => ({ ...current, staffName: event.target.value }))}
               />
               <Input
@@ -348,10 +393,16 @@ export function SuperAdminSchoolDetail() {
                 <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Данные для входа</p>
                 <p className="mt-1 text-[13px] font-bold leading-5 text-[#66717D]">Копируйте пароль только после сохранения. Если пароль не виден, задайте новый.</p>
               </div>
-              <Button variant="secondary" size="sm" onClick={() => window.open(adminLoginPath, '_blank')}>
-                <ExternalLink size={15} />
-                Открыть вход
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" onClick={copyDirectorLaunchMessage} disabled={!verifiedAccessLogin}>
+                  <MessageSquareText size={15} />
+                  Текст директору
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => window.open(adminLoginPath, '_blank')}>
+                  <ExternalLink size={15} />
+                  Открыть вход
+                </Button>
+              </div>
             </div>
             <div className="mt-3 grid gap-2">
               <AccessValueRow label="Логин" value={accessLogin} actionLabel="Копировать" icon={<Copy size={15} />} onAction={() => copyAccessValue(accessLogin)} />
