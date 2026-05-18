@@ -107,13 +107,8 @@ async function updateProfile(env, body) {
     email: clean(body.email),
     password_hash: await hashPassword(password),
     avatar_url: clean(body.avatarUrl) || null,
-    category_codes: Array.isArray(body.categoryCodes) && body.categoryCodes.length ? body.categoryCodes.map(clean).filter(Boolean) : null,
-    training_stage: clean(body.trainingStage) || null,
+    categories: Array.isArray(body.categoryCodes) && body.categoryCodes.length ? body.categoryCodes.map(clean).filter(Boolean) : ['B'],
     group_name: clean(body.groupName),
-    training_start_date: clean(body.trainingStartDate) || null,
-    driving_start_date: clean(body.drivingStartDate) || null,
-    training_end_date: clean(body.trainingEndDate) || null,
-    driving_end_date: clean(body.drivingEndDate) || null,
   }
 
   const rows = await supabaseFetch(env, '/rest/v1/students?on_conflict=school_id,normalized_phone&select=id,normalized_phone', {
