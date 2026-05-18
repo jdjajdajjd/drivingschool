@@ -234,7 +234,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   const fallbackPath = navItems[0]?.to ?? basePath
 
   return (
-    <div className="v-admin-shell flex h-dvh overflow-hidden bg-[var(--admin-bg)] text-[#111315]">
+    <div className="v-admin-shell vroom-admin-shell flex h-dvh overflow-hidden bg-[var(--admin-bg)] text-[#111315]">
       <aside className="hidden w-[272px] shrink-0 lg:block">
         <Sidebar navItems={navItems} basePath={basePath} onCustomize={() => setMenuSettingsOpen(true)} />
       </aside>

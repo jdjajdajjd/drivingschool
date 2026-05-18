@@ -25,9 +25,9 @@ export function SuperAdminLayout() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="v-admin-shell min-h-screen">
+    <div className="v-superadmin-shell min-h-screen">
       <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/70 bg-white/75 px-4 py-3 backdrop-blur-2xl">
+        <header className="v-superadmin-mobile-header sticky top-0 z-20 flex items-center justify-between px-4 py-3 backdrop-blur-2xl">
           <button
             onClick={() => setOpen(true)}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-[#111827]/[0.07] bg-white/75 text-[#667381] shadow-[var(--shadow-card)]"
@@ -51,7 +51,7 @@ export function SuperAdminLayout() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-white/70 bg-white/75 shadow-[var(--shadow-card)] backdrop-blur-2xl transition-transform duration-200 md:translate-x-0',
+          'v-superadmin-sidebar fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col transition-transform duration-200 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -72,8 +72,8 @@ export function SuperAdminLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium transition-colors',
-                  isActive ? 'bg-[#EAF3FF] text-[#111315] shadow-[inset_0_0_0_1px_rgba(17,24,39,0.06)]' : 'text-[#667381] hover:bg-white/70 hover:text-[#111315]',
+                  'v-superadmin-nav-link flex min-h-11 items-center gap-3 px-3.5 py-3 text-sm font-semibold transition-colors',
+                  isActive ? 'is-active text-white' : 'text-[#9CA8B6] hover:text-white',
                 )
               }
             >
@@ -109,7 +109,7 @@ export function SuperAdminLayout() {
         </div>
       </aside>
 
-      <main className="min-h-screen md:ml-[280px]">
+      <main className="v-superadmin-main min-h-screen md:ml-[280px]">
         <Outlet />
       </main>
     </div>

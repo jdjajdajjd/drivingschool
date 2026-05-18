@@ -95,7 +95,7 @@ function readCreatedAccess(schoolId: string | undefined): { login: string; passw
 }
 
 function launchStepClass(done: boolean): string {
-  return done ? 'border-[#BFE7CF] bg-[#F7FCF9] text-[#157347]' : 'border-[#F7D58B] bg-[#FFFDF7] text-[#A45A00]'
+  return done ? 'border-[#2DD4BF]/25 bg-[#0F2B2E] text-[#6EE7D8]' : 'border-[#60A5FA]/25 bg-[#0B1E3A] text-[#93C5FD]'
 }
 
 export function SuperAdminSchoolDetail() {
@@ -257,7 +257,7 @@ export function SuperAdminSchoolDetail() {
 
       <div className="mt-6 space-y-5">
         <Section title="Готовность к запуску" description={`${launchDoneCount} из ${launchSteps.length}.`}>
-          <div className={`rounded-[14px] border p-4 ${launchReady ? 'border-[#BFE7CF] bg-[#F7FCF9]' : 'border-[#F7D58B] bg-[#FFFDF7]'}`}>
+          <div className={`rounded-[14px] border p-4 ${launchReady ? 'border-[#2DD4BF]/25 bg-[#0F2B2E]' : 'border-[#60A5FA]/25 bg-[#0B1E3A]'}`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[18px] font-black text-[#111418]">{launchReady ? 'Можно запускать' : 'Нужно дозаполнить'}</p>
@@ -336,7 +336,7 @@ export function SuperAdminSchoolDetail() {
               />
             </div>
             {verifiedAccessLogin ? (
-              <span className="mt-4 inline-flex min-h-10 items-center rounded-[10px] border border-[#BFE7CF] bg-[#F7FCF9] px-3 text-[13px] font-black text-[#157347]">
+              <span className="mt-4 inline-flex min-h-10 items-center rounded-[10px] border border-[#2DD4BF]/25 bg-[#0F2B2E] px-3 text-[13px] font-black text-[#6EE7D8]">
                 Проверено: {verifiedAccessLogin}
               </span>
             ) : null}

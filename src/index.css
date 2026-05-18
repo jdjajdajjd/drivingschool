@@ -438,7 +438,7 @@
     --motion-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  .v-admin-shell::before {
+  .vroom-admin-shell::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -452,17 +452,17 @@
       radial-gradient(620px 420px at 8% 12%, rgba(29,122,85,0.08), transparent 64%);
   }
 
-  .v-admin-shell > aside,
-  .v-admin-shell > div {
+  .vroom-admin-shell > aside,
+  .vroom-admin-shell > div {
     position: relative;
     z-index: 1;
   }
 
-  .v-admin-shell header {
+  .vroom-admin-shell header {
     background: rgba(255,252,245,0.78) !important;
   }
 
-  .v-admin-shell aside > div {
+  .vroom-admin-shell aside > div {
     background:
       linear-gradient(180deg, rgba(255,252,245,0.88), rgba(247,242,232,0.74)) !important;
   }
@@ -491,18 +491,18 @@
       opacity 220ms var(--motion-soft);
   }
 
-  .v-admin-toolbar,
-  .v-admin-panel,
-  .v-admin-stat,
-  .v-admin-empty {
+  .vroom-admin-shell .v-admin-toolbar,
+  .vroom-admin-shell .v-admin-panel,
+  .vroom-admin-shell .v-admin-stat,
+  .vroom-admin-shell .v-admin-empty {
     position: relative;
     overflow: hidden;
     border-color: rgba(21,19,15,0.12) !important;
     background: rgba(255,252,245,0.80) !important;
   }
 
-  .v-admin-panel::before,
-  .v-admin-stat::before {
+  .vroom-admin-shell .v-admin-panel::before,
+  .vroom-admin-shell .v-admin-stat::before {
     content: '';
     position: absolute;
     left: 0;
@@ -1638,5 +1638,272 @@
     .lesson-time span, .lesson-info span { font-size: 12px; }
     .quiet-empty { min-height: 150px; }
     .link-actions { grid-template-columns: 1fr; }
+  }
+}
+
+
+@layer components {
+  /* Superadmin command center */
+  .v-superadmin-shell {
+    --motion-soft: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --text: #E8EEF7;
+    --text-muted: #96A4B6;
+    --text-soft: #627086;
+    --surface: rgba(13, 20, 31, 0.72);
+    --surface-soft: rgba(23, 34, 51, 0.84);
+    --surface-muted: rgba(18, 28, 43, 0.76);
+    --border: rgba(148, 163, 184, 0.18);
+    --border-hover: rgba(96, 165, 250, 0.42);
+    --accent: #1E5EFF;
+    --accent-deep: #1648C7;
+    --shadow-card: 0 22px 60px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --shadow-card-hover: 0 28px 72px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    --shadow-btn: 0 16px 34px rgba(30, 94, 255, 0.28);
+    --shadow-btn-hover: 0 20px 44px rgba(30, 94, 255, 0.36);
+    position: relative;
+    overflow-x: hidden;
+    background:
+      radial-gradient(780px 420px at 82% -10%, rgba(30, 94, 255, 0.22), transparent 62%),
+      radial-gradient(620px 360px at 18% 10%, rgba(20, 184, 166, 0.12), transparent 58%),
+      linear-gradient(180deg, #07101C 0%, #0B1320 48%, #0D111A 100%);
+    color: var(--text);
+  }
+
+  .v-superadmin-shell::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.48;
+    background:
+      linear-gradient(90deg, rgba(148,163,184,0.075) 1px, transparent 1px) 0 0 / 54px 54px,
+      linear-gradient(180deg, rgba(148,163,184,0.055) 1px, transparent 1px) 0 0 / 54px 54px,
+      linear-gradient(115deg, transparent 0 52%, rgba(30,94,255,0.08) 52% 52.4%, transparent 52.4% 100%);
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.72) 54%, transparent 100%);
+  }
+
+  .v-superadmin-shell::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.08), transparent 38%);
+    mix-blend-mode: screen;
+  }
+
+  .v-superadmin-sidebar,
+  .v-superadmin-main,
+  .v-superadmin-mobile-header {
+    position: relative;
+    z-index: 1;
+  }
+
+  .v-superadmin-sidebar {
+    border-right: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(180deg, rgba(8, 15, 27, 0.94), rgba(10, 18, 31, 0.88));
+    box-shadow: 24px 0 70px rgba(0, 0, 0, 0.28), inset -1px 0 0 rgba(255,255,255,0.04);
+    backdrop-filter: blur(24px);
+  }
+
+  .v-superadmin-sidebar > div:first-child,
+  .v-superadmin-sidebar > div:last-child {
+    border-color: rgba(148, 163, 184, 0.14) !important;
+  }
+
+  .v-superadmin-sidebar p,
+  .v-superadmin-sidebar button:not(.v-superadmin-nav-link) {
+    color: #93A1B5;
+  }
+
+  .v-superadmin-nav-link {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+  }
+
+  .v-superadmin-nav-link::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: linear-gradient(135deg, rgba(30,94,255,0.96), rgba(20,184,166,0.72));
+    transition: opacity 180ms var(--motion-soft);
+  }
+
+  .v-superadmin-nav-link::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    width: 3px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.86);
+    opacity: 0;
+    transform: translateY(-50%) scaleY(0.5);
+    transition: opacity 180ms var(--motion-soft), transform 220ms var(--motion-soft);
+  }
+
+  .v-superadmin-nav-link:hover { background: rgba(148, 163, 184, 0.08); }
+  .v-superadmin-nav-link.is-active::before { opacity: 1; }
+  .v-superadmin-nav-link.is-active::after { opacity: 1; transform: translateY(-50%) scaleY(1); }
+  .v-superadmin-nav-link > * { position: relative; z-index: 1; }
+  .v-superadmin-nav-link.is-active { padding-left: 22px; box-shadow: 0 16px 36px rgba(30,94,255,0.28); }
+  .v-superadmin-nav-link.is-active svg { color: white !important; }
+
+  .v-superadmin-mobile-header {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(8, 15, 27, 0.82);
+  }
+
+  .v-superadmin-main {
+    min-height: 100dvh;
+    animation: route-rise 360ms var(--motion-soft) both;
+  }
+
+  .v-superadmin-main > div {
+    margin: 0 auto;
+  }
+
+  .v-superadmin-shell [class*="bg-white"],
+  .v-superadmin-shell [style*="background: white"],
+  .v-superadmin-shell [style*="background: #fff"],
+  .v-superadmin-shell [style*="background: #FFFFFF"] {
+    background: var(--surface) !important;
+  }
+
+  .v-superadmin-shell [class*="border-white"],
+  .v-superadmin-shell [style*="borderColor"] {
+    border-color: var(--border) !important;
+  }
+
+  .v-superadmin-shell h1,
+  .v-superadmin-shell h2,
+  .v-superadmin-shell h3,
+  .v-superadmin-shell p,
+  .v-superadmin-shell strong,
+  .v-superadmin-shell span,
+  .v-superadmin-shell td {
+    color: inherit;
+  }
+
+  .v-superadmin-shell .caption,
+  .v-superadmin-shell [style*="color: #687381"],
+  .v-superadmin-shell [style*="color: #667381"],
+  .v-superadmin-shell [class*="text-[#667381]"],
+  .v-superadmin-shell [class*="text-[#687381]"] {
+    color: var(--text-muted) !important;
+  }
+
+  .v-superadmin-shell [style*="color: #111315"],
+  .v-superadmin-shell [style*="color: #111418"],
+  .v-superadmin-shell [class*="#111418"],
+  .v-superadmin-shell [class*="text-[#111418]"],
+  .v-superadmin-shell [class*="text-[#111315]"] {
+    color: var(--text) !important;
+  }
+
+  .v-superadmin-shell [class*="rounded-[24px]"],
+  .v-superadmin-shell [class*="rounded-[22px]"],
+  .v-superadmin-shell .rounded-2xl {
+    border-radius: 16px;
+  }
+
+  .v-superadmin-shell [class*="shadow-[var(--shadow-card)]"] {
+    box-shadow: var(--shadow-card) !important;
+  }
+
+  .v-superadmin-shell input,
+  .v-superadmin-shell textarea {
+    background: rgba(5, 10, 18, 0.58) !important;
+    border-color: rgba(148, 163, 184, 0.20) !important;
+    color: var(--text) !important;
+  }
+
+  .v-superadmin-shell input:focus,
+  .v-superadmin-shell textarea:focus {
+    border-color: rgba(96, 165, 250, 0.58) !important;
+    box-shadow: 0 0 0 4px rgba(30, 94, 255, 0.16) !important;
+  }
+
+  .v-superadmin-shell .v-superadmin-main .transition-all,
+  .v-superadmin-shell .v-superadmin-main .transition-colors,
+  .v-superadmin-shell .v-superadmin-main button,
+  .v-superadmin-shell .v-superadmin-main a {
+    transition-duration: 180ms;
+    transition-timing-function: var(--motion-soft);
+  }
+
+  .v-superadmin-shell .v-superadmin-main [class*="hover:-translate-y"]:hover,
+  .v-superadmin-shell .v-superadmin-main [class*="hover\:-translate-y"]:hover {
+    transform: translateY(-2px);
+  }
+}
+
+
+@layer components {
+  /* Superadmin tone overrides */
+  .v-superadmin-shell [style*="#FFF4DC"],
+  .v-superadmin-shell [style*="#FFFDF7"],
+  .v-superadmin-shell [style*="#FFFBEB"],
+  .v-superadmin-shell [style*="#FFFAEB"],
+  .v-superadmin-shell [class*="bg-[#FFF4DC]"],
+  .v-superadmin-shell [class*="bg-[#FFFDF7]"],
+  .v-superadmin-shell [class*="bg-[#FFFBEB]"],
+  .v-superadmin-shell [class*="bg-[#FFFAEB]"] {
+    background: rgba(30, 94, 255, 0.12) !important;
+  }
+
+  .v-superadmin-shell [style*="#A15C07"],
+  .v-superadmin-shell [style*="#A45A00"],
+  .v-superadmin-shell [style*="#B45309"],
+  .v-superadmin-shell [class*="text-[#A15C07]"],
+  .v-superadmin-shell [class*="text-[#A45A00]"],
+  .v-superadmin-shell [class*="text-[#B45309]"] {
+    color: #93C5FD !important;
+  }
+  .v-superadmin-shell [class*="border-[#F7D58B]"],
+  .v-superadmin-shell [class*="border-[#B45309]"] {
+    border-color: rgba(96, 165, 250, 0.28) !important;
+  }
+}
+
+
+@layer components {
+  /* Superadmin surface hardening */
+  .v-superadmin-main [class*="backdrop-blur"],
+  .v-superadmin-main [style*="border-radius: 22px"],
+  .v-superadmin-main [style*="border-radius: 24px"] {
+    border-color: rgba(148, 163, 184, 0.18) !important;
+    background: rgba(12, 19, 31, 0.78) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+
+  .v-superadmin-main [style*="color"] {
+    color: inherit !important;
+  }
+
+  .v-superadmin-main .caption,
+  .v-superadmin-main p:not([class*="text-white"]):not([class*="text-[#111"]),
+  .v-superadmin-main span:not([class*="text-white"]):not([class*="text-[#111"]) {
+    color: var(--text-muted);
+  }
+
+  .v-superadmin-main h1,
+  .v-superadmin-main h2,
+  .v-superadmin-main h3,
+  .v-superadmin-main strong,
+  .v-superadmin-main [class*="font-bold"],
+  .v-superadmin-main [class*="font-semibold"],
+  .v-superadmin-main [class*="font-black"] {
+    color: var(--text) !important;
+  }
+
+  .v-superadmin-main button[class*="bg-[var(--accent)]"] {
+    background: linear-gradient(135deg, #2563FF, #1E5EFF) !important;
   }
 }
