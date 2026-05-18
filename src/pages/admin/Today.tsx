@@ -246,6 +246,13 @@ export function AdminToday() {
     .filter((slot) => slot.status === 'available')
     .sort((left, right) => left.time.localeCompare(right.time))
     .slice(0, 8)
+  const nextEntry = data.upcoming[0] ?? null
+  const nextInstructor = nextEntry ? data.instructors.find((item) => item.id === nextEntry.booking.instructorId) : null
+  const nextBranch = nextEntry ? data.branches.find((item) => item.id === nextEntry.booking.branchId) : null
+  const firstPriority = priorities[0] ?? null
+  const firstFreeSlot = freeSlots[0] ?? null
+  const firstFreeInstructor = firstFreeSlot ? data.instructors.find((item) => item.id === firstFreeSlot.instructorId) : null
+  const firstFreeBranch = firstFreeSlot ? data.branches.find((item) => item.id === firstFreeSlot.branchId) : null
 
   return (
     <div className="v-admin-workspace vroom-admin-today">
@@ -288,6 +295,66 @@ export function AdminToday() {
         availableFutureSlots={data.availableFutureSlots}
         studentCount={data.students.length}
       /> : null}
+
+      <section className="v-admin-focus-board mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.28fr)_minmax(300px,.86fr)_minmax(260px,.72fr)]">
+        <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)} className="v-focus-card is-primary min-w-0 p-5 text-left">
+          <span className="v-route-pill bg-white/80 text-[#075EBC]">Главный фокус</span>
+          {nextEntry ? (
+            <>
+              <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-[#4F6275]">Ближайшее занятие</p>
+                  <strong className="mt-1 block text-[38px] font-semibold leading-none text-[#0F172A] tabular-nums md:text-[48px]">
+                    {format(getSlotDateTime(nextEntry.slot), 'HH:mm')}
+                  </strong>
+                </div>
+                <span className="rounded-full bg-[#0F172A] px-3 py-2 text-[12px] font-semibold text-white">{format(getSlotDateTime(nextEntry.slot), 'dd.MM')}</span>
+              </div>
+              <div className="mt-5 min-w-0">
+                <strong className="block truncate text-[19px] font-semibold text-[#111827]">{nextEntry.booking.studentName}</strong>
+                <span className="mt-1 block truncate text-[14px] font-medium text-[#667085]">
+                  {nextInstructor?.name ?? 'Инструктор не назначен'} · {nextBranch?.name ?? 'Филиал не указан'} · {nextEntry.slot.duration} мин
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <strong className="mt-5 block text-[24px] font-semibold leading-7 text-[#111827]">На ближайшее время записей нет</strong>
+              <span className="mt-2 block max-w-xl text-[14px] font-medium leading-6 text-[#667085]">Откройте окна на неделю вперед, чтобы ученики могли записаться без ручной переписки.</span>
+            </>
+          )}
+        </button>
+
+        <Link to={firstPriority?.to ?? `${ADMIN_BASE_PATH}/reports`} className={`v-focus-card min-w-0 p-5 ${firstPriority ? `is-${firstPriority.tone}` : 'is-ok'}`}>
+          <span className="v-route-pill bg-[#F8FAFC] text-[#667085]">Контроль</span>
+          {firstPriority ? (
+            <>
+              <strong className="mt-4 block text-[18px] font-semibold leading-6 text-[#111827]">{firstPriority.title}</strong>
+              <span className="mt-2 block text-[14px] font-medium leading-6 text-[#667085]">{firstPriority.text}</span>
+            </>
+          ) : (
+            <>
+              <strong className="mt-4 block text-[18px] font-semibold leading-6 text-[#111827]">Критичных задач нет</strong>
+              <span className="mt-2 block text-[14px] font-medium leading-6 text-[#667085]">Долги, документы, заявки и прошедшие занятия сейчас без красных флагов.</span>
+            </>
+          )}
+        </Link>
+
+        <button type="button" onClick={() => navigate(`${ADMIN_BASE_PATH}/schedule`)} className="v-focus-card min-w-0 p-5 text-left is-free">
+          <span className="v-route-pill bg-[rgba(52,199,89,0.12)] text-[#1F8F3F]">Свободное окно</span>
+          {firstFreeSlot ? (
+            <>
+              <strong className="mt-4 block text-[34px] font-semibold leading-none text-[#111827] tabular-nums">{firstFreeSlot.time}</strong>
+              <span className="mt-3 block truncate text-[14px] font-medium text-[#667085]">{firstFreeInstructor?.name ?? 'Инструктор'} · {firstFreeBranch?.name ?? 'Филиал'} · {firstFreeSlot.duration} мин</span>
+            </>
+          ) : (
+            <>
+              <strong className="mt-4 block text-[19px] font-semibold leading-6 text-[#111827]">Сегодня все окна разобраны</strong>
+              <span className="mt-2 block text-[14px] font-medium leading-6 text-[#667085]">Проверьте неделю и добавьте резервные слоты.</span>
+            </>
+          )}
+        </button>
+      </section>
 
       {(hasBlock('nearest') || hasBlock('attention') || hasBlock('quickActions')) ? <section className={`mt-4 grid gap-4 ${hasBlock('nearest') && (hasBlock('attention') || hasBlock('quickActions')) ? 'lg:grid-cols-[minmax(0,1fr)_380px]' : ''}`}>
         {hasBlock('nearest') ? <div className="v-admin-panel overflow-hidden">

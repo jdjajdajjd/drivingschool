@@ -1977,6 +1977,114 @@
     box-shadow: inset 0 0 0 1px rgba(10,132,255,0.10);
   }
 
+  .v-admin-focus-board .v-focus-card {
+    position: relative;
+    min-height: 176px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.82);
+    box-shadow: 0 14px 32px rgba(15,23,42,0.055);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .v-admin-focus-board .v-focus-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: #0A84FF;
+  }
+
+  .v-admin-focus-board .v-focus-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(10,132,255,0.22);
+    box-shadow: 0 20px 42px rgba(15,23,42,0.075);
+  }
+
+  .v-admin-focus-board .v-focus-card.is-primary {
+    background:
+      radial-gradient(circle at 92% 18%, rgba(10,132,255,0.18), transparent 28%),
+      linear-gradient(135deg, rgba(255,255,255,0.94), rgba(234,244,255,0.72));
+  }
+
+  .v-admin-focus-board .v-focus-card.is-free::before,
+  .v-admin-focus-board .v-focus-card.is-ok::before { background: #34C759; }
+  .v-admin-focus-board .v-focus-card.is-danger::before { background: #FF3B30; }
+  .v-admin-focus-board .v-focus-card.is-warning::before { background: #FFCC00; }
+  .v-admin-focus-board .v-focus-card.is-info::before { background: #0A84FF; }
+
+  .v-students-summary .v-student-stat {
+    display: flex;
+    min-width: 0;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 92px;
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.82);
+    padding: 14px;
+    text-align: left;
+    box-shadow: 0 10px 26px rgba(15,23,42,0.04);
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+
+  .v-students-summary .v-student-stat:hover,
+  .v-students-summary .v-student-stat.is-active {
+    transform: translateY(-1px);
+    border-color: rgba(10,132,255,0.24);
+    background: #fff;
+  }
+
+  .v-students-summary .v-student-stat.is-danger strong { color: #C92820; }
+  .v-students-summary .v-student-stat.is-warning strong { color: #8A5A00; }
+  .v-students-summary .v-student-stat.is-ok strong { color: #1F8F3F; }
+
+  .v-students-list {
+    background: rgba(255,255,255,0.78) !important;
+  }
+
+  .v-students-list-head {
+    border-bottom: 1px solid rgba(15,23,42,0.07);
+    background: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(241,245,249,0.76));
+  }
+
+  .v-student-row {
+    border-bottom: 1px solid rgba(15,23,42,0.06);
+    background: rgba(255,255,255,0.54);
+  }
+
+  .v-student-row:last-child { border-bottom: 0; }
+  .v-student-row:hover { background: #F8FAFC; }
+
+  .v-schedule-command-card {
+    min-height: 104px;
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.82);
+    padding: 14px;
+    box-shadow: 0 10px 26px rgba(15,23,42,0.04);
+  }
+
+  .v-schedule-command-card.is-action {
+    background: linear-gradient(135deg, rgba(234,244,255,0.92), rgba(255,255,255,0.84));
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+
+  .v-schedule-command-card.is-action:hover {
+    transform: translateY(-1px);
+    border-color: rgba(10,132,255,0.24);
+  }
+
+  .vroom-day-card {
+    box-shadow: 0 10px 24px rgba(15,23,42,0.04);
+  }
+
+  .vroom-calendar-grid {
+    box-shadow: 0 16px 36px rgba(15,23,42,0.06);
+  }
+
   .v-mobile-day-group {
     border: 1px solid rgba(15,23,42,0.10);
     border-radius: 18px;
@@ -2034,6 +2142,11 @@
     .vroom-schedule-toolbar .v-admin-button,
     .vroom-schedule-toolbar .v-admin-button-secondary { min-height: 36px; padding-inline: 10px; font-size: 12px; }
     .v-mobile-schedule-list { padding-bottom: 8px; }
+    .v-schedule-command { display: none; }
+    .v-admin-focus-board .v-focus-card { min-height: 132px; border-radius: 18px; padding: 16px !important; }
+    .v-students-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .v-students-summary .v-student-stat { min-height: 78px; padding: 12px; }
+    .v-students-summary .v-student-stat strong { font-size: 22px !important; }
     .v-mobile-day-group > div:first-child { padding: 12px; }
     .v-mobile-day-group h2 { font-size: 18px !important; }
     .v-mobile-slot-row .v-admin-pill { max-width: 86px; padding-inline: 7px; font-size: 10px; }

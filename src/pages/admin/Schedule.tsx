@@ -94,6 +94,13 @@ export function AdminSchedule() {
     booked: filteredSlots.filter((slot) => slot.status === 'booked').length,
     free: filteredSlots.filter((slot) => slot.status === 'available').length,
   }
+  const todayKey = format(new Date(), 'yyyy-MM-dd')
+  const todayVisibleSlots = filteredSlots.filter((slot) => slot.date === todayKey)
+  const schedulePressure = {
+    todayBooked: todayVisibleSlots.filter((slot) => slot.status === 'booked').length,
+    todayFree: todayVisibleSlots.filter((slot) => slot.status === 'available').length,
+    instructors: new Set(todayVisibleSlots.map((slot) => slot.instructorId)).size,
+  }
 
   const dailySummary = viewRange.map((date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
@@ -321,6 +328,24 @@ export function AdminSchedule() {
         </div>
       </div>
 
+      <section className="v-schedule-command mx-3 mt-3 hidden gap-2 md:mx-5 md:grid md:grid-cols-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)_minmax(0,.9fr)]">
+        <button type="button" onClick={() => setShowCreateModal(true)} className="v-schedule-command-card is-action text-left">
+          <span className="text-[12px] font-semibold text-[#075EBC]">Быстрое действие</span>
+          <strong className="mt-1 block text-[17px] font-semibold text-[#111827]">Открыть новые окна</strong>
+          <span className="mt-1 block text-[12px] font-medium text-[#667085]">Добавьте время на ближайшие дни, чтобы ученики сами выбирали слот.</span>
+        </button>
+        <div className="v-schedule-command-card">
+          <span className="text-[12px] font-semibold text-[#667085]">Сегодня</span>
+          <strong className="mt-1 block text-[24px] font-semibold leading-none text-[#111827] tabular-nums">{schedulePressure.todayBooked} / {schedulePressure.todayFree}</strong>
+          <span className="mt-1 block text-[12px] font-medium text-[#667085]">занято / свободно</span>
+        </div>
+        <div className="v-schedule-command-card">
+          <span className="text-[12px] font-semibold text-[#667085]">Инструкторы в сетке</span>
+          <strong className="mt-1 block text-[24px] font-semibold leading-none text-[#111827] tabular-nums">{schedulePressure.instructors}</strong>
+          <span className="mt-1 block text-[12px] font-medium text-[#667085]">с окнами сегодня</span>
+        </div>
+      </section>
+
       <div className="mx-3 mt-3 hidden gap-2 lg:mx-5 lg:grid lg:grid-cols-7">
         {dailySummary.map((day) => (
           <button
@@ -333,6 +358,9 @@ export function AdminSchedule() {
             <span className="mt-2 flex gap-2 text-[12px] font-medium">
               <span className="text-[#075EBC]">{day.booked} занято</span>
               <span className="text-[#1F8F3F]">{day.free} свободно</span>
+            </span>
+            <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-[#EEF2F7]">
+              <span className="block h-full rounded-full bg-[#0A84FF]" style={{ width: `${day.total ? Math.round((day.booked / day.total) * 100) : 0}%` }} />
             </span>
           </button>
         ))}

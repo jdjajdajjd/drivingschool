@@ -155,6 +155,18 @@ export function AdminStudents() {
     isIdleStudent(data.last[student.id], data.next[student.id]) ||
     ['no_bookings', 'frozen', 'refused'].includes(student.trainingStage ?? ''),
   ).length
+  const studentStats = [
+    {
+      label: 'Активные',
+      value: data.rows.filter((student) => ['training_active', 'practice_active', 'practice_ground', 'city', 'theory'].includes(student.trainingStage ?? '')).length,
+      caption: 'в обучении',
+      filter: 'active' as FilterTab,
+      tone: 'ok',
+    },
+    { label: 'Проблемы', value: problemCount, caption: 'нужно внимание', filter: 'problem' as FilterTab, tone: problemCount ? 'danger' : 'ok' },
+    { label: 'Долги', value: data.debtStudents.size, caption: 'по оплатам', filter: 'debt' as FilterTab, tone: data.debtStudents.size ? 'danger' : 'ok' },
+    { label: 'Документы', value: data.rows.filter((student) => (data.docs[student.id] ?? 0) > 0).length, caption: 'проверить', filter: 'no_docs' as FilterTab, tone: 'warning' },
+  ]
   const instructors = school ? db.instructors.bySchool(school.id).filter((item) => item.isActive) : []
   const selectedStudents = data.rows.filter((student) => selectedIds.includes(student.id))
   const visibleIds = filtered.map((student) => student.id)
@@ -245,6 +257,23 @@ export function AdminStudents() {
       </div>
 
       <div className="flex-1 overflow-auto p-3 md:p-5">
+        <section className="v-students-summary mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {studentStats.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => setFilterPersisted(item.filter)}
+              className={`v-student-stat is-${item.tone} ${filter === item.filter ? 'is-active' : ''}`}
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-[12px] font-semibold text-[#667085]">{item.label}</span>
+                <strong className="mt-1 block text-[28px] font-semibold leading-none text-[#111827] tabular-nums">{item.value}</strong>
+              </span>
+              <span className="truncate text-right text-[12px] font-medium text-[#667085]">{item.caption}</span>
+            </button>
+          ))}
+        </section>
+
         {selectedIds.length > 0 ? (
           <div className="mb-3 rounded-[14px] border border-[#DCE2E8] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.05)]">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -326,8 +355,8 @@ export function AdminStudents() {
             })}
           </div>
 
-          <div className="v-admin-panel v-admin-table-sticky v-admin-table-compact hidden overflow-hidden md:block">
-            <div className="grid grid-cols-[40px_minmax(240px,1.2fr)_minmax(150px,.75fr)_minmax(160px,.8fr)_minmax(150px,.7fr)_minmax(130px,.55fr)_40px] items-center gap-14 border-b border-[rgba(15,23,42,0.07)] bg-[#F8FAFC] px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
+          <div className="v-admin-panel v-students-list hidden overflow-hidden md:block">
+            <div className="v-students-list-head grid grid-cols-[40px_minmax(260px,1.22fr)_minmax(150px,.72fr)_minmax(190px,.9fr)_minmax(170px,.76fr)_minmax(150px,.62fr)_40px] items-center gap-4 px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
               <span className="text-center"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} className="accent-[#0A84FF]" /></span>
               <span>Ученик</span>
               <span>Статус</span>
@@ -346,7 +375,7 @@ export function AdminStudents() {
                   const stage = student.trainingStage
 
                   return (
-                    <button key={student.id} className="grid w-full grid-cols-[40px_minmax(240px,1.2fr)_minmax(150px,.75fr)_minmax(160px,.8fr)_minmax(150px,.7fr)_minmax(130px,.55fr)_40px] items-center gap-4 border-b border-[rgba(15,23,42,0.06)] px-4 py-4 text-left transition last:border-b-0 hover:bg-[#F8FAFC]" onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}>
+                    <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(260px,1.22fr)_minmax(150px,.72fr)_minmax(190px,.9fr)_minmax(170px,.76fr)_minmax(150px,.62fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}>
                       <span className="text-center" onClick={(event) => event.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggleSelected(student.id)} className="accent-[#0A84FF]" />
                       </span>
