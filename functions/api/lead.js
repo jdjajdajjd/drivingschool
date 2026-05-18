@@ -1,4 +1,5 @@
 const MAX_FIELD_LENGTH = 700
+const ASSET_SCAN_TIMEOUT_MS = 4500
 
 function json(body, init = {}) {
   return new Response(JSON.stringify(body), {
@@ -38,6 +39,95 @@ function buildTelegramMessage(payload) {
   return lines.join('\n')
 }
 
+function isSupabaseUrl(value) {
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(String(value ?? '')) && !String(value).includes('example.supabase.co')
+}
+
+function isJwt(value) {
+  return /^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/.test(String(value ?? ''))
+}
+
+async function fetchText(url, signal) {
+  const response = await fetch(url, { signal })
+  if (!response.ok) return ''
+  return response.text()
+}
+
+async function discoverSupabaseConfigFromAssets(request) {
+  const origin = new URL(request.url).origin
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), ASSET_SCAN_TIMEOUT_MS)
+
+  try {
+    const html = await fetchText(origin, controller.signal)
+    const assetPaths = Array.from(html.matchAll(/\/assets\/[^"'\s>]+\.js/g), (match) => match[0]).slice(0, 14)
+    const candidates = await Promise.all(assetPaths.map((path) => fetchText(`${origin}${path}`, controller.signal).catch(() => '')))
+    const source = candidates.join('\n')
+    const urls = Array.from(source.matchAll(/https:\/\/[a-z0-9-]+\.supabase\.co/gi), (match) => match[0]).filter(isSupabaseUrl)
+    const keys = Array.from(source.matchAll(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g), (match) => match[0]).filter(isJwt)
+    const url = urls.at(-1)
+    const anonKey = keys.at(-1)
+    return url && anonKey ? { url, anonKey } : null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+async function resolveSupabaseConfig(request, env) {
+  const envUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL
+  const envAnonKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY
+  if (isSupabaseUrl(envUrl) && isJwt(envAnonKey)) return { url: envUrl, anonKey: envAnonKey }
+  return discoverSupabaseConfigFromAssets(request)
+}
+
+async function saveLeadToSupabase(request, env, payload) {
+  const config = await resolveSupabaseConfig(request, env)
+  if (!config) return false
+
+  const response = await fetch(`${config.url}/rest/v1/lead_requests`, {
+    method: 'POST',
+    headers: {
+      apikey: config.anonKey,
+      authorization: `Bearer ${config.anonKey}`,
+      'content-type': 'application/json',
+      prefer: 'return=minimal',
+    },
+    body: JSON.stringify({
+      name: payload.name,
+      phone: payload.phone,
+      school_name: payload.schoolName,
+      city: payload.city,
+      comment: payload.comment,
+      source: 'landing',
+      page_url: request.headers.get('referer') || new URL(request.url).origin,
+      user_agent: clean(request.headers.get('user-agent')),
+    }),
+  })
+
+  return response.ok
+}
+
+async function sendLeadToTelegram(env, payload) {
+  const token = env.TELEGRAM_BOT_TOKEN
+  const chatId = env.TELEGRAM_LEADS_CHAT_ID
+  if (!token || !chatId) return false
+
+  const telegramResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: buildTelegramMessage(payload),
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    }),
+  })
+
+  return telegramResponse.ok
+}
+
 export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') {
     return json({ ok: true }, { headers: { allow: 'POST, OPTIONS' } })
@@ -45,13 +135,6 @@ export async function onRequest({ request, env }) {
 
   if (request.method !== 'POST') {
     return json({ error: 'Method not allowed' }, { status: 405, headers: { allow: 'POST, OPTIONS' } })
-  }
-
-  const token = env.TELEGRAM_BOT_TOKEN
-  const chatId = env.TELEGRAM_LEADS_CHAT_ID
-
-  if (!token || !chatId) {
-    return json({ error: 'Прием заявок пока не настроен.' }, { status: 503 })
   }
 
   let body
@@ -73,18 +156,9 @@ export async function onRequest({ request, env }) {
     return json({ error: 'Заполните имя, телефон и название автошколы.' }, { status: 400 })
   }
 
-  const telegramResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: buildTelegramMessage(payload),
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-    }),
-  })
+  const delivered = await sendLeadToTelegram(env, payload) || await saveLeadToSupabase(request, env, payload)
 
-  if (!telegramResponse.ok) {
+  if (!delivered) {
     return json({ error: 'Не удалось отправить заявку. Попробуйте позже.' }, { status: 502 })
   }
 

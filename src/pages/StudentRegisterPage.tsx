@@ -186,9 +186,10 @@ export default function StudentRegisterPage() {
     try {
       if (isSupabaseConfigured()) {
         await saveStudentProfileToSupabase(school.id, { name: fullName, phone, password }, { passwordSet: true })
+      } else {
+        saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
+        saveStudentCredentials(phone, password, school.id)
       }
-      saveStudentProfile(school.id, { name: fullName, phone, password }, { passwordSet: true })
-      saveStudentCredentials(phone, password, school.id)
       localStorage.removeItem(draftKey)
       sessionStorage.removeItem(draftKey)
     } catch {

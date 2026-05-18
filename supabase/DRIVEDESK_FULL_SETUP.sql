@@ -68,7 +68,19 @@ alter table public.slots
   add column if not exists lesson_type text not null default 'driving';
 
 alter table public.students
+  add column if not exists password_hash text,
+  add column if not exists avatar_url text,
+  add column if not exists assigned_branch_id text references public.branches(id) on delete set null,
+  add column if not exists assigned_instructor_id text references public.instructors(id) on delete set null,
+  add column if not exists category_codes text[],
+  add column if not exists training_stage text,
   add column if not exists group_name text not null default '',
+  add column if not exists training_start_date date,
+  add column if not exists driving_start_date date,
+  add column if not exists training_end_date date,
+  add column if not exists driving_end_date date,
+  add column if not exists branch_change_requested_at timestamptz,
+  add column if not exists branch_change_note text,
   add column if not exists status text not null default 'active',
   add column if not exists categories text[] not null default array['B'],
   add column if not exists contract_number text not null default '',
@@ -77,6 +89,34 @@ alter table public.students
   add column if not exists theory_access_expires_at date,
   add column if not exists last_activity_at timestamptz,
   add column if not exists notes text not null default '';
+
+create table if not exists public.lead_requests (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  phone text not null,
+  school_name text not null,
+  city text not null default '',
+  comment text not null default '',
+  source text not null default 'landing',
+  page_url text not null default '',
+  user_agent text not null default '',
+  status text not null default 'new' check (status in ('new', 'contacted', 'qualified', 'won', 'lost')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.lead_requests enable row level security;
+
+drop policy if exists lead_requests_public_insert on public.lead_requests;
+create policy lead_requests_public_insert
+  on public.lead_requests
+  for insert
+  to anon, authenticated
+  with check (
+    length(trim(name)) between 2 and 700
+    and length(trim(phone)) between 6 and 700
+    and length(trim(school_name)) between 2 and 700
+    and status = 'new'
+  );
 
 insert into public.staff_access_credentials (role, password_sha256) values
   ('admin', '94754e78d07756488a78665a5b7bb3a1d636dabb002e682e4f8fac946250603d'),
@@ -129,6 +169,143 @@ drop function if exists public.public_upsert_student_documents(jsonb, text);
 drop function if exists public.public_admin_list_student_requests(text, text);
 drop function if exists public.public_create_student_request(text, text, text, text, text, text, text, text, timestamptz, timestamptz);
 drop function if exists public.public_update_student_request_status(text, text, text, timestamptz, text);
+
+drop function if exists public.public_update_student_profile(text, text, text, text, text, text, text[], text, text, date, date, date, date);
+drop function if exists public.public_login_student(text, text, text);
+
+create or replace function public.public_update_student_profile(
+  p_school_id text,
+  p_phone text,
+  p_name text,
+  p_email text,
+  p_password text,
+  p_avatar_url text,
+  p_category_codes text[] default null,
+  p_training_stage text default null,
+  p_group_name text default null,
+  p_training_start_date date default null,
+  p_driving_start_date date default null,
+  p_training_end_date date default null,
+  p_driving_end_date date default null
+)
+returns table (
+  student_id text,
+  student_phone text,
+  profile_ready boolean
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_normalized_phone text;
+  v_student_id text;
+begin
+  v_normalized_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(v_normalized_phone) = 11 and left(v_normalized_phone, 1) = '8' then
+    v_normalized_phone := '7' || substring(v_normalized_phone from 2);
+  elsif length(v_normalized_phone) = 10 and left(v_normalized_phone, 1) = '9' then
+    v_normalized_phone := '7' || v_normalized_phone;
+  end if;
+
+  if v_normalized_phone !~ '^7[0-9]{10}$' then
+    raise exception 'Phone is invalid.';
+  end if;
+
+  if p_name is null or length(trim(p_name)) < 2 then
+    raise exception 'Student name is required.';
+  end if;
+
+  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+    raise exception 'Student training stage is invalid.';
+  end if;
+
+  if not exists (
+    select 1 from public.students
+    where school_id = p_school_id
+      and normalized_phone = v_normalized_phone
+      and password_hash is not null
+  ) and (p_password is null or length(p_password) < 6) then
+    raise exception 'Password is too short.';
+  end if;
+
+  insert into public.students (
+    id, school_id, name, phone, normalized_phone, email, password_hash, avatar_url,
+    category_codes, training_stage, group_name, training_start_date, driving_start_date,
+    training_end_date, driving_end_date
+  ) values (
+    'stu-' || replace(gen_random_uuid()::text, '-', ''),
+    p_school_id,
+    trim(p_name),
+    v_normalized_phone,
+    v_normalized_phone,
+    coalesce(trim(p_email), ''),
+    case when p_password is not null and length(p_password) >= 6 then extensions.crypt(p_password, extensions.gen_salt('bf')) else null end,
+    nullif(trim(coalesce(p_avatar_url, '')), ''),
+    nullif(p_category_codes, '{}'), p_training_stage, p_group_name, p_training_start_date, p_driving_start_date,
+    p_training_end_date, p_driving_end_date
+  )
+  on conflict (school_id, normalized_phone)
+  do update set
+    name = excluded.name,
+    phone = excluded.phone,
+    email = excluded.email,
+    password_hash = coalesce(excluded.password_hash, public.students.password_hash),
+    avatar_url = excluded.avatar_url,
+    category_codes = coalesce(nullif(p_category_codes, '{}'), public.students.category_codes),
+    training_stage = coalesce(p_training_stage, public.students.training_stage),
+    group_name = coalesce(p_group_name, public.students.group_name),
+    training_start_date = coalesce(p_training_start_date, public.students.training_start_date),
+    driving_start_date = coalesce(p_driving_start_date, public.students.driving_start_date),
+    training_end_date = coalesce(p_training_end_date, public.students.training_end_date),
+    driving_end_date = coalesce(p_driving_end_date, public.students.driving_end_date),
+    updated_at = now()
+  returning public.students.id into v_student_id;
+
+  student_id := v_student_id;
+  student_phone := v_normalized_phone;
+  profile_ready := true;
+  return next;
+end;
+$$;
+
+create or replace function public.public_login_student(
+  p_school_id text,
+  p_phone text,
+  p_password text
+)
+returns table (
+  student_id text,
+  name text,
+  phone text,
+  email text,
+  avatar_url text,
+  assigned_branch_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_normalized_phone text;
+begin
+  v_normalized_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(v_normalized_phone) = 11 and left(v_normalized_phone, 1) = '8' then
+    v_normalized_phone := '7' || substring(v_normalized_phone from 2);
+  elsif length(v_normalized_phone) = 10 and left(v_normalized_phone, 1) = '9' then
+    v_normalized_phone := '7' || v_normalized_phone;
+  end if;
+
+  return query
+  select s.id, s.name, s.phone, s.email, s.avatar_url, s.assigned_branch_id
+  from public.students s
+  where s.school_id = p_school_id
+    and s.normalized_phone = v_normalized_phone
+    and s.password_hash is not null
+    and s.password_hash = extensions.crypt(p_password, s.password_hash)
+  limit 1;
+end;
+$$;
 
 create or replace function public.public_cancel_booking(
   p_booking_id text,
@@ -1138,6 +1315,9 @@ $$;
 grant execute on function public.public_get_booking_group(text) to anon, authenticated;
 grant execute on function public.public_get_instructor_schedule(text) to anon, authenticated;
 grant execute on function public.public_admin_list_bookings(text, text) to anon, authenticated;
+grant execute on function public.public_update_student_profile(text, text, text, text, text, text, text[], text, text, date, date, date, date) to anon, authenticated;
+grant execute on function public.public_login_student(text, text, text) to anon, authenticated;
+grant insert on public.lead_requests to anon, authenticated;
 grant execute on function public.public_admin_list_students(text, text) to anon, authenticated;
 
 -- END DRIVEDESK_SAFE_PATCH

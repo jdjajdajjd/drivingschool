@@ -21,7 +21,7 @@ import {
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { getFutureAvailableSlots, loadPublicSchoolData, refreshPublicSlots } from '../services/publicSchoolData'
 import { db, findSchoolNamespaceBySlug, setDataNamespace } from '../services/storage'
-import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
+import { createSupabaseBooking } from '../services/supabasePublicService'
 import {
   acquireSlotLock,
   createBooking,
@@ -33,7 +33,8 @@ import {
   releaseSessionLocks,
   releaseSlotLock,
 } from '../services/bookingService'
-import { findAnyStudentProfile, saveStudentProfile } from '../services/studentProfile'
+import { findAnyStudentProfile, saveStudentProfile, saveStudentProfileToSupabase } from '../services/studentProfile'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { lessonTypeLabel } from './student/studentUtils'
@@ -659,18 +660,12 @@ export function BookingFlowPage() {
     }
     setSubmitting(true)
     try {
-      saveStudentProfile(school.id, form, { passwordSet: true, assignedBranchId: selectedBranch?.id, assignedInstructorId: selectedInstructor?.id })
-      void updateStudentProfileInSupabase({
-        schoolId: school.id,
-        name: normalizePersonName(form.name),
-        phone: form.phone,
-        email: form.email,
-        password: form.password,
-        avatarUrl: '',
-        categoryCodes: ['B'],
-        trainingStage: 'theory',
-        groupName: '',
-      }).catch(() => undefined)
+      const profilePayload = { passwordSet: true, assignedBranchId: selectedBranch?.id, assignedInstructorId: selectedInstructor?.id, categoryCodes: ['B'], trainingStage: 'theory' as const, groupName: '' }
+      if (isSupabaseConfigured()) {
+        await saveStudentProfileToSupabase(school.id, form, profilePayload)
+      } else {
+        saveStudentProfile(school.id, form, profilePayload)
+      }
       navigate('/student')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось создать кабинет.', 'error')

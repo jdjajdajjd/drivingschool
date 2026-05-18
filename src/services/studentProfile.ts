@@ -44,11 +44,13 @@ function getCredentialKey(phone: string): string {
 }
 
 export function saveStudentCredentials(phone: string, password: string, schoolId: string): void {
+  if (isSupabaseConfigured()) return
   const normalizedPhone = normalizePhone(phone)
   localStorage.setItem(getCredentialKey(normalizedPhone), JSON.stringify({ schoolId, phone: normalizedPhone, password }))
 }
 
 export function verifyStudentCredentials(phone: string, password: string): { schoolId: string } | null {
+  if (isSupabaseConfigured()) return null
   try {
     const raw = localStorage.getItem(getCredentialKey(phone))
     if (!raw) return null
@@ -132,6 +134,7 @@ export function saveStudentProfile(
   }
   if (isSupabaseConfigured()) {
     saveStudentSessionProfile(schoolId, profile)
+    return profile
   }
   localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
   return profile
@@ -198,10 +201,9 @@ export async function saveStudentProfileToSupabase(schoolId: string, form: Stude
     })
   } catch (error) {
     if (!isMissingStudentProfileRpcError(error)) throw error
+    if (isSupabaseConfigured()) throw new Error('Кабинет ученика не сохранен в Supabase. Проверьте SQL-функции public_update_student_profile и public_login_student.')
 
-    const fallbackProfile = saveStudentProfile(schoolId, form, extra)
-    if (form.password?.trim()) saveStudentCredentials(form.phone, form.password, schoolId)
-    return fallbackProfile
+    return saveStudentProfile(schoolId, form, extra)
   }
 
   const profile: StudentProfile = {
@@ -215,8 +217,6 @@ export async function saveStudentProfileToSupabase(schoolId: string, form: Stude
     ...extra,
   }
   saveStudentSessionProfile(schoolId, profile)
-  localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
-  if (form.password?.trim()) saveStudentCredentials(form.phone, form.password, schoolId)
   return profile
 }
 
@@ -226,6 +226,8 @@ export async function loginStudentProfileFromSupabase(schoolId: string, phone: s
     result = await loginStudentInSupabase({ schoolId, phone, password })
   } catch (error) {
     if (!isMissingStudentProfileRpcError(error)) throw error
+    if (isSupabaseConfigured()) throw new Error('Вход ученика не настроен в Supabase. Проверьте SQL-функцию public_login_student.')
+
     const localCredentials = verifyStudentCredentials(phone, password)
     if (!localCredentials || localCredentials.schoolId !== schoolId) return null
     return loadStudentProfile(schoolId)
