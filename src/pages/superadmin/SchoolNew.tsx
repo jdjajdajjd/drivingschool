@@ -6,7 +6,17 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { createSchool } from '../../services/schoolService'
+import { db } from '../../services/storage'
 import { SUPERADMIN_BASE_PATH } from '../../services/accessControl'
+import { createSupabaseSchool } from '../../services/supabaseAdminService'
+import { closeSupabaseStaffSession, openSupabaseStaffSession, upsertSupabaseSchoolStaffCredential } from '../../services/staffSessionService'
+
+function generateStaffPassword(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+  const bytes = new Uint8Array(18)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('')
+}
 
 export function SuperAdminSchoolNew() {
   const navigate = useNavigate()
@@ -18,8 +28,10 @@ export function SuperAdminSchoolNew() {
     primaryColor: '#6658F5',
     logoUrl: '',
   })
+  const [pending, setPending] = useState(false)
 
-  function handleCreate(): void {
+  async function handleCreate(): Promise<void> {
+    if (pending) return
     const result = createSchool({
       name: form.name,
       slug: form.slug,
@@ -32,21 +44,50 @@ export function SuperAdminSchoolNew() {
       bookingLimitEnabled: true,
       maxActiveBookingsPerStudent: 2,
       isActive: true,
-    })
+    }, { persist: false })
 
     if (!result.ok || !result.school) {
       showToast(result.error ?? 'Не удалось создать автошколу.', 'error')
       return
     }
 
-    showToast('Автошкола создана.', 'success')
-    navigate(`${SUPERADMIN_BASE_PATH}/schools/${result.school.id}`)
+    try {
+      setPending(true)
+      await createSupabaseSchool(result.school)
+      const adminLogin = `${result.school.slug}-admin`
+      const adminPassword = generateStaffPassword()
+      const savedLogin = await upsertSupabaseSchoolStaffCredential({
+        schoolId: result.school.id,
+        login: adminLogin,
+        password: adminPassword,
+        staffName: result.school.name,
+        isActive: true,
+      })
+      const session = await openSupabaseStaffSession('admin', savedLogin, adminPassword)
+      if (session.staffContext?.schoolId !== result.school.id) {
+        throw new Error('Доступ создался не для этой школы.')
+      }
+      await closeSupabaseStaffSession(session.staffContext.role, session.sessionToken)
+      db.schools.upsert(result.school)
+      sessionStorage.setItem(
+        `dd:superadmin:created_access:${result.school.id}`,
+        JSON.stringify({ login: savedLogin, password: adminPassword }),
+      )
+      showToast('Автошкола создана.', 'success')
+      navigate(`${SUPERADMIN_BASE_PATH}/schools/${result.school.id}`, {
+        state: { createdAccess: { login: savedLogin, password: adminPassword } },
+      })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось создать автошколу в Supabase.', 'error')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
     <div className="max-w-6xl p-4 md:p-6">
       <PageHeader
-        eyebrow="Superadmin"
+        eyebrow="Платформа"
         title="Создать автошколу"
         description="Минимальная карточка tenant: название, slug, описание и брендовый акцент для white-label интерфейса."
       />
@@ -63,7 +104,7 @@ export function SuperAdminSchoolNew() {
             <Textarea label="Описание" rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Button onClick={handleCreate}>Создать автошколу</Button>
+            <Button onClick={handleCreate} disabled={pending}>{pending ? 'Создаём...' : 'Создать автошколу'}</Button>
             <Button variant="secondary" onClick={() => navigate(`${SUPERADMIN_BASE_PATH}/schools`)}>Назад</Button>
           </div>
         </Section>

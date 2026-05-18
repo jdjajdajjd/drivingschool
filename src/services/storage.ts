@@ -62,15 +62,7 @@ function readAllFromNamespace<T>(namespace: DataNamespace, key: string): T[] {
 }
 
 export function findSchoolNamespaceBySlug(slug: string): DataNamespace | null {
-  // Demo school 'virazh' is always the canonical demo — never shadowed by workspace.
-  if (slug === 'virazh') {
-    const demoSchool = readAllFromNamespace<School>('demo', K.SCHOOLS).some(
-      (school) => school.slug === slug,
-    )
-    if (demoSchool) return 'demo'
-  }
-
-  // Workspace data takes priority for all other slugs — owner configures schools from workspace admin.
+  // Workspace data takes priority; demo routes set the demo namespace explicitly.
   const workspaceSchool = readAllFromNamespace<School>('workspace', K.SCHOOLS).some(
     (school) => school.slug === slug,
   )
@@ -169,9 +161,25 @@ function writeLocks(locks: SlotLock[]): void {
   writeAll(K.SLOT_LOCKS, locks)
 }
 
+function currentAdminSchool(): School | null {
+  let staffSchoolId = ''
+  try {
+    const raw = sessionStorage.getItem('dd:staff_context:workspace')
+    const parsed = raw ? (JSON.parse(raw) as { schoolId?: unknown }) : null
+    staffSchoolId = typeof parsed?.schoolId === 'string' ? parsed.schoolId : ''
+  } catch {
+    staffSchoolId = ''
+  }
+
+  if (staffSchoolId) return readAll<School>(K.SCHOOLS).find((school) => school.id === staffSchoolId) ?? null
+  const schools = readAll<School>(K.SCHOOLS)
+  return schools.find((school) => school.isActive !== false) ?? schools[0] ?? null
+}
+
 export const db = {
   schools: {
     all: () => readAll<School>(K.SCHOOLS),
+    currentAdmin: () => currentAdminSchool() as School,
     bySlug: (slug: string) => readAll<School>(K.SCHOOLS).find((school) => school.slug === slug) ?? null,
     byId: (id: string) => readAll<School>(K.SCHOOLS).find((school) => school.id === id) ?? null,
     upsert: (school: School) => upsert(K.SCHOOLS, school),
@@ -309,6 +317,6 @@ export const db = {
 
   reset: () => {
     Object.values(K).forEach((key) => localStorage.removeItem(namespacedKey(key)))
-    memoryStore.delete(activeNamespace)
+    Object.values(K).forEach((key) => memoryStore.delete(`${activeNamespace}:${key}`))
   },
 }

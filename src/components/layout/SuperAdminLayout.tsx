@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { cn } from '../../lib/utils'
 import { NavLink } from 'react-router-dom'
 import { createHugeIcon } from '../ui/HugeIcon'
-import { ADMIN_BASE_PATH, SUPERADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
+import { SUPERADMIN_BASE_PATH, WORKSPACE_ADMIN_LOGIN_PATH, clearAccess, getAccessSecret } from '../../services/accessControl'
+import { closeSupabaseStaffSession } from '../../services/staffSessionService'
 import { BrandMark } from './BrandMark'
 
 const Building2 = createHugeIcon(Building03Icon)
@@ -24,12 +25,12 @@ export function SuperAdminLayout() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="shell">
+    <div className="v-admin-shell min-h-screen">
       <div className="md:hidden">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b rgba(0,0,0,0.06) bg-white/92 px-4 py-3 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/70 bg-white/75 px-4 py-3 backdrop-blur-2xl">
           <button
             onClick={() => setOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border rgba(0,0,0,0.06) bg-white #6F747A shadow-[0_20px_60px_rgba(15,20,25,0.08)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#111827]/[0.07] bg-white/75 text-[#667381] shadow-[var(--shadow-card)]"
             aria-label="Открыть меню"
           >
             <Menu size={18} />
@@ -42,7 +43,7 @@ export function SuperAdminLayout() {
 
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-warm-main/20 backdrop-blur-sm transition-opacity md:hidden',
+          'fixed inset-0 z-30 bg-[#111827]/25 backdrop-blur-sm transition-opacity md:hidden',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={() => setOpen(false)}
@@ -50,15 +51,15 @@ export function SuperAdminLayout() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r rgba(0,0,0,0.06) bg-white/95  backdrop-blur-xl transition-transform duration-200 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-white/70 bg-white/75 shadow-[var(--shadow-card)] backdrop-blur-2xl transition-transform duration-200 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="border-b rgba(0,0,0,0.06) px-5 py-5">
+        <div className="border-b border-[#111827]/[0.06] px-5 py-5">
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
             <BrandMark size="md" />
             <div className="text-left">
-              <p className="text-xs font-medium #9EA3A8">Superadmin</p>
+              <p className="text-xs font-medium text-[#687381]">Панель владельца</p>
             </div>
           </button>
         </div>
@@ -71,37 +72,39 @@ export function SuperAdminLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-colors',
-                  isActive ? 'rgba(246,184,77,0.12) #C97F10 shadow-[0_20px_60px_rgba(15,20,25,0.08)]' : '#6F747A hover:#F4F5F6 hover:#111418',
+                  'flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium transition-colors',
+                  isActive ? 'bg-[#EAF3FF] text-[#111315] shadow-[inset_0_0_0_1px_rgba(17,24,39,0.06)]' : 'text-[#667381] hover:bg-white/70 hover:text-[#111315]',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? '#C97F10' : '#9EA3A8'} />
+                  <Icon size={16} className={isActive ? 'text-[#111315]' : 'text-[#9AA6B2]'} />
                   <span>{label}</span>
                 </>
               )}
             </NavLink>
           ))}
         </nav>
-        <div className="border-t rgba(0,0,0,0.06) px-3 py-4">
+        <div className="border-t border-[#111827]/[0.06] px-3 py-4">
           <button
-            onClick={() => navigate(ADMIN_BASE_PATH)}
-            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold #6F747A transition hover:#F4F5F6 hover:#111418"
+            onClick={() => window.open(WORKSPACE_ADMIN_LOGIN_PATH, '_blank')}
+            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium text-[#667381] transition hover:bg-white/70 hover:text-[#111315]"
           >
-            <Building2 size={15} className="#9EA3A8" />
-            Открыть кабинет школы
+            <Building2 size={15} className="text-[#9AA6B2]" />
+            Вход админа
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
+              const sessionToken = getAccessSecret('superadmin')
+              await closeSupabaseStaffSession('superadmin', sessionToken)
               clearAccess('superadmin')
               navigate('/')
             }}
-            className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm #E5534B transition hover:#FEF2F2"
+            className="mt-2 flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm text-[#D1433C] transition hover:bg-[#FEF2F2]"
           >
             <LogOut size={15} />
-            Выйти из центра управления
+            Выйти
           </button>
         </div>
       </aside>

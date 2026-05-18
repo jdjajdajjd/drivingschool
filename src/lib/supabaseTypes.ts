@@ -273,6 +273,43 @@ export interface Database {
           school_id: string
         }>
       }
+      public_create_school: {
+        Args: {
+          p_school_id: string
+          p_name: string
+          p_slug: string
+          p_description: string
+          p_phone: string
+          p_email: string
+          p_address: string
+          p_primary_color: string
+          p_logo_url: string
+          p_booking_limit_enabled: boolean
+          p_max_active_bookings_per_student: number
+          p_branch_selection_mode: 'student_choice' | 'fixed_first'
+          p_max_slots_per_booking: number
+          p_default_lesson_duration: number
+          p_enabled_category_codes: string[]
+          p_is_active: boolean
+          p_superadmin_password: string
+        }
+        Returns: Array<Database['public']['Tables']['schools']['Row']>
+      }
+      public_delete_school: {
+        Args: {
+          p_school_id: string
+          p_superadmin_password: string
+        }
+        Returns: Array<{
+          school_id: string
+        }>
+      }
+      public_superadmin_list_schools: {
+        Args: {
+          p_superadmin_password: string
+        }
+        Returns: Array<Database['public']['Tables']['schools']['Row']>
+      }
       public_create_slot: {
         Args: {
           p_slot_id: string

@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { db } from '../../services/storage'
-import { adminCars, createAuditEntry } from '../../services/adminStorage'
+import { adminCars, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { Modal } from '../../components/ui/Modal'
 import type { Car, CarStatus } from '../../types'
+import { filterBranches } from '../../services/staffScope'
+import { assertAdminPermission } from '../../services/adminAccess'
 
 const STATUS_COLORS: Record<CarStatus, { bg: string; text: string; label: string }> = {
   working: { bg: 'bg-green-50', text: 'text-green-600', label: 'Работает' },
@@ -13,7 +15,7 @@ const STATUS_COLORS: Record<CarStatus, { bg: string; text: string; label: string
 }
 
 export function AdminCars() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<CarStatus | 'all'>('all')
   const [showAdd, setShowAdd] = useState(false)
 
@@ -42,7 +44,7 @@ export function AdminCars() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${
-                  filter === f ? 'bg-[#10201F] text-white' : 'text-gray-500 hover:bg-[#E7F6F0] hover:text-[#10201F]'
+                  filter === f ? 'bg-[#111827] text-white' : 'text-gray-500 hover:bg-[#EAF3FF] hover:text-[#111315]'
                 }`}
               >
                 {f === 'all' ? 'Все' : STATUS_COLORS[f].label}
@@ -123,29 +125,46 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
     transmission: 'auto' as 'manual' | 'auto', color: '', year: '',
     insuranceNumber: '', notes: '',
   })
-  const branches = db.branches.bySchool(schoolId)
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  const branches = filterBranches(db.branches.bySchool(schoolId))
 
-  const handleSubmit = () => {
-    if (!form.brand || !form.licensePlate) return
+  const handleSubmit = async () => {
+    const access = assertAdminPermission('vehicles.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+
+    setError('')
+    if (!schoolId) { setError('Школа не найдена.'); return }
+    if (!branches[0]?.id) { setError('Сначала добавьте филиал.'); return }
+    if (!form.brand.trim()) { setError('Укажите марку.'); return }
+    if (!form.licensePlate.trim()) { setError('Укажите госномер.'); return }
     const car: Car = {
       id: `car_${Date.now()}`,
       schoolId,
-      branchId: branches[0]?.id ?? '',
-      brand: form.brand,
-      model: form.model,
-      licensePlate: form.licensePlate.toUpperCase(),
+      branchId: branches[0].id,
+      brand: form.brand.trim(),
+      model: form.model.trim(),
+      licensePlate: form.licensePlate.trim().toUpperCase(),
       category: form.category,
       transmission: form.transmission,
       status: 'working',
-      color: form.color,
+      color: form.color.trim(),
       year: form.year ? parseInt(form.year) : undefined,
-      insuranceNumber: form.insuranceNumber,
-      notes: form.notes,
+      insuranceNumber: form.insuranceNumber.trim(),
+      notes: form.notes.trim(),
       createdAt: new Date().toISOString(),
     }
-    adminCars.upsert(car)
-    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'car_created', 'car', car.id, `Добавлена машина ${car.brand} ${car.licensePlate}`)
-    onClose()
+    try {
+      setPending(true)
+      await adminCars.upsertConfirmed(car)
+      createCurrentStaffAuditEntry(schoolId, 'car_created', 'car', car.id, `Добавлена машина ${car.brand} ${car.licensePlate}`)
+      onClose()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось сохранить машину.')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -189,9 +208,10 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
         <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" placeholder="..." />
       </div>
 
+      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

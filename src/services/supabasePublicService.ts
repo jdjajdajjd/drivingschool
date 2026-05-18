@@ -1,7 +1,7 @@
 import type { Booking, Branch, Instructor, School, Slot, Student, StudentRequest } from '../types'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Database } from '../lib/supabaseTypes'
-import { getAccessPassword } from './accessControl'
+import { getAccessSecret } from './accessControl'
 import { getSupabaseStudentsAdmin } from './supabaseAdminService'
 
 type SchoolRow = Database['public']['Tables']['schools']['Row']
@@ -120,19 +120,7 @@ export interface SupabaseBookingBundle {
   student: Student | null
 }
 
-export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolBundle | null> {
-  const { data: schoolRow, error: schoolError } = await supabase
-    .from('schools')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single()
-
-  if (schoolError) {
-    if (schoolError.code === 'PGRST116') return null
-    throw schoolError
-  }
-
+async function buildSchoolBundle(schoolRow: SchoolRow): Promise<PublicSchoolBundle> {
   const school = mapSchool(schoolRow)
 
   const [branchesResult, instructorsResult, slotsResult] = await Promise.all([
@@ -151,6 +139,37 @@ export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolB
     instructors: instructorsResult.data.map(mapInstructor),
     slots: slotsResult.data.map(mapSlot),
   }
+}
+
+export async function getPublicSchoolBundle(slug: string): Promise<PublicSchoolBundle | null> {
+  const { data: schoolRow, error: schoolError } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single()
+
+  if (schoolError) {
+    if (schoolError.code === 'PGRST116') return null
+    throw schoolError
+  }
+
+  return buildSchoolBundle(schoolRow)
+}
+
+export async function getAdminSchoolBundleById(schoolId: string): Promise<AdminSchoolBundle | null> {
+  const { data: schoolRow, error: schoolError } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('id', schoolId)
+    .single()
+
+  if (schoolError) {
+    if (schoolError.code === 'PGRST116') return null
+    throw schoolError
+  }
+
+  return getAdminSchoolBundleFromPublicBundle(await buildSchoolBundle(schoolRow))
 }
 
 function mapBookingLike(row: any): Booking {
@@ -195,12 +214,16 @@ export async function getAdminSchoolBundle(slug: string): Promise<AdminSchoolBun
   const publicBundle = await getPublicSchoolBundle(slug)
   if (!publicBundle) return null
 
-  const adminPassword = getAccessPassword('admin')
-  if (!adminPassword) throw new Error('Войдите в кабинет школы заново.')
+  return getAdminSchoolBundleFromPublicBundle(publicBundle)
+}
+
+async function getAdminSchoolBundleFromPublicBundle(publicBundle: PublicSchoolBundle): Promise<AdminSchoolBundle> {
+  const adminSecret = getAccessSecret('admin')
+  if (!adminSecret) throw new Error('Войдите в кабинет школы заново.')
 
   const [students, bookingsResult] = await Promise.all([
-    getSupabaseStudentsAdmin(publicBundle.school.id),
-    untypedSupabase.rpc('public_admin_list_bookings', { p_school_id: publicBundle.school.id, p_staff_password: adminPassword }),
+    getSupabaseStudentsAdmin(publicBundle.school.id, { allowBeforeWorkspaceReady: true }),
+    untypedSupabase.rpc('public_admin_list_bookings', { p_school_id: publicBundle.school.id, p_staff_password: adminSecret }),
   ])
 
   if (bookingsResult.error) throw bookingsResult.error
@@ -492,5 +515,21 @@ export async function requestBranchChangeInSupabase(params: {
     p_note: params.note,
   })
 
+  if (error) throw error
+}
+
+export async function updateInstructorBookingInSupabase(params: {
+  token: string
+  bookingId: string
+  status: 'completed' | 'cancelled'
+  comment?: string
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  const { error } = await supabase.rpc('public_update_instructor_booking', {
+    p_token: params.token,
+    p_booking_id: params.bookingId,
+    p_status: params.status,
+    p_comment: params.comment ?? '',
+  })
   if (error) throw error
 }

@@ -29,7 +29,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              className="w-full overflow-hidden"
+              className="flex max-h-[calc(100dvh-32px)] w-full flex-col overflow-hidden"
               style={{
                 background: 'white',
                 border: '1px solid rgba(0,0,0,0.06)',
@@ -59,7 +59,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
                   </button>
                 </div>
               )}
-              <div>{children}</div>
+              <div className="min-h-0 overflow-y-auto">{children}</div>
             </motion.div>
           </div>
         </>

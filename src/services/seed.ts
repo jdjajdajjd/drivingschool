@@ -1,7 +1,8 @@
 import { addDays, format } from 'date-fns'
 import { clearLocalDbWhenSupabaseConfigured, db } from './storage'
-import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule, StudentProgress, LessonDescription } from '../types'
+import type { School, Branch, Instructor, Slot, Booking, Student, SchoolModule, StudentProgress, LessonDescription, Car, Document, GIBDDExam, InternalExam, Payment, ProblemCase, User } from '../types'
 import { saveStudentProgress, saveLessonDescription } from './studentProfile'
+import { adminCars, adminDocuments, adminGIBDDExams, adminInternalExams, adminPayments, adminUsers, problemCases } from './adminStorage'
 
 const SCHOOL_ID = 'school-virazh'
 export const WORKSPACE_SCHOOL_ID = 'school-workspace'
@@ -275,28 +276,8 @@ export function seedIfNeeded(options: { force?: boolean; mode?: 'demo' | 'worksp
   if (!options.force && db.isSeeded()) return
 
   if (options.mode === 'workspace') {
-    // Don't wipe existing workspace data — only seed school record if none exists.
-    // This preserves school settings, branches, instructors, slots across page loads.
-    if (!db.schools.all().length) {
-      db.schools.upsert({
-        id: WORKSPACE_SCHOOL_ID,
-        name: 'Новая автошкола',
-        slug: 'workspace',
-        description: '',
-        phone: '',
-        email: '',
-        address: '',
-        createdAt: new Date().toISOString(),
-        primaryColor: '#1f5b43',
-        bookingLimitEnabled: true,
-        maxActiveBookingsPerStudent: 2,
-        branchSelectionMode: 'student_choice',
-        maxSlotsPerBooking: 1,
-        defaultLessonDuration: 90,
-        enabledCategoryCodes: ['B'],
-        isActive: true,
-      })
-    }
+    // Production workspaces must come from Supabase and be tied to a staff session.
+    // Do not create a local placeholder school here: that can mask a broken tenant binding.
     db.markSeeded()
     return
   }
@@ -318,6 +299,7 @@ export function seedIfNeeded(options: { force?: boolean; mode?: 'demo' | 'worksp
 
   db.markSeeded()
   seedDemoProgress()
+  seedDemoAdminOperations()
 }
 
 const THEORY_TOPICS = [
@@ -380,6 +362,242 @@ function seedDemoProgress(): void {
     }
     saveLessonDescription(desc)
   })
+}
+
+function seedDemoAdminOperations(): void {
+  const cars: Car[] = [
+    {
+      id: 'car-vesta-314',
+      schoolId: SCHOOL_ID,
+      branchId: 'branch-central',
+      instructorId: 'inst-petrov',
+      brand: 'Lada',
+      model: 'Vesta',
+      licensePlate: 'А314ВС777',
+      category: 'B',
+      transmission: 'manual',
+      status: 'working',
+      color: 'белый',
+      year: 2023,
+      insuranceNumber: 'ЕЕЕ 1234567890',
+      insuranceExpiry: format(addDays(new Date(), 42), 'yyyy-MM-dd'),
+      nextServiceDate: format(addDays(new Date(), 18), 'yyyy-MM-dd'),
+      mileage: 48200,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'car-rio-205',
+      schoolId: SCHOOL_ID,
+      branchId: 'branch-north',
+      instructorId: 'inst-smirnova',
+      brand: 'Kia',
+      model: 'Rio',
+      licensePlate: 'О205КМ799',
+      category: 'B',
+      transmission: 'auto',
+      status: 'working',
+      color: 'серебристый',
+      year: 2022,
+      insuranceNumber: 'ЕЕЕ 9876543210',
+      insuranceExpiry: format(addDays(new Date(), 74), 'yyyy-MM-dd'),
+      mileage: 39500,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'car-solaris-781',
+      schoolId: SCHOOL_ID,
+      branchId: 'branch-central',
+      instructorId: 'inst-kozlov',
+      brand: 'Hyundai',
+      model: 'Solaris',
+      licensePlate: 'М781РА797',
+      category: 'B',
+      transmission: 'manual',
+      status: 'maintenance',
+      color: 'синий',
+      year: 2021,
+      nextServiceDate: format(addDays(new Date(), 2), 'yyyy-MM-dd'),
+      notes: 'Плановое ТО перед экзаменационной неделей.',
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const payments: Payment[] = [
+    {
+      id: 'pay-demo-001',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-001',
+      amount: 56000,
+      paidAmount: 56000,
+      remainingAmount: 0,
+      status: 'paid',
+      method: 'card',
+      description: 'Полная оплата курса категории B',
+      paidAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'pay-demo-002',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-002',
+      amount: 56000,
+      paidAmount: 28000,
+      remainingAmount: 28000,
+      status: 'partial',
+      method: 'transfer',
+      description: 'Рассрочка за обучение',
+      dueDate: format(addDays(new Date(), 5), 'yyyy-MM-dd'),
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'pay-demo-003',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-003',
+      amount: 12000,
+      paidAmount: 0,
+      remainingAmount: 12000,
+      status: 'overdue',
+      method: 'receipt',
+      description: 'Дополнительный пакет практики',
+      dueDate: format(addDays(new Date(), -3), 'yyyy-MM-dd'),
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const documents: Document[] = [
+    {
+      id: 'doc-demo-001',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-001',
+      type: 'contract',
+      status: 'verified',
+      fileName: 'dogovor-ivanova.pdf',
+      uploadedAt: format(addDays(new Date(), -20), 'yyyy-MM-dd'),
+      verifiedAt: format(addDays(new Date(), -19), 'yyyy-MM-dd'),
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'doc-demo-002',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-002',
+      type: 'medical_certificate',
+      status: 'pending',
+      fileName: 'med-spravka-sokolov.pdf',
+      uploadedAt: format(addDays(new Date(), -1), 'yyyy-MM-dd'),
+      expiresAt: format(addDays(new Date(), 21), 'yyyy-MM-dd'),
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'doc-demo-003',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-003',
+      type: 'state_fee_receipt',
+      status: 'missing',
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const internalExams: InternalExam[] = [
+    {
+      id: 'exam-int-demo-001',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-001',
+      scheduledDate: format(addDays(new Date(), 4), 'yyyy-MM-dd'),
+      examinerId: 'inst-kozlov',
+      attemptNumber: 1,
+      status: 'scheduled',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'exam-int-demo-002',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-003',
+      scheduledDate: format(addDays(new Date(), -5), 'yyyy-MM-dd'),
+      examinerId: 'inst-petrov',
+      attemptNumber: 1,
+      result: 'passed',
+      status: 'passed',
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const gibddExams: GIBDDExam[] = [
+    {
+      id: 'exam-gibdd-demo-001',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-003',
+      examDate: format(addDays(new Date(), 12), 'yyyy-MM-dd'),
+      attemptNumber: 1,
+      status: 'scheduled',
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const users: User[] = [
+    {
+      id: 'user-director-demo',
+      schoolId: SCHOOL_ID,
+      role: 'director',
+      name: 'Марина Орлова',
+      phone: '+7 916 700-10-10',
+      email: 'director@virazh-school.ru',
+      isActive: true,
+      branchIds: ['branch-central', 'branch-north', 'branch-west'],
+      canViewFinances: true,
+      canManageSettings: true,
+      canDeleteData: true,
+      canManageStaff: true,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'user-branch-demo',
+      schoolId: SCHOOL_ID,
+      role: 'branch_admin',
+      name: 'Ирина Крылова',
+      phone: '+7 916 700-20-20',
+      email: 'north@virazh-school.ru',
+      isActive: true,
+      branchIds: ['branch-north'],
+      canViewFinances: false,
+      canManageSettings: false,
+      canDeleteData: false,
+      canManageStaff: false,
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const cases: ProblemCase[] = [
+    {
+      id: 'problem-demo-001',
+      schoolId: SCHOOL_ID,
+      studentId: 'stu-002',
+      instructorId: 'inst-smirnova',
+      type: 'student_wants_new_instructor',
+      status: 'open',
+      description: 'Ученик просит обсудить смену инструктора после занятия на площадке.',
+      createdById: 'user-branch-demo',
+      assignedToId: 'user-director-demo',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'problem-demo-002',
+      schoolId: SCHOOL_ID,
+      carId: 'car-solaris-781',
+      type: 'car_broken',
+      status: 'in_progress',
+      description: 'Машина отправлена на ТО, свободные окна инструктора перенесены на резервный автомобиль.',
+      createdById: 'user-director-demo',
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  cars.forEach((item) => adminCars.upsert(item))
+  payments.forEach((item) => adminPayments.upsert(item))
+  documents.forEach((item) => adminDocuments.upsert(item))
+  internalExams.forEach((item) => adminInternalExams.upsert(item))
+  gibddExams.forEach((item) => adminGIBDDExams.upsert(item))
+  users.forEach((item) => adminUsers.upsert(item))
+  cases.forEach((item) => problemCases.upsert(item))
 }
 
 export function resetDemoData(): void {

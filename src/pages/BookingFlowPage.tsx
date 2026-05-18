@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft01Icon, CalendarAdd01Icon, Car03Icon, CheckmarkCircle02Icon, Clock01Icon, Refresh03Icon } from '@hugeicons/core-free-icons'
@@ -34,10 +34,12 @@ import {
   releaseSlotLock,
 } from '../services/bookingService'
 import { findAnyStudentProfile, saveStudentProfile } from '../services/studentProfile'
+import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { lessonTypeLabel } from './student/studentUtils'
 import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
 import { formatInstructorName, generateId } from '../lib/utils'
+import { normalizePersonName } from '../lib/nameFormat'
 import { addDays, format, isSameDay, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BrandMark } from '../components/layout/BrandMark'
@@ -332,10 +334,10 @@ function VroomSchedulerPicker({
 
 
 export function BookingFlowPage() {
-  const { slug = 'virazh' } = useParams<{ slug: string }>()
-  const isDemo = slug === 'virazh'
+  const { slug = DEMO_SCHOOL_SLUG } = useParams<{ slug: string }>()
+  const schoolNamespace = findSchoolNamespaceBySlug(slug)
   const isWorkspace = slug === 'workspace'
-  const isLocalSchool = Boolean(findSchoolNamespaceBySlug(slug)) || isDemo || isWorkspace
+  const isLocalSchool = Boolean(schoolNamespace) || isWorkspace
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -577,7 +579,7 @@ export function BookingFlowPage() {
         if (isLocalSchool) throw new Error('Local school uses local booking')
         const result = await createSupabaseBooking({
           schoolId: school.id,
-          studentName: form.name,
+          studentName: normalizePersonName(form.name),
           studentPhone: form.phone,
           slotIds: [bookingSlot.id],
         })
@@ -608,7 +610,7 @@ export function BookingFlowPage() {
           branchId: freshLocalSlot.branchId,
           instructorId: freshLocalSlot.instructorId,
           slotId: freshLocalSlot.id,
-          studentName: form.name,
+          studentName: normalizePersonName(form.name),
           studentPhone: form.phone,
           sessionId: sessionId.current,
         })
@@ -628,14 +630,14 @@ export function BookingFlowPage() {
         branchId: bookingSlot.branchId,
         instructorId: bookingSlot.instructorId,
         studentId: student.id,
-        studentName: form.name.trim(),
+        studentName: normalizePersonName(form.name),
         studentPhone: normalizedPhone,
         studentEmail: form.email.trim(),
         status: 'active',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      db.students.upsert({ ...student, name: form.name.trim(), phone: normalizedPhone, normalizedPhone, email: form.email.trim() })
+      db.students.upsert({ ...student, name: normalizePersonName(form.name), phone: normalizedPhone, normalizedPhone, email: form.email.trim() })
       db.bookings.upsert(booking)
       db.slots.upsert({ ...bookingSlot, status: 'booked', bookingId: booking.id })
       releaseSessionLocks(sessionId.current)
@@ -660,7 +662,7 @@ export function BookingFlowPage() {
       saveStudentProfile(school.id, form, { passwordSet: true, assignedBranchId: selectedBranch?.id, assignedInstructorId: selectedInstructor?.id })
       void updateStudentProfileInSupabase({
         schoolId: school.id,
-        name: form.name,
+        name: normalizePersonName(form.name),
         phone: form.phone,
         email: form.email,
         password: form.password,
@@ -870,7 +872,7 @@ export function BookingFlowPage() {
                   <div className="mt-4 flex items-center gap-3.5">
                     <Avatar
                       initials={selectedInstructor.avatarInitials || formatInstructorName(selectedInstructor.name)[0]}
-                      color={selectedInstructor.avatarColor || '#EFF2FF'}
+                      color={selectedInstructor.avatarColor || '#EEF3F5'}
                       src={getInstructorPhoto(selectedInstructor)}
                       alt={selectedInstructor.name}
                       size="md"
@@ -951,6 +953,7 @@ export function BookingFlowPage() {
                     error={errors.name}
                     placeholder="Анна Иванова"
                     onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))}
+                    onBlur={() => setForm((c) => ({ ...c, name: normalizePersonName(c.name) }))}
                   />
 
                   <PhoneInput
@@ -1105,6 +1108,7 @@ export function BookingFlowPage() {
                     value={form.name}
                     error={errors.name}
                     onChange={(e) => setForm((c) => ({ ...c, name: e.target.value }))}
+                    onBlur={() => setForm((c) => ({ ...c, name: normalizePersonName(c.name) }))}
                   />
                   <PhoneInput
                     label="Телефон"

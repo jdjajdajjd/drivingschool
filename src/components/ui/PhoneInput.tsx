@@ -80,7 +80,7 @@ export function PhoneInput({
   return (
     <div className="flex flex-col gap-2">
       {label && (
-        <label htmlFor={inputId} className="text-[13px] font-extrabold leading-none text-[var(--text-muted,#6F655C)]">
+        <label htmlFor={inputId} className="text-[13px] font-medium leading-none text-[var(--text-muted,#687381)]">
           {label}
         </label>
       )}
@@ -98,9 +98,9 @@ export function PhoneInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         className={cn(
-          'min-h-[52px] w-full rounded-[15px] border border-[var(--border-strong,rgba(0,0,0,0.10))] bg-white px-4 text-[16px] font-extrabold leading-none text-[var(--text,#15120E)] outline-none placeholder:text-[var(--text-soft,#A09488)]',
-          'shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-[border-color,box-shadow,background-color] duration-150',
-          'focus:border-[#1F2BD8] focus:shadow-[0_0_0_4px_rgba(31,43,216,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted,#F2ECE2)] disabled:text-[var(--text-muted,#6F655C)]',
+          'min-h-[52px] w-full rounded-[20px] border border-[var(--border)] bg-[rgba(255,255,255,0.66)] px-4 text-[16px] font-medium leading-none text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]',
+          'shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(20,24,32,0.03)] backdrop-blur-xl transition-[border-color,box-shadow,background-color] duration-150',
+          'focus:border-[rgba(83,97,106,0.28)] focus:bg-[rgba(255,255,255,0.9)] focus:shadow-[0_0_0_4px_rgba(129,153,173,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] disabled:text-[var(--text-muted)]',
           error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           disabled && 'opacity-70',
         )}
@@ -108,7 +108,7 @@ export function PhoneInput({
       />
       {error && <p className="text-[12px] font-medium text-[#E5534B]">{error}</p>}
       {!disabled && !error && isComplete && (
-        <p className="text-[12px] font-bold text-[#15803D]">Номер введён верно</p>
+        <p className="text-[12px] font-medium text-[#247A4B]">Номер введён верно</p>
       )}
     </div>
   )

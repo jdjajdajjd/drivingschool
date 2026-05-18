@@ -1,5 +1,5 @@
 import { addDays, isAfter, subDays } from 'date-fns'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import { generateId } from '../lib/utils'
 import type { School, SchoolOverview } from '../types'
 import { DRIVING_CATEGORIES } from './drivingCategories'
@@ -8,6 +8,8 @@ import { resetDemoData as resetSeedData } from './seed'
 import { db } from './storage'
 import { validateDataIntegrity } from './integrityService'
 import { updateSupabaseSchoolSettings } from './supabaseAdminService'
+import { assertAdminPermission } from './adminAccess'
+import { purgeAdminDataForSchool } from './adminStorage'
 
 export function getSchools(): School[] {
   return [...db.schools.all()].sort((left, right) => left.name.localeCompare(right.name, 'ru'))
@@ -19,6 +21,14 @@ export function getSchoolById(schoolId: string): School | null {
 
 export function getSchoolBySlug(slug: string): School | null {
   return db.schools.bySlug(slug)
+}
+
+export function getCurrentAdminSchool(): School | null {
+  return db.schools.currentAdmin() ?? null
+}
+
+export function getCurrentAdminSchoolId(): string {
+  return getCurrentAdminSchool()?.id ?? ''
 }
 
 export function validateSchoolSlug(slug: string): boolean {
@@ -55,7 +65,7 @@ export interface SchoolInput {
   isActive?: boolean
 }
 
-export function createSchool(input: SchoolInput): { ok: boolean; school?: School; error?: string } {
+export function createSchool(input: SchoolInput, options: { persist?: boolean } = {}): { ok: boolean; school?: School; error?: string } {
   const name = input.name.trim()
   const slug = input.slug.trim()
 
@@ -95,7 +105,9 @@ export function createSchool(input: SchoolInput): { ok: boolean; school?: School
     isActive: input.isActive ?? true,
   }
 
-  db.schools.upsert(school)
+  if (options.persist !== false) {
+    db.schools.upsert(school)
+  }
   return { ok: true, school }
 }
 
@@ -176,7 +188,28 @@ export function updateSchool(schoolId: string, patch: Partial<SchoolInput>): { o
   return { ok: true, school: updated }
 }
 
+export function deleteSchoolLocalCascade(schoolId: string): { ok: boolean; error?: string } {
+  const school = db.schools.byId(schoolId)
+  if (!school) return { ok: false, error: 'Автошкола не найдена.' }
+  if (school.slug === 'virazh' || school.id === 'school-virazh') {
+    return { ok: false, error: 'Вираж нельзя удалить.' }
+  }
+
+  db.bookings.bySchool(schoolId).forEach((item) => db.bookings.remove(item.id))
+  db.slots.bySchool(schoolId).forEach((item) => db.slots.remove(item.id))
+  db.instructors.bySchool(schoolId).forEach((item) => db.instructors.remove(item.id))
+  db.branches.bySchool(schoolId).forEach((item) => db.branches.remove(item.id))
+  db.students.bySchool(schoolId).forEach((item) => db.students.remove(item.id))
+  db.schoolModules.bySchool(schoolId).forEach((item) => db.schoolModules.remove(item.id))
+  purgeAdminDataForSchool(schoolId)
+  db.schools.remove(schoolId)
+  return { ok: true }
+}
+
 export async function updateSchoolConfirmed(schoolId: string, patch: Partial<SchoolInput>): Promise<{ ok: boolean; school?: School; error?: string }> {
+  const access = assertAdminPermission('settings.manage')
+  if (!access.ok) return access
+
   const school = db.schools.byId(schoolId)
   if (!school) {
     return { ok: false, error: 'Автошкола не найдена.' }
@@ -187,7 +220,7 @@ export async function updateSchoolConfirmed(schoolId: string, patch: Partial<Sch
     return result
   }
 
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     try {
       await updateSupabaseSchoolSettings(schoolId, {
         name: result.school.name,

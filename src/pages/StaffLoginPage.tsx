@@ -1,16 +1,24 @@
-import { FormEvent, useState } from 'react'
-import { ArrowRight01Icon, LockKeyIcon, Shield01Icon } from '@hugeicons/core-free-icons'
+import { FormEvent, useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { ArrowRight, LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { BrandMark } from '../components/layout/BrandMark'
 import { Button } from '../components/ui/Button'
-import { createHugeIcon } from '../components/ui/HugeIcon'
 import { Input } from '../components/ui/Input'
-import { AccessRole, getAccessConfig, grantAccess, isAccessConfigured, isAccessGranted } from '../services/accessControl'
+import {
+  AccessRole,
+  ADMIN_BASE_PATH,
+  DEMO_ADMIN_BASE_PATH,
+  grantAccess,
+  isAccessConfigured,
+  isAccessGranted,
+  getLegacyAccessConfig,
+  isLegacyAccessConfigured,
+  SUPERADMIN_BASE_PATH,
+  setWorkspaceStaffContext,
+} from '../services/accessControl'
+import { openSupabaseStaffSession } from '../services/staffSessionService'
 import { setDataNamespace } from '../services/storage'
-
-const ArrowRight = createHugeIcon(ArrowRight01Icon)
-const LockKeyhole = createHugeIcon(LockKeyIcon)
-const ShieldCheck = createHugeIcon(Shield01Icon)
+import { syncSupabaseSchoolToLocalDb } from '../services/supabaseSync'
 
 interface StaffLoginPageProps {
   role: AccessRole
@@ -20,120 +28,189 @@ interface StaffLoginPageProps {
 const copy = {
   admin: {
     title: 'Кабинет школы',
-    subtitle: 'Войдите, чтобы управлять расписанием, учениками, оплатами и работой инструкторов.',
-    badge: 'Автошкола «Вираж»',
-    icon: LockKeyhole,
+    subtitle: 'Управление расписанием, учениками, оплатами и работой инструкторов.',
+    badge: 'Автошкола',
+    Icon: LockKeyhole,
   },
   superadmin: {
-    title: 'Центр управления vroom',
-    subtitle: 'Служебный доступ для команды платформы.',
-    badge: 'vroom',
-    icon: ShieldCheck,
+    title: 'Операторский вход',
+    subtitle: 'Внутреннее управление школами, доступами и рабочими пространствами vroom.',
+    badge: 'закрытый доступ',
+    Icon: ShieldCheck,
   },
 }
 
 export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
   const navigate = useNavigate()
-  const config = getAccessConfig(role)
-  const accessConfigured = isAccessConfigured(role)
-  const Icon = copy[role].icon
+  const { Icon } = copy[role]
+  const isDemoAdmin = role === 'admin' && mode === 'demo'
+  const remoteAccessReady = isAccessConfigured(role, mode)
+  const legacyAccess = getLegacyAccessConfig(role)
+  const redirect = role === 'admin' ? (mode === 'demo' ? DEMO_ADMIN_BASE_PATH : ADMIN_BASE_PATH) : SUPERADMIN_BASE_PATH
+
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  setDataNamespace(mode)
+  useEffect(() => {
+    setDataNamespace(mode)
+  }, [mode])
 
   if (isAccessGranted(role)) {
-    return <Navigate to={config.redirect} replace />
+    return <Navigate to={redirect} replace />
   }
 
   function openDemo(): void {
-    if (role !== 'admin' || !accessConfigured) return
-    setDataNamespace(mode)
-    grantAccess(role, config.password)
-    navigate(config.redirect, { replace: true })
+    if (!isDemoAdmin) return
+    setDataNamespace('demo')
+    grantAccess(role)
+    navigate(redirect, { replace: true })
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!accessConfigured) {
-      setError('Доступ не настроен. Добавьте логин и пароль в переменные окружения.')
+    setError('')
+
+    if (isDemoAdmin) {
+      openDemo()
       return
     }
-    if (login.trim() !== config.login || password !== config.password) {
-      setError('Проверьте логин и пароль.')
+
+    if (!remoteAccessReady) {
+      setError('Боевой вход пока не подключён к Supabase.')
       return
     }
-    setDataNamespace(mode)
-    grantAccess(role, password)
-    navigate(config.redirect, { replace: true })
+
+    if (!login.trim() || !password.trim()) {
+      setError('Введите логин и пароль.')
+      return
+    }
+
+    try {
+      setPending(true)
+      setDataNamespace(mode)
+      if (isLegacyAccessConfigured(role) && login.trim() === legacyAccess.login && password.trim() === legacyAccess.password) {
+        grantAccess(role, password.trim())
+      } else {
+        const session = await openSupabaseStaffSession(role, login, password.trim())
+        if (role === 'admin' && session.staffContext) {
+          setWorkspaceStaffContext(session.staffContext)
+        }
+        grantAccess(role, session.sessionToken)
+        if (role === 'admin' && session.staffContext?.schoolId) {
+          await syncSupabaseSchoolToLocalDb({ schoolId: session.staffContext.schoolId })
+        }
+      }
+      navigate(redirect, { replace: true })
+    } catch (authError) {
+      setError(authError instanceof Error && authError.message.includes('Staff access denied') ? 'Логин или пароль не совпадают. Проверьте логин из карточки школы и последний сохранённый пароль.' : authError instanceof Error ? authError.message : 'Не удалось войти. Проверьте логин и пароль.')
+    } finally {
+      setPending(false)
+    }
   }
 
-  const isWorkspaceDemo = role === 'admin' && mode === 'workspace'
+  const helperText = isDemoAdmin
+    ? 'Это безопасная демо-админка. Её можно показывать, переключать и сбрасывать без риска для рабочих данных.'
+    : role === 'admin'
+      ? 'Это рабочий вход для реальной автошколы. После входа откроется живой кабинет школы.'
+      : copy[role].subtitle
 
   return (
-    <div className="min-h-dvh bg-[#F6F7FA] px-4 py-4 text-[#050609]">
+    <div className="min-h-dvh bg-[#F3F7FB] px-4 py-4 text-[#111827]">
       <main className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-[430px] items-center">
-        <form onSubmit={submit} className="w-full rounded-[28px] border border-[#EBECF0] bg-white p-5 shadow-[0_18px_48px_rgba(15,20,25,0.07)] sm:p-6">
+        <form
+          onSubmit={submit}
+          className="w-full rounded-[30px] border border-white/70 bg-white/72 p-5 shadow-[0_20px_58px_rgba(32,45,62,0.08)] backdrop-blur-2xl sm:p-6"
+        >
           <BrandMark size="md" className="mb-6" />
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-[16px] bg-[#EEF0FA] text-[#1F2BD8]">
-                <Icon size={24} />
-              </span>
-              <div>
-                <p className="text-[12px] font-black uppercase leading-4 tracking-[0.08em] text-[#A5A7AE]">{copy[role].badge}</p>
-                <h1 className="mt-1 text-[30px] font-black leading-[1.02] tracking-[-0.03em] text-[#050609]">
-                  {copy[role].title}
-                </h1>
-              </div>
+
+          <div className="flex items-start gap-3">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#EAF4FF] text-[#315A7C]">
+              <Icon size={23} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] font-normal leading-4 text-[#687381]">
+                {isDemoAdmin ? 'Демо автошколы' : copy[role].badge}
+              </p>
+              <h1 className="mt-1 text-[30px] font-semibold leading-[1.04] text-[#111827]">
+                {copy[role].title}
+              </h1>
             </div>
           </div>
 
-          <p className="mt-4 text-[15px] font-bold leading-6 text-[#8B8D94]">
-            {isWorkspaceDemo
-              ? accessConfigured
-                ? 'Можно сразу открыть кабинет и посмотреть день, учеников и оплаты.'
-                : 'Доступ школы нужно настроить через переменные окружения перед запуском.'
-              : copy[role].subtitle}
-          </p>
+          <p className="mt-5 text-[15px] font-normal leading-6 text-[#687381]">{helperText}</p>
 
-          <div className="mt-6 space-y-4">
-            <Input
-              label="Логин"
-              value={login}
-              onChange={(event) => {
-                setLogin(event.target.value)
-                setError('')
-              }}
-              placeholder="Введите логин"
-              autoComplete="username"
-            />
-            <Input
-              label="Пароль"
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value)
-                setError('')
-              }}
-              placeholder="Введите пароль"
-              autoComplete="current-password"
-              error={error}
-            />
-          </div>
-
-          {role === 'admin' && accessConfigured ? (
-            <Button type="button" size="lg" className="mt-6 w-full min-h-[56px] rounded-[17px] bg-[#1F2BD8] text-[16px] shadow-[0_16px_34px_rgba(31,43,216,0.20)] hover:bg-[#1722C2]" onClick={openDemo}>
-              Открыть кабинет школы
+          {isDemoAdmin ? (
+            <Button
+              type="button"
+              size="lg"
+              className="mt-6 w-full min-h-[56px] rounded-full text-[16px]"
+              onClick={openDemo}
+            >
+              Открыть демо-админку
               <ArrowRight size={20} />
             </Button>
-          ) : null}
+          ) : (
+            <>
+              <div className="mt-6 space-y-4">
+                <Input
+                  label="Логин"
+                  value={login}
+                  onChange={(event) => {
+                    setLogin(event.target.value)
+                    setError('')
+                  }}
+                  placeholder="Введите логин"
+                  autoComplete="username"
+                />
+                <Input
+                  label="Пароль"
+                  type="password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value)
+                    setError('')
+                  }}
+                  placeholder="Введите пароль"
+                  autoComplete="current-password"
+                  error={error}
+                />
+              </div>
 
-          <Button type="submit" size="lg" variant={role === 'admin' ? 'secondary' : 'primary'} className="mt-3 w-full min-h-[56px] rounded-[17px] text-[16px]">
-            Войти с логином
-            <ArrowRight size={20} />
-          </Button>
+              {role === 'admin' ? (
+                <p className="mt-3 text-[13px] font-normal leading-5 text-[#7A8794]">
+                  Демо и рабочая школа разделены. Этот вход открывает только рабочий кабинет школы.
+                </p>
+              ) : null}
+
+              <Button
+                type="submit"
+                size="lg"
+                variant={role === 'admin' ? 'secondary' : 'primary'}
+                className="mt-6 w-full min-h-[56px] rounded-full text-[16px]"
+                disabled={pending}
+              >
+                {pending ? (
+                  <>
+                    <LoaderCircle className="animate-spin" size={20} />
+                    Входим…
+                  </>
+                ) : (
+                  <>
+                    Войти
+                    <ArrowRight size={20} />
+                  </>
+                )}
+              </Button>
+
+              {error ? (
+                <p className="mt-3 rounded-[18px] border border-[#F5D0D0] bg-[#FFF6F6] px-4 py-3 text-[13px] font-normal text-[#B42318]">
+                  {error}
+                </p>
+              ) : null}
+            </>
+          )}
         </form>
       </main>
     </div>

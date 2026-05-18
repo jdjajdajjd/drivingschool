@@ -1,4 +1,4 @@
-import { cn } from '../../lib/utils'
+﻿import { cn } from '../../lib/utils'
 
 type LoaderTone = 'student' | 'admin' | 'dark'
 
@@ -8,15 +8,15 @@ interface LoaderProps {
 }
 
 const toneClass: Record<LoaderTone, string> = {
-  student: 'border-[#1F2BD8]',
-  admin: 'border-[#0E7C66]',
-  dark: 'border-[#10201F]',
+  student: 'border-[#35485A]',
+  admin: 'border-[#111827]',
+  dark: 'border-[#111827]',
 }
 
 const screenTone: Record<LoaderTone, { bg: string; text: string; soft: string }> = {
-  student: { bg: 'bg-[#F6F7FA]', text: 'text-[#1F2BD8]', soft: 'text-[#8B8D94]' },
-  admin: { bg: 'bg-[var(--admin-bg,#EEF4F2)]', text: 'text-[#0E7C66]', soft: 'text-[#5D6D70]' },
-  dark: { bg: 'bg-[#F6F7FA]', text: 'text-[#10201F]', soft: 'text-[#667085]' },
+  student: { bg: 'bg-[#F3F7FB]', text: 'text-[#15202B]', soft: 'text-[#6D7A88]' },
+  admin: { bg: 'bg-[var(--admin-bg,#F3F7FB)]', text: 'text-[#111315]', soft: 'text-[#687381]' },
+  dark: { bg: 'bg-[#F3F7FB]', text: 'text-[#111315]', soft: 'text-[#667085]' },
 }
 
 export default function ClassicLoader({ className, tone = 'student' }: LoaderProps) {
@@ -34,8 +34,8 @@ export default function ClassicLoader({ className, tone = 'student' }: LoaderPro
 }
 
 export function ConcentricLoader({ className, tone = 'student' }: LoaderProps) {
-  const outer = tone === 'admin' ? 'border-t-[#0E7C66] text-[#0E7C66]' : 'border-t-[#1F2BD8] text-[#1F2BD8]'
-  const inner = tone === 'admin' ? 'border-t-[#10201F]' : 'border-t-[#8B91F0]'
+  const outer = tone === 'admin' ? 'border-t-[#111827] text-[#111827]' : 'border-t-[#111315] text-[#111315]'
+  const inner = tone === 'admin' ? 'border-t-[#687381]' : 'border-t-[#8B91F0]'
 
   return (
     <div className={cn('flex w-full flex-col items-center justify-center gap-4', className)} role="status" aria-label="Загрузка">
@@ -55,10 +55,10 @@ export function LoadingScreen({
 
   return (
     <div className={cn('flex min-h-dvh items-center justify-center px-4', colors.bg, className)}>
-      <div className="flex flex-col items-center gap-3 text-center">
+      <div className="flex flex-col items-center rounded-[28px] border border-white/70 bg-[rgba(255,255,255,0.62)] px-7 py-6 text-center shadow-[0_18px_46px_rgba(32,45,62,0.07)] backdrop-blur-2xl">
         <ClassicLoader tone={tone} />
-        <p className={cn('text-[13px] font-black uppercase tracking-[0.08em]', colors.text)}>{label}</p>
-        <p className={cn('text-[12px] font-bold', colors.soft)}>Подготавливаем экран</p>
+        <p className={cn('mt-4 text-[15px] font-medium leading-5', colors.text)}>{label}</p>
+        <p className={cn('mt-1 text-[13px] font-normal leading-5', colors.soft)}>Подготавливаем экран</p>
       </div>
     </div>
   )
@@ -67,10 +67,10 @@ export function LoadingScreen({
 export function AdminContentLoader() {
   return (
     <div className="flex min-h-[calc(100dvh-64px)] items-center justify-center px-4 py-10">
-      <div className="rounded-[16px] border border-[var(--admin-line,#D7E3DF)] bg-white px-8 py-7 shadow-[0_12px_34px_rgba(16,32,31,0.07)]">
+      <div className="rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.76)] px-8 py-7 shadow-[var(--shadow-card)] backdrop-blur-2xl">
         <div className="flex flex-col items-center gap-3 text-center">
           <ConcentricLoader tone="admin" />
-          <p className="text-[13px] font-black uppercase tracking-[0.08em] text-[#0E7C66]">Загрузка раздела</p>
+          <p className="text-[14px] font-medium text-[#111315]">Загрузка раздела</p>
         </div>
       </div>
     </div>

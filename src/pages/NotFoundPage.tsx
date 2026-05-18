@@ -4,6 +4,7 @@ import { PublicNav } from '../components/layout/PublicNav'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { createHugeIcon } from '../components/ui/HugeIcon'
+import { DEMO_SCHOOL_PATH } from '../services/schoolRoutes'
 
 const Compass = createHugeIcon(Compass01Icon)
 const Home = createHugeIcon(Home05Icon)
@@ -32,7 +33,7 @@ export function NotFoundPage() {
                 <Home size={16} />
                 На главную
               </Button>
-              <Button variant="secondary" onClick={() => navigate('/school/virazh')}>
+              <Button variant="secondary" onClick={() => navigate(DEMO_SCHOOL_PATH)}>
                 Открыть автошколу
               </Button>
             </div>

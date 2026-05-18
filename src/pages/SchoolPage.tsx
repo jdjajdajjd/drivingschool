@@ -6,6 +6,7 @@ import { LoadingScreen } from '../components/ui/loader'
 import { StateView } from '../components/ui/StateView'
 import { findSchoolNamespaceBySlug } from '../services/storage'
 import { loadPublicSchoolData, type PublicSchoolData } from '../services/publicSchoolData'
+import { ADMIN_BASE_PATH, hasWorkspaceAdminAccessForSchool } from '../services/accessControl'
 import type { School } from '../types'
 
 void React
@@ -24,9 +25,10 @@ export function SchoolPage() {
 
   const school = data?.school ?? null
   const categories = school?.enabledCategoryCodes?.length ? school.enabledCategoryCodes : ['B']
+  const hasAdminSession = school ? hasWorkspaceAdminAccessForSchool(school.id) : false
 
   useEffect(() => {
-    const isLocalSchool = Boolean(findSchoolNamespaceBySlug(slug)) || slug === 'virazh' || slug === 'workspace'
+    const isLocalSchool = Boolean(findSchoolNamespaceBySlug(slug))
     setLoading(true)
     void loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
       .then((loaded) => setData(loaded))
@@ -37,7 +39,7 @@ export function SchoolPage() {
 
   if (!school) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F6F7FA] px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--page-bg)] px-4">
         <StateView
           kind="error"
           title="Автошкола не найдена"
@@ -49,81 +51,75 @@ export function SchoolPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#F6F7FA] text-[#050609]">
+    <div className="student-lite min-h-dvh bg-[var(--page-bg)] text-[var(--text)]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-4 pb-6 pt-4">
-        <header className="flex items-center justify-between rounded-[24px] border border-[#EBECF0] bg-white px-3 py-3 shadow-[0_12px_34px_rgba(15,20,25,0.06)]">
+        <header className="flex items-center justify-between rounded-[24px] border border-white/55 bg-[rgba(255,255,255,0.7)] px-3 py-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
           <button className="flex min-w-0 items-center gap-2.5 text-left" onClick={() => navigate('/')}>
             <SchoolLogo school={school} />
             <span className="min-w-0">
-              <span className="block max-w-[190px] truncate text-[15px] font-black leading-4 text-[#050609]">{school.name}</span>
-              <span className="block text-[12px] font-bold leading-4 text-[#8B8D94]">vroom.today</span>
+              <span className="block max-w-[190px] truncate text-[15px] font-semibold leading-4 text-[var(--text)]">{school.name}</span>
+              <span className="block text-[12px] font-medium leading-4 text-[var(--text-muted)]">vroom.today</span>
             </span>
           </button>
           <button
-            className="min-h-10 rounded-[14px] bg-[#EEF0FA] px-3 text-[13px] font-extrabold text-[#1F2BD8] active:scale-[0.97]"
-            onClick={() => navigate(`/school/${school.slug}/login`)}
+            className="min-h-10 rounded-full border border-white/60 bg-[rgba(255,255,255,0.66)] px-4 text-[13px] font-semibold text-[var(--text)] shadow-[0_6px_20px_rgba(20,24,32,0.04)] backdrop-blur-xl active:scale-[0.97]"
+            onClick={() => navigate(hasAdminSession ? ADMIN_BASE_PATH : `/school/${school.slug}/login`)}
           >
-            Войти
+            {hasAdminSession ? 'В админку' : 'Войти'}
           </button>
         </header>
 
         <section className="flex flex-1 flex-col justify-center py-6">
-          <article className="rounded-[28px] border border-[#EBECF0] bg-white p-5 shadow-[0_18px_48px_rgba(15,20,25,0.07)]">
+          <article className="rounded-[28px] border border-white/60 bg-[rgba(255,255,255,0.76)] p-5 shadow-[var(--shadow-card)] backdrop-blur-2xl">
             <SchoolLogo school={school} large />
-            <p className="mt-5 text-[12px] font-extrabold uppercase leading-4 text-[#B8BABF]">автошкола</p>
-            <h1 className="mt-1 text-[32px] font-black leading-[1.02] tracking-[-0.04em] text-[#050609]">{school.name}</h1>
+            <p className="mt-5 text-[11px] font-semibold uppercase leading-4 tracking-[0.08em] text-[var(--text-soft)]">автошкола</p>
+            <h1 className="mt-1 text-[29px] font-semibold leading-[1.04] text-[var(--text)]">{school.name}</h1>
             {school.description ? (
-              <p className="mt-3 text-[15px] font-semibold leading-6 text-[#8B8D94]">{school.description}</p>
+              <p className="mt-3 max-w-[32ch] text-[15px] font-medium leading-6 text-[var(--text-muted)]">{school.description}</p>
             ) : (
-              <p className="mt-3 text-[15px] font-semibold leading-6 text-[#8B8D94]">Личный кабинет ученика, занятия и документы.</p>
+              <p className="mt-3 max-w-[32ch] text-[15px] font-medium leading-6 text-[var(--text-muted)]">Личный кабинет ученика, занятия и документы.</p>
             )}
 
             <div className="mt-5 grid grid-cols-3 gap-2">
               {categories.slice(0, 3).map((category) => (
-                <div key={category} className="rounded-[18px] bg-[#F5F6FA] px-3 py-3">
-                  <p className="text-[11px] font-bold uppercase text-[#8B8D94]">категория</p>
-                  <p className="mt-1 text-[22px] font-black leading-none text-[#050609]">{category}</p>
+                <div key={category} className="rounded-[18px] border border-white/60 bg-[rgba(255,255,255,0.56)] px-3 py-3 backdrop-blur-xl">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-soft)]">категория</p>
+                  <p className="mt-1 text-[20px] font-semibold leading-none text-[var(--text)]">{category}</p>
                 </div>
               ))}
             </div>
 
             <div className="mt-6 grid gap-2.5">
               <button
-                className="flex min-h-[62px] w-full items-center gap-3 rounded-[20px] bg-[#1F2BD8] px-4 text-left text-white shadow-[0_14px_30px_rgba(31,43,216,0.20)] active:scale-[0.99]"
+                className="flex min-h-[60px] w-full items-center gap-3 rounded-full bg-[var(--accent)] px-4 text-left text-white shadow-[var(--shadow-btn)] active:scale-[0.99]"
                 onClick={() => navigate(`/school/${school.slug}/login`)}
               >
                 <User size={22} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[16px] font-black leading-5">Открыть личный кабинет</span>
-                  <span className="mt-0.5 block text-[12px] font-semibold text-white/76">расписание и занятия внутри</span>
+                  <span className="block text-[15px] font-semibold leading-5">Открыть личный кабинет</span>
+                  <span className="mt-0.5 block text-[12px] font-medium text-white/72">расписание и занятия внутри</span>
                 </span>
                 <ArrowRight size={19} />
-              </button>
-              <button
-                className="flex min-h-[54px] w-full items-center justify-center rounded-[18px] bg-[#EEF0FA] px-4 text-[14px] font-extrabold text-[#1F2BD8] active:scale-[0.99]"
-                onClick={() => navigate(`/school/${school.slug}/register`)}
-              >
-                Создать доступ
               </button>
             </div>
           </article>
 
           <section className="mt-3 space-y-2">
             {school.phone ? (
-              <a href={`tel:${school.phone.replace(/\D/g, '')}`} className="flex min-h-[58px] items-center gap-3 rounded-[22px] border border-[#EBECF0] bg-white px-4 text-left">
-                <Phone className="text-[#1F2BD8]" size={21} />
+              <a href={`tel:${school.phone.replace(/\D/g, '')}`} className="flex min-h-[58px] items-center gap-3 rounded-[22px] border border-white/60 bg-[rgba(255,255,255,0.72)] px-4 text-left shadow-[0_6px_20px_rgba(20,24,32,0.03)] backdrop-blur-xl">
+                <Phone className="text-[var(--text)]" size={21} />
                 <span className="min-w-0">
-                  <span className="block text-[13px] font-bold leading-4 text-[#8B8D94]">телефон</span>
-                  <span className="block text-[15px] font-black leading-5 text-[#050609]">{school.phone}</span>
+                  <span className="block text-[12px] font-medium leading-4 text-[var(--text-muted)]">телефон</span>
+                  <span className="block text-[15px] font-semibold leading-5 text-[var(--text)]">{school.phone}</span>
                 </span>
               </a>
             ) : null}
             {school.address ? (
-              <div className="flex min-h-[58px] items-center gap-3 rounded-[22px] border border-[#EBECF0] bg-white px-4 text-left">
-                <Location className="text-[#1F2BD8]" size={21} />
+              <div className="flex min-h-[58px] items-center gap-3 rounded-[22px] border border-white/60 bg-[rgba(255,255,255,0.72)] px-4 text-left shadow-[0_6px_20px_rgba(20,24,32,0.03)] backdrop-blur-xl">
+                <Location className="text-[var(--text)]" size={21} />
                 <span className="min-w-0">
-                  <span className="block text-[13px] font-bold leading-4 text-[#8B8D94]">адрес</span>
-                  <span className="block truncate text-[15px] font-black leading-5 text-[#050609]">{school.address}</span>
+                  <span className="block text-[12px] font-medium leading-4 text-[var(--text-muted)]">адрес</span>
+                  <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--text)]">{school.address}</span>
                 </span>
               </div>
             ) : null}
@@ -135,10 +131,10 @@ export function SchoolPage() {
 }
 
 function SchoolLogo({ school, large = false }: { school: School; large?: boolean }) {
-  const size = large ? 'h-16 w-16 rounded-[20px]' : 'h-11 w-11 rounded-[15px]'
+  const size = large ? 'h-14 w-14 rounded-[18px]' : 'h-11 w-11 rounded-[15px]'
 
   return (
-    <span className={`${size} grid shrink-0 place-items-center overflow-hidden bg-[#050609] text-white`}>
+    <span className={`${size} grid shrink-0 place-items-center overflow-hidden bg-[linear-gradient(180deg,#1A1E23_0%,#101215_100%)] text-white shadow-[0_10px_28px_rgba(17,19,21,0.18)]`}>
       {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={large ? 28 : 22} />}
     </span>
   )

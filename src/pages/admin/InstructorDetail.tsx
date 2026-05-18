@@ -3,15 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { format, eachDayOfInterval, startOfWeek, addDays } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminCars } from '../../services/adminStorage'
+import { adminCars, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Instructor, Transmission } from '../../types'
+import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
+import { filterBookings, filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
+import { normalizePersonName } from '../../lib/nameFormat'
+import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 
 export function AdminInstructorDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [showEdit, setShowEdit] = useState(false)
 
@@ -19,10 +23,12 @@ export function AdminInstructorDetail() {
     if (!school || !id) return null
     const instructor = db.instructors.byId(id)
     if (!instructor) return null
+    if (instructor.schoolId !== school.id) return null
+    if (filterInstructors([instructor]).length === 0) return null
     const car = instructor.car ? adminCars.all(school.id).find((c) => c.id === instructor.car) : null
     const branch = db.branches.byId(instructor.branchId)
-    const slots = db.slots.byInstructor(instructor.id)
-    const bookings = db.bookings.byInstructor(instructor.id)
+    const slots = filterSlots(db.slots.byInstructor(instructor.id))
+    const bookings = filterBookings(db.bookings.byInstructor(instructor.id))
     const students = [...new Set(bookings.map((b) => b.studentId))]
     const weekDays = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) })
     const weekSlots = weekDays.map((day) => {
@@ -43,6 +49,10 @@ export function AdminInstructorDetail() {
   }
 
   const { instructor, car, branch, students, weekSlots, weekDays, weekBooked, weekAvailable, totalCompleted, totalNoShow } = data
+  const canManageInstructors = canUseAdminPermission('branches.manage')
+  const copyPhone = () => {
+    void navigator.clipboard?.writeText(instructor.phone)
+  }
 
   return (
     <div className="overflow-y-auto">
@@ -61,9 +71,17 @@ export function AdminInstructorDetail() {
             <h1 className="text-[22px] font-black text-gray-900">{instructor.name}</h1>
             <p className="text-[13px] font-semibold text-gray-400">{instructor.phone}</p>
           </div>
-          <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
-            Редактировать
+          <button onClick={copyPhone} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            Копировать телефон
           </button>
+          <a href={`tel:${instructor.phone}`} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            Звонок
+          </a>
+          {canManageInstructors ? (
+            <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+              Редактировать
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -178,7 +196,7 @@ export function AdminInstructorDetail() {
 }
 
 function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: string; instructor: Instructor; onClose: () => void }) {
-  const branches = db.branches.bySchool(schoolId)
+  const branches = filterBranches(db.branches.bySchool(schoolId))
   const [name, setName] = useState(instructor.name)
   const [phone, setPhone] = useState(instructor.phone)
   const [email, setEmail] = useState(instructor.email)
@@ -188,17 +206,20 @@ function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: strin
   const [experience, setExperience] = useState(String(instructor.experience))
 
   const handleSubmit = () => {
-    if (!name.trim() || !phone.trim() || !branchId) return
-    const initials = name
-      .trim()
+    const access = assertAdminPermission('branches.manage')
+    if (!access.ok) return
+
+    const normalizedName = normalizePersonName(name)
+    if (!normalizedName || !phone.trim() || !branchId) return
+    const initials = normalizedName
       .split(/\s+/)
       .map((part) => part[0])
       .join('')
       .slice(0, 2)
       .toUpperCase() || instructor.avatarInitials
-    db.instructors.upsert({
+    const nextInstructor = {
       ...instructor,
-      name: name.trim(),
+      name: normalizedName,
       phone: phone.trim(),
       email: email.trim(),
       branchId,
@@ -206,7 +227,9 @@ function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: strin
       transmission,
       experience: Number(experience) || 0,
       avatarInitials: initials,
-    })
+    }
+    db.instructors.upsert(nextInstructor)
+    createCurrentStaffAuditEntry(schoolId, 'instructor_updated', 'instructor', instructor.id, `Обновлен инструктор ${nextInstructor.name}`)
     onClose()
   }
 
@@ -214,7 +237,7 @@ function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: strin
     <div className="space-y-4 p-5">
       <input value={name} onChange={(event) => setName(event.target.value)} className="v-admin-input w-full" placeholder="ФИО" />
       <div className="grid gap-3 sm:grid-cols-2">
-        <input value={phone} onChange={(event) => setPhone(event.target.value)} className="v-admin-input w-full" placeholder="Телефон" />
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setPhone((value) => formatRussianPhoneInput(value))} className="v-admin-input w-full" placeholder="Телефон" />
         <input value={email} onChange={(event) => setEmail(event.target.value)} className="v-admin-input w-full" placeholder="Email" />
       </div>
       <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">

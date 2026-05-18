@@ -3,7 +3,8 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { CreditCard, Plus } from 'lucide-react'
 import { db } from '../../services/storage'
-import { adminPayments, createAuditEntry } from '../../services/adminStorage'
+import { adminPayments, createCurrentStaffAuditEntry } from '../../services/adminStorage'
+import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { Modal } from '../../components/ui/Modal'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types'
 
@@ -39,9 +40,10 @@ function statusTone(status: PaymentStatus) {
 }
 
 export function AdminPayments() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<FilterTab>('all')
   const [showAdd, setShowAdd] = useState(false)
+  const canManageFinance = canUseAdminPermission('finance.manage')
 
   const rows = useMemo(() => {
     if (!school) return []
@@ -90,10 +92,12 @@ export function AdminPayments() {
             <p className="text-[11px] font-black uppercase text-[#B42318]">Долг</p>
             <p className="text-[18px] font-black text-[#111418]">{money(totals.debt)}</p>
           </div>
-          <button onClick={() => setShowAdd(true)} className="v-admin-button">
-            <Plus size={16} />
-            Принять оплату
-          </button>
+          {canManageFinance ? (
+            <button onClick={() => setShowAdd(true)} className="v-admin-button">
+              <Plus size={16} />
+              Принять оплату
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -164,10 +168,18 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<PaymentStatus>('paid')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const access = assertAdminPermission('finance.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+    setError('')
+
     const parsed = Number.parseInt(amount, 10)
-    if (!studentId || !Number.isFinite(parsed) || parsed <= 0) return
+    if (!studentId) { setError('Выберите ученика.'); return }
+    if (!Number.isFinite(parsed) || parsed <= 0) { setError('Укажите корректную сумму.'); return }
     const payment: Payment = {
       id: `pay_${Date.now()}`,
       schoolId,
@@ -181,9 +193,16 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
       paidAt: status === 'paid' ? new Date().toISOString() : undefined,
       createdAt: new Date().toISOString(),
     }
-    adminPayments.upsert(payment)
-    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'payment_added', 'payment', payment.id, `Принята оплата ${money(payment.amount)}`)
-    onClose()
+    try {
+      setPending(true)
+      await adminPayments.upsertConfirmed(payment)
+      createCurrentStaffAuditEntry(schoolId, 'payment_added', 'payment', payment.id, `Принята оплата ${money(payment.amount)}`)
+      onClose()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось сохранить оплату.')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -222,9 +241,10 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Описание</span>
         <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Оплата за обучение" className="v-admin-input w-full" />
       </label>
+      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

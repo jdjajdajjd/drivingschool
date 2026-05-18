@@ -34,7 +34,7 @@ const emptyIntakeForm = {
 }
 
 export function AdminBookings() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [date, setDate] = useState('')

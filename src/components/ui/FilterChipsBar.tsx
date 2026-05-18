@@ -28,10 +28,10 @@ export function FilterChipsBar({
               type="button"
               onClick={() => onChange(item.value)}
               className={cn(
-                'min-h-9 whitespace-nowrap rounded-full border px-4 text-[13px] font-bold transition-all duration-150 active:scale-[0.97]',
+                'min-h-9 whitespace-nowrap rounded-full border px-4 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]',
                 active
-                  ? 'border-[#C4935A] bg-[rgba(246,184,77,0.12)] text-[#C97F10]'
-                  : 'border-[rgba(0,0,0,0.06)] bg-white text-[#6F747A] hover:border-[rgba(0,0,0,0.10)]',
+                  ? 'border-[#111827] bg-[#111827] text-white'
+                  : 'border-[rgba(17,24,39,0.07)] bg-white text-[#687381] hover:border-[rgba(17,24,39,0.14)]',
               )}
             >
               {item.label}

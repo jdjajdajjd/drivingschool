@@ -9,10 +9,15 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
   const slots = db.slots.bySchool(schoolId)
   const instructors = db.instructors.bySchool(schoolId)
   const branches = db.branches.bySchool(schoolId)
+  const students = db.students.bySchool(schoolId)
   const now = new Date()
 
   for (const booking of bookings) {
     const slot = db.slots.byId(booking.slotId)
+    const instructor = db.instructors.byId(booking.instructorId)
+    const branch = db.branches.byId(booking.branchId)
+    const student = booking.studentId ? db.students.byId(booking.studentId) : null
+
     if (!slot) {
       issues.push({
         id: `booking-slot-${booking.id}`,
@@ -22,27 +27,53 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
       continue
     }
 
-    if (!db.instructors.byId(booking.instructorId)) {
+    if (slot.schoolId !== schoolId) {
+      issues.push({
+        id: `booking-slot-school-${booking.id}`,
+        level: 'error',
+        message: `Запись ${booking.studentName} связана со временем другой школы.`,
+      })
+    }
+
+    if (!instructor) {
       issues.push({
         id: `booking-inst-${booking.id}`,
         level: 'error',
         message: `У записи ${booking.studentName} не найден инструктор.`,
       })
+    } else if (instructor.schoolId !== schoolId) {
+      issues.push({
+        id: `booking-inst-school-${booking.id}`,
+        level: 'error',
+        message: `Запись ${booking.studentName} связана с инструктором другой школы.`,
+      })
     }
 
-    if (!db.branches.byId(booking.branchId)) {
+    if (!branch) {
       issues.push({
         id: `booking-branch-${booking.id}`,
         level: 'error',
         message: `У записи ${booking.studentName} не найден филиал.`,
       })
+    } else if (branch.schoolId !== schoolId) {
+      issues.push({
+        id: `booking-branch-school-${booking.id}`,
+        level: 'error',
+        message: `Запись ${booking.studentName} связана с филиалом другой школы.`,
+      })
     }
 
-    if (booking.studentId && !db.students.byId(booking.studentId)) {
+    if (booking.studentId && !student) {
       issues.push({
         id: `booking-student-${booking.id}`,
         level: 'warning',
         message: `У записи ${booking.studentName} потеряна ссылка на ученика.`,
+      })
+    } else if (student && student.schoolId !== schoolId) {
+      issues.push({
+        id: `booking-student-school-${booking.id}`,
+        level: 'error',
+        message: `Запись ${booking.studentName} связана с учеником другой школы.`,
       })
     }
 
@@ -56,19 +87,72 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
   }
 
   for (const slot of slots) {
-    if (!db.instructors.byId(slot.instructorId)) {
+    const instructor = db.instructors.byId(slot.instructorId)
+    const branch = db.branches.byId(slot.branchId)
+
+    if (!instructor) {
       issues.push({
         id: `slot-inst-${slot.id}`,
         level: 'error',
         message: `У времени ${slot.date} ${slot.time} не найден инструктор.`,
       })
+    } else if (instructor.schoolId !== schoolId) {
+      issues.push({
+        id: `slot-inst-school-${slot.id}`,
+        level: 'error',
+        message: `Время ${slot.date} ${slot.time} связано с инструктором другой школы.`,
+      })
+    } else if (instructor.branchId !== slot.branchId) {
+      issues.push({
+        id: `slot-inst-branch-${slot.id}`,
+        level: 'warning',
+        message: `Время ${slot.date} ${slot.time} связано с филиалом, отличным от филиала инструктора.`,
+      })
     }
 
-    if (!db.branches.byId(slot.branchId)) {
+    if (!branch) {
       issues.push({
         id: `slot-branch-${slot.id}`,
         level: 'error',
         message: `У времени ${slot.date} ${slot.time} не найден филиал.`,
+      })
+    } else if (branch.schoolId !== schoolId) {
+      issues.push({
+        id: `slot-branch-school-${slot.id}`,
+        level: 'error',
+        message: `Время ${slot.date} ${slot.time} связано с филиалом другой школы.`,
+      })
+    }
+  }
+
+  for (const instructor of instructors) {
+    const branch = db.branches.byId(instructor.branchId)
+    if (branch && branch.schoolId !== schoolId) {
+      issues.push({
+        id: `instructor-branch-school-${instructor.id}`,
+        level: 'error',
+        message: `Инструктор ${instructor.name} привязан к филиалу другой школы.`,
+      })
+    }
+  }
+
+  for (const student of students) {
+    const branch = student.assignedBranchId ? db.branches.byId(student.assignedBranchId) : null
+    const instructor = student.assignedInstructorId ? db.instructors.byId(student.assignedInstructorId) : null
+
+    if (branch && branch.schoolId !== schoolId) {
+      issues.push({
+        id: `student-branch-school-${student.id}`,
+        level: 'error',
+        message: `Ученик ${student.name} привязан к филиалу другой школы.`,
+      })
+    }
+
+    if (instructor && instructor.schoolId !== schoolId) {
+      issues.push({
+        id: `student-instructor-school-${student.id}`,
+        level: 'error',
+        message: `Ученик ${student.name} привязан к инструктору другой школы.`,
       })
     }
   }

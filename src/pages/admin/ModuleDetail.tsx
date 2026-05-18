@@ -44,7 +44,7 @@ export function AdminModuleDetail() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const { moduleId } = useParams<{ moduleId: string }>()
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const module = moduleId ? getModuleById(moduleId) : null
 
   if (!school || !module) {
@@ -111,8 +111,8 @@ export function AdminModuleDetail() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <Section title="Что даёт дополнение" description="Коротко и по делу: без фейковых обещаний и без технической перегрузки.">
-          <div className="flex items-start gap-4 rounded-[16px] border border-[#D8E0EC] bg-[#F8FAFE] px-5 py-5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-white #C97F10 shadow-[0_20px_60px_rgba(15,20,25,0.08)]">
+          <div className="flex items-start gap-4 rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.72)] px-5 py-5 shadow-[var(--shadow-card)] backdrop-blur-2xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#EAF3FF] text-[#111827] shadow-[inset_0_0_0_1px_rgba(17,24,39,0.06)]">
               <Icon size={20} />
             </div>
             <div>

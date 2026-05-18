@@ -4,17 +4,20 @@ import { db } from '../../services/storage'
 import { adminCars } from '../../services/adminStorage'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import type { Instructor, Transmission } from '../../types'
+import type { Transmission } from '../../types'
+import { createInstructorConfirmed } from '../../services/instructorService'
+import { filterBranches, filterInstructors } from '../../services/staffScope'
+import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 
 export function AdminInstructors() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const navigate = useNavigate()
 
   const data = useMemo(() => {
     if (!school) return []
-    return db.instructors.bySchool(school.id).map((instructor) => {
+    return filterInstructors(db.instructors.bySchool(school.id)).map((instructor) => {
       const slots = db.slots.byInstructor(instructor.id)
       const bookings = db.bookings.byInstructor(instructor.id)
       const todaySlots = slots.filter((s) => s.date === new Date().toISOString().split('T')[0])
@@ -150,7 +153,7 @@ function InstructorForm({
   onClose: () => void
   onCreated: (instructorId: string) => void
 }) {
-  const branches = schoolId ? db.branches.bySchool(schoolId) : []
+  const branches = schoolId ? filterBranches(db.branches.bySchool(schoolId)) : []
   const defaultBranchId = branches[0]?.id ?? ''
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -159,35 +162,31 @@ function InstructorForm({
   const [category, setCategory] = useState('B')
   const [transmission, setTransmission] = useState<Transmission>('auto')
   const [car, setCar] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
-    if (!schoolId || !name.trim() || !phone.trim() || !branchId) return
-    const initials = name
-      .trim()
-      .split(/\s+/)
-      .map((part) => part[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase() || 'ИН'
-    const instructor: Instructor = {
-      id: `inst_${Date.now()}`,
+  const handleSubmit = async () => {
+    if (pending) return
+    setError('')
+    if (!schoolId) { setError('Школа не найдена.'); return }
+    if (!branchId) { setError('Сначала добавьте филиал.'); return }
+    if (!name.trim()) { setError('Укажите имя инструктора.'); return }
+    if (!phone.trim()) { setError('Укажите телефон инструктора.'); return }
+    setPending(true)
+    const result = await createInstructorConfirmed({
       schoolId,
       branchId,
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      token: `tok_${Date.now()}`,
-      bio: '',
-      experience: 0,
+      name,
+      phone,
+      email,
       isActive: true,
       categories: [category.trim() || 'B'],
-      avatarInitials: initials,
-      avatarColor: '#101418',
-      car: car.trim() || undefined,
+      car,
       transmission,
-    }
-    db.instructors.upsert(instructor)
-    onCreated(instructor.id)
+    })
+    setPending(false)
+    if (result.ok && result.instructor) { onCreated(result.instructor.id); return }
+    setError(result.error ?? 'Не удалось сохранить инструктора.')
   }
 
   return (
@@ -199,7 +198,7 @@ function InstructorForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Телефон</label>
-          <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+7 999 123-45-67" className="v-admin-input w-full" />
+          <input value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setPhone((value) => formatRussianPhoneInput(value))} placeholder="+7 999 123-45-67" className="v-admin-input w-full" />
         </div>
         <div>
           <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Email</label>
@@ -209,6 +208,7 @@ function InstructorForm({
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Филиал</label>
         <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+          {branches.length === 0 ? <option value="">Сначала добавьте филиал</option> : null}
           {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
         </select>
       </div>
@@ -229,9 +229,10 @@ function InstructorForm({
           <input value={car} onChange={(event) => setCar(event.target.value)} placeholder="Solaris" className="v-admin-input w-full" />
         </div>
       </div>
+      {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

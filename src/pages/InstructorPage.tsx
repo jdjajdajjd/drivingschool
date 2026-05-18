@@ -20,7 +20,7 @@ import { cancelBooking, completeBooking, getSlotDateTime, updateBookingComment }
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { db } from '../services/storage'
-import { getPublicInstructorBundle } from '../services/supabasePublicService'
+import { getPublicInstructorBundle, updateInstructorBookingInSupabase } from '../services/supabasePublicService'
 import { loadLessonDescription, loadStudentProgress } from '../services/studentProfile'
 import type { Booking, Branch, Instructor, LessonType, Slot, Student, StudentProgress } from '../types'
 import { formatDateFull, formatDayOfWeek, formatHumanDate, formatTimeRange } from '../utils/date'
@@ -395,13 +395,27 @@ export function InstructorPage() {
     setNotice('')
   }
 
-  function handleSubmitAction() {
+  async function handleSubmitAction() {
     if (!actionId || !actionMode) return
     const row = rows.find((currentRow) => currentRow.booking.id === actionId)
     if (!row) return
 
     const existingLocalBooking = db.bookings.byId(actionId)
     const note = draftNote.trim()
+    if (token && isSupabaseConfigured()) {
+      try {
+        await updateInstructorBookingInSupabase({
+          token,
+          bookingId: actionId,
+          status: actionMode === 'complete' ? 'completed' : 'cancelled',
+          comment: note,
+        })
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : 'Не удалось сохранить действие инструктора.')
+        return
+      }
+    }
+
     const mutation = actionMode === 'complete'
       ? existingLocalBooking ? completeBooking(actionId, { skipRemote: true, comment: note }) : { ok: true, booking: { ...row.booking, status: 'completed' as const, comment: note || row.booking.comment, notes: note || row.booking.notes, updatedAt: new Date().toISOString() } }
       : existingLocalBooking ? cancelBooking(actionId, { skipRemote: true }) : { ok: true, booking: { ...row.booking, status: 'cancelled' as const, comment: note || row.booking.comment, notes: note || row.booking.notes, updatedAt: new Date().toISOString() } }

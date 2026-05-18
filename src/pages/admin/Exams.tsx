@@ -8,7 +8,7 @@ import { ADMIN_BASE_PATH } from '../../services/accessControl'
 type ExamTab = 'internal' | 'gibdd'
 
 export function AdminExams() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [tab, setTab] = useState<ExamTab>('internal')
 
   const data = useMemo(() => {

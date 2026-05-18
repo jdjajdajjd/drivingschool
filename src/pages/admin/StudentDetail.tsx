@@ -3,10 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, studentProgress, getDebtForStudent, createAuditEntry } from '../../services/adminStorage'
+import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, studentProgress, getDebtForStudent, createCurrentStaffAuditEntry } from '../../services/adminStorage'
+import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Document, DocumentStatus, DocumentType, Payment, PaymentMethod, PaymentStatus, Student, TrainingStage } from '../../types'
+import { filterBookings, filterStudents } from '../../services/staffScope'
+import { updateStudentAdminConfirmed } from '../../services/studentService'
+import { normalizePersonName } from '../../lib/nameFormat'
+import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 
 const STAGE_LABELS: Record<string, string> = {
   new_request: 'Новая заявка',
@@ -55,9 +60,11 @@ const DOC_STATUS_COLORS: Record<string, string> = {
 export function AdminStudentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [showAddPayment, setShowAddPayment] = useState(false)
   const [showAddDocument, setShowAddDocument] = useState(false)
+  const [gibddExamError, setGibddExamError] = useState('')
+  const [gibddExamPending, setGibddExamPending] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [noteSaved, setNoteSaved] = useState(false)
@@ -66,9 +73,11 @@ export function AdminStudentDetail() {
     if (!school || !id) return null
     const student = db.students.byId(id)
     if (!student) return null
+    if (student.schoolId !== school.id) return null
+    if (filterStudents([student]).length === 0) return null
     const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
     const branch = db.branches.byId(student.assignedBranchId ?? '')
-    const bookings = db.bookings.bySchool(school.id).filter((b) => b.studentId === student.id)
+    const bookings = filterBookings(db.bookings.bySchool(school.id).filter((b) => b.studentId === student.id))
     const payments = adminPayments.byStudent(student.id)
     const documents = adminDocuments.byStudent(student.id)
     const internalExams = adminInternalExams.byStudent(student.id)
@@ -102,11 +111,29 @@ export function AdminStudentDetail() {
     !documents.some((d) => d.type === 'contract' && d.status !== 'verified')
 
   const currentNote = note ?? student.notes ?? ''
+  const canManageStudents = canUseAdminPermission('students.manage')
+  const canManageFinance = canUseAdminPermission('finance.manage')
+  const canManageDocuments = canUseAdminPermission('documents.manage')
+  const canManageExams = canUseAdminPermission('exams.manage')
+  const missingDocs = documents.filter((doc) => doc.status === 'missing' || doc.status === 'rejected' || doc.status === 'expired').length
+  const nextBooking = bookings
+    .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+    .filter((entry) => entry.booking.status === 'active' && entry.slot && new Date(`${entry.slot.date}T${entry.slot.time}`) > new Date())
+    .sort((left, right) => new Date(`${left.slot?.date}T${left.slot?.time}`).getTime() - new Date(`${right.slot?.date}T${right.slot?.time}`).getTime())[0]
 
   const saveNote = () => {
-    db.students.upsert({ ...student, notes: currentNote })
-    createAuditEntry(school.id, 'admin', 'Менеджер школы', 'student_note', 'student', student.id, `Обновлена заметка ученика ${student.name}`)
-    setNoteSaved(true)
+    const access = assertAdminPermission('students.manage')
+    if (!access.ok) return
+
+    void updateStudentAdminConfirmed(student.id, { notes: currentNote }).then((result) => {
+      if (!result.ok) return
+      createCurrentStaffAuditEntry(school.id, 'student_note', 'student', student.id, `Обновлена заметка ученика ${student.name}`)
+      setNoteSaved(true)
+    })
+  }
+
+  const copyPhone = () => {
+    void navigator.clipboard?.writeText(student.phone)
   }
 
   return (
@@ -120,10 +147,44 @@ export function AdminStudentDetail() {
           </button>
           <div className="flex-1">
             <h1 className="text-[22px] font-black text-gray-900">{student.name}</h1>
+            <p className="text-[13px] font-semibold text-gray-400">{student.phone}</p>
           </div>
-          <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
-            Редактировать
+          <button onClick={copyPhone} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            Копировать телефон
           </button>
+          <a href={`tel:${student.phone}`} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            Звонок
+          </a>
+          {canManageStudents ? (
+            <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+              Редактировать
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="grid gap-3 border-b border-gray-100 bg-white px-4 py-3 md:grid-cols-5 md:px-6">
+        <div className="rounded-xl bg-gray-50 p-3">
+          <p className="text-[11px] font-black uppercase text-gray-400">Этап</p>
+          <p className="mt-1 truncate text-[14px] font-black text-gray-900">{STAGE_LABELS[stage] ?? stage}</p>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <p className="text-[11px] font-black uppercase text-gray-400">Долг</p>
+          <p className={`mt-1 text-[14px] font-black ${debt > 0 ? 'text-red-600' : 'text-green-700'}`}>{debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'нет'}</p>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <p className="text-[11px] font-black uppercase text-gray-400">Документы</p>
+          <p className={`mt-1 text-[14px] font-black ${missingDocs > 0 ? 'text-amber-700' : 'text-green-700'}`}>{missingDocs > 0 ? `${missingDocs} не хватает` : 'готово'}</p>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <p className="text-[11px] font-black uppercase text-gray-400">Практика</p>
+          <p className="mt-1 text-[14px] font-black text-gray-900">{completedHours} / {totalHours} ч</p>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <p className="text-[11px] font-black uppercase text-gray-400">Следующее</p>
+          <p className="mt-1 truncate text-[14px] font-black text-gray-900">
+            {nextBooking?.slot ? format(new Date(`${nextBooking.slot.date}T${nextBooking.slot.time}`), 'dd.MM HH:mm') : 'нет'}
+          </p>
         </div>
       </div>
 
@@ -162,9 +223,11 @@ export function AdminStudentDetail() {
           <div className="rounded-2xl border border-gray-100 bg-white p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-[16px] font-bold text-gray-900">Документы</h2>
-              <button onClick={() => setShowAddDocument(true)} className="text-[13px] font-bold text-blue-600">
-                + Добавить
-              </button>
+              {canManageDocuments ? (
+                <button onClick={() => setShowAddDocument(true)} className="text-[13px] font-bold text-blue-600">
+                  + Добавить
+                </button>
+              ) : null}
             </div>
             <div className="space-y-2">
               {documents.length === 0 ? (
@@ -294,15 +357,27 @@ export function AdminStudentDetail() {
                 ))
               )}
 
-              {canGoToGIBDD && (
+              {canGoToGIBDD && canManageExams && (
                 <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-4 text-center">
                   <p className="font-bold text-green-700">✓ Ученик готов к экзамену ГИБДД</p>
                   <button
-                    onClick={() => adminGIBDDExams.upsert({ id: `gibdd_${Date.now()}`, schoolId: school.id, studentId: student.id, attemptNumber: gibddExams.length + 1, status: 'scheduled', createdAt: new Date().toISOString() })}
-                    className="mt-2 rounded-lg bg-green-600 px-4 py-2 text-[13px] font-bold text-white"
+                    onClick={() => {
+                      const access = assertAdminPermission('exams.manage')
+                      if (!access.ok) { setGibddExamError(access.error ?? 'Недостаточно прав.'); return }
+                      if (gibddExamPending) return
+                      const exam = { id: `gibdd_${Date.now()}`, schoolId: school.id, studentId: student.id, attemptNumber: gibddExams.length + 1, status: 'scheduled' as const, createdAt: new Date().toISOString() }
+                      setGibddExamError('')
+                      setGibddExamPending(true)
+                      void adminGIBDDExams.upsertConfirmed(exam)
+                        .catch((error) => setGibddExamError(error instanceof Error ? error.message : 'Не удалось записать на экзамен.'))
+                        .finally(() => setGibddExamPending(false))
+                    }}
+                    disabled={gibddExamPending}
+                    className="mt-2 rounded-lg bg-green-600 px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50"
                   >
-                    Записать на экзамен
+                    {gibddExamPending ? 'Записываем...' : 'Записать на экзамен'}
                   </button>
+                  {gibddExamError ? <p className="mt-2 text-[13px] font-bold text-red-600">{gibddExamError}</p> : null}
                 </div>
               )}
             </div>
@@ -351,12 +426,14 @@ export function AdminStudentDetail() {
                   {debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'Нет долга'}
                 </p>
               </div>
-              <button
-                onClick={() => setShowAddPayment(true)}
-                className={`rounded-xl px-4 py-2 text-[13px] font-bold ${debt > 0 ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}`}
-              >
-                + Оплата
-              </button>
+              {canManageFinance ? (
+                <button
+                  onClick={() => setShowAddPayment(true)}
+                  className={`rounded-xl px-4 py-2 text-[13px] font-bold ${debt > 0 ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}`}
+                >
+                  + Оплата
+                </button>
+              ) : null}
             </div>
 
             {payments.length > 0 && (
@@ -383,9 +460,11 @@ export function AdminStudentDetail() {
               rows={3}
               className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-[13px] font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-900 focus:bg-white focus:outline-none"
             />
-            <button onClick={saveNote} className="mt-2 w-full rounded-xl border border-gray-200 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
-              {noteSaved ? 'Заметка сохранена' : 'Сохранить заметку'}
-            </button>
+            {canManageStudents ? (
+              <button onClick={saveNote} className="mt-2 w-full rounded-xl border border-gray-200 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+                {noteSaved ? 'Заметка сохранена' : 'Сохранить заметку'}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -415,12 +494,20 @@ function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; stu
   const [branchId, setBranchId] = useState(student.assignedBranchId ?? branches[0]?.id ?? '')
   const [instructorId, setInstructorId] = useState(student.assignedInstructorId ?? '')
   const [category, setCategory] = useState(student.categoryCodes?.[0] ?? 'B')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
-    if (!name.trim() || !phone.trim()) return
-    db.students.upsert({
-      ...student,
-      name: name.trim(),
+  const handleSubmit = async () => {
+    const access = assertAdminPermission('students.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+
+    const normalizedName = normalizePersonName(name)
+    if (!normalizedName || !phone.trim()) { setError('Проверьте ФИО и телефон.'); return }
+    setError('')
+    setPending(true)
+    const result = await updateStudentAdminConfirmed(student.id, {
+      name: normalizedName,
       phone: phone.trim(),
       normalizedPhone: phone.replace(/\D/g, ''),
       email: email.trim(),
@@ -429,6 +516,11 @@ function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; stu
       assignedInstructorId: instructorId || undefined,
       categoryCodes: category ? [category] : [],
     })
+    setPending(false)
+    if (!result.ok) {
+      setError(result.error ?? 'Не удалось сохранить ученика.')
+      return
+    }
     onClose()
   }
 
@@ -436,7 +528,7 @@ function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; stu
     <div className="space-y-4 p-5">
       <input value={name} onChange={(event) => setName(event.target.value)} className="v-admin-input w-full" placeholder="ФИО" />
       <div className="grid gap-3 sm:grid-cols-2">
-        <input value={phone} onChange={(event) => setPhone(event.target.value)} className="v-admin-input w-full" placeholder="Телефон" />
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setPhone((value) => formatRussianPhoneInput(value))} className="v-admin-input w-full" placeholder="Телефон" />
         <input value={email} onChange={(event) => setEmail(event.target.value)} className="v-admin-input w-full" placeholder="Email" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -455,9 +547,10 @@ function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; stu
           {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
         </select>
       </div>
+      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )
@@ -470,8 +563,13 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
   const [status, setStatus] = useState<PaymentStatus>('paid')
   const [method, setMethod] = useState<PaymentMethod>('card')
   const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const access = assertAdminPermission('finance.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+
     const total = Number(amount)
     const paid = Math.min(Number(paidAmount), total)
     setError('')
@@ -493,9 +591,16 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
       createdById: 'admin',
       createdAt: new Date().toISOString(),
     }
-    adminPayments.upsert(payment)
-    createAuditEntry(schoolId, 'admin', 'Менеджер школы', 'payment_added', 'payment', payment.id, `Добавлена оплата ${student.name}: ${paid} ₽`)
-    onClose()
+    try {
+      setPending(true)
+      await adminPayments.upsertConfirmed(payment)
+      createCurrentStaffAuditEntry(schoolId, 'payment_added', 'payment', payment.id, `Добавлена оплата ${student.name}: ${paid} ₽`)
+      onClose()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось сохранить оплату.')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -521,8 +626,8 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
       </div>
       {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )
@@ -531,8 +636,14 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
 function DocumentForm({ schoolId, student, onClose }: { schoolId: string; student: Student; onClose: () => void }) {
   const [type, setType] = useState<DocumentType>('contract')
   const [status, setStatus] = useState<DocumentStatus>('uploaded')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const access = assertAdminPermission('documents.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+
     const document: Document = {
       id: `doc_${Date.now()}`,
       schoolId,
@@ -543,9 +654,17 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
       verifiedAt: status === 'verified' ? new Date().toISOString() : undefined,
       createdAt: new Date().toISOString(),
     }
-    adminDocuments.upsert(document)
-    createAuditEntry(schoolId, 'admin', 'Менеджер школы', status === 'verified' ? 'document_verified' : 'document_uploaded', 'document', document.id, `Добавлен документ ${student.name}`)
-    onClose()
+    try {
+      setPending(true)
+      setError('')
+      await adminDocuments.upsertConfirmed(document)
+      createCurrentStaffAuditEntry(schoolId, status === 'verified' ? 'document_verified' : 'document_uploaded', 'document', document.id, `Добавлен документ ${student.name}`)
+      onClose()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось сохранить документ.')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -560,9 +679,10 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
         <option value="missing">Не загружен</option>
         <option value="rejected">Отклонен</option>
       </select>
+      {error ? <p className="rounded-[10px] bg-[#FFF4DA] px-3 py-2 text-[13px] font-bold text-[#A45A00]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

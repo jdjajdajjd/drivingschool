@@ -13,6 +13,7 @@ import {
   updateSlotStatusConfirmed,
 } from '../../services/slotService'
 import { db } from '../../services/storage'
+import { filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
 import type { LessonType } from '../../types'
 
 type SlotStatusFilter = 'all' | 'available' | 'booked' | 'cancelled'
@@ -41,7 +42,7 @@ const lessonTypeLabels: Record<LessonType, string> = {
 }
 
 export function AdminSlots() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const { showToast } = useToast()
   const [createMode, setCreateMode] = useState<'bulk' | 'single'>('bulk')
   const [search, setSearch] = useState('')
@@ -53,8 +54,8 @@ export function AdminSlots() {
   const [toggleId, setToggleId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const branches = school ? db.branches.bySchool(school.id).filter((b) => b.isActive) : []
-  const instructors = school ? db.instructors.bySchool(school.id).filter((i) => i.isActive) : []
+  const branches = school ? filterBranches(db.branches.bySchool(school.id)).filter((b) => b.isActive) : []
+  const instructors = school ? filterInstructors(db.instructors.bySchool(school.id)).filter((i) => i.isActive) : []
   const defaultDuration = String(school?.defaultLessonDuration ?? 90)
 
   const [bulkForm, setBulkForm] = useState({
@@ -79,7 +80,7 @@ export function AdminSlots() {
     lessonType: 'driving' as LessonType,
   })
 
-  const slots = useMemo(() => school ? getSlotsBySchool(school.id) : [], [school, refreshKey])
+  const slots = useMemo(() => school ? getSlotsBySchool(school.id).filter((entry) => filterSlots([entry.slot]).length > 0) : [], [school, refreshKey])
 
   const stats = useMemo(() => {
     const now = new Date()

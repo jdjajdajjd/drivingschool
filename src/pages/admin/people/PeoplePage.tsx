@@ -12,7 +12,7 @@ import { trainingStageLabels } from '../../student/studentUtils'
 
 /* ─── STUDENTS ─── */
 function StudentsTab() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const [query, setQuery] = useState('')
   const [detailId, setDetailId] = useState<string | null>(null)
 
@@ -188,7 +188,7 @@ function StudentsTab() {
 
 /* ─── INSTRUCTORS ─── */
 function InstructorsTab() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const [query, setQuery] = useState('')
   const [detailId, setDetailId] = useState<string | null>(null)
 

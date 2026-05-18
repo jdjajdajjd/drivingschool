@@ -12,7 +12,7 @@ type SchoolTab = 'main' | 'branches' | 'categories' | 'rules' | 'public'
 const ALL_CATEGORIES = ['B', 'A', 'A1', 'C', 'D', 'BE', 'CE', 'D1', 'Tm', 'Tb']
 
 export function AdminSchoolSettings() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const { showToast } = useToast()
   const [tab, setTab] = useState<SchoolTab>('main')
   const [editing, setEditing] = useState(false)

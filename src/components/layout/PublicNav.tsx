@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { BrandMark } from './BrandMark'
 import { Button } from '../ui/Button'
+import { DEMO_SCHOOL_PATH } from '../../services/schoolRoutes'
 
 interface PublicNavProps {
   transparent?: boolean
@@ -22,7 +23,7 @@ export function PublicNav({ transparent = false }: PublicNavProps) {
 
         <Button
           size="md"
-          onClick={() => navigate('/school/virazh')}
+          onClick={() => navigate(DEMO_SCHOOL_PATH)}
           className="px-6 py-2.5 text-base font-semibold"
         >
           Записаться

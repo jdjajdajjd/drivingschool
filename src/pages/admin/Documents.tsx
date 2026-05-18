@@ -27,7 +27,7 @@ const STATUS_COLORS: Record<DocumentStatus, string> = {
 type FilterTab = 'all' | 'missing' | 'pending' | 'verified' | 'expired'
 
 export function AdminDocuments() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<FilterTab>('all')
 
   const data = useMemo(() => {

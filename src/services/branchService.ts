@@ -1,8 +1,9 @@
 import { generateId } from '../lib/utils'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import type { Branch } from '../types'
 import { db } from './storage'
 import { updateSupabaseSlotStatus, upsertSupabaseBranch } from './supabaseAdminService'
+import { assertAdminPermission } from './adminAccess'
 
 export interface BranchInput {
   schoolId: string
@@ -28,7 +29,7 @@ async function persistBranchWithInactiveSlotCleanup(nextBranch: Branch): Promise
             new Date(`${slot.date}T${slot.time}:00`).getTime() >= now,
         )
 
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     try {
       await upsertSupabaseBranch(nextBranch.id, {
         schoolId: nextBranch.schoolId,
@@ -49,6 +50,9 @@ async function persistBranchWithInactiveSlotCleanup(nextBranch: Branch): Promise
 }
 
 export async function createBranchConfirmed(input: BranchInput): Promise<{ ok: boolean; branch?: Branch; error?: string }> {
+  const access = assertAdminPermission('branches.manage')
+  if (!access.ok) return access
+
   const name = input.name.trim()
   if (!name) {
     return { ok: false, error: 'Укажите название филиала.' }
@@ -63,7 +67,7 @@ export async function createBranchConfirmed(input: BranchInput): Promise<{ ok: b
     isActive: input.isActive,
   }
 
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     try {
       await upsertSupabaseBranch(branch.id, { ...input, name: branch.name, address: branch.address, phone: branch.phone })
     } catch (error) {
@@ -79,6 +83,9 @@ export async function updateBranchConfirmed(
   branchId: string,
   input: Omit<BranchInput, 'schoolId'>,
 ): Promise<{ ok: boolean; branch?: Branch; error?: string }> {
+  const access = assertAdminPermission('branches.manage')
+  if (!access.ok) return access
+
   const current = db.branches.byId(branchId)
   if (!current) {
     return { ok: false, error: 'Филиал не найден.' }
@@ -101,6 +108,9 @@ export async function updateBranchConfirmed(
 }
 
 export async function archiveBranchConfirmed(branchId: string): Promise<{ ok: boolean; branch?: Branch; error?: string }> {
+  const access = assertAdminPermission('branches.manage')
+  if (!access.ok) return access
+
   const current = db.branches.byId(branchId)
   if (!current) {
     return { ok: false, error: 'Филиал не найден.' }

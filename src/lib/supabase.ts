@@ -37,3 +37,8 @@ export function isSupabaseConfigured(): boolean {
   }
   return configured
 }
+
+export function isWorkspaceSupabaseReady(): boolean {
+  if (typeof window === 'undefined') return false
+  return configured && window.sessionStorage.getItem('dd:data_namespace') === 'workspace' && window.sessionStorage.getItem('dd:supabase_workspace_ready') === 'true'
+}

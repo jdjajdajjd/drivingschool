@@ -1,9 +1,12 @@
 import { generateId } from '../lib/utils'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { normalizePersonName } from '../lib/nameFormat'
+import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import type { Instructor, Transmission } from '../types'
 import { db } from './storage'
 import { getSlotDateTime, normalizePhone, validateRussianPhone } from './bookingService'
 import { persistSupabaseMutation, updateSupabaseInstructorActive, updateSupabaseSlotStatus, upsertSupabaseInstructor } from './supabaseAdminService'
+import { assertAdminPermission } from './adminAccess'
+import { validateBranchBelongsToSchool } from './tenantIntegrity'
 
 export interface InstructorInput {
   schoolId: string
@@ -52,7 +55,7 @@ export function getInstructorsBySchool(schoolId: string): Instructor[] {
 }
 
 export function createInstructor(input: InstructorInput): { ok: boolean; instructor?: Instructor; error?: string } {
-  const trimmedName = input.name.trim()
+  const trimmedName = normalizePersonName(input.name)
   if (!trimmedName) {
     return { ok: false, error: 'Укажите имя инструктора.' }
   }
@@ -98,7 +101,7 @@ export function updateInstructor(
     return { ok: false, error: 'Инструктор не найден.' }
   }
 
-  const trimmedName = input.name.trim()
+  const trimmedName = normalizePersonName(input.name)
   if (!trimmedName) {
     return { ok: false, error: 'Укажите имя инструктора.' }
   }
@@ -165,9 +168,15 @@ export function toggleInstructorActive(
 }
 
 export async function createInstructorConfirmed(input: InstructorInput): Promise<{ ok: boolean; instructor?: Instructor; error?: string }> {
-  const trimmedName = input.name.trim()
+  const access = assertAdminPermission('branches.manage')
+  if (!access.ok) return access
+
+  const trimmedName = normalizePersonName(input.name)
   if (!trimmedName) return { ok: false, error: 'Укажите имя инструктора.' }
   if (!input.branchId) return { ok: false, error: 'Выберите филиал.' }
+
+  const branchError = validateBranchBelongsToSchool(input.schoolId, input.branchId)
+  if (branchError) return { ok: false, error: branchError }
 
   const normalizedPhone = input.phone ? normalizePhone(input.phone) : ''
   if (normalizedPhone && !validateRussianPhone(normalizedPhone)) {
@@ -192,7 +201,7 @@ export async function createInstructorConfirmed(input: InstructorInput): Promise
     transmission: input.transmission,
   }
 
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     try {
       await upsertSupabaseInstructor(instructor.id, { ...input, phone: normalizedPhone, name: trimmedName }, instructor.token)
     } catch (error) {
@@ -208,16 +217,22 @@ export async function updateInstructorConfirmed(
   instructorId: string,
   input: Omit<InstructorInput, 'schoolId'>,
 ): Promise<{ ok: boolean; instructor?: Instructor; error?: string }> {
+  const access = assertAdminPermission('branches.manage')
+  if (!access.ok) return access
+
   const current = db.instructors.byId(instructorId)
   if (!current) return { ok: false, error: 'Инструктор не найден.' }
 
-  const trimmedName = input.name.trim()
+  const trimmedName = normalizePersonName(input.name)
   if (!trimmedName) return { ok: false, error: 'Укажите имя инструктора.' }
 
   const normalizedPhone = input.phone ? normalizePhone(input.phone) : ''
   if (normalizedPhone && !validateRussianPhone(normalizedPhone)) {
     return { ok: false, error: 'Телефон инструктора указан в неверном формате.' }
   }
+
+  const branchError = validateBranchBelongsToSchool(current.schoolId, input.branchId)
+  if (branchError) return { ok: false, error: branchError }
 
   const nextInstructor: Instructor = {
     ...current,
@@ -235,7 +250,7 @@ export async function updateInstructorConfirmed(
   }
 
   const disabling = current.isActive && !nextInstructor.isActive
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     const futureAvailableSlots = disabling ? getFutureAvailableSlotsForInstructor(nextInstructor.id) : []
     try {
       await upsertSupabaseInstructor(
@@ -278,6 +293,9 @@ export async function toggleInstructorActiveConfirmed(
   instructorId: string,
   isActive?: boolean,
 ): Promise<{ ok: boolean; instructor?: Instructor; error?: string }> {
+  const access = assertAdminPermission('branches.manage')
+  if (!access.ok) return access
+
   const instructor = db.instructors.byId(instructorId)
   if (!instructor) return { ok: false, error: 'Инструктор не найден.' }
 
@@ -289,7 +307,7 @@ export async function toggleInstructorActiveConfirmed(
   const disabling = instructor.isActive && !nextInstructor.isActive
   if (disabling) {
     const futureAvailableSlots = getFutureAvailableSlotsForInstructor(nextInstructor.id)
-    if (isSupabaseConfigured()) {
+    if (isWorkspaceSupabaseReady()) {
       try {
         await updateSupabaseInstructorActive(instructorId, false)
         for (const slot of futureAvailableSlots) {
@@ -305,7 +323,7 @@ export async function toggleInstructorActiveConfirmed(
       }
     }
     cancelSlots(futureAvailableSlots)
-  } else if (isSupabaseConfigured()) {
+  } else if (isWorkspaceSupabaseReady()) {
     try {
       await updateSupabaseInstructorActive(instructorId, true)
     } catch (error) {

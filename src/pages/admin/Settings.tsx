@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
 import { db } from '../../services/storage'
-import { adminSettings, createAuditEntry } from '../../services/adminStorage'
+import { adminSettings, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import type { SchoolSettings as SchoolSettingsType } from '../../types'
+import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 
 export function AdminSettings() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [saved, setSaved] = useState(false)
+  const [schoolPhone, setSchoolPhone] = useState(school?.phone ?? '')
+  const canManageSettings = canUseAdminPermission('settings.manage')
 
   const defaults: SchoolSettingsType = useMemo(() => {
     if (!school) return { schoolId: '', defaultLessonDuration: 60, maxDaysAheadForBooking: 14, minHoursBeforeCancel: 4, maxActiveBookingsPerStudent: 3, allowBookingWithDebt: false, allowBookingWithoutMedical: false, allowBookingWithoutContract: false, requireManualModeration: false, allowChangeInstructor: true, allowStudentChooseInstructor: true, allowDifferentInstructors: true, maxLessonsPerDay: 2, maxLessonsPerWeek: 6, breakBetweenLessons: 15, workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 20, defaultPricingPlans: [], blockBookingOnDebt: true, debtGracePeriodDays: 7, notifyAdminOnNoShow: true, notifyAdminOnCancel: true, notifyAdminOnNewBooking: true, notifyAdminOnDebt: true, requiredDocuments: [], documentExpiryWarningDays: 14 }
@@ -19,10 +22,12 @@ export function AdminSettings() {
   }
 
   const handleSave = () => {
+    const access = assertAdminPermission('settings.manage')
+    if (!access.ok || !school) return
+
+    db.schools.upsert({ ...school, phone: schoolPhone.trim() })
     adminSettings.save(settings)
-    if (school) {
-      createAuditEntry(school.id, 'admin', 'Менеджер школы', 'settings_changed', 'school_settings', school.id, 'Изменены настройки школы')
-    }
+    createCurrentStaffAuditEntry(school.id, 'settings_changed', 'school_settings', school.id, 'Изменены настройки школы')
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -33,7 +38,7 @@ export function AdminSettings() {
     <div className="overflow-y-auto">
       <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4 md:px-6">
         <h1 className="text-[24px] font-black text-gray-900">Настройки школы</h1>
-        <button onClick={handleSave} className="v-admin-button px-5">
+        <button onClick={handleSave} disabled={!canManageSettings} className="v-admin-button px-5 disabled:cursor-not-allowed disabled:opacity-50">
           {saved ? '✓ Сохранено' : 'Сохранить'}
         </button>
       </div>
@@ -49,7 +54,7 @@ export function AdminSettings() {
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Телефон</label>
-              <input value={school.phone} onChange={(e) => db.schools.upsert({ ...school, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
+              <input value={schoolPhone} onChange={(e) => setSchoolPhone(e.target.value)} disabled={!canManageSettings} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 disabled:cursor-not-allowed disabled:text-gray-400" />
             </div>
           </div>
         </section>
@@ -133,7 +138,7 @@ export function AdminSettings() {
                     update('workDays', days)
                   }}
                   className={`h-10 w-12 rounded-xl text-[13px] font-semibold transition ${
-                    settings.workDays.includes(i) ? 'bg-[#10201F] text-white' : 'border border-gray-200 bg-gray-50 text-gray-500'
+                    settings.workDays.includes(i) ? 'bg-[#111827] text-white' : 'border border-gray-200 bg-gray-50 text-gray-500'
                   }`}
                 >
                   {day}

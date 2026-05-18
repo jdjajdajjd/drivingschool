@@ -1,9 +1,11 @@
 import { isAfter } from 'date-fns'
 import type { ResolvedBooking, Student, StudentStats } from '../types'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { isWorkspaceSupabaseReady } from '../lib/supabase'
+import { normalizePersonName } from '../lib/nameFormat'
 import { db } from './storage'
 import { getBookingById, getBookingsByStudent, getSlotDateTime, normalizePhone } from './bookingService'
 import { updateSupabaseStudentAdmin } from './supabaseAdminService'
+import { assertAdminPermission } from './adminAccess'
 
 export function getStudentById(studentId: string): Student | null {
   return db.students.byId(studentId)
@@ -81,13 +83,44 @@ export async function updateStudentAdminConfirmed(
   studentId: string,
   patch: Partial<Student>,
 ): Promise<{ ok: boolean; student?: Student; error?: string }> {
+  const access = assertAdminPermission('students.manage')
+  if (!access.ok) return access
+
   const current = db.students.byId(studentId)
   if (!current) return { ok: false, error: 'Ученик не найден.' }
 
-  const nextStudent: Student = { ...current, ...patch }
+  const nextStudent: Student = { ...current, ...patch, name: patch.name !== undefined ? normalizePersonName(patch.name) : current.name }
   if (!nextStudent.name.trim()) return { ok: false, error: 'Укажите имя ученика.' }
+  if (patch.schoolId && patch.schoolId !== current.schoolId) return { ok: false, error: 'Нельзя перенести ученика в другую автошколу.' }
 
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
+    try {
+      await updateSupabaseStudentAdmin(nextStudent)
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить ученика.' }
+    }
+  }
+
+  db.students.upsert(nextStudent)
+  return { ok: true, student: nextStudent }
+}
+
+export async function createStudentAdminConfirmed(
+  student: Student,
+): Promise<{ ok: boolean; student?: Student; error?: string }> {
+  const access = assertAdminPermission('students.manage')
+  if (!access.ok) return access
+
+  const nextStudent: Student = { ...student, name: normalizePersonName(student.name) }
+  if (!nextStudent.name.trim()) return { ok: false, error: 'Укажите имя ученика.' }
+  if (!nextStudent.normalizedPhone?.trim()) return { ok: false, error: 'Укажите телефон ученика.' }
+
+  const duplicate = db.students
+    .bySchool(nextStudent.schoolId)
+    .find((item) => item.id !== nextStudent.id && item.normalizedPhone === nextStudent.normalizedPhone)
+  if (duplicate) return { ok: false, error: 'Ученик с таким телефоном уже есть.' }
+
+  if (isWorkspaceSupabaseReady()) {
     try {
       await updateSupabaseStudentAdmin(nextStudent)
     } catch (error) {

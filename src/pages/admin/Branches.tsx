@@ -2,15 +2,17 @@ import { useMemo, useState } from 'react'
 import { db } from '../../services/storage'
 import { Modal } from '../../components/ui/Modal'
 import type { Branch } from '../../types'
+import { createBranchConfirmed, updateBranchConfirmed } from '../../services/branchService'
+import { filterBranches } from '../../services/staffScope'
 
 export function AdminBranches() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [showAdd, setShowAdd] = useState(false)
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
 
   const branches = useMemo(() => {
     if (!school) return []
-    return db.branches.bySchool(school.id).map((branch) => {
+    return filterBranches(db.branches.bySchool(school.id)).map((branch) => {
       const instructors = db.instructors.byBranch(branch.id)
       const slots = db.slots.byBranch(branch.id)
       const todaySlots = slots.filter((s) => s.date === new Date().toISOString().split('T')[0])
@@ -96,19 +98,21 @@ function BranchForm({ schoolId, branch, onClose }: { schoolId: string; branch: B
   const [name, setName] = useState(branch?.name ?? '')
   const [address, setAddress] = useState(branch?.address ?? '')
   const [phone, setPhone] = useState(branch?.phone ?? '')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
-    if (!name || !address) return
-    const nextBranch: Branch = {
-      id: branch?.id ?? `branch_${Date.now()}`,
-      schoolId,
-      name,
-      address,
-      phone,
-      isActive: branch?.isActive ?? true,
-    }
-    db.branches.upsert(nextBranch)
-    onClose()
+  const handleSubmit = async () => {
+    if (pending) return
+    setError('')
+    if (!name.trim()) { setError('Укажите название филиала.'); return }
+    if (!address.trim()) { setError('Укажите адрес филиала.'); return }
+    setPending(true)
+    const result = branch
+      ? await updateBranchConfirmed(branch.id, { name, address, phone, isActive: branch.isActive })
+      : await createBranchConfirmed({ schoolId, name, address, phone, isActive: true })
+    setPending(false)
+    if (result.ok) { onClose(); return }
+    setError(result.error ?? 'Не удалось сохранить филиал.')
   }
 
   return (
@@ -125,9 +129,10 @@ function BranchForm({ schoolId, branch, onClose }: { schoolId: string; branch: B
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Телефон</label>
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (999) 123-45-67" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" />
       </div>
+      {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

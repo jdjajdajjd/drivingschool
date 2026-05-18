@@ -1,8 +1,10 @@
 import { normalizePhone } from './bookingService'
+import { normalizePersonName } from '../lib/nameFormat'
 import type { LessonDescription, StudentDocument, StudentDocumentStatus, StudentDocumentType, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
 import { createStudentRequestInSupabase, loginStudentInSupabase, updateStudentProfileInSupabase } from './supabasePublicService'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { getSupabaseStudentDocumentsAdmin, getSupabaseStudentProgressAdmin, getSupabaseStudentRequestsAdmin, updateSupabaseStudentRequestStatusAdmin, upsertSupabaseStudentDocumentsAdmin, upsertSupabaseStudentProgressAdmin } from './supabaseAdminService'
+import { assertAdminPermission } from './adminAccess'
 
 export interface StudentProfile {
   name: string
@@ -119,7 +121,7 @@ export function saveStudentProfile(
   extra?: Partial<StudentProfile>,
 ): StudentProfile {
   const profile: StudentProfile = {
-    name: form.name.trim(),
+    name: normalizePersonName(form.name),
     phone: normalizePhone(form.phone),
     email: form.email?.trim() ?? '',
     avatarUrl: form.avatarUrl?.trim() ?? '',
@@ -181,7 +183,7 @@ export async function saveStudentProfileToSupabase(schoolId: string, form: Stude
   try {
     result = await updateStudentProfileInSupabase({
       schoolId,
-      name: form.name,
+      name: normalizePersonName(form.name),
       phone: form.phone,
       email: form.email ?? '',
       password: form.password ?? '',
@@ -203,7 +205,7 @@ export async function saveStudentProfileToSupabase(schoolId: string, form: Stude
   }
 
   const profile: StudentProfile = {
-    name: form.name.trim(),
+    name: normalizePersonName(form.name),
     phone: result.normalizedPhone,
     email: form.email?.trim() ?? '',
     avatarUrl: form.avatarUrl?.trim() ?? '',
@@ -426,6 +428,9 @@ export async function updateStudentRequestStatusAdminConfirmed(
   requestId: string,
   status: StudentRequestStatus,
 ): Promise<{ ok: boolean; requests?: StudentRequest[]; error?: string }> {
+  const access = assertAdminPermission('students.manage')
+  if (!access.ok) return access
+
   const updatedAt = new Date().toISOString()
   const requests = loadStudentRequests(schoolId).map((request) => request.id === requestId ? { ...request, status, updatedAt } : request)
 

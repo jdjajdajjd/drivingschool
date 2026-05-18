@@ -438,18 +438,43 @@ export interface GIBDDExam {
 }
 
 // ===== Пользователи и роли =====
-export type UserRole = 'director' | 'admin' | 'instructor' | 'accountant' | 'superadmin'
+export type UserRole = 'director' | 'admin' | 'branch_admin' | 'instructor' | 'accountant' | 'superadmin'
+export type StaffPermission =
+  | 'school.manage'
+  | 'branches.manage'
+  | 'staff.manage'
+  | 'students.manage'
+  | 'schedule.manage'
+  | 'finance.view'
+  | 'finance.manage'
+  | 'vehicles.manage'
+  | 'documents.manage'
+  | 'exams.manage'
+  | 'reports.view'
+  | 'settings.manage'
+  | 'data.delete'
+
+export interface SchoolRoleDefinition {
+  id: UserRole
+  label: string
+  description: string
+  permissions: StaffPermission[]
+  branchScoped: boolean
+}
 
 export interface User {
   id: string
   schoolId?: string
   role: UserRole
+  roleId?: UserRole
   name: string
   phone: string
   email?: string
   passwordHash?: string
   isActive: boolean
   branchIds: string[]
+  title?: string
+  invitedAt?: string
   canViewFinances: boolean
   canManageSettings: boolean
   canDeleteData: boolean

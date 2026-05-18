@@ -1,80 +1,163 @@
-export type AccessRole = 'admin' | 'superadmin'
+import { isSupabaseRemoteConfigured } from '../lib/supabase'
 
-export const ADMIN_BASE_PATH = '/virazh-office-73q'
-export const SUPERADMIN_BASE_PATH = '/drivedesk-root-91x'
-export const ADMIN_LOGIN_PATH = '/staff-entrance-73q'
-export const WORKSPACE_ADMIN_LOGIN_PATH = '/workspace-admin'
-export const SUPERADMIN_LOGIN_PATH = '/root-entrance-91x'
+export type AccessRole = 'admin' | 'superadmin'
+export type WorkspaceStaffRole = 'director' | 'admin' | 'branch_admin' | 'accountant' | 'instructor'
+
+export interface WorkspaceStaffContext {
+  role: WorkspaceStaffRole
+  schoolId?: string
+  branchIds: string[]
+  name?: string
+}
+
+export const DEMO_ADMIN_BASE_PATH = '/demo/admin'
+export const ADMIN_BASE_PATH = '/admin-panel'
+export const SUPERADMIN_BASE_PATH = '/superadmin'
+export const ADMIN_LOGIN_PATH = '/demo/admin-login'
+export const WORKSPACE_ADMIN_LOGIN_PATH = '/admin-login'
+export const SUPERADMIN_LOGIN_PATH = '/operator/login'
 
 const ACCESS_KEYS: Record<AccessRole, string> = {
   admin: 'dd:access:admin',
   superadmin: 'dd:access:superadmin',
 }
 
-const ACCESS_PASSWORD_KEYS: Record<AccessRole, string> = {
-  admin: 'dd:access_password:admin',
-  superadmin: 'dd:access_password:superadmin',
+const ACCESS_SECRET_KEYS: Record<AccessRole, string> = {
+  admin: 'dd:access_secret:admin',
+  superadmin: 'dd:access_secret:superadmin',
 }
+
+const WORKSPACE_STAFF_CONTEXT_KEY = 'dd:staff_context:workspace'
 
 function envValue(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function accessValue(value: unknown): string {
-  return envValue(value)
-}
-
-const ACCESS: Record<AccessRole, { login: string; password: string; redirect: string }> = {
+const LEGACY_ACCESS: Record<AccessRole, { login: string; password: string; redirect: string }> = {
   admin: {
-    login: accessValue(import.meta.env.VITE_ADMIN_LOGIN),
-    password: accessValue(import.meta.env.VITE_ADMIN_PASSWORD),
+    login: envValue(import.meta.env.VITE_ADMIN_LOGIN),
+    password: envValue(import.meta.env.VITE_ADMIN_PASSWORD),
     redirect: ADMIN_BASE_PATH,
   },
   superadmin: {
-    login: accessValue(import.meta.env.VITE_SUPERADMIN_LOGIN),
-    password: accessValue(import.meta.env.VITE_SUPERADMIN_PASSWORD),
+    login: envValue(import.meta.env.VITE_SUPERADMIN_LOGIN),
+    password: envValue(import.meta.env.VITE_SUPERADMIN_PASSWORD),
     redirect: SUPERADMIN_BASE_PATH,
   },
 }
 
-export function getAccessConfig(role: AccessRole) {
-  return ACCESS[role]
-}
-
-export function isAccessConfigured(role: AccessRole): boolean {
-  const config = getAccessConfig(role)
-  return Boolean(config.login && config.password)
-}
-
-export function isAccessGranted(role: AccessRole): boolean {
-  return sessionStorage.getItem(accessKey(role)) === 'granted'
-}
-
 function currentNamespace(): string {
   if (typeof window === 'undefined') return 'demo'
-  return (window as Window & { __VROOM_DATA_NAMESPACE?: string }).__VROOM_DATA_NAMESPACE ?? window.sessionStorage.getItem('dd:data_namespace') ?? 'demo'
+  return (
+    (window as Window & { __VROOM_DATA_NAMESPACE?: string }).__VROOM_DATA_NAMESPACE ??
+    window.sessionStorage.getItem('dd:data_namespace') ??
+    'demo'
+  )
 }
 
 function accessKey(role: AccessRole): string {
   return role === 'admin' ? `${ACCESS_KEYS[role]}:${currentNamespace()}` : ACCESS_KEYS[role]
 }
 
-function accessPasswordKey(role: AccessRole): string {
-  return role === 'admin' ? `${ACCESS_PASSWORD_KEYS[role]}:${currentNamespace()}` : ACCESS_PASSWORD_KEYS[role]
+function accessSecretKey(role: AccessRole): string {
+  return role === 'admin' ? `${ACCESS_SECRET_KEYS[role]}:${currentNamespace()}` : ACCESS_SECRET_KEYS[role]
 }
 
-export function grantAccess(role: AccessRole, password: string): void {
+export function isAccessConfigured(role: AccessRole, mode: 'demo' | 'workspace' = 'workspace'): boolean {
+  if (role === 'admin' && mode === 'demo') return true
+  return isSupabaseRemoteConfigured() || isLegacyAccessConfigured(role)
+}
+
+export function isAccessGranted(role: AccessRole): boolean {
+  if (sessionStorage.getItem(accessKey(role)) !== 'granted') return false
+  const requiresSecret = role === 'superadmin' || (role === 'admin' && currentNamespace() === 'workspace')
+  return requiresSecret ? Boolean(sessionStorage.getItem(accessSecretKey(role))) : true
+}
+
+export function grantAccess(role: AccessRole, secret = ''): void {
   sessionStorage.setItem(accessKey(role), 'granted')
-  sessionStorage.setItem(accessPasswordKey(role), password)
+  if (role === 'admin') {
+    sessionStorage.setItem('dd:supabase_workspace_ready', 'false')
+    if (currentNamespace() === 'workspace' && !sessionStorage.getItem(WORKSPACE_STAFF_CONTEXT_KEY)) {
+      setWorkspaceStaffContext({ role: 'admin', branchIds: [] })
+    }
+  }
+  if (secret) {
+    sessionStorage.setItem(accessSecretKey(role), secret)
+  } else {
+    sessionStorage.removeItem(accessSecretKey(role))
+  }
   localStorage.removeItem(accessKey(role))
 }
 
 export function clearAccess(role: AccessRole): void {
   sessionStorage.removeItem(accessKey(role))
-  sessionStorage.removeItem(accessPasswordKey(role))
+  sessionStorage.removeItem(accessSecretKey(role))
+  if (role === 'admin') {
+    sessionStorage.removeItem('dd:supabase_workspace_ready')
+    sessionStorage.removeItem(WORKSPACE_STAFF_CONTEXT_KEY)
+  }
   localStorage.removeItem(accessKey(role))
 }
 
-export function getAccessPassword(role: AccessRole): string {
-  return sessionStorage.getItem(accessPasswordKey(role)) ?? ''
+export function getAccessSecret(role: AccessRole): string {
+  return sessionStorage.getItem(accessSecretKey(role)) ?? ''
+}
+
+export function hasWorkspaceAdminAccessForSchool(schoolId?: string): boolean {
+  if (typeof window === 'undefined') return false
+  if (window.sessionStorage.getItem('dd:access:admin:workspace') !== 'granted') return false
+  if (!window.sessionStorage.getItem('dd:access_secret:admin:workspace')) return false
+
+  const context = getWorkspaceStaffContext()
+  return Boolean(context.schoolId && (!schoolId || context.schoolId === schoolId))
+}
+
+export function setWorkspaceStaffContext(context: WorkspaceStaffContext): void {
+  if (typeof window === 'undefined') return
+  sessionStorage.setItem(
+    WORKSPACE_STAFF_CONTEXT_KEY,
+    JSON.stringify({
+      ...context,
+      branchIds: Array.from(new Set(context.branchIds.filter(Boolean))),
+    }),
+  )
+}
+
+export function getWorkspaceStaffContext(): WorkspaceStaffContext {
+  if (typeof window === 'undefined') return { role: 'admin', branchIds: [] }
+  try {
+    const raw = sessionStorage.getItem(WORKSPACE_STAFF_CONTEXT_KEY)
+    if (!raw) return { role: 'admin', branchIds: [] }
+    const parsed = JSON.parse(raw) as Partial<WorkspaceStaffContext>
+    const allowedRoles: WorkspaceStaffRole[] = ['director', 'admin', 'branch_admin', 'accountant', 'instructor']
+    const role = allowedRoles.includes(parsed.role as WorkspaceStaffRole) ? parsed.role as WorkspaceStaffRole : 'admin'
+    return {
+      role,
+      schoolId: parsed.schoolId,
+      branchIds: Array.isArray(parsed.branchIds) ? parsed.branchIds.filter(Boolean) : [],
+      name: parsed.name,
+    }
+  } catch {
+    return { role: 'admin', branchIds: [] }
+  }
+}
+
+export function isBranchAdminContext(): boolean {
+  return getWorkspaceStaffContext().role === 'branch_admin'
+}
+
+export function canAccessBranch(branchId?: string | null): boolean {
+  const context = getWorkspaceStaffContext()
+  if (context.role !== 'branch_admin') return true
+  return Boolean(branchId && context.branchIds.includes(branchId))
+}
+
+export function getLegacyAccessConfig(role: AccessRole) {
+  return LEGACY_ACCESS[role]
+}
+
+export function isLegacyAccessConfigured(role: AccessRole): boolean {
+  const config = getLegacyAccessConfig(role)
+  return Boolean(config.login && config.password)
 }

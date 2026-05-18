@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+﻿import type { ReactNode } from 'react'
 import React from 'react'
 import { AlertCircleIcon, CheckmarkCircle02Icon, Loading03Icon, Search01Icon, ShieldQuestionMarkIcon } from '@hugeicons/core-free-icons'
 import { cn } from '../../lib/utils'
@@ -32,24 +32,24 @@ const iconByKind: Record<StateKind, ReactNode> = {
 }
 
 const toneByKind: Record<StateKind, { bg: string; color: string }> = {
-  empty: { bg: '#F4F5F6', color: '#9EA3A8' },
-  'no-results': { bg: '#F4F5F6', color: '#9EA3A8' },
-  loading: { bg: 'rgba(36,54,217,0.10)', color: '#2436D9' },
-  error: { bg: '#FEF2F2', color: '#E5534B' },
-  success: { bg: '#F0FDF4', color: '#15803D' },
-  locked: { bg: '#FFFBEB', color: '#B45309' },
+  empty: { bg: '#EEF6FF', color: '#667381' },
+  'no-results': { bg: '#EEF6FF', color: '#667381' },
+  loading: { bg: '#F2F6FA', color: '#111315' },
+  error: { bg: '#FEF2F2', color: '#D1433C' },
+  success: { bg: '#EAF6EE', color: '#247A4B' },
+  locked: { bg: '#FFF4DC', color: '#A15C07' },
 }
 
 export function StateView({ kind = 'empty', title, description, action, className }: StateViewProps) {
   const tone = toneByKind[kind]
   return (
     <div
-      className={cn('text-left', className)}
+      className={cn('text-left shadow-[var(--shadow-card)] backdrop-blur-2xl', className)}
       style={{
-        borderRadius: '14px',
-        border: '1px dashed rgba(0,0,0,0.12)',
-        background: '#F8FAFC',
-        padding: '0.875rem',
+        borderRadius: '24px',
+        border: '1px solid rgba(255,255,255,0.72)',
+        background: 'rgba(255,255,255,0.72)',
+        padding: '1rem',
       }}
     >
       <div className="flex items-start gap-2.5">
@@ -60,9 +60,9 @@ export function StateView({ kind = 'empty', title, description, action, classNam
           {iconByKind[kind]}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</p>
+          <p className="text-[15px] font-semibold" style={{ color: '#111315' }}>{title}</p>
           {description ? (
-            <p className="mt-0.5 text-[13px] font-medium leading-5" style={{ color: '#6F747A' }}>
+            <p className="mt-0.5 text-[13px] font-medium leading-5" style={{ color: '#687381' }}>
               {description}
             </p>
           ) : null}

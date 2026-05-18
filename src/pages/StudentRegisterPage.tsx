@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft01Icon, ArrowRight01Icon, Building05Icon, CheckmarkCircle02Icon, Login03Icon, User03Icon } from '@hugeicons/core-free-icons'
@@ -10,7 +10,9 @@ import { isValidRussianPhone } from '../services/bookingService'
 import { findSchoolBySlugAcrossNamespaces } from '../services/storage'
 import { findAnyStudentProfile, saveStudentCredentials, saveStudentProfile, saveStudentProfileToSupabase, type StudentProfile } from '../services/studentProfile'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import type { School } from '../types'
+import { normalizeNamePart, normalizePersonName } from '../lib/nameFormat'
 
 void React
 
@@ -28,7 +30,7 @@ const draftKey = 'vroom:student_register_draft'
 const fallbackSchool: School = {
   id: 'school-virazh',
   name: 'Автошкола «Вираж»',
-  slug: 'virazh',
+  slug: DEMO_SCHOOL_SLUG,
   description: '',
   phone: '',
   email: '',
@@ -51,7 +53,7 @@ function cleanNamePart(value: string) {
 
 export default function StudentRegisterPage() {
   const navigate = useNavigate()
-  const { slug = 'virazh' } = useParams<{ slug?: string }>()
+  const { slug = DEMO_SCHOOL_SLUG } = useParams<{ slug?: string }>()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [existingProfile, setExistingProfile] = useState<StudentProfile | null>(null)
   const [step, setStep] = useState<RegisterStep>('lastName')
@@ -68,7 +70,7 @@ export default function StudentRegisterPage() {
   const school = useMemo(() => findSchoolBySlugAcrossNamespaces(slug) ?? fallbackSchool, [slug])
   const currentIndex = stepIndex(step)
   const progress = step === 'success' ? 100 : Math.round(((currentIndex + 1) / steps.length) * 100)
-  const fullName = [lastName, first, middleName].map((part) => part.trim()).filter(Boolean).join(' ')
+  const fullName = normalizePersonName([lastName, first, middleName].map((part) => part.trim()).filter(Boolean).join(' '))
 
   useEffect(() => {
     const found = findAnyStudentProfile()
@@ -205,22 +207,22 @@ export default function StudentRegisterPage() {
   }
 
   return (
-    <div className="min-h-dvh overflow-hidden bg-[#F6F7FA] text-[var(--text)]">
+    <div className="student-lite min-h-dvh overflow-hidden bg-[var(--page-bg)] text-[var(--text)]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-5 pb-6 pt-5">
         <header className="flex items-center justify-between">
           <button className="flex items-center gap-2.5 text-left" onClick={() => navigate(`/school/${school.slug}`)}>
-            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[#1F2BD8] text-white shadow-[0_14px_30px_rgba(36,54,217,0.24)]">
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[linear-gradient(180deg,#1A1E23_0%,#101215_100%)] text-white shadow-[0_10px_28px_rgba(17,19,21,0.16)]">
               {school.logoUrl ? <img src={school.logoUrl} alt={school.name} className="h-full w-full object-cover" /> : <Building size={22} />}
             </div>
             <div className="min-w-0">
-              <p className="max-w-[150px] truncate text-[15px] font-black leading-4 tracking-[-0.02em] text-[var(--text)]">{school.name}</p>
-              <p className="text-[12px] font-bold leading-4 text-[var(--text-muted)]">кабинет ученика</p>
+              <p className="max-w-[150px] truncate text-[15px] font-semibold leading-4 tracking-normal text-[var(--text)]">{school.name}</p>
+              <p className="text-[12px] font-medium leading-4 text-[var(--text-muted)]">кабинет ученика</p>
             </div>
           </button>
           <div className="flex items-center gap-2">
             {existingProfile ? (
               <button
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[var(--surface)] px-4 text-[13px] font-extrabold text-[#1F2BD8] shadow-[var(--shadow-card)] active:scale-[0.97]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/60 bg-[rgba(255,255,255,0.62)] px-4 text-[13px] font-semibold text-[var(--text)] shadow-[var(--shadow-card)] backdrop-blur-xl active:scale-[0.97]"
                 onClick={() => navigate('/student')}
               >
                 <Login size={14} /> Войти
@@ -234,16 +236,16 @@ export default function StudentRegisterPage() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]"
+            className="overflow-hidden rounded-[28px] border border-white/60 bg-[rgba(255,255,255,0.76)] p-5 shadow-[var(--shadow-card)] backdrop-blur-2xl"
             onKeyDown={handleKeyDown}
           >
             <div className="mb-5 flex items-center justify-between gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF0FA] px-3 py-2 text-[12px] font-extrabold text-[#1F2BD8]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.56)] px-3 py-2 text-[12px] font-semibold text-[var(--text)] shadow-[0_6px_20px_rgba(20,24,32,0.03)]">
                 {step === 'success' ? <Check size={14} /> : <UserRound size={14} />}
                 {step === 'success' ? 'Готово' : `${progress}% заполнено`}
               </div>
               {step !== 'success' ? (
-                <button className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-muted)] px-3.5 text-[12px] font-extrabold text-[var(--text-muted)]" style={{ minHeight: 40 }} onClick={step === 'lastName' ? () => navigate(`/school/${school.slug}/login`) : goBack}>
+                <button className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-[rgba(255,255,255,0.56)] px-3.5 text-[12px] font-medium text-[var(--text-muted)] shadow-[0_6px_20px_rgba(20,24,32,0.03)]" style={{ minHeight: 40 }} onClick={step === 'lastName' ? () => navigate(`/school/${school.slug}/login`) : goBack}>
                   <ArrowLeft size={14} />
                   {step === 'lastName' ? 'Вход' : 'Назад'}
                 </button>
@@ -251,19 +253,19 @@ export default function StudentRegisterPage() {
             </div>
 
             <div className="mb-6 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]" aria-label={`Прогресс регистрации ${progress}%`}>
-              <motion.div className="h-full rounded-full bg-[#1F2BD8]" animate={{ width: `${progress}%` }} transition={{ duration: 0.24 }} />
+              <motion.div className="h-full rounded-full bg-[var(--accent)]" animate={{ width: `${progress}%` }} transition={{ duration: 0.24 }} />
             </div>
 
             <AnimatePresence mode="wait">
               {step === 'lastName' ? (
                 <motion.div key="lastName" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#EEF0FA] px-3 py-2 text-[12px] font-extrabold text-[#1F2BD8]">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[rgba(255,255,255,0.56)] px-3 py-2 text-[12px] font-semibold text-[var(--text)] shadow-[0_6px_20px_rgba(20,24,32,0.03)]">
                     <UserRound size={14} /> Регистрация ученика
                   </div>
-                  <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Введите фамилию</h1>
-                  <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Начнём с короткой регистрации ученика. Можно использовать только буквы, пробел и дефис.</p>
+                  <h1 className="text-[28px] font-semibold leading-[1.08] text-[var(--text)]">Введите фамилию</h1>
+                  <p className="mt-3 text-[15px] font-medium leading-6 text-[var(--text-muted)]">Начнём с короткой регистрации ученика. Можно использовать только буквы, пробел и дефис.</p>
                   <div className="mt-6">
-                    <Input ref={inputRef} label="Фамилия *" value={lastName} error={error} helperText={!lastName.trim() ? 'Обязательное поле' : undefined} placeholder="Иванов" autoComplete="family-name" onChange={(event) => { setError(''); setLastName(cleanNamePart(event.target.value)) }} />
+                    <Input ref={inputRef} label="Фамилия *" value={lastName} error={error} helperText={!lastName.trim() ? 'Обязательное поле' : undefined} placeholder="Иванов" autoComplete="family-name" onChange={(event) => { setError(''); setLastName(cleanNamePart(event.target.value)) }} onBlur={() => setLastName((value) => normalizeNamePart(value))} />
                   </div>
                   <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={!isNamePartValid(lastName)} onClick={next}>
                     Дальше
@@ -274,10 +276,10 @@ export default function StudentRegisterPage() {
 
               {step === 'firstName' ? (
                 <motion.div key="firstName" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
-                  <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Теперь имя</h1>
-                  <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Так автошкола будет видеть вас в записи.</p>
+                  <h1 className="text-[28px] font-semibold leading-[1.08] text-[var(--text)]">Теперь имя</h1>
+                  <p className="mt-3 text-[15px] font-medium leading-6 text-[var(--text-muted)]">Так автошкола будет видеть вас в записи.</p>
                   <div className="mt-6">
-                    <Input ref={inputRef} label="Имя *" value={first} error={error} helperText={!first.trim() ? 'Обязательное поле' : undefined} placeholder="Иван" autoComplete="given-name" onChange={(event) => { setError(''); setFirst(cleanNamePart(event.target.value)) }} />
+                    <Input ref={inputRef} label="Имя *" value={first} error={error} helperText={!first.trim() ? 'Обязательное поле' : undefined} placeholder="Иван" autoComplete="given-name" onChange={(event) => { setError(''); setFirst(cleanNamePart(event.target.value)) }} onBlur={() => setFirst((value) => normalizeNamePart(value))} />
                   </div>
                   <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={!isNamePartValid(first)} onClick={next}>
                     Дальше
@@ -288,10 +290,10 @@ export default function StudentRegisterPage() {
 
               {step === 'middleName' ? (
                 <motion.div key="middleName" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
-                  <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Отчество</h1>
-                  <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Если отчества нет или не хотите указывать, пропустите.</p>
+                  <h1 className="text-[28px] font-semibold leading-[1.08] text-[var(--text)]">Отчество</h1>
+                  <p className="mt-3 text-[15px] font-medium leading-6 text-[var(--text-muted)]">Если отчества нет или не хотите указывать, пропустите.</p>
                   <div className="mt-6">
-                    <Input ref={inputRef} label="Отчество" value={middleName} error={error} helperText="Необязательное поле" placeholder="Сергеевич" autoComplete="additional-name" onChange={(event) => { setError(''); setMiddleName(cleanNamePart(event.target.value)) }} />
+                    <Input ref={inputRef} label="Отчество" value={middleName} error={error} helperText="Необязательное поле" placeholder="Сергеевич" autoComplete="additional-name" onChange={(event) => { setError(''); setMiddleName(cleanNamePart(event.target.value)) }} onBlur={() => setMiddleName((value) => normalizeNamePart(value))} />
                   </div>
                   <div className="mt-5 grid grid-cols-2 gap-2.5">
                     <Button size="lg" variant="secondary" className="rounded-[18px]" onClick={() => { setMiddleName(''); setError(''); setStep('phone') }}>
@@ -306,8 +308,8 @@ export default function StudentRegisterPage() {
 
               {step === 'phone' ? (
                 <motion.div key="phone" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
-                  <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Номер телефона</h1>
-                  <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Он нужен автошколе для записи на занятие и входа в кабинет.</p>
+                  <h1 className="text-[28px] font-semibold leading-[1.08] text-[var(--text)]">Номер телефона</h1>
+                  <p className="mt-3 text-[15px] font-medium leading-6 text-[var(--text-muted)]">Он нужен автошколе для записи на занятие и входа в кабинет.</p>
                   <div className="mt-6">
                     <PhoneInput label="Телефон *" value={phone} error={error} onChange={(value) => { setError(''); setPhone(value) }} autoFocus />
                   </div>
@@ -320,19 +322,19 @@ export default function StudentRegisterPage() {
 
               {step === 'password' ? (
                 <motion.div key="password" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.2 }}>
-                  <h1 className="text-[32px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Пароль для входа</h1>
-                  <p className="mt-3 text-[15px] font-semibold leading-6 text-[var(--text-muted)]">Телефон и пароль будут использоваться для входа в кабинет.</p>
+                  <h1 className="text-[28px] font-semibold leading-[1.08] text-[var(--text)]">Пароль для входа</h1>
+                  <p className="mt-3 text-[15px] font-medium leading-6 text-[var(--text-muted)]">Телефон и пароль будут использоваться для входа в кабинет.</p>
                   <div className="mt-6 space-y-3">
                     <Input ref={inputRef} label="Пароль *" type="password" value={password} error={error} helperText="Минимум 6 символов" placeholder="Минимум 6 символов" autoComplete="new-password" onChange={(event) => { setError(''); setPassword(event.target.value) }} />
                     <Input label="Повторите пароль *" type="password" value={confirmPassword} error={password && confirmPassword && password !== confirmPassword ? 'Пароли не совпадают.' : undefined} placeholder="Ещё раз пароль" autoComplete="new-password" onChange={(event) => { setError(''); setConfirmPassword(event.target.value) }} />
                   </div>
-                  <label className="mt-4 flex items-start gap-3 rounded-[18px] bg-[var(--surface-muted)] p-3 text-[12px] font-semibold leading-5 text-[var(--text-muted)]">
-                    <input className="mt-1 h-4 w-4 accent-[#1F2BD8]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
+                  <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-white/60 bg-[rgba(255,255,255,0.5)] p-3 text-[12px] font-medium leading-5 text-[var(--text-muted)] shadow-[0_6px_20px_rgba(20,24,32,0.03)]">
+                    <input className="mt-1 h-4 w-4 accent-[#111315]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
                     <span>
-                      Согласен с <a className="font-extrabold text-[#1F2BD8]" href="/terms">условиями сервиса</a> и <a className="font-extrabold text-[#1F2BD8]" href="/privacy">политикой конфиденциальности</a>.
+                      Согласен с <a className="font-semibold text-[#111315]" href="/terms">условиями сервиса</a> и <a className="font-semibold text-[#111315]" href="/privacy">политикой конфиденциальности</a>.
                     </span>
                   </label>
-                  {error ? <p className="mt-3 rounded-[16px] bg-[#FFEDEF] px-3 py-2 text-[13px] font-semibold text-[#FF3155]">{error}</p> : null}
+                  {error ? <p className="mt-3 rounded-[16px] bg-[#FEF2F2] px-3 py-2 text-[13px] font-semibold text-[#E5534B]">{error}</p> : null}
                   <Button size="lg" className="mt-5 w-full rounded-[18px]" disabled={submitting || password.trim().length < 6 || password !== confirmPassword || !acceptedTerms} onClick={() => void submit()}>
                     {submitting ? 'Создаём...' : 'Создать кабинет'}
                     <ArrowRight size={18} />
@@ -342,10 +344,10 @@ export default function StudentRegisterPage() {
 
               {step === 'success' ? (
                 <motion.div key="success" className="py-5 text-center" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.22 }}>
-                  <motion.div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-[#EAF8F0] text-[#14995B]" initial={{ scale: 0.7, rotate: -8 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.28 }}>
+                  <motion.div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-[#EAF8F0] text-[#247A4B]" initial={{ scale: 0.7, rotate: -8 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.28 }}>
                     <Check size={30} />
                   </motion.div>
-                  <h1 className="mt-5 text-[30px] font-black leading-[1.05] tracking-[-0.03em] text-[var(--text)]">Кабинет создан</h1>
+                  <h1 className="mt-5 text-[28px] font-semibold leading-[1.08] text-[var(--text)]">Кабинет создан</h1>
                   <p className="mx-auto mt-3 max-w-[260px] text-[14px] font-semibold leading-5 text-[var(--text-muted)]">Сейчас откроем ваш кабинет ученика.</p>
                 </motion.div>
               ) : null}

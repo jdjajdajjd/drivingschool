@@ -10,7 +10,7 @@ type AuditFilter = 'all' | AuditAction
 type ReportTab = 'overview' | 'finance' | 'instructors' | 'cars' | 'audit'
 
 export function AdminReports() {
-  const school = db.schools.all()[0]
+  const school = db.schools.currentAdmin()
   const [activeTab, setActiveTab] = useState<ReportTab>('overview')
   
   // Фильтры для журнала

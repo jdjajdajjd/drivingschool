@@ -1,4 +1,4 @@
-import { cn } from '../../lib/utils'
+﻿import { cn } from '../../lib/utils'
 
 type BrandMarkProps = {
   variant?: 'dark' | 'light'
@@ -19,8 +19,8 @@ export function BrandMark({ variant = 'dark', size = 'md', className = '', alt =
       aria-label={alt}
       className={cn(
         sizeClass[size],
-        'inline-flex shrink-0 items-baseline font-black tracking-[-0.03em]',
-        variant === 'light' ? 'text-white' : 'text-[#050609]',
+        'inline-flex shrink-0 items-baseline font-extrabold tracking-normal',
+        variant === 'light' ? 'text-white' : 'text-[var(--text)]',
         className,
       )}
     >

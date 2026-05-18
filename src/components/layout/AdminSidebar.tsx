@@ -43,7 +43,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const navigate = useNavigate()
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const schoolName = school?.name || 'Новая автошкола'
   const publicPath = `/school/${school?.slug ?? 'workspace'}`
 
@@ -81,7 +81,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
         <div className="mx-2.5 mt-2.5 rounded-[10px] border border-[#D8E0EC] bg-white px-3 py-2.5">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#667085]">Автошкола</p>
-          <p className="mt-1 text-[15px] font-black leading-5 text-[#15120E]">{schoolName}</p>
+          <p className="mt-1 text-[15px] font-semibold leading-5 text-[#111315]">{schoolName}</p>
           <p className="mt-1 text-sm font-semibold text-[#334155]">Управление школой</p>
         </div>
 

@@ -1,6 +1,6 @@
 import { addMinutes, eachDayOfInterval, format, isBefore, parseISO } from 'date-fns'
 import { generateId } from '../lib/utils'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import type { BulkSlotCreateResult, LessonType, ResolvedSlot, Slot, SlotStatus } from '../types'
 import { db } from './storage'
 import { getBookingById, getSlotDateTime } from './bookingService'
@@ -10,6 +10,8 @@ import {
   persistSupabaseMutation,
   updateSupabaseSlotStatus,
 } from './supabaseAdminService'
+import { assertAdminPermission } from './adminAccess'
+import { validateBranchBelongsToSchool, validateInstructorBelongsToSchool } from './tenantIntegrity'
 
 export interface CreateSlotParams {
   schoolId: string
@@ -83,6 +85,9 @@ export function checkSlotDuplicate(instructorId: string, date: string, startTime
 }
 
 export function createSlot(params: CreateSlotParams, options: { skipRemote?: boolean } = {}): { ok: boolean; slot?: Slot; error?: string } {
+  const access = assertAdminPermission('schedule.manage')
+  if (!access.ok) return access
+
   const instructor = db.instructors.byId(params.instructorId)
   if (!instructor) {
     return { ok: false, error: 'Инструктор не найден.' }
@@ -90,6 +95,16 @@ export function createSlot(params: CreateSlotParams, options: { skipRemote?: boo
 
   if (!instructor.isActive) {
     return { ok: false, error: 'Нельзя создавать время для выключенного инструктора.' }
+  }
+
+  const branchError = validateBranchBelongsToSchool(params.schoolId, params.branchId)
+  if (branchError) return { ok: false, error: branchError }
+
+  const instructorError = validateInstructorBelongsToSchool(params.schoolId, params.instructorId)
+  if (instructorError) return { ok: false, error: instructorError }
+
+  if (instructor.branchId !== params.branchId) {
+    return { ok: false, error: 'Инструктор не относится к выбранному филиалу.' }
   }
 
   const slotDate = new Date(`${params.date}T${params.startTime}:00`)
@@ -133,7 +148,7 @@ export function createSlot(params: CreateSlotParams, options: { skipRemote?: boo
 export async function createSlotConfirmed(params: CreateSlotParams): Promise<{ ok: boolean; slot?: Slot; error?: string }> {
   const result = createSlot(params, { skipRemote: true })
   if (!result.ok || !result.slot) return result
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     try {
       await createSupabaseSlot({
         slotId: result.slot.id,
@@ -173,6 +188,9 @@ function iterateWindow(
 }
 
 export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRemote?: boolean } = {}): { ok: boolean; result?: BulkSlotCreateResult; error?: string } {
+  const access = assertAdminPermission('schedule.manage')
+  if (!access.ok) return access
+
   const instructor = db.instructors.byId(params.instructorId)
   if (!instructor) {
     return { ok: false, error: 'Инструктор не найден.' }
@@ -180,6 +198,16 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
 
   if (!instructor.isActive) {
     return { ok: false, error: 'Для выключенного инструктора нельзя создать время.' }
+  }
+
+  const branchError = validateBranchBelongsToSchool(params.schoolId, params.branchId)
+  if (branchError) return { ok: false, error: branchError }
+
+  const instructorError = validateInstructorBelongsToSchool(params.schoolId, params.instructorId)
+  if (instructorError) return { ok: false, error: instructorError }
+
+  if (instructor.branchId !== params.branchId) {
+    return { ok: false, error: 'Инструктор не относится к выбранному филиалу.' }
   }
 
   const dates = eachDayOfInterval({
@@ -262,7 +290,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
 export async function createBulkSlotsConfirmed(params: CreateBulkSlotsParams): Promise<{ ok: boolean; result?: BulkSlotCreateResult; error?: string }> {
   const result = createBulkSlots(params, { skipRemote: true })
   if (!result.ok || !result.result) return result
-  if (isSupabaseConfigured()) {
+  if (isWorkspaceSupabaseReady()) {
     const created = result.result.created
     try {
       for (const slot of created) {
@@ -290,6 +318,9 @@ export function updateSlotStatus(
   status: SlotStatus,
   options: { skipRemote?: boolean } = {},
 ): { ok: boolean; slot?: Slot; error?: string } {
+  const access = assertAdminPermission('schedule.manage')
+  if (!access.ok) return access
+
   const slot = db.slots.byId(slotId)
   if (!slot) {
     return { ok: false, error: 'Выбранное время не найдено.' }
@@ -315,11 +346,14 @@ export function updateSlotStatus(
 }
 
 export async function updateSlotStatusConfirmed(slotId: string, status: SlotStatus): Promise<{ ok: boolean; slot?: Slot; error?: string }> {
-  if (isSupabaseConfigured()) await updateSupabaseSlotStatus(slotId, status)
+  if (isWorkspaceSupabaseReady()) await updateSupabaseSlotStatus(slotId, status)
   return updateSlotStatus(slotId, status, { skipRemote: true })
 }
 
 export function deleteSlot(slotId: string, options: { skipRemote?: boolean } = {}): { ok: boolean; error?: string } {
+  const access = assertAdminPermission('schedule.manage')
+  if (!access.ok) return access
+
   const slot = db.slots.byId(slotId)
   if (!slot) {
     return { ok: false, error: 'Выбранное время не найдено.' }
@@ -335,6 +369,6 @@ export function deleteSlot(slotId: string, options: { skipRemote?: boolean } = {
 }
 
 export async function deleteSlotConfirmed(slotId: string): Promise<{ ok: boolean; error?: string }> {
-  if (isSupabaseConfigured()) await deleteSupabaseSlot(slotId)
+  if (isWorkspaceSupabaseReady()) await deleteSupabaseSlot(slotId)
   return deleteSlot(slotId, { skipRemote: true })
 }

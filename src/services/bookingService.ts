@@ -1,7 +1,8 @@
 import { addMinutes, endOfDay, format, isAfter, isBefore, isSameDay, parseISO, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { generateId } from '../lib/utils'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { normalizePersonName } from '../lib/nameFormat'
+import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import type { Booking, ResolvedBooking, School, Slot, Student } from '../types'
 import { db } from './storage'
 import {
@@ -112,7 +113,7 @@ export function getOrCreateStudent(
   if (existingStudent) {
     const nextStudent: Student = {
       ...existingStudent,
-      name: name.trim() || existingStudent.name,
+      name: normalizePersonName(name) || existingStudent.name,
       phone: normalizedPhone,
       normalizedPhone,
     }
@@ -123,7 +124,7 @@ export function getOrCreateStudent(
   const student: Student = {
     id: generateId('stu'),
     schoolId,
-    name: name.trim(),
+    name: normalizePersonName(name),
     phone: normalizedPhone,
     normalizedPhone,
     email: '',
@@ -226,7 +227,7 @@ function saveBookingAndSlot(booking: Booking, slot: Slot): BookingMutationResult
 }
 
 export function createBooking(params: CreateBookingParams): BookingMutationResult {
-  const studentName = params.studentName.trim()
+  const studentName = normalizePersonName(params.studentName)
   const normalizedPhone = normalizePhone(params.studentPhone)
 
   if (!params.branchId || !params.instructorId || !params.slotId) {
@@ -348,7 +349,7 @@ export function cancelBooking(bookingId: string, options: { skipRemote?: boolean
 }
 
 export async function cancelBookingConfirmed(bookingId: string): Promise<BookingMutationResult> {
-  if (isSupabaseConfigured()) await cancelSupabaseBooking(bookingId)
+  if (isWorkspaceSupabaseReady()) await cancelSupabaseBooking(bookingId)
   return cancelBooking(bookingId, { skipRemote: true })
 }
 
@@ -416,7 +417,7 @@ export function completeBooking(bookingId: string, options: { skipRemote?: boole
 }
 
 export async function completeBookingConfirmed(bookingId: string): Promise<BookingMutationResult> {
-  if (isSupabaseConfigured()) await completeSupabaseBooking(bookingId)
+  if (isWorkspaceSupabaseReady()) await completeSupabaseBooking(bookingId)
   return completeBooking(bookingId, { skipRemote: true })
 }
 
@@ -506,7 +507,7 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
 }
 
 export async function rescheduleBookingConfirmed(params: RescheduleBookingParams): Promise<BookingMutationResult> {
-  if (isSupabaseConfigured()) await rescheduleSupabaseBooking(params.bookingId, params.newSlotId)
+  if (isWorkspaceSupabaseReady()) await rescheduleSupabaseBooking(params.bookingId, params.newSlotId)
   return rescheduleBooking(params, { skipRemote: true })
 }
 

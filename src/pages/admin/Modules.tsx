@@ -65,7 +65,7 @@ function getPriceLabel(module: Module): string {
 export function AdminModules() {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const [filter, setFilter] = useState<'all' | ModuleCategory>('all')
   const [showBaseFeatures, setShowBaseFeatures] = useState(false)
   const [, forceUpdate] = useState(0)
@@ -191,8 +191,8 @@ export function AdminModules() {
                 onClick={() => setFilter(item)}
                 className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                   filter === item
-                    ? 'border-[#0E7C66] bg-[#10201F] text-white'
-                    : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:bg-[#FFF3D6] hover:text-[#111827]'
+                    ? 'border-[#111827] bg-[#111827] text-white'
+                    : 'border-[#D8E0EC] bg-white text-[#4B5A70] hover:bg-[#EAF3FF] hover:text-[#111827]'
                 }`}
               >
                 {item === 'all' ? 'Все' : MODULE_CATEGORY_LABELS[item]}

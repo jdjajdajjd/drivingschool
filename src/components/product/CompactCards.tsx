@@ -1,4 +1,4 @@
-import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, Location01Icon, Logout03Icon, MapsIcon, Settings02Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
+﻿import { ArrowRight01Icon, Calendar03Icon, CheckmarkCircle02Icon, Location01Icon, Logout03Icon, MapsIcon, Settings02Icon, SmartPhone01Icon, User03Icon } from '@hugeicons/core-free-icons'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'
@@ -78,21 +78,21 @@ export function InstructorCompactCard({
         'flex w-full items-center gap-3.5 p-4 text-left transition-all duration-150',
         'bg-[var(--surface)]',
         selected
-          ? 'border-2 shadow-[0_0_0_3px_rgba(36,54,217,0.14),0_18px_45px_rgba(15,20,25,0.10)]'
+          ? 'border-2 shadow-[0_0_0_3px_rgba(17,19,21,0.10),0_18px_45px_rgba(15,20,25,0.10)]'
           : 'border border-[var(--border)] shadow-[var(--shadow-card)] hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]',
       )}
       style={{ borderRadius: '24px' }}
     >
       <Avatar
         initials={instructor.avatarInitials || initialsFromText(shortName)}
-        color={instructor.avatarColor || '#EFF2FF'}
+        color={instructor.avatarColor || '#EEF3F5'}
         src={getInstructorPhoto(instructor)}
         alt={instructor.name}
         size="lg"
         className="rounded-full text-[var(--accent)]"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-extrabold tracking-tight" style={{ color: ui.text }}>{shortName}</p>
+        <p className="text-[15px] font-semibold" style={{ color: ui.text }}>{shortName}</p>
         <p className="mt-1 text-[13px] font-medium" style={{ color: ui.textMuted }}>
           {instructor.car ?? 'Учебный автомобиль'} · {instructor.transmission === 'auto' ? 'автомат' : 'механика'}
         </p>
@@ -100,7 +100,7 @@ export function InstructorCompactCard({
           {(instructor.categories ?? []).slice(0, 3).map((category) => (
             <span
               key={category}
-              className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
               style={{ background: ui.surfaceMuted, color: ui.textMuted }}
             >
               {category}
@@ -108,7 +108,7 @@ export function InstructorCompactCard({
           ))}
           {branch ? (
             <span
-              className="max-w-[110px] truncate rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+              className="max-w-[110px] truncate rounded-full px-2.5 py-0.5 text-[11px] font-medium"
               style={{ background: ui.surfaceMuted, color: ui.textSoft }}
             >
               {branch.name}
@@ -119,17 +119,17 @@ export function InstructorCompactCard({
       <div className="flex w-[80px] shrink-0 flex-col items-end gap-2">
         {nextSlot ? (
           <div className="text-right">
-            <p className="text-[13px] font-extrabold" style={{ color: ui.text }}>{nextSlot.time}</p>
+            <p className="text-[13px] font-semibold" style={{ color: ui.text }}>{nextSlot.time}</p>
             <p className="text-[12px] font-medium" style={{ color: ui.textSoft }}>{formatDate(nextSlot.date)}</p>
           </div>
         ) : (
           <p className="text-right text-[12px] font-medium" style={{ color: ui.textSoft }}>Нет окон</p>
         )}
         <span
-          className="inline-flex min-h-8 items-center rounded-full px-3 text-[12px] font-extrabold transition-all duration-150"
+          className="inline-flex min-h-8 items-center rounded-full px-3 text-[12px] font-semibold transition-all duration-150"
           style={
             selected
-              ? { background: ui.accent, color: 'white', boxShadow: '0 12px 28px rgba(36,54,217,0.24)' }
+              ? { background: ui.accent, color: 'white', boxShadow: '0 12px 28px rgba(17,19,21,0.18)' }
               : { background: ui.accentSoft, color: ui.accent }
           }
         >
@@ -161,7 +161,7 @@ export function BranchCompactCard({ branch, onSelect }: { branch: Branch; onSele
         <Location size={18} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-extrabold tracking-tight" style={{ color: ui.text }}>{branch.name}</span>
+        <span className="block truncate text-[15px] font-semibold" style={{ color: ui.text }}>{branch.name}</span>
         <span className="mt-1 block truncate text-[13px] font-medium" style={{ color: ui.textMuted }}>{branch.address}</span>
         {branch.phone ? (
           <span className="mt-0.5 block text-[13px] font-medium" style={{ color: ui.textSoft }}>{formatPhone(branch.phone)}</span>
@@ -200,21 +200,21 @@ export function DayChipsScroller({
                 background: active ? ui.accentSoft : ui.surface,
                 border: `2px solid ${active ? ui.accent : ui.border}`,
                 borderRadius: '18px',
-                boxShadow: active ? '0 0 0 3px rgba(36,54,217,0.14)' : '0 18px 45px rgba(15,20,25,0.10)',
+                boxShadow: active ? '0 0 0 3px rgba(17,19,21,0.10)' : '0 18px 45px rgba(15,20,25,0.10)',
                 minHeight: '68px',
               }}
             >
               {active && (
                 <Check size={12} className="absolute right-2 top-2" style={{ color: ui.accent }} />
               )}
-              <span className="text-[12px] font-extrabold" style={{ color: ui.text }}>
+              <span className="text-[12px] font-semibold" style={{ color: ui.text }}>
                 {index === 0 ? 'Сегодня' : index === 1 ? 'Завтра' : formatDayOfWeek(date).slice(0, 2)}
               </span>
               <span className="mt-0.5 text-[11px] font-medium" style={{ color: ui.textMuted }}>
                 {formatHumanDate(date, false)}
               </span>
               <span
-                className="mt-1 text-[11px] font-bold"
+                className="mt-1 text-[11px] font-medium"
                 style={{ color: active ? ui.accent : ui.textSoft }}
               >
                 {count} окон
@@ -251,7 +251,7 @@ export function TimeSlotGrid({
               background: active ? ui.accentSoft : ui.surface,
               border: `2px solid ${active ? ui.accent : ui.border}`,
               borderRadius: '18px',
-              boxShadow: active ? '0 0 0 3px rgba(36,54,217,0.14)' : '0 18px 45px rgba(15,20,25,0.10)',
+              boxShadow: active ? '0 0 0 3px rgba(17,19,21,0.10)' : '0 18px 45px rgba(15,20,25,0.10)',
               minHeight: '80px',
             }}
           >
@@ -428,9 +428,9 @@ export function SuccessHeader({
 function bookingCardStyles(state: BookingUrgencyState): React.CSSProperties {
   return {
     'future-muted': { background: ui.surfaceSoft, border: `1px solid ${ui.border}` },
-    'soon-2-days': { background: ui.accentSoft, border: '1px solid rgba(36,54,217,0.18)' },
-    tomorrow: { background: ui.surface, border: '1px solid rgba(36,54,217,0.18)' },
-    today: { background: ui.accentSoft, border: '1px solid rgba(36,54,217,0.24)' },
+    'soon-2-days': { background: ui.accentSoft, border: '1px solid rgba(17,19,21,0.12)' },
+    tomorrow: { background: ui.surface, border: '1px solid rgba(17,19,21,0.12)' },
+    today: { background: ui.accentSoft, border: '1px solid rgba(17,19,21,0.18)' },
     completed: { background: ui.surfaceMuted, border: `1px solid ${ui.border}`, opacity: 0.9 },
     cancelled: { background: ui.surfaceMuted, border: `1px solid ${ui.border}`, opacity: 0.8 },
   }[state] as React.CSSProperties
@@ -447,9 +447,9 @@ export function BookingStatusChip({ state, slot }: { state: BookingUrgencyState;
           : getRelativeLessonLabel(slot)
 
   const chipStyles: Record<BookingUrgencyState, React.CSSProperties> = {
-    today: { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(36,54,217,0.18)' },
-    tomorrow: { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(36,54,217,0.18)' },
-    'soon-2-days': { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(36,54,217,0.18)' },
+    today: { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(17,19,21,0.12)' },
+    tomorrow: { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(17,19,21,0.12)' },
+    'soon-2-days': { background: ui.accentSoft, color: ui.accent, border: '1px solid rgba(17,19,21,0.12)' },
     'future-muted': { background: ui.surfaceMuted, color: ui.textMuted, border: `1px solid ${ui.border}` },
     completed: { background: ui.greenSoft, color: ui.green, border: '1px solid rgba(21,128,61,0.15)' },
     cancelled: { background: ui.redSoft, color: ui.red, border: '1px solid rgba(229,83,75,0.15)' },
@@ -528,7 +528,7 @@ export function StudentBookingCard({
       >
         <Avatar
           initials={instructor?.avatarInitials ?? initialsFromText(shortName)}
-          color={instructor?.avatarColor || '#EFF2FF'}
+          color={instructor?.avatarColor || '#EEF3F5'}
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="sm"
@@ -559,7 +559,7 @@ export function StudentBookingCard({
       <div className="flex items-start gap-3 p-4">
         <Avatar
           initials={instructor?.avatarInitials ?? initialsFromText(shortName)}
-          color={instructor?.avatarColor || '#EFF2FF'}
+          color={instructor?.avatarColor || '#EEF3F5'}
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="lg"
@@ -813,7 +813,7 @@ export function NearestLessonCard({
       <div className="mt-4 flex items-center gap-3.5">
         <Avatar
           initials={instructor?.avatarInitials ?? 'И'}
-          color={instructor?.avatarColor || '#EFF2FF'}
+          color={instructor?.avatarColor || '#EEF3F5'}
           src={instructor ? getInstructorPhoto(instructor) : undefined}
           alt={instructor?.name ?? 'Инструктор'}
           size="lg"

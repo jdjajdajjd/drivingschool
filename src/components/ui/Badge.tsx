@@ -17,20 +17,20 @@ export function Badge({
   style,
 }: BadgeProps) {
   const variants: Record<string, { bg: string; color: string; border: string }> = {
-    default: { bg: '#F4F5F6', color: '#6F747A', border: 'rgba(0,0,0,0.06)' },
-    success: { bg: '#F0FDF4', color: '#15803D', border: 'rgba(21,128,61,0.15)' },
-    warning: { bg: '#FFFBEB', color: '#B45309', border: 'rgba(180,83,9,0.15)' },
-    error: { bg: '#FEF2F2', color: '#E5534B', border: 'rgba(229,83,75,0.15)' },
-    accent: { bg: 'rgba(246,184,77,0.12)', color: '#C97F10', border: 'rgba(246,184,77,0.20)' },
-    outline: { bg: 'transparent', color: '#6F747A', border: 'rgba(0,0,0,0.10)' },
-    info: { bg: '#EFF6FF', color: '#1D4ED8', border: 'rgba(29,78,216,0.15)' },
-    muted: { bg: '#F4F5F6', color: '#9EA3A8', border: 'rgba(0,0,0,0.06)' },
+    default: { bg: '#F2F6FA', color: '#667381', border: 'rgba(17,24,39,0.07)' },
+    success: { bg: '#EAF6EE', color: '#247A4B', border: 'rgba(36,122,75,0.16)' },
+    warning: { bg: '#FFF4DC', color: '#A15C07', border: 'rgba(161,92,7,0.16)' },
+    error: { bg: '#FEF2F2', color: '#D1433C', border: 'rgba(209,67,60,0.16)' },
+    accent: { bg: '#EAF3FF', color: '#111827', border: 'rgba(17,24,39,0.08)' },
+    outline: { bg: 'rgba(255,255,255,0.62)', color: '#667381', border: 'rgba(17,24,39,0.10)' },
+    info: { bg: '#EAF4FF', color: '#315A7C', border: 'rgba(49,90,124,0.15)' },
+    muted: { bg: '#F2F6FA', color: '#8A96A3', border: 'rgba(17,24,39,0.06)' },
   }
   const v = variants[variant] ?? variants.default
   return (
     <span
       style={{ background: v.bg, color: v.color, borderColor: v.border, ...style }}
-      className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border font-semibold', size === 'sm' ? 'px-2.5 py-0.5 text-[12px]' : 'px-3 py-1 text-[13px]', className)}
+      className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border font-medium', size === 'sm' ? 'px-2.5 py-1 text-[12px]' : 'px-3 py-1.5 text-[13px]', className)}
     >
       {children}
     </span>

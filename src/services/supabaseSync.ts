@@ -1,8 +1,15 @@
 import { db } from './storage'
 import { isSupabaseRemoteConfigured, markWorkspaceSupabaseReady } from '../lib/supabase'
-import { getAdminSchoolBundle } from './supabasePublicService'
+import { getAdminSchoolBundle, getAdminSchoolBundleById } from './supabasePublicService'
+import { hydrateAdminRecords } from './adminStorage'
+import { listSupabaseAdminRecords } from './supabaseAdminService'
 
 const SYNC_TIMEOUT_MS = 3500
+
+export interface SupabaseSchoolSyncTarget {
+  slug?: string
+  schoolId?: string
+}
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined
@@ -20,13 +27,16 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 }
 
-export async function syncSupabaseSchoolToLocalDb(slug: string): Promise<boolean> {
+export async function syncSupabaseSchoolToLocalDb(target: SupabaseSchoolSyncTarget): Promise<boolean> {
   if (!isSupabaseRemoteConfigured()) {
     markWorkspaceSupabaseReady(false)
     return false
   }
 
-  const bundle = await withTimeout(getAdminSchoolBundle(slug), SYNC_TIMEOUT_MS)
+  const bundlePromise = target.schoolId
+    ? getAdminSchoolBundleById(target.schoolId)
+    : getAdminSchoolBundle(target.slug ?? 'virazh')
+  const bundle = await withTimeout(bundlePromise, SYNC_TIMEOUT_MS)
   if (!bundle) {
     markWorkspaceSupabaseReady(false)
     return false
@@ -46,6 +56,7 @@ export async function syncSupabaseSchoolToLocalDb(slug: string): Promise<boolean
   bundle.students.forEach((student) => db.students.upsert(student))
   bundle.bookings.forEach((booking) => db.bookings.upsert(booking))
   markWorkspaceSupabaseReady(true)
+  hydrateAdminRecords(await listSupabaseAdminRecords(bundle.school.id))
 
   return true
 }

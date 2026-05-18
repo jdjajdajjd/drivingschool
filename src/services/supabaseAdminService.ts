@@ -1,8 +1,9 @@
-import { supabase } from '../lib/supabase'
+import { isSupabaseRemoteConfigured, isWorkspaceSupabaseReady, supabase } from '../lib/supabase'
 import type { LessonType, School, SlotStatus, Student, StudentDocument, StudentProgress, StudentRequest, StudentRequestStatus } from '../types'
 import type { BranchInput } from './branchService'
 import type { InstructorInput } from './instructorService'
-import { getAccessPassword } from './accessControl'
+import { getAccessSecret } from './accessControl'
+import type { Database } from '../lib/supabaseTypes'
 
 type StudentProgressRow = {
   id: string
@@ -42,6 +43,27 @@ type StudentRequestRow = {
   updated_at: string
 }
 
+export type SupabaseAdminRecordKind =
+  | 'cars'
+  | 'payments'
+  | 'documents'
+  | 'internal_exams'
+  | 'gibdd_exams'
+  | 'users'
+  | 'settings'
+  | 'audit_log'
+  | 'problem_cases'
+
+export type SupabaseAdminRecordRow = {
+  id: string
+  school_id: string
+  kind: SupabaseAdminRecordKind
+  branch_id: string | null
+  student_id: string | null
+  payload: Record<string, unknown>
+  updated_at: string
+}
+
 type StudentRow = {
   id: string
   school_id: string
@@ -65,19 +87,37 @@ type StudentRow = {
   created_at: string
 }
 
-function getAdminPassword(): string {
-  const password = getAccessPassword('admin')
-  if (!password) {
+type SchoolRow = Database['public']['Tables']['schools']['Row']
+
+function getAdminSecret(options: { requireWorkspaceReady?: boolean } = {}): string {
+  if ((options.requireWorkspaceReady ?? true) && !isWorkspaceSupabaseReady()) {
+    throw new Error('Workspace Supabase session is not ready.')
+  }
+  const secret = getAccessSecret('admin')
+  if (!secret) {
     throw new Error('Войдите в кабинет школы заново.')
   }
-  return password
+  return secret
+}
+
+function getSuperadminSecret(): string {
+  const secret = getAccessSecret('superadmin')
+  if (!secret) {
+    throw new Error('Войдите в операторскую панель заново.')
+  }
+  return secret
 }
 
 async function runAdminMutation<T>(
   request: PromiseLike<{ data: T | null; error: unknown }>,
 ): Promise<T | null> {
   const { data, error } = await request
-  if (error) throw error
+  if (error) {
+    const message = typeof error === 'object' && error && 'message' in error
+      ? String((error as { message?: unknown }).message || 'Ошибка Supabase.')
+      : 'Ошибка Supabase.'
+    throw new Error(message)
+  }
   return data
 }
 
@@ -85,7 +125,7 @@ export async function cancelSupabaseBooking(bookingId: string): Promise<void> {
   await runAdminMutation(
     supabase.rpc('public_cancel_booking', {
       p_booking_id: bookingId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -94,7 +134,7 @@ export async function completeSupabaseBooking(bookingId: string): Promise<void> 
   await runAdminMutation(
     supabase.rpc('public_complete_booking', {
       p_booking_id: bookingId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -104,7 +144,7 @@ export async function rescheduleSupabaseBooking(bookingId: string, newSlotId: st
     supabase.rpc('public_reschedule_booking', {
       p_booking_id: bookingId,
       p_new_slot_id: newSlotId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -113,6 +153,131 @@ export function persistSupabaseMutation(mutation: Promise<void>): void {
   void mutation.catch((error) => {
     console.error('Supabase mutation failed', error)
   })
+}
+
+function mapSupabaseSchool(row: SchoolRow): School {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description,
+    phone: row.phone,
+    email: row.email,
+    address: row.address,
+    createdAt: row.created_at,
+    logoUrl: row.logo_url ?? undefined,
+    primaryColor: row.primary_color ?? undefined,
+    bookingLimitEnabled: row.booking_limit_enabled,
+    maxActiveBookingsPerStudent: row.max_active_bookings_per_student,
+    branchSelectionMode: row.branch_selection_mode,
+    maxSlotsPerBooking: row.max_slots_per_booking,
+    defaultLessonDuration: row.default_lesson_duration,
+    enabledCategoryCodes: row.enabled_category_codes?.length ? row.enabled_category_codes : undefined,
+    isActive: row.is_active,
+  }
+}
+
+export async function createSupabaseSchool(
+  school: School,
+): Promise<School> {
+  if (!isSupabaseRemoteConfigured()) {
+    throw new Error('Supabase не подключен.')
+  }
+
+  const data = await runAdminMutation<SchoolRow[]>(
+    supabase.rpc('public_create_school', {
+      p_school_id: school.id,
+      p_name: school.name,
+      p_slug: school.slug,
+      p_description: school.description,
+      p_phone: school.phone,
+      p_email: school.email,
+      p_address: school.address,
+      p_primary_color: school.primaryColor ?? '',
+      p_logo_url: school.logoUrl ?? '',
+      p_booking_limit_enabled: school.bookingLimitEnabled,
+      p_max_active_bookings_per_student: school.maxActiveBookingsPerStudent ?? 2,
+      p_branch_selection_mode: school.branchSelectionMode ?? 'student_choice',
+      p_max_slots_per_booking: school.maxSlotsPerBooking ?? 1,
+      p_default_lesson_duration: school.defaultLessonDuration ?? 90,
+      p_enabled_category_codes: school.enabledCategoryCodes?.length ? school.enabledCategoryCodes : ['B'],
+      p_is_active: school.isActive !== false,
+      p_superadmin_password: getSuperadminSecret(),
+    }),
+  )
+
+  const row = Array.isArray(data) ? data[0] : null
+  if (!row) {
+    throw new Error('База не вернула созданную автошколу.')
+  }
+
+  return mapSupabaseSchool(row)
+}
+
+export async function listSupabaseSchools(): Promise<School[]> {
+  if (!isSupabaseRemoteConfigured()) return []
+  const data = await runAdminMutation<SchoolRow[]>(
+    supabase.rpc('public_superadmin_list_schools', {
+      p_superadmin_password: getSuperadminSecret(),
+    }),
+  )
+
+  return (data ?? []).map(mapSupabaseSchool)
+}
+
+export async function deleteSupabaseSchool(schoolId: string): Promise<void> {
+  if (!isSupabaseRemoteConfigured()) {
+    throw new Error('Supabase не подключен.')
+  }
+
+  await runAdminMutation(
+    supabase.rpc('public_delete_school', {
+      p_school_id: schoolId,
+      p_superadmin_password: getSuperadminSecret(),
+    }),
+  )
+}
+
+export async function listSupabaseAdminRecords(schoolId: string): Promise<SupabaseAdminRecordRow[]> {
+  if (!isWorkspaceSupabaseReady()) return []
+  const data = await runAdminMutation<SupabaseAdminRecordRow[]>(
+    supabase.rpc('public_admin_list_records', {
+      p_school_id: schoolId,
+      p_staff_password: getAdminSecret(),
+    }),
+  )
+  return data ?? []
+}
+
+export async function upsertSupabaseAdminRecord(params: {
+  kind: SupabaseAdminRecordKind
+  id: string
+  schoolId: string
+  branchId?: string | null
+  studentId?: string | null
+  payload: Record<string, unknown>
+}): Promise<void> {
+  await runAdminMutation(
+    supabase.rpc('public_upsert_admin_record', {
+      p_kind: params.kind,
+      p_record_id: params.id,
+      p_school_id: params.schoolId,
+      p_branch_id: params.branchId ?? null,
+      p_student_id: params.studentId ?? null,
+      p_payload: params.payload,
+      p_staff_password: getAdminSecret(),
+    }),
+  )
+}
+
+export async function deleteSupabaseAdminRecord(kind: SupabaseAdminRecordKind, recordId: string): Promise<void> {
+  await runAdminMutation(
+    supabase.rpc('public_delete_admin_record', {
+      p_kind: kind,
+      p_record_id: recordId,
+      p_staff_password: getAdminSecret(),
+    }),
+  )
 }
 
 export async function updateSupabaseSchoolSettings(
@@ -145,7 +310,7 @@ export async function updateSupabaseSchoolSettings(
       p_max_slots_per_booking: patch.maxSlotsPerBooking ?? 1,
       p_default_lesson_duration: patch.defaultLessonDuration ?? 90,
       p_enabled_category_codes: patch.enabledCategoryCodes?.length ? patch.enabledCategoryCodes : ['B'],
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -171,16 +336,20 @@ export async function updateSupabaseStudentAdmin(student: Student): Promise<void
       p_driving_end_date: student.drivingEndDate ?? null,
       p_branch_change_requested_at: student.branchChangeRequestedAt ?? null,
       p_branch_change_note: student.branchChangeNote ?? null,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
 
-export async function getSupabaseStudentsAdmin(schoolId: string): Promise<Student[]> {
+export async function getSupabaseStudentsAdmin(
+  schoolId: string,
+  options: { allowBeforeWorkspaceReady?: boolean } = {},
+): Promise<Student[]> {
+  if (!isWorkspaceSupabaseReady() && !options.allowBeforeWorkspaceReady) return []
   const data = await runAdminMutation<StudentRow[]>(
     supabase.rpc('public_admin_list_students', {
       p_school_id: schoolId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret({ requireWorkspaceReady: !options.allowBeforeWorkspaceReady }),
     }),
   )
   return (data ?? []).map((row) => ({
@@ -224,16 +393,17 @@ export async function upsertSupabaseStudentProgressAdmin(progress: StudentProgre
       p_gibdd_exam_status: progress.gibddExamStatus ?? 'not_scheduled',
       p_notes: progress.notes,
       p_updated_at: progress.updatedAt,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
 
 export async function getSupabaseStudentProgressAdmin(studentId: string): Promise<StudentProgress | null> {
+  if (!isWorkspaceSupabaseReady()) return null
   const data = await runAdminMutation<StudentProgressRow[]>(
     supabase.rpc('public_get_student_progress', {
       p_student_id: studentId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
   const row = Array.isArray(data) ? data[0] : null
@@ -267,16 +437,17 @@ export async function upsertSupabaseStudentDocumentsAdmin(documents: StudentDocu
         status: document.status,
         updated_at: document.updatedAt,
       })),
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
 
 export async function getSupabaseStudentDocumentsAdmin(studentId: string): Promise<StudentDocument[]> {
+  if (!isWorkspaceSupabaseReady()) return []
   const data = await runAdminMutation<StudentDocumentRow[]>(
     supabase.rpc('public_get_student_documents', {
       p_student_id: studentId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
   return (data ?? []).map((row) => ({
@@ -299,16 +470,17 @@ export async function updateSupabaseStudentRequestStatusAdmin(
       p_request_id: requestId,
       p_status: status,
       p_updated_at: updatedAt,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
 
 export async function getSupabaseStudentRequestsAdmin(schoolId: string): Promise<StudentRequest[]> {
+  if (!isWorkspaceSupabaseReady()) return []
   const data = await runAdminMutation<StudentRequestRow[]>(
     supabase.rpc('public_admin_list_student_requests', {
       p_school_id: schoolId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
   return (data ?? []).map((row) => ({
@@ -335,7 +507,7 @@ export async function upsertSupabaseBranch(branchId: string, input: BranchInput)
       p_address: input.address ?? '',
       p_phone: input.phone ?? '',
       p_is_active: input.isActive,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -344,7 +516,7 @@ export async function deleteSupabaseBranch(branchId: string): Promise<void> {
   await runAdminMutation(
     supabase.rpc('public_delete_branch', {
       p_branch_id: branchId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -364,7 +536,7 @@ export async function upsertSupabaseInstructor(instructorId: string, input: Inst
       p_car: input.car ?? '',
       p_transmission: input.transmission ?? null,
       p_categories: input.categories?.length ? input.categories : ['B'],
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -374,7 +546,7 @@ export async function updateSupabaseInstructorActive(instructorId: string, isAct
     supabase.rpc('public_update_instructor_active', {
       p_instructor_id: instructorId,
       p_is_active: isActive,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -399,7 +571,7 @@ export async function createSupabaseSlot(params: {
       p_start_time: params.startTime,
       p_duration: params.duration,
       p_lesson_type: params.lessonType,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -409,7 +581,7 @@ export async function updateSupabaseSlotStatus(slotId: string, status: SlotStatu
     supabase.rpc('public_update_slot_status', {
       p_slot_id: slotId,
       p_status: status,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }
@@ -418,7 +590,7 @@ export async function deleteSupabaseSlot(slotId: string): Promise<void> {
   await runAdminMutation(
     supabase.rpc('public_delete_slot', {
       p_slot_id: slotId,
-      p_staff_password: getAdminPassword(),
+      p_staff_password: getAdminSecret(),
     }),
   )
 }

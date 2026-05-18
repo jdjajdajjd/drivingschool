@@ -22,7 +22,7 @@ function calcRevenue(bookings: ReturnType<typeof getBookingsBySchool>, from: Dat
 }
 
 export default function MoneyPage() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
 
   const allBookings = useMemo(
     () => (school ? getBookingsBySchool(school.id) : []),

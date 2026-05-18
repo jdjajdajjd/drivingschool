@@ -1,14 +1,24 @@
 import { addDays, format, isBefore, isSameDay, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { getSlotDateTime, getUpcomingBookings } from '../../services/bookingService'
 import { loadStudentRequests, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 import { db } from '../../services/storage'
+import { validateDataIntegrity } from '../../services/integrityService'
+import { auditLog } from '../../services/adminStorage'
+import type { AuditAction } from '../../types'
+import { Modal } from '../../components/ui/Modal'
+import {
+  ADMIN_DASHBOARD_BLOCKS,
+  getEnabledDashboardBlockIds,
+  saveEnabledDashboardBlockIds,
+  type AdminDashboardBlockId,
+} from '../../services/adminPanelPreferences'
 
 function getSchool() {
-  return db.schools.all()[0] ?? null
+  return db.schools.currentAdmin() ?? null
 }
 
 type SetupStep = {
@@ -29,10 +39,30 @@ type AttentionItem = {
   tone?: 'default' | 'warning' | 'danger'
 }
 
+const AUDIT_ACTION_LABELS: Partial<Record<AuditAction, string>> = {
+  booking_cancelled: 'Отмена записи',
+  booking_rescheduled: 'Перенос записи',
+  booking_completed: 'Занятие закрыто',
+  booking_no_show: 'Неявка',
+  payment_added: 'Оплата',
+  student_created: 'Новый ученик',
+  student_note: 'Заметка',
+  instructor_updated: 'Инструктор',
+  car_created: 'Машина',
+  document_uploaded: 'Документ',
+  document_verified: 'Документ проверен',
+  settings_changed: 'Настройки',
+  user_created: 'Команда',
+  user_updated: 'Команда',
+  slot_created: 'Окно расписания',
+}
+
 export function AdminDashboard() {
   const school = getSchool()
   const navigate = useNavigate()
   const [requestRefresh, setRequestRefresh] = useState(0)
+  const [blockSettingsOpen, setBlockSettingsOpen] = useState(false)
+  const [blocksVersion, setBlocksVersion] = useState(0)
 
   const data = useMemo(() => {
     if (!school) return null
@@ -42,6 +72,8 @@ export function AdminDashboard() {
     const slots = db.slots.bySchool(school.id)
     const bookings = db.bookings.bySchool(school.id)
     const requests = loadStudentRequests(school.id)
+    const integrityIssues = validateDataIntegrity(school.id)
+    const recentAudit = auditLog.all(school.id, 5)
     const upcoming = getUpcomingBookings(school.id).filter((entry) => entry.booking.status === 'active')
     const today = upcoming.filter((entry) => entry.slot && isSameDay(getSlotDateTime(entry.slot), now))
     const freeWeek = slots.filter((slot) => {
@@ -58,7 +90,7 @@ export function AdminDashboard() {
       { id: 'instructor', title: 'Инструктор', text: 'Кто проводит занятия, принимает звонки и закрывает уроки.', done: instructors.some((instructor) => instructor.isActive), to: `${ADMIN_BASE_PATH}/instructors`, action: 'Добавить' },
       { id: 'schedule', title: 'Первые окна расписания', text: 'Свободное время, куда можно записать ученика.', done: freeWeek.length > 0, to: `${ADMIN_BASE_PATH}/slots`, action: 'Собрать' },
     ]
-    return { branches, instructors, slots, bookings, requests, upcoming, today, freeWeek, overdue, setup }
+    return { branches, instructors, slots, bookings, requests, integrityIssues, recentAudit, upcoming, today, freeWeek, overdue, setup }
   }, [school, requestRefresh])
 
   if (!school || !data) {
@@ -71,6 +103,8 @@ export function AdminDashboard() {
   const openRequests = data.requests.filter((request) => request.status === 'new' || request.status === 'reviewing')
   const nextLesson = data.upcoming[0]
   const firstInstructor = data.instructors.find((i) => i.isActive && i.token)
+  const enabledBlocks = getEnabledDashboardBlockIds(school.id)
+  const hasBlock = (id: AdminDashboardBlockId) => enabledBlocks.includes(id)
 
   const attention: AttentionItem[] = [
     ...data.overdue.slice(0, 3).map((booking) => ({
@@ -90,6 +124,14 @@ export function AdminDashboard() {
       tone: 'warning' as const,
     })),
     data.freeWeek.length === 0 ? { id: 'no-slots', title: 'Нет свободных окон на 7 дней', text: 'Запись остановится, если не собрать расписание.', to: `${ADMIN_BASE_PATH}/slots`, action: 'Собрать', tone: 'warning' as const } : null,
+    ...data.integrityIssues.filter((issue) => issue.level === 'error').slice(0, 3).map((issue) => ({
+      id: issue.id,
+      title: 'Ошибка в данных школы',
+      text: issue.message,
+      to: `${ADMIN_BASE_PATH}/reports`,
+      action: 'Проверить',
+      tone: 'danger' as const,
+    })),
   ].filter(Boolean) as AttentionItem[]
 
   async function patchRequest(requestId: string, status: 'reviewing' | 'resolved' | 'rejected') {
@@ -145,7 +187,10 @@ export function AdminDashboard() {
             <div>
               <h1 className="text-[34px] font-black leading-none tracking-[-0.055em] text-[#111827] md:text-[48px]">Сегодня</h1>
             </div>
-            <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">Записать ученика</button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setBlockSettingsOpen(true)} className="min-h-12 rounded-[12px] border border-[#E4E7EC] bg-white px-5 text-[14px] font-black text-[#111827]">Блоки</button>
+              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">Записать ученика</button>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-2 md:grid-cols-3">
@@ -164,7 +209,7 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-[18px] border border-[#E4E7EC] bg-white p-5">
+        {hasBlock('nearest') ? <div className="rounded-[18px] border border-[#E4E7EC] bg-white p-5">
           <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#667085]">Ближайшее</p>
           {nextLesson?.slot ? (
             <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="mt-4 w-full rounded-[16px] bg-[#111827] p-4 text-left text-white">
@@ -178,11 +223,11 @@ export function AdminDashboard() {
               <span className="mt-1 block text-[13px] font-semibold leading-5 text-[#667085]">Если школа работает сегодня — проверьте расписание.</span>
             </div>
           )}
-        </div>
+        </div> : null}
       </section>
 
       <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-[18px] border border-[#E4E7EC] bg-white">
+        {hasBlock('attention') ? <div className="rounded-[18px] border border-[#E4E7EC] bg-white">
           <div className="border-b border-[#E4E7EC] p-4"><h2 className="text-[18px] font-black text-[#111827]">Требует внимания</h2></div>
           {attention.length === 0 ? <div className="p-4 text-[14px] font-semibold text-[#667085]">Сейчас критичных действий нет.</div> : (
             <div className="divide-y divide-[#E4E7EC]">
@@ -197,26 +242,129 @@ export function AdminDashboard() {
               ))}
             </div>
           )}
-        </div>
+        </div> : <div />}
 
         <aside className="space-y-4">
-          <section className="rounded-[18px] border border-[#E4E7EC] bg-white">
+          {hasBlock('quickActions') ? <section className="rounded-[18px] border border-[#E4E7EC] bg-white">
             <div className="border-b border-[#E4E7EC] p-4"><h2 className="text-[18px] font-black text-[#111827]">Быстрые действия</h2></div>
             <div className="grid divide-y divide-[#E4E7EC]">
               <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Записать ученика</strong><span className="text-[13px] font-semibold text-[#667085]">Звонок → окно → запись</span></button>
               <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Создать окна</strong><span className="text-[13px] font-semibold text-[#667085]">Собрать неделю инструктору</span></button>
               <button onClick={() => { window.location.href = firstInstructor ? `/instructor/${firstInstructor.token}` : `${ADMIN_BASE_PATH}/instructors` }} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Открыть инструктора</strong><span className="text-[13px] font-semibold text-[#667085]">Мобильный день занятий</span></button>
             </div>
-          </section>
+          </section> : null}
 
-          {openRequests.length > 0 ? (
+          {hasBlock('audit') ? <section className="rounded-[18px] border border-[#E4E7EC] bg-white">
+            <div className="border-b border-[#E4E7EC] p-4">
+              <h2 className="text-[18px] font-black text-[#111827]">Последние действия</h2>
+            </div>
+            {data.recentAudit.length === 0 ? (
+              <div className="p-4 text-[14px] font-semibold text-[#667085]">Журнал пока пуст.</div>
+            ) : (
+              <div className="divide-y divide-[#E4E7EC]">
+                {data.recentAudit.map((entry) => (
+                  <div key={entry.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[14px] font-black text-[#111827]">{AUDIT_ACTION_LABELS[entry.action] ?? entry.action}</p>
+                      <time className="shrink-0 text-[11px] font-black text-[#98A2B3]">{format(new Date(entry.createdAt), 'dd.MM HH:mm')}</time>
+                    </div>
+                    <p className="mt-1 text-[13px] font-semibold leading-5 text-[#667085]">{entry.description}</p>
+                    <p className="mt-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#98A2B3]">{entry.userName}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section> : null}
+
+          {hasBlock('requests') && openRequests.length > 0 ? (
             <section className="rounded-[18px] border border-[#E4E7EC] bg-white">
               <div className="border-b border-[#E4E7EC] p-4"><h2 className="text-[18px] font-black text-[#111827]">Запросы учеников</h2></div>
               {openRequests.slice(0, 3).map((request) => <div key={request.id} className="border-b border-[#E4E7EC] p-4 last:border-b-0"><p className="text-[14px] font-black text-[#111827]">{request.type === 'reschedule' ? 'Перенос' : 'Отмена'}</p><p className="mt-1 text-[13px] font-semibold text-[#667085]">{request.reason || request.comment || 'Без причины'}</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => void patchRequest(request.id, 'reviewing')} className="min-h-10 rounded-[10px] border border-[#E4E7EC] text-[12px] font-black text-[#111827]">В работу</button><button onClick={() => void patchRequest(request.id, 'resolved')} className="min-h-10 rounded-[10px] bg-[#111827] text-[12px] font-black text-white">Решено</button></div></div>)}
             </section>
           ) : null}
+
+          {hasBlock('dataCheck') ? <section className="rounded-[18px] border border-[#E4E7EC] bg-white">
+            <div className="border-b border-[#E4E7EC] p-4">
+              <h2 className="text-[18px] font-black text-[#111827]">Проверка данных</h2>
+            </div>
+            {data.integrityIssues.length === 0 ? (
+              <div className="p-4 text-[14px] font-semibold text-[#667085]">Ошибок связей не найдено.</div>
+            ) : (
+              <div className="divide-y divide-[#E4E7EC]">
+                {data.integrityIssues.slice(0, 4).map((issue) => (
+                  <div key={issue.id} className="p-4">
+                    <p className={`text-[14px] font-black ${issue.level === 'error' ? 'text-[#B42318]' : 'text-[#B54708]'}`}>
+                      {issue.level === 'error' ? 'Ошибка' : 'Предупреждение'}
+                    </p>
+                    <p className="mt-1 text-[13px] font-semibold leading-5 text-[#667085]">{issue.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section> : null}
         </aside>
       </section>
+      <DashboardBlocksModal
+        open={blockSettingsOpen}
+        schoolId={school.id}
+        enabledIds={enabledBlocks}
+        onClose={() => setBlockSettingsOpen(false)}
+        onSaved={() => setBlocksVersion((value) => value + 1)}
+        version={blocksVersion}
+      />
     </div>
+  )
+}
+
+function DashboardBlocksModal({
+  open,
+  schoolId,
+  enabledIds,
+  onClose,
+  onSaved,
+}: {
+  open: boolean
+  schoolId: string
+  enabledIds: AdminDashboardBlockId[]
+  onClose: () => void
+  onSaved: () => void
+  version: number
+}) {
+  const [draft, setDraft] = useState<AdminDashboardBlockId[]>(enabledIds)
+
+  useEffect(() => {
+    if (open) setDraft(enabledIds)
+  }, [enabledIds, open])
+
+  const toggle = (id: AdminDashboardBlockId) => {
+    setDraft((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+  }
+
+  const save = () => {
+    saveEnabledDashboardBlockIds(schoolId, draft)
+    onSaved()
+    onClose()
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Блоки главной" size="md">
+      <div className="space-y-3 p-5">
+        <div className="grid gap-2">
+          {ADMIN_DASHBOARD_BLOCKS.map((item) => (
+            <label key={item.id} className="flex items-start gap-3 rounded-lg border border-[#E4E7EC] bg-white p-3">
+              <input type="checkbox" className="mt-1" checked={draft.includes(item.id)} onChange={() => toggle(item.id)} />
+              <span className="min-w-0">
+                <span className="block text-[14px] font-black text-[#111827]">{item.label}</span>
+                <span className="mt-0.5 block text-[12px] leading-5 text-[#667085]">{item.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+          <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
+        </div>
+      </div>
+    </Modal>
   )
 }

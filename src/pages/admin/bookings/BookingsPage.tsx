@@ -26,7 +26,7 @@ const STATUS_PILL_MAP: Record<string, { label: string; status: 'success' | 'warn
 }
 
 export default function BookingsPage() {
-  const school = db.schools.all()[0] ?? null
+  const school = db.schools.currentAdmin() ?? null
   const { showToast } = useToast()
 
   const [tab, setTab] = useState<Tab>('all')
