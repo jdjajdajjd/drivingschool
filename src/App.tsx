@@ -90,6 +90,7 @@ function adminRoutes(basePath: string) {
       <Route path="settings" element={<AdminSettings />} />
       <Route path="users" element={<AdminUsers />} />
       <Route path="bookings" element={<Navigate to={`${basePath}/schedule`} replace />} />
+      <Route path="slots" element={<Navigate to={`${basePath}/schedule`} replace />} />
       <Route path="people" element={<Navigate to={`${basePath}/students`} replace />} />
       <Route path="school" element={<Navigate to={`${basePath}/settings`} replace />} />
       <Route path="money" element={<Navigate to={`${basePath}/payments`} replace />} />

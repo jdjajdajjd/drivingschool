@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { addDays, format, isBefore, isSameDay, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -9,6 +9,7 @@ const WalletCards = CreditCards
 import { Modal } from '../../components/ui/Modal'
 import { db } from '../../services/storage'
 import { adminCars, adminDocuments, adminInternalExams, adminPayments, problemCases } from '../../services/adminStorage'
+import { loadStudentRequests, refreshStudentRequestsFromSupabase } from '../../services/studentProfile'
 import { getSlotDateTime } from '../../services/bookingService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import {
@@ -25,7 +26,7 @@ function money(value: number) {
   return `${value.toLocaleString('ru-RU')} ₽`
 }
 
-function useTodayData(schoolId: string) {
+function useTodayData(schoolId: string, version = 0) {
   return useMemo(() => {
     const now = new Date()
     const today = format(now, 'yyyy-MM-dd')
@@ -35,6 +36,7 @@ function useTodayData(schoolId: string) {
     const students = db.students.bySchool(schoolId)
     const branches = db.branches.bySchool(schoolId)
     const payments = adminPayments.all(schoolId)
+    const studentRequests = loadStudentRequests(schoolId)
 
     const todaySlots = slots.filter((slot) => slot.date === today)
     const availableFutureSlots = slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) > now).length
@@ -107,10 +109,11 @@ function useTodayData(schoolId: string) {
       docsExpiring: adminDocuments.expiringSoon(schoolId, 14).length,
       openProblems: problemCases.open(schoolId).length,
       examsSoon,
+      openStudentRequests: studentRequests.filter((request) => request.status === 'new' || request.status === 'reviewing').length,
       idleInstructors: instructorLoads.filter((load) => load.total > 0 && load.booked === 0).length,
       busyInstructors: instructorLoads.filter((load) => load.booked >= 5).length,
     }
-  }, [schoolId])
+  }, [schoolId, version])
 }
 
 function PriorityCard({ title, text, tone, to }: { title: string; text: string; tone: 'danger' | 'warning' | 'info'; to: string }) {
@@ -227,12 +230,20 @@ export function AdminToday() {
   const navigate = useNavigate()
   const [blockSettingsOpen, setBlockSettingsOpen] = useState(false)
   const [blocksVersion, setBlocksVersion] = useState(0)
+  const [requestVersion, setRequestVersion] = useState(0)
+
+  useEffect(() => {
+    if (!school) return
+    void refreshStudentRequestsFromSupabase(school.id)
+      .then(() => setRequestVersion((value) => value + 1))
+      .catch(() => undefined)
+  }, [school?.id])
+
+  const data = useTodayData(school?.id ?? '', requestVersion)
 
   if (!school) {
     return <div className="v-admin-empty m-4"><strong>Школа не найдена</strong><span>Проверьте рабочее пространство.</span></div>
   }
-
-  const data = useTodayData(school.id)
   const enabledBlocks = getEnabledDashboardBlockIds(school.id)
   const hasBlock = (id: AdminDashboardBlockId) => enabledBlocks.includes(id)
   void blocksVersion
@@ -242,6 +253,8 @@ export function AdminToday() {
     data.openProblems > 0 ? { title: 'Открытые проблемы', text: `${data.openProblems} ситуаций ждут решения`, tone: 'warning' as const, to: `${ADMIN_BASE_PATH}/reports` } : null,
     data.carsInRepair > 0 ? { title: 'Машины недоступны', text: `${data.carsInRepair} машин в ремонте или обслуживании`, tone: 'warning' as const, to: `${ADMIN_BASE_PATH}/cars` } : null,
     data.docsExpiring > 0 ? { title: 'Документы скоро истекут', text: `${data.docsExpiring} документов проверить за 14 дней`, tone: 'info' as const, to: `${ADMIN_BASE_PATH}/documents` } : null,
+    data.openStudentRequests > 0 ? { title: 'Запросы учеников', text: `${data.openStudentRequests} переносов или отмен ждут ответа`, tone: 'info' as const, to: `${ADMIN_BASE_PATH}/students` } : null,
+    data.availableFutureSlots < Math.max(6, data.activeInstructors * 2) ? { title: 'Мало свободных окон', text: `Открыто ${data.availableFutureSlots} будущих окон: ученикам сложнее записаться`, tone: 'warning' as const, to: `${ADMIN_BASE_PATH}/schedule` } : null,
   ].filter(Boolean)
   const freeSlots = data.todaySlots
     .filter((slot) => slot.status === 'available')
@@ -277,8 +290,8 @@ export function AdminToday() {
       <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <TodayMetric label="занятий сегодня" value={data.activeToday.length} tone="blue" to={`${ADMIN_BASE_PATH}/schedule`} />
         <TodayMetric label="свободных окон" value={data.freeSlotsToday} tone="green" to={`${ADMIN_BASE_PATH}/schedule`} />
-        <TodayMetric label="новых записей" value={data.upcoming.length} tone="muted" to={`${ADMIN_BASE_PATH}/students`} />
-        <TodayMetric label="проблем / долгов" value={data.openProblems + data.debtStudentsCount} tone={data.openProblems + data.debtStudentsCount ? 'red' : 'green'} to={`${ADMIN_BASE_PATH}/reports`} />
+        <TodayMetric label="ближайших записей" value={data.upcoming.length} tone="muted" to={`${ADMIN_BASE_PATH}/schedule`} />
+        <TodayMetric label="запросов / долгов" value={data.openStudentRequests + data.debtStudentsCount} tone={data.openStudentRequests + data.debtStudentsCount ? 'red' : 'green'} to={`${ADMIN_BASE_PATH}/reports`} />
       </section>
 
       {hasBlock('launchChecklist') ? <LaunchChecklist
@@ -368,6 +381,21 @@ export function AdminToday() {
           </div> : null}
         </aside> : null}
       </section> : null}
+
+      <section className="mt-4 grid gap-3 lg:grid-cols-4">
+        {[
+          { label: 'Деньги под контролем', value: money(data.overdueAmount), text: data.debtStudentsCount ? `${data.debtStudentsCount} учеников с долгом` : 'Долгов не видно', tone: data.debtStudentsCount ? 'danger' : 'ok' },
+          { label: 'Потери времени', value: data.freeSlotsToday, text: 'свободных окон сегодня', tone: data.freeSlotsToday ? 'warning' : 'ok' },
+          { label: 'Запросы учеников', value: data.openStudentRequests, text: 'нужно разобрать администратору', tone: data.openStudentRequests ? 'warning' : 'ok' },
+          { label: 'Операционный риск', value: data.overdueBookings + data.carsInRepair + data.docsExpiring, text: 'занятия, машины и документы', tone: data.overdueBookings + data.carsInRepair + data.docsExpiring ? 'danger' : 'ok' },
+        ].map((item) => (
+          <div key={item.label} className={`v-admin-panel min-h-[132px] p-4 ${item.tone === 'danger' ? 'border-[rgba(255,59,48,0.18)]' : item.tone === 'warning' ? 'border-[rgba(10,132,255,0.18)]' : 'border-[rgba(52,199,89,0.18)]'}`}>
+            <span className={`v-route-pill ${item.tone === 'danger' ? 'bg-[rgba(255,59,48,0.10)] text-[#C92820]' : item.tone === 'warning' ? 'bg-[#EAF4FF] text-[#075EBC]' : 'bg-[#EAF7EF] text-[#1F8F3F]'}`}>{item.label}</span>
+            <strong className="mt-4 block text-[28px] font-semibold leading-none text-[#111827] tabular-nums">{item.value}</strong>
+            <span className="mt-2 block text-[13px] font-medium leading-5 text-[#667085]">{item.text}</span>
+          </div>
+        ))}
+      </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="v-admin-panel overflow-hidden">

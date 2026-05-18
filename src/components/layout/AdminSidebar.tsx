@@ -17,7 +17,7 @@ const Users = Group
 const NAV = [
   { to: ADMIN_BASE_PATH, label: 'Сегодня', icon: LayoutDashboard, end: true, color: 'bg-[#EAF7EE] text-[#188447]' },
   { to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: ClipboardList, color: 'bg-[#EAF0FF] text-[#3156D4]' },
-  { to: `${ADMIN_BASE_PATH}/slots`, label: 'Расписание', icon: CalendarDays, color: 'bg-[#F2EAFF] text-[#7B3FD6]' },
+  { to: `${ADMIN_BASE_PATH}/schedule`, label: 'Расписание', icon: CalendarDays, color: 'bg-[#F2EAFF] text-[#7B3FD6]' },
   { to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: UserRound, color: 'bg-[#FFF0D8] text-[#315A7C]' },
   { to: `${ADMIN_BASE_PATH}/instructors`, label: 'Инструкторы', icon: Users, color: 'bg-[#EAF7EE] text-[#188447]' },
   { to: `${ADMIN_BASE_PATH}/branches`, label: 'Филиалы', icon: Location, color: 'bg-[#FFECEA] text-[#D94A38]' },

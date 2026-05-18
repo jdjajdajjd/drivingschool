@@ -19,7 +19,7 @@ interface Tab {
 const TABS: Tab[] = [
   { key: 'today', to: ADMIN_BASE_PATH, label: 'Сегодня', icon: Home },
   { key: 'bookings', to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: Clipboard },
-  { key: 'slots', to: `${ADMIN_BASE_PATH}/slots`, label: 'График', icon: Calendar },
+  { key: 'slots', to: `${ADMIN_BASE_PATH}/schedule`, label: 'График', icon: Calendar },
   { key: 'people', to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: Users },
   { key: 'school', to: `${ADMIN_BASE_PATH}/settings`, label: 'Школа', icon: Settings },
 ]
@@ -27,7 +27,7 @@ const TABS: Tab[] = [
 function activeKey(path: string): string {
   if (path === ADMIN_BASE_PATH || path === ADMIN_BASE_PATH + '/') return 'today'
   if (path.includes('/bookings')) return 'bookings'
-  if (path.includes('/slots')) return 'slots'
+  if (path.includes('/slots') || path.includes('/schedule')) return 'slots'
   if (path.includes('/students') || path.includes('/instructors')) return 'people'
   if (path.includes('/branches') || path.includes('/modules') || path.includes('/settings')) return 'school'
   return 'today'

@@ -26,7 +26,7 @@ export interface AdminNavDefinition {
 
 export const REQUIRED_ADMIN_NAV_IDS: AdminNavItemId[] = ['today', 'schedule', 'students', 'instructors']
 
-export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['branches', 'settings']
+export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['branches', 'payments', 'reports', 'cars', 'documents', 'exams', 'settings']
 
 export function getAdminPanelPreferencesKey(schoolId: string): string {
   const context = getWorkspaceStaffContext()
@@ -90,7 +90,7 @@ export const ADMIN_DASHBOARD_BLOCKS: AdminDashboardBlockDefinition[] = [
   { id: 'dataCheck', label: 'Проверка данных', description: 'Ошибки связей.' },
 ]
 
-const DEFAULT_DASHBOARD_BLOCK_IDS: AdminDashboardBlockId[] = ['stats', 'launchChecklist', 'nearest', 'attention', 'quickActions']
+const DEFAULT_DASHBOARD_BLOCK_IDS: AdminDashboardBlockId[] = ['stats', 'finance', 'launchChecklist', 'nearest', 'attention', 'quickActions']
 
 function getAdminDashboardBlocksKey(schoolId: string): string {
   return `${getAdminPanelPreferencesKey(schoolId)}:dashboard_blocks`
