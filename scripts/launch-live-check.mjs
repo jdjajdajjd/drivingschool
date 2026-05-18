@@ -107,6 +107,20 @@ async function supabaseRpc(fn, body) {
   return data
 }
 
+async function supabaseRpcAttempt(fn, body) {
+  if (!hasSupabaseAnon()) throw new Error('Supabase anon env is not configured for RPC checks.')
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${anonKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  return { ok: response.ok, status: response.status, body: await readResponse(response) }
+}
+
 async function checkStaffAuth() {
   if (!adminLogin || !adminPassword) {
     note('staff auth: VITE_ADMIN_LOGIN/VITE_ADMIN_PASSWORD are not configured; skipped admin login check.')
@@ -272,6 +286,84 @@ async function cleanupSchool(schoolId) {
   await supabaseFetch(`/rest/v1/schools?id=eq.${encodeURIComponent(schoolId)}`, { method: 'DELETE' })
 }
 
+async function checkPublicBookingGuards() {
+  const suffix = String(Date.now()).slice(-8)
+  const schoolId = `school-race-${suffix}`
+  const branchId = `branch-race-${suffix}`
+  const instructorId = `inst-race-${suffix}`
+  const slotId = `slot-race-${suffix}`
+  const secondSlotId = `slot-race2-${suffix}`
+  const date = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+  await supabaseFetch('/rest/v1/schools', {
+    method: 'POST',
+    headers: { prefer: 'return=minimal' },
+    body: JSON.stringify({
+      id: schoolId,
+      name: 'Launch Race School',
+      slug: `launch-race-${suffix}`,
+      description: '',
+      phone: '',
+      email: '',
+      address: '',
+      booking_limit_enabled: true,
+      max_active_bookings_per_student: 1,
+      max_slots_per_booking: 1,
+      default_lesson_duration: 90,
+      enabled_category_codes: ['B'],
+      is_active: true,
+    }),
+  })
+  cleanupTasks.push(() => cleanupSchool(schoolId))
+
+  await supabaseFetch('/rest/v1/branches', {
+    method: 'POST',
+    headers: { prefer: 'return=minimal' },
+    body: JSON.stringify({ id: branchId, school_id: schoolId, name: 'Launch Race Branch', address: '', phone: '', is_active: true }),
+  })
+  await supabaseFetch('/rest/v1/instructors', {
+    method: 'POST',
+    headers: { prefer: 'return=minimal' },
+    body: JSON.stringify({
+      id: instructorId,
+      school_id: schoolId,
+      branch_id: branchId,
+      name: 'Launch Race Instructor',
+      phone: '',
+      email: '',
+      token: `launch-race-${suffix}`,
+      bio: '',
+      is_active: true,
+      car: '',
+      transmission: 'manual',
+      categories: ['B'],
+    }),
+  })
+  await supabaseFetch('/rest/v1/slots', {
+    method: 'POST',
+    headers: { prefer: 'return=minimal' },
+    body: JSON.stringify([
+      { id: slotId, school_id: schoolId, branch_id: branchId, instructor_id: instructorId, date, time: '12:00', duration: 90, lesson_type: 'city', status: 'available' },
+      { id: secondSlotId, school_id: schoolId, branch_id: branchId, instructor_id: instructorId, date, time: '14:00', duration: 90, lesson_type: 'city', status: 'available' },
+    ]),
+  })
+
+  const [first, second] = await Promise.all([
+    supabaseRpcAttempt('public_create_booking', { p_school_id: schoolId, p_student_name: 'Race One', p_student_phone: '+7 999 111-22-33', p_slot_ids: [slotId] }),
+    supabaseRpcAttempt('public_create_booking', { p_school_id: schoolId, p_student_name: 'Race Two', p_student_phone: '+7 999 222-33-44', p_slot_ids: [slotId] }),
+  ])
+  const wins = [first, second].filter((result) => result.ok).length
+  expect(wins === 1, `public booking guards: expected exactly one concurrent booking winner, got ${wins}`)
+  expect([first, second].some((result) => !result.ok && String(result.body?.message ?? '').includes('уже занят')), 'public booking guards: losing concurrent booking did not get occupied-slot error')
+
+  const limit = await supabaseRpcAttempt('public_create_booking', {
+    p_school_id: schoolId,
+    p_student_name: 'Race One',
+    p_student_phone: '+7 999 111-22-33',
+    p_slot_ids: [secondSlotId],
+  })
+  expect(!limit.ok && String(limit.body?.message ?? '').includes('максимум активных записей'), 'public booking guards: active booking limit was not enforced')
+}
 async function checkStudentProfile() {
   const suffix = String(Date.now()).slice(-8)
   const schoolId = `school-launch-check-${suffix}`
@@ -330,6 +422,7 @@ try {
   await checkHealth()
   await checkStaffAuth()
   await checkLeadDelivery()
+  await checkPublicBookingGuards()
   await checkStudentProfile()
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error))

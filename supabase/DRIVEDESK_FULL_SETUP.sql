@@ -1709,6 +1709,9 @@ declare
   v_student_id text;
   v_group_id text;
   v_max_slots integer;
+  v_booking_limit_enabled boolean;
+  v_max_active_bookings integer;
+  v_active_booking_count integer;
   v_slot_count integer;
   v_slot record;
   v_booking_id text;
@@ -1728,8 +1731,8 @@ begin
     raise exception 'Введите корректный номер телефона.';
   end if;
 
-  select max_slots_per_booking
-    into v_max_slots
+  select max_slots_per_booking, booking_limit_enabled, max_active_bookings_per_student
+    into v_max_slots, v_booking_limit_enabled, v_max_active_bookings
     from public.schools
     where id = p_school_id and is_active = true;
 
@@ -1749,6 +1752,21 @@ begin
     raise exception 'Выбрано слишком много занятий.';
   end if;
 
+  if coalesce(v_booking_limit_enabled, true) and coalesce(v_max_active_bookings, 0) > 0 then
+    select count(*)
+      into v_active_booking_count
+      from public.bookings b
+      join public.slots s on s.id = b.slot_id
+      where b.school_id = p_school_id
+        and b.student_phone = v_normalized_phone
+        and b.status = 'active'
+        and ((s.date::timestamp + s.time) >= now());
+
+    if v_active_booking_count + v_slot_count > v_max_active_bookings then
+      raise exception 'У ученика уже есть максимум активных записей.';
+    end if;
+  end if;
+
   insert into public.students (id, school_id, name, phone, normalized_phone)
   values ('stu-' || replace(gen_random_uuid()::text, '-', ''), p_school_id, trim(p_student_name), v_normalized_phone, v_normalized_phone)
   on conflict (school_id, normalized_phone)
@@ -1766,12 +1784,12 @@ begin
   for v_slot in
     select s.*
     from public.slots s
-    join unnest(p_slot_ids) as selected(slot_id) on selected.slot_id = s.id
     where s.school_id = p_school_id
+      and s.id in (select distinct selected_slot_id from unnest(p_slot_ids) as selected_slot_id)
     order by s.date, s.time
     for update
   loop
-    if v_slot.status <> 'available' then
+    if v_slot.status <> 'available' or v_slot.booking_id is not null then
       raise exception 'Один из выбранных слотов уже занят.';
     end if;
 
@@ -1799,13 +1817,13 @@ begin
       v_student_id, trim(p_student_name), v_normalized_phone, '', 'active'
     );
 
-    update public.slots
+    update public.slots as target_slot
       set status = 'booked',
           booking_id = v_booking_id,
           updated_at = now()
-      where id = v_slot.id
-        and status = 'available'
-        and booking_id is null;
+      where target_slot.id = v_slot.id
+        and target_slot.status = 'available'
+        and target_slot.booking_id is null;
 
     if not found then
       raise exception 'Этот слот только что заняли.';

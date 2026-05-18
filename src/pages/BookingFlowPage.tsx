@@ -579,7 +579,14 @@ export function BookingFlowPage() {
         })
         bookingId = result.bookingIds[0] ?? ''
         bookingGroupId = result.bookingGroupId
-      } catch {
+      } catch (error) {
+        if (!isLocalSchool && isSupabaseConfigured()) {
+          await refreshPublicSlots(school.id, { preferLocal: false }).catch(() => undefined)
+          setSlotsVersion((current) => current + 1)
+          const message = error instanceof Error && error.message ? error.message : 'Не удалось создать запись. Обновите расписание и попробуйте ещё раз.'
+          throw new Error(message)
+        }
+
         const freshData = await loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
         const freshLocalSlot = db.slots.byId(bookingSlot.id)
         const freshBranchActive = freshLocalSlot
