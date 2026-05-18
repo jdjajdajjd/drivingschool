@@ -207,17 +207,19 @@ export async function onRequest({ request, env }) {
     return json({ error: 'Заполните имя, телефон и название автошколы.' }, { status: 400 })
   }
 
-  let delivered = false
+  let saved = false
+  let notified = false
   try {
-    delivered = await sendLeadToTelegram(env, payload) || await saveLeadToSupabase(request, env, payload)
+    saved = await saveLeadToSupabase(request, env, payload)
+    notified = await sendLeadToTelegram(env, payload)
   } catch (error) {
     console.error('Lead delivery failed', error instanceof Error ? error.message : error)
   }
 
-  if (!delivered) {
+  if (!saved && !notified) {
     console.error('Lead accepted without configured delivery', payload)
     return json({ ok: true, queued: false })
   }
 
-  return json({ ok: true })
+  return json({ ok: true, saved, notified })
 }
