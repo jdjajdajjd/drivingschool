@@ -205,6 +205,20 @@ function isMissingRpcError(error: unknown): boolean {
   return status === 404 || code.startsWith('PGRST') || text.includes('function') || text.includes('rpc')
 }
 
+async function callStudentProfileApi<T>(payload: Record<string, unknown>): Promise<T> {
+  const response = await fetch('/api/student-profile', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const result = await response.json().catch(() => null) as { error?: string } | T | null
+  if (!response.ok) {
+    const message = result && typeof result === 'object' && 'error' in result ? String(result.error || '') : ''
+    throw new Error(message || 'Student profile API failed.')
+  }
+  return result as T
+}
+
 function getPublicBookingLabel(name: string | null | undefined): string {
   const trimmed = name?.trim()
   return trimmed ? `${trimmed.slice(0, 1)}.` : 'Ученик'
@@ -446,7 +460,7 @@ export async function updateStudentProfileInSupabase(params: {
     throw new Error('Supabase is not configured.')
   }
 
-  const { data, error } = await supabase.rpc('public_update_student_profile', {
+  const rpcPayload = {
     p_school_id: params.schoolId,
     p_phone: params.phone,
     p_name: params.name,
@@ -460,9 +474,30 @@ export async function updateStudentProfileInSupabase(params: {
     p_driving_start_date: params.drivingStartDate ?? null,
     p_training_end_date: params.trainingEndDate ?? null,
     p_driving_end_date: params.drivingEndDate ?? null,
-  })
+  }
+  const { data, error } = await supabase.rpc('public_update_student_profile', rpcPayload)
 
-  if (error) throw error
+  if (error) {
+    if (isMissingRpcError(error)) {
+      return callStudentProfileApi<{ studentId: string; normalizedPhone: string }>({
+        action: 'update',
+        schoolId: params.schoolId,
+        name: params.name,
+        phone: params.phone,
+        email: params.email,
+        password: params.password,
+        avatarUrl: params.avatarUrl,
+        categoryCodes: params.categoryCodes,
+        trainingStage: params.trainingStage,
+        groupName: params.groupName,
+        trainingStartDate: params.trainingStartDate,
+        drivingStartDate: params.drivingStartDate,
+        trainingEndDate: params.trainingEndDate,
+        drivingEndDate: params.drivingEndDate,
+      })
+    }
+    throw error
+  }
   const row = data?.[0]
   if (!row) throw new Error('Student profile was not saved.')
 
@@ -490,9 +525,36 @@ export async function loginStudentInSupabase(params: {
     p_password: params.password,
   })
 
-  if (error) throw error
+  if (error) {
+    if (isMissingRpcError(error)) {
+      const result = await callStudentProfileApi<{
+        profile: {
+          studentId: string
+          name: string
+          phone: string
+          email: string
+          avatarUrl: string
+          assignedBranchId: string
+        } | null
+      }>({ action: 'login', schoolId: params.schoolId, phone: params.phone, password: params.password })
+      return result.profile
+    }
+    throw error
+  }
   const row = data?.[0]
-  if (!row) return null
+  if (!row) {
+    const result = await callStudentProfileApi<{
+      profile: {
+        studentId: string
+        name: string
+        phone: string
+        email: string
+        avatarUrl: string
+        assignedBranchId: string
+      } | null
+    }>({ action: 'login', schoolId: params.schoolId, phone: params.phone, password: params.password })
+    return result.profile
+  }
 
   return {
     studentId: row.student_id,

@@ -2,12 +2,6 @@ name: Apply Supabase Safe Patch
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/DRIVEDESK_FULL_SETUP.sql'
-      - 'scripts/apply-supabase-sql.mjs'
-      - '.github/workflows/supabase-safe-patch.yml'
 
 jobs:
   apply-safe-patch:
