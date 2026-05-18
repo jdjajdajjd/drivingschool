@@ -89,6 +89,52 @@ type StudentRow = {
 
 type SchoolRow = Database['public']['Tables']['schools']['Row']
 
+type LeadRequestStatus = 'new' | 'contacted' | 'qualified' | 'won' | 'lost'
+
+export type LeadRequest = {
+  id: string
+  name: string
+  phone: string
+  schoolName: string
+  city: string
+  comment: string
+  source: string
+  pageUrl: string
+  userAgent: string
+  status: LeadRequestStatus
+  createdAt: string
+}
+
+type LeadRequestRow = {
+  id: string
+  name: string
+  phone: string
+  school_name: string
+  city: string
+  comment: string
+  source: string
+  page_url: string
+  user_agent: string
+  status: LeadRequestStatus
+  created_at: string
+}
+
+function mapLeadRequest(row: LeadRequestRow): LeadRequest {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    schoolName: row.school_name,
+    city: row.city,
+    comment: row.comment,
+    source: row.source,
+    pageUrl: row.page_url,
+    userAgent: row.user_agent,
+    status: row.status,
+    createdAt: row.created_at,
+  }
+}
+
 function getAdminSecret(options: { requireWorkspaceReady?: boolean } = {}): string {
   if ((options.requireWorkspaceReady ?? true) && !isWorkspaceSupabaseReady()) {
     throw new Error('Workspace Supabase session is not ready.')
@@ -223,6 +269,34 @@ export async function listSupabaseSchools(): Promise<School[]> {
   )
 
   return (data ?? []).map(mapSupabaseSchool)
+}
+
+export async function listSupabaseLeadRequests(): Promise<LeadRequest[]> {
+  if (!isSupabaseRemoteConfigured()) return []
+  const data = await runAdminMutation<LeadRequestRow[]>(
+    supabase.rpc('public_superadmin_list_leads' as never, {
+      p_superadmin_password: getSuperadminSecret(),
+    } as never),
+  )
+
+  return (data ?? []).map(mapLeadRequest)
+}
+
+export async function updateSupabaseLeadStatus(leadId: string, status: LeadRequest['status']): Promise<LeadRequest | null> {
+  if (!isSupabaseRemoteConfigured()) {
+    throw new Error('Supabase не подключен.')
+  }
+
+  const data = await runAdminMutation<LeadRequestRow[]>(
+    supabase.rpc('public_superadmin_update_lead_status' as never, {
+      p_lead_id: leadId,
+      p_status: status,
+      p_superadmin_password: getSuperadminSecret(),
+    } as never),
+  )
+
+  const row = Array.isArray(data) ? data[0] : null
+  return row ? mapLeadRequest(row) : null
 }
 
 export async function deleteSupabaseSchool(schoolId: string): Promise<void> {

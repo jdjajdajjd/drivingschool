@@ -120,7 +120,7 @@ create policy lead_requests_public_insert
 
 insert into public.staff_access_credentials (role, password_sha256) values
   ('admin', '94754e78d07756488a78665a5b7bb3a1d636dabb002e682e4f8fac946250603d'),
-  ('superadmin', 'ddc85ebe831f77142817db5a756d377c954b92c87c0c1e5fa4746a872b7f6588')
+  ('superadmin', 'a9979a4f54ede620455a9ea469844e45ba9054da9ce92822b7ebb33436728c5d')
 on conflict (role)
 do update set
   password_sha256 = excluded.password_sha256,
@@ -1380,7 +1380,7 @@ create table public.staff_access_credentials (
 
 insert into public.staff_access_credentials (role, password_sha256) values
   ('admin', '94754e78d07756488a78665a5b7bb3a1d636dabb002e682e4f8fac946250603d'),
-  ('superadmin', 'ddc85ebe831f77142817db5a756d377c954b92c87c0c1e5fa4746a872b7f6588');
+  ('superadmin', 'a9979a4f54ede620455a9ea469844e45ba9054da9ce92822b7ebb33436728c5d');
 
 create or replace function public.private_assert_admin_password(p_staff_password text)
 returns void

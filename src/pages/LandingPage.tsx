@@ -40,8 +40,16 @@ const steps = [
 const schoolFeatures = [
   'расписание по инструкторам',
   'свободные и занятые окна',
-  'контакты учеников',
+  'долги и оплаты учеников',
+  'запросы на переносы и отмены',
+  'готовность школы к запуску',
   'отдельная страница школы',
+]
+
+const pains = [
+  { title: 'Администратор меньше сидит в телефоне', text: 'Ученик сам выбирает окно, а школа видит запись в кабинете.' },
+  { title: 'Директор видит потери', text: 'Свободные окна, долги, просроченные занятия и проблемы собраны на главном экране.' },
+  { title: 'Школу проще подключить', text: 'Филиалы, инструкторы, слоты, ученики и публичная ссылка собраны в один запускной контур.' },
 ]
 
 function LandingPhoneMockup() {
@@ -166,8 +174,14 @@ export function LandingPage() {
             </h1>
 
             <p className="landing-copy mt-5 max-w-[58ch] text-[16px] font-normal leading-7 text-[#657281] sm:text-[17px]">
-              Ученики сами выбирают свободное время. Школа видит запись в расписании и не собирает заявки в мессенджерах.
+              Ученики сами выбирают свободное время. Директор видит записи, долги, свободные окна и проблемы дня в одном кабинете.
             </p>
+
+            <div className="mt-5 inline-flex flex-wrap items-baseline gap-2 rounded-[22px] border border-[#D7E2EC] bg-[#F8FBFE] px-4 py-3 shadow-[0_12px_30px_rgba(43,57,75,0.08)]">
+              <span className="text-[13px] font-medium text-[#667381]">базовый тариф</span>
+              <strong className="text-[28px] font-semibold leading-none text-[#111827]">4 990 ₽</strong>
+              <span className="text-[13px] font-medium text-[#667381]">в месяц</span>
+            </div>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button
@@ -217,6 +231,15 @@ export function LandingPage() {
               </article>
             )
           })}
+        </section>
+
+        <section className="mt-5 grid gap-3 lg:grid-cols-3">
+          {pains.map((pain) => (
+            <article key={pain.title} className="landing-proof-card rounded-[26px] border border-[#D7E2EC] bg-[#111827] p-5 text-white shadow-[0_18px_54px_rgba(17,24,39,0.16)]">
+              <h3 className="text-[19px] font-semibold leading-6">{pain.title}</h3>
+              <p className="mt-2 text-[14px] font-normal leading-6 text-[#D4DEE9]">{pain.text}</p>
+            </article>
+          ))}
         </section>
 
         <section className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">

@@ -25,6 +25,13 @@ export function AdminReports() {
     const payments = adminPayments.all(school.id)
     const cars = adminCars.all(school.id)
     const now = new Date()
+    const activeBookings = bookings.filter((booking) => booking.status === 'active').length
+    const completedBookings = bookings.filter((booking) => booking.status === 'completed').length
+    const cancelledBookings = bookings.filter((booking) => booking.status === 'cancelled').length
+    const noShowBookings = bookings.filter((booking) => booking.status === 'no_show').length
+    const availableSlots = db.slots.bySchool(school.id).filter((slot) => slot.status === 'available').length
+    const bookedSlots = db.slots.bySchool(school.id).filter((slot) => slot.status === 'booked').length
+    const slotUtilization = bookedSlots + availableSlots > 0 ? Math.round((bookedSlots / (bookedSlots + availableSlots)) * 100) : 0
 
     // This month
     const monthStart = startOfMonth(now)
@@ -77,6 +84,11 @@ export function AdminReports() {
 
     return {
       monthRevenue,
+      activeBookings,
+      completedBookings,
+      cancelledBookings,
+      noShowBookings,
+      slotUtilization,
       totalDebt,
       overdueCount: overduePayments.length,
       monthPayments: monthPayments.length,
@@ -92,6 +104,7 @@ export function AdminReports() {
   }, [school?.id])
 
   if (!data) return null
+  const reportData = data
 
   // Фильтрация журнала
   const filteredAudit = useMemo(() => {
@@ -129,6 +142,31 @@ export function AdminReports() {
   ]
 
   const maxRevenue = Math.max(...data.revenueByDay.map((d) => d.revenue), 1)
+  const directorRisks = [
+    data.totalDebt > 0 ? `${data.totalDebt.toLocaleString('ru-RU')} ₽ зависло в долгах` : 'Долги не обнаружены',
+    data.noShowBookings > 0 ? `${data.noShowBookings} неявок требуют реакции` : 'Неявок не видно',
+    data.slotUtilization < 60 ? `Загрузка окон ${data.slotUtilization}%: есть резерв продаж` : `Загрузка окон ${data.slotUtilization}%`,
+  ]
+
+  function exportCsv() {
+    const rows = [
+      ['Показатель', 'Значение'],
+      ['Выручка за месяц', String(reportData.monthRevenue)],
+      ['Долг', String(reportData.totalDebt)],
+      ['Активные записи', String(reportData.activeBookings)],
+      ['Проведено занятий', String(reportData.completedBookings)],
+      ['Отмены', String(reportData.cancelledBookings)],
+      ['Неявки', String(reportData.noShowBookings)],
+      ['Загрузка окон', `${reportData.slotUtilization}%`],
+    ]
+    const csv = rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `vroom-report-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -136,8 +174,8 @@ export function AdminReports() {
         <h1 className="text-[24px] font-black text-gray-900">Отчёты</h1>
         <p className="text-[13px] font-semibold text-gray-400">{format(new Date(), 'MMMM yyyy', { locale: ru })}</p>
         <div className="ml-auto">
-          <button onClick={() => window.print()} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
-            Скачать PDF
+          <button onClick={exportCsv} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            Скачать CSV
           </button>
         </div>
       </div>
@@ -164,12 +202,21 @@ export function AdminReports() {
               {[
                 { label: 'Выручка за месяц', value: `${data.monthRevenue.toLocaleString('ru-RU')} ₽`, color: 'text-green-600' },
                 { label: 'Общий долг', value: `${data.totalDebt.toLocaleString('ru-RU')} ₽`, color: data.totalDebt > 0 ? 'text-red-500' : 'text-green-600' },
-                { label: 'Учеников', value: data.studentCount.toString(), color: 'text-gray-900' },
-                { label: 'Активных инструкторов', value: data.instructorCount.toString(), color: 'text-gray-900' },
+                { label: 'Активных записей', value: data.activeBookings.toString(), color: 'text-gray-900' },
+                { label: 'Загрузка окон', value: `${data.slotUtilization}%`, color: data.slotUtilization < 60 ? 'text-red-500' : 'text-green-600' },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-2xl border border-gray-100 bg-white p-5">
                   <p className="text-[13px] font-semibold text-gray-400">{stat.label}</p>
                   <p className={`mt-1 text-[28px] font-black ${stat.color}`}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-3">
+              {directorRisks.map((risk) => (
+                <div key={risk} className="rounded-2xl border border-[#D7E2EC] bg-[#F8FBFE] p-4">
+                  <p className="text-[12px] font-black uppercase text-[#667085]">Вывод для директора</p>
+                  <p className="mt-2 text-[15px] font-bold leading-5 text-[#111827]">{risk}</p>
                 </div>
               ))}
             </div>
