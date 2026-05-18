@@ -79,8 +79,16 @@ async function resolveSupabaseConfig(request, env) {
   const envUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL
   const envAnonKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
-  if (isSupabaseUrl(envUrl) && isJwt(envAnonKey)) return { url: envUrl, anonKey: envAnonKey, serviceRoleKey }
-  return discoverSupabaseConfigFromAssets(request)
+  if (isSupabaseUrl(envUrl) && (isJwt(envAnonKey) || isJwt(serviceRoleKey))) {
+    return {
+      url: envUrl,
+      anonKey: isJwt(envAnonKey) ? envAnonKey : null,
+      serviceRoleKey: isJwt(serviceRoleKey) ? serviceRoleKey : null,
+    }
+  }
+
+  const discovered = await discoverSupabaseConfigFromAssets(request)
+  return discovered ? { ...discovered, serviceRoleKey: isJwt(serviceRoleKey) ? serviceRoleKey : null } : null
 }
 
 async function saveLeadToSupabase(request, env, payload) {
@@ -98,18 +106,22 @@ async function saveLeadToSupabase(request, env, payload) {
     user_agent: clean(request.headers.get('user-agent')),
   }
 
-  const response = await fetch(`${config.url}/rest/v1/lead_requests`, {
-    method: 'POST',
-    headers: {
-      apikey: config.anonKey,
-      authorization: `Bearer ${config.anonKey}`,
-      'content-type': 'application/json',
-      prefer: 'return=minimal',
-    },
-    body: JSON.stringify(leadRecord),
-  })
+  const leadRequestsKey = config.anonKey || config.serviceRoleKey
+  if (leadRequestsKey) {
+    const response = await fetch(`${config.url}/rest/v1/lead_requests`, {
+      method: 'POST',
+      headers: {
+        apikey: leadRequestsKey,
+        authorization: `Bearer ${leadRequestsKey}`,
+        'content-type': 'application/json',
+        prefer: 'return=minimal',
+      },
+      body: JSON.stringify(leadRecord),
+    })
 
-  if (response.ok) return true
+    if (response.ok) return true
+  }
+
   if (!config.serviceRoleKey) return false
 
   const fallbackResponse = await fetch(`${config.url}/rest/v1/admin_records`, {
