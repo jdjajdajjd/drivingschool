@@ -53,7 +53,7 @@ export function SuperAdminLayout() {
           <button onClick={() => navigate('/')} className="flex items-center gap-3">
             <BrandMark size="md" />
             <div className="text-left">
-              <p className="text-xs font-medium text-[#687381]">Панель владельца</p>
+              <p className="text-xs font-medium text-[#687381]">Операторская</p>
             </div>
           </button>
         </div>
