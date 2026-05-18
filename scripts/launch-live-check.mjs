@@ -4,9 +4,16 @@ const baseUrl = process.env.LAUNCH_BASE_URL || 'https://vroom.today'
 const supabaseEnvFile = process.env.SUPABASE_ENV_FILE || '.env.supabase'
 
 dotenv.config({ path: supabaseEnvFile })
+dotenv.config({ path: '.env.production.local' })
+dotenv.config({ path: '.env.local' })
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const adminLogin = process.env.VITE_ADMIN_LOGIN
+const adminPassword = process.env.VITE_ADMIN_PASSWORD
+const superadminLogin = process.env.VITE_SUPERADMIN_LOGIN
+const superadminPassword = process.env.VITE_SUPERADMIN_PASSWORD
+const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
 const failures = []
 const notes = []
 const cleanupTasks = []
@@ -40,6 +47,10 @@ function normalizePhone(value) {
 
 function hasSupabaseService() {
   return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(String(supabaseUrl ?? '')) && /^eyJ/.test(String(serviceRoleKey ?? ''))
+}
+
+function hasSupabaseAnon() {
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(String(supabaseUrl ?? '')) && /^eyJ/.test(String(anonKey ?? ''))
 }
 
 async function readResponse(response) {
@@ -78,6 +89,63 @@ function buildQuery(params) {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) search.set(key, value)
   return search.toString()
+}
+
+async function supabaseRpc(fn, body) {
+  if (!hasSupabaseAnon()) throw new Error('Supabase anon env is not configured for RPC checks.')
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${anonKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  const data = await readResponse(response)
+  if (!response.ok) throw new Error(`Supabase RPC ${fn} failed: ${response.status} ${JSON.stringify(data)}`)
+  return data
+}
+
+async function checkStaffAuth() {
+  if (!adminLogin || !adminPassword) {
+    note('staff auth: VITE_ADMIN_LOGIN/VITE_ADMIN_PASSWORD are not configured; skipped admin login check.')
+  } else {
+    const rows = await supabaseRpc('public_open_staff_session', {
+      p_role: 'admin',
+      p_login: adminLogin,
+      p_password: adminPassword,
+    })
+    const session = Array.isArray(rows) ? rows[0] : null
+    expect(Boolean(session?.session_token), 'staff auth: admin session token is missing')
+    expect(Boolean(session?.school_id), 'staff auth: admin session is not bound to a school')
+    if (session?.session_token) {
+      const staffRole = session.role === 'branch_admin' ? 'branch_admin' : 'admin'
+      const verified = await supabaseRpc('public_verify_staff_session', {
+        p_role: staffRole,
+        p_session_token: session.session_token,
+      })
+      expect(Array.isArray(verified) && verified.length > 0, 'staff auth: admin session verification failed')
+      await supabaseRpc('public_close_staff_session', {
+        p_role: staffRole,
+        p_session_token: session.session_token,
+      }).catch((error) => note(error.message))
+    }
+  }
+
+  if (!superadminLogin || !superadminPassword) {
+    note('staff auth: VITE_SUPERADMIN_LOGIN/VITE_SUPERADMIN_PASSWORD are not configured; skipped operator login check.')
+    return
+  }
+
+  const superRows = await supabaseRpc('public_open_staff_session', {
+    p_role: 'superadmin',
+    p_login: superadminLogin,
+    p_password: superadminPassword,
+  })
+  const superSession = Array.isArray(superRows) ? superRows[0] : null
+  expect(Boolean(superSession?.session_token), 'staff auth: operator session token is missing')
+  await supabaseRpc('public_superadmin_list_leads', { p_superadmin_password: superadminPassword })
 }
 
 async function trySupabaseFetch(path, init = {}) {
@@ -260,6 +328,7 @@ try {
   await checkStaticAssets()
   await checkSecurityHeaders()
   await checkHealth()
+  await checkStaffAuth()
   await checkLeadDelivery()
   await checkStudentProfile()
 } catch (error) {
