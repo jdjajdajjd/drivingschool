@@ -376,6 +376,9 @@ export function LandingPage() {
               {leadStatus === 'submitting' ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
               {leadStatus === 'submitting' ? 'Отправляем' : 'Отправить заявку'}
             </button>
+            <p className="text-[12px] font-medium leading-5 text-[#7A8795]">
+              Отправляя заявку, вы соглашаетесь с <a className="font-semibold text-[#111827]" href="/terms">условиями сервиса</a> и <a className="font-semibold text-[#111827]" href="/privacy">политикой конфиденциальности</a>.
+            </p>
           </form>
         </section>
       </main>

@@ -4,6 +4,20 @@ import { adminSettings, createCurrentStaffAuditEntry } from '../../services/admi
 import type { SchoolSettings as SchoolSettingsType } from '../../types'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 
+const launchSteps = [
+  'Заполнить филиалы, инструкторов и рабочие часы.',
+  'Импортировать учеников из CSV на странице «Ученики».',
+  'Создать свободные окна минимум на 7 дней вперёд.',
+  'Проверить публичную ссылку школы и тестовую запись ученика.',
+  'Назначить ответственного администратора и включить уведомления.',
+]
+
+const operationRules = [
+  'Оплата 4 990 ₽/мес принимается вручную переводом; доступ продлевается после подтверждения оплаты.',
+  'Резервное копирование Supabase и проверка /api/health выполняются перед массовой рассылкой.',
+  'При инциденте P1: остановить новые подключения, сохранить скрин/время, проверить Supabase и последние изменения.',
+]
+
 export function AdminSettings() {
   const school = db.schools.currentAdmin()
   const [saved, setSaved] = useState(false)
@@ -43,7 +57,38 @@ export function AdminSettings() {
         </button>
       </div>
 
-      <div className="max-w-3xl space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl space-y-6 p-4 md:p-6 lg:p-8">
+        <section className="rounded-2xl border border-[#D7E2EC] bg-white p-5 shadow-[0_14px_36px_rgba(37,51,68,0.06)]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#315A7C]">Запуск школы</p>
+              <h2 className="mt-2 text-[20px] font-black text-gray-900">Чеклист внедрения за 1-3 дня</h2>
+              <p className="mt-2 max-w-[620px] text-[14px] font-semibold leading-6 text-gray-600">
+                Этот блок закрывает подключение первой реальной автошколы: данные, расписание, тестовая запись, уведомления и операционный контроль.
+              </p>
+            </div>
+            <span className="rounded-full bg-[#EEF8F1] px-3 py-1.5 text-[12px] font-black text-[#2F6E4B]">готово к пилоту</span>
+          </div>
+          <div className="mt-5 grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-2">
+              {launchSteps.map((step, index) => (
+                <div key={step} className="flex gap-3 rounded-xl bg-[#F8FBFE] p-3">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[12px] font-black text-[#315A7C] shadow-sm">{index + 1}</span>
+                  <span className="text-[13px] font-semibold leading-5 text-gray-700">{step}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl border border-[#E1EAF2] bg-[#F8FBFE] p-4">
+              <h3 className="text-[14px] font-black text-gray-900">Операционные правила</h3>
+              <div className="mt-3 space-y-3">
+                {operationRules.map((rule) => (
+                  <p key={rule} className="text-[13px] font-semibold leading-5 text-gray-600">{rule}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* General */}
         <section className="rounded-2xl border border-gray-100 bg-white p-5">
           <h2 className="mb-4 text-[16px] font-bold text-gray-900">Общие настройки</h2>
