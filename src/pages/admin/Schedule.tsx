@@ -441,8 +441,8 @@ export function AdminSchedule() {
             </section>
           )})}
         </div>
-        <div className={`v-admin-panel vroom-calendar-grid hidden overflow-hidden lg:block ${viewMode === 'day' ? 'min-w-[520px]' : 'min-w-[1160px]'}`}>
-          <div className="grid bg-[#F2F6FA]" style={{ gridTemplateColumns: viewMode === 'day' ? '74px minmax(360px,1fr)' : '74px repeat(7,minmax(154px,1fr))' }}>
+        <div className="v-admin-panel vroom-calendar-grid hidden overflow-hidden lg:block">
+          <div className="grid bg-[#F2F6FA]" style={{ gridTemplateColumns: viewMode === 'day' ? '66px minmax(0,1fr)' : '66px repeat(7,minmax(0,1fr))' }}>
             <div className="border-b border-r border-[#111827]/[0.07]" />
             {viewRange.map((date) => (
               <div key={date.toISOString()} className={`border-b border-r border-[#111827]/[0.07] p-3 text-center ${isSameDay(date, new Date()) ? 'bg-[#EAF3FF]' : ''}`}>

@@ -308,6 +308,27 @@
     color: #111315 !important;
   }
 
+  @media (max-width: 640px) {
+    .v-today-metrics .vroom-kpi-card {
+      min-height: 82px !important;
+      padding: 12px !important;
+      border-radius: 18px !important;
+    }
+
+    .v-today-metrics .vroom-kpi-card strong {
+      margin-top: 10px !important;
+      font-size: 24px !important;
+    }
+
+    .v-today-metrics .v-route-pill {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+    }
+  }
+
   .vroom-schedule-toolbar {
     background:
       linear-gradient(90deg, rgba(10,132,255,0.18), transparent 36%),
@@ -1317,6 +1338,25 @@
     .v-tab-row-wrap .v-tab { flex: 1 1 auto; min-height: 40px; }
     .v-tab-tools { width: 100%; justify-content: space-between; }
     .v-tab-tools button { min-height: 40px; padding-left: 14px; padding-right: 14px; }
+    .v-students-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .v-students-summary .v-student-stat {
+      min-height: 76px;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px;
+    }
+    .v-students-summary .v-student-stat strong {
+      font-size: 24px !important;
+    }
+    .v-students-summary .v-student-stat > span:last-child {
+      width: 100%;
+      text-align: left;
+      white-space: nowrap;
+    }
   }
 }
 
@@ -2089,6 +2129,21 @@
     box-shadow: 0 16px 36px rgba(15,23,42,0.06);
   }
 
+  .vroom-calendar-grid {
+    max-width: 100%;
+  }
+
+  .vroom-calendar-grid .vroom-slot-card {
+    min-height: 104px;
+    padding: 10px !important;
+    border-radius: 14px !important;
+    font-size: 11px !important;
+  }
+
+  .vroom-calendar-grid .vroom-slot-card span {
+    min-width: 0;
+  }
+
   /* Legacy admin routes still use older utility-heavy markup. This layer pulls them into the same launch UI system. */
   .vroom-admin-shell main > .flex.h-full.flex-col > .flex-shrink-0.bg-white,
   .vroom-admin-shell main > .flex.h-full.flex-col > .flex.flex-shrink-0 {
@@ -2296,9 +2351,21 @@
   .v-ops-shell section,
   .v-ops-shell .v-ops-panel,
   .v-ops-shell .v-ops-hero {
+    min-width: 0;
     border-radius: 18px;
     overflow: hidden;
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.045);
+  }
+
+  .v-ops-shell aside,
+  .v-ops-shell main,
+  .v-ops-shell input,
+  .v-ops-shell select,
+  .v-ops-shell textarea,
+  .v-ops-shell button,
+  .v-ops-shell article,
+  .v-ops-shell [class*="grid"] {
+    min-width: 0;
   }
 
   .v-ops-shell input,
@@ -2312,9 +2379,24 @@
     border-radius: 0;
   }
 
+  .v-ops-shell [class*="overflow-x-auto"] {
+    max-width: 100%;
+    scrollbar-width: none;
+  }
+
+  .v-ops-shell [class*="overflow-x-auto"]::-webkit-scrollbar {
+    display: none;
+  }
+
   @media (max-width: 640px) {
     .v-ops-shell {
+      overflow-x: hidden;
       padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+
+    .v-ops-shell > .mx-auto {
+      width: 100%;
+      max-width: 100vw;
     }
 
     .v-ops-shell .v-ops-hero h1 {
@@ -2328,6 +2410,24 @@
 
     .v-ops-shell .v-ops-hero strong {
       font-size: 24px;
+    }
+
+    .v-ops-shell .v-ops-hero p {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .v-ops-shell [class*="overflow-x-auto"] {
+      margin-right: -1px;
+      padding-right: 10px;
+    }
+
+    .v-ops-shell [class*="overflow-x-auto"] button {
+      min-height: 38px;
+      padding-inline: 10px;
+      font-size: 11px;
     }
   }
 
