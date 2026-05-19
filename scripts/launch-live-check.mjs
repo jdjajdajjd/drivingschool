@@ -285,6 +285,22 @@ async function checkLeadDelivery() {
   if (record) cleanupTasks.push(() => cleanupLead(record, { phone: payload.phone, schoolName: payload.schoolName }))
 }
 
+async function checkApiAbuseProtection() {
+  const leadForbidden = await appFetch('/api/lead', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
+    body: JSON.stringify({ name: 'Bad', phone: '+79990000000', schoolName: 'Bad School' }),
+  })
+  expect(leadForbidden.response.status === 403, `/api/lead: cross-origin request should be rejected, got ${leadForbidden.response.status}`)
+
+  const studentForbidden = await appFetch('/api/student-profile', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
+    body: JSON.stringify({ action: 'login', schoolId: 'school-virazh', phone: '+79990000000', password: 'password1' }),
+  })
+  expect(studentForbidden.response.status === 403, `/api/student-profile: cross-origin request should be rejected, got ${studentForbidden.response.status}`)
+}
+
 async function cleanupStudent({ schoolId, normalizedPhone }) {
   const query = buildQuery({ school_id: `eq.${schoolId}`, normalized_phone: `eq.${normalizedPhone}` })
   await supabaseFetch(`/rest/v1/students?${query}`, { method: 'DELETE' })
@@ -429,6 +445,7 @@ try {
   await checkSecurityHeaders()
   await checkHealth()
   await checkStaffAuth()
+  await checkApiAbuseProtection()
   await checkLeadDelivery()
   await checkPublicBookingGuards()
   await checkStudentProfile()
