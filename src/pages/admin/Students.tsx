@@ -559,14 +559,14 @@ export function AdminStudents() {
         </div>
       </div>
 
-      <div className="v-tab-row">
+      <div className="v-tab-row v-tab-row-wrap">
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => setFilterPersisted(tab.id)} className={`v-tab ${filter === tab.id ? 'v-tab-active' : ''}`}>
             {tab.label}
             {tab.count !== undefined ? <span className="ml-2 rounded-full bg-[#EEF2F5] px-2 py-0.5 text-[11px] text-[#59626D]">{tab.count}</span> : null}
           </button>
         ))}
-        <div className="ml-auto flex shrink-0 items-center gap-2 py-2">
+        <div className="v-tab-tools ml-auto flex shrink-0 items-center gap-2 py-2">
           {selectedIds.length > 0 ? <span className="rounded-full bg-[#111827] px-3 py-1 text-[11px] font-medium text-white">Выбрано {selectedIds.length}</span> : null}
           <button type="button" onClick={toggleCompactTable} className={`rounded-full px-3 py-1 text-[11px] font-medium ${compactTable ? 'bg-[#111827] text-white' : 'bg-[#F2F6FA] text-[#667381]'}`}>
             Плотно

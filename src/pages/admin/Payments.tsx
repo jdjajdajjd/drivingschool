@@ -151,7 +151,7 @@ export function AdminPayments() {
         </div>
       </div>
 
-      <div className="v-tab-row">
+      <div className="v-tab-row v-tab-row-wrap">
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => setFilter(tab.id)} className={`v-tab ${filter === tab.id ? 'v-tab-active' : ''}`}>
             {tab.label}

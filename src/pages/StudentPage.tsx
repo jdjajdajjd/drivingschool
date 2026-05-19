@@ -85,16 +85,16 @@ function HorizontalScroller({ children, className, contentClassName, step = 280 
   return (
     <div className={cn('relative', className)}>
       {canScrollLeft ? (
-        <button type="button" className="absolute left-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-[rgba(255,255,255,0.76)] text-[var(--text)] shadow-[0_8px_24px_rgba(15,20,25,0.06)] backdrop-blur-xl active:scale-[0.96]" onClick={() => scrollByDirection(-1)} aria-label="Прокрутить влево">
-          <ChevronLeft size={17} />
+        <button type="button" className="absolute left-1 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-[rgba(255,255,255,0.88)] text-[var(--text)] shadow-[0_10px_28px_rgba(15,20,25,0.10)] backdrop-blur-xl active:scale-[0.96]" onClick={() => scrollByDirection(-1)} aria-label="Прокрутить влево">
+          <ChevronLeft size={21} />
         </button>
       ) : null}
-      <div ref={ref} className={cn('no-scrollbar overflow-x-auto scroll-smooth', contentClassName)}>
+      <div ref={ref} data-horizontal-scroll="true" className={cn('no-scrollbar overflow-x-auto scroll-smooth', contentClassName)}>
         {children}
       </div>
       {canScrollRight ? (
-        <button type="button" className="absolute right-1 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-[rgba(255,255,255,0.76)] text-[var(--text)] shadow-[0_8px_24px_rgba(15,20,25,0.06)] backdrop-blur-xl active:scale-[0.96]" onClick={() => scrollByDirection(1)} aria-label="Прокрутить вправо">
-          <ChevronRight size={17} />
+        <button type="button" className="absolute right-1 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-[rgba(255,255,255,0.88)] text-[var(--text)] shadow-[0_10px_28px_rgba(15,20,25,0.10)] backdrop-blur-xl active:scale-[0.96]" onClick={() => scrollByDirection(1)} aria-label="Прокрутить вправо">
+          <ChevronRight size={21} />
         </button>
       ) : null}
     </div>
@@ -197,13 +197,13 @@ function MiniCalendar({ selectedDate, onSelect, slots, selectedInstructor, lesso
           <StudentAvatar name={selectedInstructor?.name ?? 'Инструктор'} src={selectedInstructor ? getInstructorPhoto(selectedInstructor) : undefined} size={24} fallback="male" />
           <span className="truncate">{selectedInstructor ? formatInstructorName(selectedInstructor.name) : 'Выбрать инструктора'}</span>
         </button>
-        <button className="shrink-0 text-[13px] font-semibold text-[#74787D]" onClick={onInstructorClick}>Сменить</button>
+        <button className="inline-flex min-h-9 shrink-0 items-center rounded-full px-3 text-[13px] font-semibold text-[#74787D] active:scale-[0.98]" onClick={onInstructorClick}>Сменить</button>
       </div>
       <div className="mb-3"><FilterChips value={lessonFilter} onChange={onLessonFilterChange} /></div>
       <div className="mb-3 flex items-center justify-between px-1">
-        <button onClick={() => onSelect(addDays(selectedDate, -7))} aria-label="Предыдущая неделя"><ChevronLeft size={22} /></button>
+          <button className="grid h-10 w-10 place-items-center rounded-full active:scale-[0.97]" onClick={() => onSelect(addDays(selectedDate, -7))} aria-label="Предыдущая неделя"><ChevronLeft size={22} /></button>
         <p className="text-[21px] font-bold capitalize tracking-[-0.02em] text-[#111315]">{format(startOfMonth(selectedDate), 'LLLL yyyy', { locale: ru })}</p>
-        <button onClick={() => onSelect(addDays(selectedDate, 7))} aria-label="Следующая неделя"><ChevronRight size={22} /></button>
+          <button className="grid h-10 w-10 place-items-center rounded-full active:scale-[0.97]" onClick={() => onSelect(addDays(selectedDate, 7))} aria-label="Следующая неделя"><ChevronRight size={22} /></button>
       </div>
       <HorizontalScroller className="-mx-4" contentClassName="px-4 pb-1" step={336}>
         <div className="flex gap-1">
