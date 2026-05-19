@@ -348,8 +348,7 @@ function DashboardBlocksModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Блоки главной" size="md">
-      <div className="space-y-3 p-5">
-        <div className="grid gap-2">
+      <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4 sm:p-5">
           {ADMIN_DASHBOARD_BLOCKS.map((item) => (
             <label key={item.id} className="flex items-start gap-3 rounded-lg border border-[#E4E7EC] bg-white p-3">
               <input type="checkbox" className="mt-1" checked={draft.includes(item.id)} onChange={() => toggle(item.id)} />
@@ -359,11 +358,10 @@ function DashboardBlocksModal({
               </span>
             </label>
           ))}
-        </div>
-        <div className="flex gap-2 pt-2">
-          <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-          <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
-        </div>
+      </div>
+      <div className="flex shrink-0 gap-2 border-t border-[#111827]/[0.07] bg-white/95 p-4 backdrop-blur-2xl">
+        <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </Modal>
   )

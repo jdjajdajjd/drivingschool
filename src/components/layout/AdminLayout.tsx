@@ -428,8 +428,10 @@ function AdminMenuSettingsModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Разделы" size="md">
-      <div className="max-h-[min(72vh,640px)] space-y-3 overflow-y-auto p-5">
-        <div className="grid gap-2">
+      <div className="border-b border-[#111827]/[0.07] bg-[#F8FAFC] px-5 py-3 text-[13px] font-medium leading-5 text-[#687381]">
+        Оставьте только рабочие разделы. Основные разделы закреплены, остальное можно включать по мере запуска.
+      </div>
+      <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4 sm:p-5">
           {items.map((item) => (
             <label key={item.id} className="flex items-start gap-3 rounded-[20px] border border-white/70 bg-white/75 p-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
               <input
@@ -445,11 +447,10 @@ function AdminMenuSettingsModal({
               </span>
             </label>
           ))}
-        </div>
-        <div className="flex gap-2 pt-2">
-          <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-          <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
-        </div>
+      </div>
+      <div className="flex shrink-0 gap-2 border-t border-[#111827]/[0.07] bg-white/95 p-4 backdrop-blur-2xl">
+        <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
+        <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
       </div>
     </Modal>
   )

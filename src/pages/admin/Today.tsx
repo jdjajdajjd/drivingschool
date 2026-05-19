@@ -572,7 +572,7 @@ function TodayBlocksModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Блоки главной" size="md">
-      <div className="grid gap-2 p-4">
+      <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4">
         {TODAY_BLOCKS.map((block) => {
           const enabled = draft.includes(block.id)
           return (
@@ -593,7 +593,7 @@ function TodayBlocksModal({
           )
         })}
       </div>
-      <div className="sticky bottom-0 flex gap-2 border-t border-[#111827]/[0.07] bg-white/90 p-4 backdrop-blur-2xl">
+      <div className="flex shrink-0 gap-2 border-t border-[#111827]/[0.07] bg-white/95 p-4 backdrop-blur-2xl">
         <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">
           Отмена
         </button>
