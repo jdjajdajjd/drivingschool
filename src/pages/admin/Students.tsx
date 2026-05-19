@@ -646,7 +646,7 @@ export function AdminStudents() {
                       checked={selectedIds.includes(student.id)}
                       onChange={(event) => { event.stopPropagation(); toggleSelected(student.id) }}
                       onClick={(event) => event.stopPropagation()}
-                      className="mt-3 h-4 w-4 accent-[#0A84FF]"
+                      className="mt-2 h-5 w-5 shrink-0 accent-[#0A84FF]"
                     />
                     <span className="v-person-avatar shrink-0">{initials}</span>
                     <span className="min-w-0 flex-1">
@@ -680,7 +680,7 @@ export function AdminStudents() {
 
           <div className="v-admin-panel v-students-list hidden overflow-hidden md:block">
             <div className="v-students-list-head grid grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
-              <span className="text-center"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} className="accent-[#0A84FF]" /></span>
+              <span className="text-center"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} className="h-5 w-5 accent-[#0A84FF]" /></span>
               <span>Ученик</span>
               <span>Статус</span>
               <span>Ближайшее</span>
@@ -699,7 +699,7 @@ export function AdminStudents() {
                   return (
                     <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
                       <span className="text-center" onClick={(event) => event.stopPropagation()}>
-                        <input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggleSelected(student.id)} className="accent-[#0A84FF]" />
+                        <input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggleSelected(student.id)} className="h-5 w-5 accent-[#0A84FF]" />
                       </span>
                       <span>
                         <div className="flex items-center gap-3">

@@ -323,7 +323,7 @@ export default function StudentRegisterPage() {
                     <Input label="Повторите пароль *" type="password" value={confirmPassword} error={password && confirmPassword && password !== confirmPassword ? 'Пароли не совпадают.' : undefined} placeholder="Ещё раз пароль" autoComplete="new-password" onChange={(event) => { setError(''); setConfirmPassword(event.target.value) }} />
                   </div>
                   <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-white/60 bg-[rgba(255,255,255,0.5)] p-3 text-[12px] font-medium leading-5 text-[var(--text-muted)] shadow-[0_6px_20px_rgba(20,24,32,0.03)]">
-                    <input className="mt-1 h-4 w-4 accent-[#111315]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
+                    <input className="mt-0.5 h-5 w-5 shrink-0 accent-[#111315]" type="checkbox" checked={acceptedTerms} onChange={(event) => { setError(''); setAcceptedTerms(event.target.checked) }} />
                     <span>
                       Согласен с <a className="font-semibold text-[#111315]" href="/terms">условиями сервиса</a>, <a className="font-semibold text-[#111315]" href="/privacy">политикой конфиденциальности</a> и обработкой персональных данных для записи в автошколу.
                     </span>

@@ -436,7 +436,7 @@ function AdminMenuSettingsModal({
             <label key={item.id} className="flex items-start gap-3 rounded-[20px] border border-white/70 bg-white/75 p-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 accent-[#111827]"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#111827]"
                 checked={item.required || draft.includes(item.id as AdminNavItemId)}
                 disabled={item.required}
                 onChange={() => toggle(item.id as AdminNavItemId)}
@@ -448,7 +448,7 @@ function AdminMenuSettingsModal({
             </label>
           ))}
       </div>
-      <div className="flex shrink-0 gap-2 border-t border-[#111827]/[0.07] bg-white/95 p-4 backdrop-blur-2xl">
+      <div className="v-modal-actions">
         <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
         <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
       </div>

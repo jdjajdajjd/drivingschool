@@ -10,6 +10,7 @@ import {
   getAccessSecret,
   getLegacyAccessConfig,
   getWorkspaceStaffContext,
+  grantAccess,
   isAccessGranted,
   isLegacyAccessConfigured,
 } from '../../services/accessControl'
@@ -26,6 +27,11 @@ interface ProtectedAccessProps {
 export function ProtectedAccess({ role, mode = 'demo' }: ProtectedAccessProps) {
   if (role === 'admin') setDataNamespace(mode)
 
+  const demoAdminAccess = role === 'admin' && mode === 'demo'
+  if (demoAdminAccess && !isAccessGranted(role)) {
+    grantAccess(role)
+  }
+
   const loginPath = role === 'admin'
     ? (mode === 'workspace' ? WORKSPACE_ADMIN_LOGIN_PATH : ADMIN_LOGIN_PATH)
     : SUPERADMIN_LOGIN_PATH
@@ -33,7 +39,7 @@ export function ProtectedAccess({ role, mode = 'demo' }: ProtectedAccessProps) {
     () => isSupabaseRemoteConfigured() && (role === 'superadmin' || mode === 'workspace'),
     [mode, role],
   )
-  const accessGranted = isAccessGranted(role)
+  const accessGranted = demoAdminAccess || isAccessGranted(role)
   const [remoteSessionState, setRemoteSessionState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
 
   useEffect(() => {

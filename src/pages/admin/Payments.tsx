@@ -129,7 +129,7 @@ export function AdminPayments() {
           <h1 className="v-admin-heading">Оплаты</h1>
           <p className="v-admin-note mt-1">Долги, частичные оплаты и поступления</p>
         </div>
-        <div className="ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-3">
+        <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-3">
           <div className="rounded-[10px] bg-[#EAF7EF] px-4 py-2">
             <p className="text-[11px] font-black uppercase text-[#157347]">Оплачено</p>
             <p className="text-[18px] font-black text-[#111418]">{money(totals.paid)}</p>
@@ -143,7 +143,7 @@ export function AdminPayments() {
             <p className="text-[18px] font-black text-[#111418]">{money(totals.debt)}</p>
           </div>
           {canManageFinance ? (
-            <button onClick={() => setShowAdd(true)} className="v-admin-button">
+            <button onClick={() => setShowAdd(true)} className="v-admin-button col-span-2 sm:col-span-3">
               <Plus width={16} height={16} />
               Принять оплату
             </button>
@@ -183,7 +183,7 @@ export function AdminPayments() {
                   return (
                   <div key={item.student?.id ?? item.payments[0]?.studentId} className="grid gap-3 p-4 transition hover:bg-[#F8FAFC] sm:grid-cols-[minmax(0,1fr)_160px_170px_180px] sm:items-center">
                     <span className="min-w-0">
-                      <a href={item.student ? `${getAdminBasePathForLocation()}/students/${item.student.id}` : '#'} className="block truncate text-[15px] font-black text-[#111418] hover:text-[#075EBC]">{item.student?.name ?? 'Ученик не найден'}</a>
+                      <a href={item.student ? `${getAdminBasePathForLocation()}/students/${item.student.id}` : '#'} className="block min-h-9 truncate py-1 text-[15px] font-black text-[#111418] hover:text-[#075EBC]">{item.student?.name ?? 'Ученик не найден'}</a>
                       <span className="mt-1 block text-[12px] font-bold text-[#66717D]">{item.student?.phone ?? 'телефон не указан'} · {item.payments.length} платежей</span>
                     </span>
                     <span className="text-[16px] font-black text-[#B42318]">{money(item.debt)}</span>
@@ -218,7 +218,40 @@ export function AdminPayments() {
             <span>Поменяйте фильтр или примите новую оплату.</span>
           </div>
         ) : (
-          <div className="v-admin-panel overflow-hidden">
+          <>
+            <div className="grid gap-2 md:hidden">
+            {filtered.map(({ payment, student }) => (
+              <article key={payment.id} className="v-human-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <strong className="block truncate text-[15px] font-semibold text-[#111827]">{student?.name ?? 'Ученик не найден'}</strong>
+                    <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{payment.description}</span>
+                  </div>
+                  <span className={`v-admin-pill shrink-0 ${statusTone(payment.status)}`}>{STATUS_LABELS[payment.status]}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
+                    <strong className="block text-[15px] font-semibold text-[#111827]">{money(payment.amount)}</strong>
+                    <span className="text-[11px] font-medium text-[#667085]">сумма</span>
+                  </span>
+                  <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
+                    <strong className="block text-[15px] font-semibold text-[#1F8F3F]">{money(payment.paidAmount)}</strong>
+                    <span className="text-[11px] font-medium text-[#667085]">оплачено</span>
+                  </span>
+                  <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
+                    <strong className={`block text-[15px] font-semibold ${payment.remainingAmount > 0 ? 'text-[#C92820]' : 'text-[#1F8F3F]'}`}>{payment.remainingAmount > 0 ? money(payment.remainingAmount) : 'нет'}</strong>
+                    <span className="text-[11px] font-medium text-[#667085]">долг</span>
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-medium text-[#667085]">
+                  <span className="truncate">{payment.method ? METHOD_LABELS[payment.method] : 'способ не указан'}</span>
+                  <span className="shrink-0">{payment.paidAt ? format(new Date(payment.paidAt), 'd MMM', { locale: ru }) : payment.dueDate ? `до ${format(new Date(payment.dueDate), 'd MMM', { locale: ru })}` : 'ожидается'}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+
+            <div className="v-admin-panel hidden overflow-hidden md:block">
             <table className="v-admin-table min-w-[940px]">
               <thead>
                 <tr>
@@ -253,6 +286,7 @@ export function AdminPayments() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
