@@ -26,8 +26,8 @@ const K = {
   SEED_VERSION: 'seed_version',
 } as const
 
-function namespacedKey(key: string): string {
-  return `${KEY_PREFIX}${activeNamespace}:${key}`
+function namespacedKey(key: string, namespace: DataNamespace = activeNamespace as DataNamespace): string {
+  return `${KEY_PREFIX}${namespace}:${key}`
 }
 
 export type DataNamespace = 'demo' | 'workspace'
@@ -44,6 +44,15 @@ export function getDataNamespace(): DataNamespace {
   return activeNamespace as DataNamespace
 }
 
+export function isDemoNamespace(): boolean {
+  return getDataNamespace() === 'demo'
+}
+
+function browserStorageForNamespace(namespace: DataNamespace): Storage | null {
+  if (typeof window === 'undefined') return null
+  return namespace === 'demo' ? window.sessionStorage : window.localStorage
+}
+
 const memoryStore = new Map<string, unknown[]>()
 
 /**
@@ -52,9 +61,9 @@ const memoryStore = new Map<string, unknown[]>()
  * a workspace school by slug when the current namespace is 'demo').
  */
 function readAllFromNamespace<T>(namespace: DataNamespace, key: string): T[] {
-  const nsKey = `${KEY_PREFIX}${namespace}:${key}`
+  const nsKey = namespacedKey(key, namespace)
   try {
-    const raw = localStorage.getItem(nsKey)
+    const raw = browserStorageForNamespace(namespace)?.getItem(nsKey)
     return raw ? (JSON.parse(raw) as T[]) : []
   } catch {
     return [...((memoryStore.get(`${namespace}:${key}`) as T[] | undefined) ?? [])]
@@ -108,7 +117,8 @@ export function clearLocalDbWhenSupabaseConfigured(): void {
 
 function readAll<T>(key: string): T[] {
   try {
-    const raw = localStorage.getItem(namespacedKey(key))
+    const namespace = getDataNamespace()
+    const raw = browserStorageForNamespace(namespace)?.getItem(namespacedKey(key, namespace))
     return raw ? (JSON.parse(raw) as T[]) : []
   } catch {
     return [...((memoryStore.get(`${activeNamespace}:${key}`) as T[] | undefined) ?? [])]
@@ -117,7 +127,8 @@ function readAll<T>(key: string): T[] {
 
 function writeAll<T>(key: string, data: T[]): void {
   try {
-    localStorage.setItem(namespacedKey(key), JSON.stringify(data))
+    const namespace = getDataNamespace()
+    browserStorageForNamespace(namespace)?.setItem(namespacedKey(key, namespace), JSON.stringify(data))
   } catch {
     memoryStore.set(`${activeNamespace}:${key}`, data)
   }
@@ -306,17 +317,24 @@ export const db = {
     },
   },
 
-  isSeeded: () =>
-    localStorage.getItem(namespacedKey(K.SEEDED)) === 'true' &&
-    localStorage.getItem(namespacedKey(K.SEED_VERSION)) === SEED_VERSION,
+  isSeeded: () => {
+    const namespace = getDataNamespace()
+    const storage = browserStorageForNamespace(namespace)
+    return storage?.getItem(namespacedKey(K.SEEDED, namespace)) === 'true' &&
+      storage?.getItem(namespacedKey(K.SEED_VERSION, namespace)) === SEED_VERSION
+  },
 
   markSeeded: () => {
-    localStorage.setItem(namespacedKey(K.SEEDED), 'true')
-    localStorage.setItem(namespacedKey(K.SEED_VERSION), SEED_VERSION)
+    const namespace = getDataNamespace()
+    const storage = browserStorageForNamespace(namespace)
+    storage?.setItem(namespacedKey(K.SEEDED, namespace), 'true')
+    storage?.setItem(namespacedKey(K.SEED_VERSION, namespace), SEED_VERSION)
   },
 
   reset: () => {
-    Object.values(K).forEach((key) => localStorage.removeItem(namespacedKey(key)))
+    const namespace = getDataNamespace()
+    const storage = browserStorageForNamespace(namespace)
+    Object.values(K).forEach((key) => storage?.removeItem(namespacedKey(key, namespace)))
     Object.values(K).forEach((key) => memoryStore.delete(`${activeNamespace}:${key}`))
   },
 }

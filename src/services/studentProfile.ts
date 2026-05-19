@@ -5,6 +5,7 @@ import { createStudentRequestInSupabase, loginStudentInSupabase, updateStudentPr
 import { isSupabaseConfigured } from '../lib/supabase'
 import { getSupabaseStudentDocumentsAdmin, getSupabaseStudentProgressAdmin, getSupabaseStudentRequestsAdmin, updateSupabaseStudentRequestStatusAdmin, upsertSupabaseStudentDocumentsAdmin, upsertSupabaseStudentProgressAdmin } from './supabaseAdminService'
 import { assertAdminPermission } from './adminAccess'
+import { findSchoolNamespaceById, getDataNamespace } from './storage'
 
 export interface StudentProfile {
   name: string
@@ -55,15 +56,15 @@ function getCredentialKey(phone: string): string {
 }
 
 export function saveStudentCredentials(phone: string, password: string, schoolId: string): void {
-  if (isSupabaseConfigured()) return
+  if (shouldUseRemoteForSchool(schoolId)) return
   const normalizedPhone = normalizePhone(phone)
-  localStorage.setItem(getCredentialKey(normalizedPhone), JSON.stringify({ schoolId, phone: normalizedPhone, password }))
+  setLocalStudentItem(getCredentialKey(normalizedPhone), JSON.stringify({ schoolId, phone: normalizedPhone, password }))
 }
 
 export function verifyStudentCredentials(phone: string, password: string): { schoolId: string } | null {
-  if (isSupabaseConfigured()) return null
+  if (isSupabaseConfigured() && getDataNamespace() === 'workspace') return null
   try {
-    const raw = localStorage.getItem(getCredentialKey(phone))
+    const raw = getLocalStudentItem(getCredentialKey(phone))
     if (!raw) return null
     const saved = JSON.parse(raw) as { schoolId?: string; password?: string }
     if (!saved.schoolId || saved.password !== password) return null
@@ -74,6 +75,44 @@ export function verifyStudentCredentials(phone: string, password: string): { sch
 }
 
 const sessionProfileKey = 'vroom:student_session_profile'
+
+function localStudentStorage(): Storage {
+  return getDataNamespace() === 'demo' ? sessionStorage : localStorage
+}
+
+function getLocalStudentItem(key: string): string | null {
+  const value = localStudentStorage().getItem(key)
+  if (value || getDataNamespace() !== 'demo') return value
+  return localStorage.getItem(key)
+}
+
+function setLocalStudentItem(key: string, value: string): void {
+  localStudentStorage().setItem(key, value)
+}
+
+function removeLocalStudentItem(key: string): void {
+  localStudentStorage().removeItem(key)
+  if (getDataNamespace() === 'demo') localStorage.removeItem(key)
+}
+
+function localStudentKeys(prefix: string): string[] {
+  const storages = getDataNamespace() === 'demo' ? [sessionStorage, localStorage] : [localStorage]
+  return Array.from(new Set(storages.flatMap((storage) => {
+    const keys: string[] = []
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index)
+      if (key?.startsWith(prefix)) keys.push(key)
+    }
+    return keys
+  })))
+}
+
+function shouldUseRemoteForSchool(schoolId?: string): boolean {
+  if (!isSupabaseConfigured()) return false
+  if (getDataNamespace() === 'demo') return false
+  if (schoolId && findSchoolNamespaceById(schoolId) === 'demo') return false
+  return true
+}
 
 export function saveStudentSessionProfile(schoolId: string, profile: StudentProfile): void {
   sessionStorage.setItem(sessionProfileKey, JSON.stringify({ schoolId, profile }))
@@ -93,12 +132,12 @@ export function clearStudentSessionProfile(): void {
 }
 
 export function loadStudentProfile(schoolId: string): StudentProfile | null {
-  if (isSupabaseConfigured()) {
+  if (shouldUseRemoteForSchool(schoolId)) {
     const sessionProfile = loadStudentSessionProfile()
     if (sessionProfile?.schoolId === schoolId) return sessionProfile.profile
   }
   try {
-    const raw = localStorage.getItem(getProfileKey(schoolId))
+    const raw = getLocalStudentItem(getProfileKey(schoolId))
     if (!raw) return null
     const profile = JSON.parse(raw) as StudentProfile
     if (!profile.createdByConsent || !profile.name || !profile.phone) return null
@@ -114,13 +153,11 @@ export function loadStudentProfile(schoolId: string): StudentProfile | null {
 }
 
 export function findAnyStudentProfile(): { schoolId: string; profile: StudentProfile } | null {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured() && getDataNamespace() === 'workspace') {
     const sessionProfile = loadStudentSessionProfile()
     if (sessionProfile) return sessionProfile
   }
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index)
-    if (!key?.startsWith('dd:student_profile:')) continue
+  for (const key of localStudentKeys('dd:student_profile:')) {
     const schoolId = key.replace('dd:student_profile:', '')
     const profile = loadStudentProfile(schoolId)
     if (profile) return { schoolId, profile }
@@ -143,20 +180,20 @@ export function saveStudentProfile(
     createdByConsent: true,
     ...extra,
   }
-  if (isSupabaseConfigured()) {
+  if (shouldUseRemoteForSchool(schoolId)) {
     saveStudentSessionProfile(schoolId, profile)
     return profile
   }
-  localStorage.setItem(getProfileKey(schoolId), JSON.stringify(profile))
+  setLocalStudentItem(getProfileKey(schoolId), JSON.stringify(profile))
   return profile
 }
 
 export function removeStudentProfile(schoolId: string): void {
-  if (isSupabaseConfigured()) {
+  if (shouldUseRemoteForSchool(schoolId)) {
     clearStudentSessionProfile()
     return
   }
-  localStorage.removeItem(getProfileKey(schoolId))
+  removeLocalStudentItem(getProfileKey(schoolId))
 }
 
 export function initialsFromName(name: string): string {
@@ -172,7 +209,7 @@ export function getProgressKey(studentId: string): string {
 
 export function loadStudentProgress(studentId: string): StudentProgress | null {
   try {
-    const raw = localStorage.getItem(getProgressKey(studentId))
+    const raw = getLocalStudentItem(getProgressKey(studentId))
     if (!raw) return null
     return JSON.parse(raw) as StudentProgress
   } catch {
@@ -193,6 +230,7 @@ function isMissingStudentProfileRpcError(error: unknown): boolean {
 }
 
 export async function saveStudentProfileToSupabase(schoolId: string, form: StudentProfileForm, extra?: Partial<StudentProfile>): Promise<StudentProfile> {
+  if (!shouldUseRemoteForSchool(schoolId)) return saveStudentProfile(schoolId, form, extra)
   let result: Awaited<ReturnType<typeof updateStudentProfileInSupabase>> | null = null
   try {
     result = await updateStudentProfileInSupabase({
@@ -237,6 +275,7 @@ export async function saveStudentProfileToSupabaseWithSchool(
   form: StudentProfileForm,
   extra?: Partial<StudentProfile>,
 ): Promise<StudentProfile> {
+  if (!shouldUseRemoteForSchool(schoolId)) return saveStudentProfile(schoolId, form, extra)
   let result: Awaited<ReturnType<typeof updateStudentProfileInSupabase>> | null = null
   try {
     result = await updateStudentProfileInSupabase({
@@ -284,6 +323,11 @@ export async function saveStudentProfileToSupabaseWithSchool(
 }
 
 export async function loginStudentProfileFromSupabase(schoolId: string, phone: string, password: string): Promise<StudentProfile | null> {
+  if (!shouldUseRemoteForSchool(schoolId)) {
+    const localCredentials = verifyStudentCredentials(phone, password)
+    if (!localCredentials || localCredentials.schoolId !== schoolId) return null
+    return loadStudentProfile(schoolId)
+  }
   let result: Awaited<ReturnType<typeof loginStudentInSupabase>>
   try {
     result = await loginStudentInSupabase({ schoolId, phone, password })
@@ -311,17 +355,18 @@ export async function loginStudentProfileFromSupabase(schoolId: string, phone: s
 }
 
 export async function refreshStudentProgressFromSupabase(studentId: string): Promise<StudentProgress | null> {
+  if (getDataNamespace() === 'demo') return loadStudentProgress(studentId)
   const progress = await getSupabaseStudentProgressAdmin(studentId)
   if (progress) saveStudentProgress(progress)
   return progress
 }
 
 export function saveStudentProgress(progress: StudentProgress): void {
-  localStorage.setItem(getProgressKey(progress.studentId), JSON.stringify(progress))
+  setLocalStudentItem(getProgressKey(progress.studentId), JSON.stringify(progress))
 }
 
 export async function saveStudentProgressAdminConfirmed(progress: StudentProgress): Promise<{ ok: boolean; progress?: StudentProgress; error?: string }> {
-  if (isSupabaseConfigured()) {
+  if (shouldUseRemoteForSchool()) {
     try {
       await upsertSupabaseStudentProgressAdmin(progress)
     } catch (error) {
@@ -329,14 +374,12 @@ export async function saveStudentProgressAdminConfirmed(progress: StudentProgres
     }
   }
 
-  localStorage.setItem(getProgressKey(progress.studentId), JSON.stringify(progress))
+  setLocalStudentItem(getProgressKey(progress.studentId), JSON.stringify(progress))
   return { ok: true, progress }
 }
 
 export function findAnyStudentProgress(): { studentId: string; progress: StudentProgress } | null {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (!key?.startsWith('dd:student_progress:')) continue
+  for (const key of localStudentKeys('dd:student_progress:')) {
     const studentId = key.replace('dd:student_progress:', '')
     const progress = loadStudentProgress(studentId)
     if (progress) return { studentId, progress }
@@ -352,7 +395,7 @@ export function getLessonDescriptionKey(slotId: string): string {
 
 export function loadLessonDescription(slotId: string): LessonDescription | null {
   try {
-    const raw = localStorage.getItem(getLessonDescriptionKey(slotId))
+    const raw = getLocalStudentItem(getLessonDescriptionKey(slotId))
     if (!raw) return null
     return JSON.parse(raw) as LessonDescription
   } catch {
@@ -361,7 +404,7 @@ export function loadLessonDescription(slotId: string): LessonDescription | null 
 }
 
 export function saveLessonDescription(desc: LessonDescription): void {
-  localStorage.setItem(getLessonDescriptionKey(desc.slotId), JSON.stringify(desc))
+  setLocalStudentItem(getLessonDescriptionKey(desc.slotId), JSON.stringify(desc))
 }
 
 export const studentDocumentLabels: Record<StudentDocumentType, string> = {
@@ -394,7 +437,7 @@ export function getStudentDocumentsKey(studentId: string): string {
 
 export function loadStudentDocuments(studentId: string): StudentDocument[] {
   try {
-    const raw = localStorage.getItem(getStudentDocumentsKey(studentId))
+    const raw = getLocalStudentItem(getStudentDocumentsKey(studentId))
     const saved = raw ? JSON.parse(raw) as StudentDocument[] : []
     const byType = new Map(saved.map((document) => [document.type, document]))
     return defaultDocumentTypes.map((type) => byType.get(type) ?? { studentId, type, status: 'missing', updatedAt: new Date().toISOString() })
@@ -404,13 +447,14 @@ export function loadStudentDocuments(studentId: string): StudentDocument[] {
 }
 
 export async function refreshStudentDocumentsFromSupabase(studentId: string): Promise<StudentDocument[]> {
+  if (getDataNamespace() === 'demo') return loadStudentDocuments(studentId)
   const documents = await getSupabaseStudentDocumentsAdmin(studentId)
   if (documents.length > 0) saveStudentDocuments(studentId, documents)
   return documents
 }
 
 export function saveStudentDocuments(studentId: string, documents: StudentDocument[]): void {
-  localStorage.setItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
+  setLocalStudentItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
 }
 
 export function updateStudentDocument(studentId: string, type: StudentDocumentType, status: StudentDocumentStatus): StudentDocument[] {
@@ -426,7 +470,7 @@ export async function updateStudentDocumentAdminConfirmed(
 ): Promise<{ ok: boolean; documents?: StudentDocument[]; error?: string }> {
   const documents = loadStudentDocuments(studentId).map((document) => document.type === type ? { ...document, status, updatedAt: new Date().toISOString() } : document)
 
-  if (isSupabaseConfigured()) {
+  if (shouldUseRemoteForSchool()) {
     try {
       await upsertSupabaseStudentDocumentsAdmin(documents)
     } catch (error) {
@@ -434,7 +478,7 @@ export async function updateStudentDocumentAdminConfirmed(
     }
   }
 
-  localStorage.setItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
+  setLocalStudentItem(getStudentDocumentsKey(studentId), JSON.stringify(documents))
   return { ok: true, documents }
 }
 
@@ -451,7 +495,7 @@ export function getStudentRequestsKey(schoolId: string): string {
 
 export function loadStudentRequests(schoolId: string): StudentRequest[] {
   try {
-    const raw = localStorage.getItem(getStudentRequestsKey(schoolId))
+    const raw = getLocalStudentItem(getStudentRequestsKey(schoolId))
     return raw ? JSON.parse(raw) as StudentRequest[] : []
   } catch {
     return []
@@ -459,13 +503,14 @@ export function loadStudentRequests(schoolId: string): StudentRequest[] {
 }
 
 export async function refreshStudentRequestsFromSupabase(schoolId: string): Promise<StudentRequest[]> {
+  if (!shouldUseRemoteForSchool(schoolId)) return loadStudentRequests(schoolId)
   const requests = await getSupabaseStudentRequestsAdmin(schoolId)
   saveStudentRequests(schoolId, requests)
   return requests
 }
 
 export function saveStudentRequests(schoolId: string, requests: StudentRequest[]): void {
-  localStorage.setItem(getStudentRequestsKey(schoolId), JSON.stringify(requests))
+  setLocalStudentItem(getStudentRequestsKey(schoolId), JSON.stringify(requests))
 }
 
 export function createStudentRequest(request: Omit<StudentRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>): StudentRequest {
@@ -478,7 +523,9 @@ export function createStudentRequest(request: Omit<StudentRequest, 'id' | 'statu
     updatedAt: now,
   }
   saveStudentRequests(request.schoolId, [next, ...loadStudentRequests(request.schoolId)])
-  void createStudentRequestInSupabase(next).catch((error) => console.error('Supabase student request sync failed', error))
+  if (shouldUseRemoteForSchool(request.schoolId)) {
+    void createStudentRequestInSupabase(next).catch((error) => console.error('Supabase student request sync failed', error))
+  }
   return next
 }
 
@@ -499,7 +546,7 @@ export async function updateStudentRequestStatusAdminConfirmed(
   const updatedAt = new Date().toISOString()
   const requests = loadStudentRequests(schoolId).map((request) => request.id === requestId ? { ...request, status, updatedAt } : request)
 
-  if (isSupabaseConfigured()) {
+  if (shouldUseRemoteForSchool(schoolId)) {
     try {
       await updateSupabaseStudentRequestStatusAdmin(schoolId, requestId, status, updatedAt)
     } catch (error) {

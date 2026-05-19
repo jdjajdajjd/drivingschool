@@ -583,21 +583,23 @@ export function StudentPage() {
       assignedInstructorId: student?.assignedInstructorId ?? saved.assignedInstructorId,
       createdAt: student?.createdAt ?? new Date().toISOString(),
     })
-    void updateStudentProfileInSupabase({
-      schoolId: school.id,
-      name: saved.name,
-      phone: saved.phone,
-      email: saved.email,
-      password: '',
-      avatarUrl: saved.avatarUrl,
-      categoryCodes: student?.categoryCodes,
-      trainingStage: student?.trainingStage,
-      groupName: student?.groupName,
-      trainingStartDate: student?.trainingStartDate,
-      drivingStartDate: student?.drivingStartDate,
-      trainingEndDate: student?.trainingEndDate,
-      drivingEndDate: student?.drivingEndDate,
-    }).catch(() => undefined)
+    if (findSchoolNamespaceById(school.id) !== 'demo') {
+      void updateStudentProfileInSupabase({
+        schoolId: school.id,
+        name: saved.name,
+        phone: saved.phone,
+        email: saved.email,
+        password: '',
+        avatarUrl: saved.avatarUrl,
+        categoryCodes: student?.categoryCodes,
+        trainingStage: student?.trainingStage,
+        groupName: student?.groupName,
+        trainingStartDate: student?.trainingStartDate,
+        drivingStartDate: student?.drivingStartDate,
+        trainingEndDate: student?.trainingEndDate,
+        drivingEndDate: student?.drivingEndDate,
+      }).catch(() => undefined)
+    }
   }
 
   async function uploadPhoto(file: File | undefined) {
