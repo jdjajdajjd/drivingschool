@@ -280,7 +280,7 @@ export function AdminToday() {
         </div>
       </section>
 
-      <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="v-today-metrics mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <TodayMetric label="занятий сегодня" value={data.activeToday.length} tone="blue" to={`${ADMIN_BASE_PATH}/schedule`} />
         <TodayMetric label="свободных окон" value={data.freeSlotsToday} tone="green" to={`${ADMIN_BASE_PATH}/schedule`} />
         <TodayMetric label="ближайших записей" value={data.upcoming.length} tone="muted" to={`${ADMIN_BASE_PATH}/schedule`} />

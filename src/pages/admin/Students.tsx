@@ -356,13 +356,12 @@ export function AdminStudents() {
           </div>
 
           <div className="v-admin-panel v-students-list hidden overflow-hidden md:block">
-            <div className="v-students-list-head grid grid-cols-[40px_minmax(260px,1.22fr)_minmax(150px,.72fr)_minmax(190px,.9fr)_minmax(170px,.76fr)_minmax(150px,.62fr)_40px] items-center gap-4 px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
+            <div className="v-students-list-head grid grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
               <span className="text-center"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} className="accent-[#0A84FF]" /></span>
               <span>Ученик</span>
               <span>Статус</span>
               <span>Ближайшее</span>
               <span>Деньги</span>
-              <span>Практика</span>
               <span />
             </div>
             <div>
@@ -375,7 +374,7 @@ export function AdminStudents() {
                   const stage = student.trainingStage
 
                   return (
-                    <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(260px,1.22fr)_minmax(150px,.72fr)_minmax(190px,.9fr)_minmax(170px,.76fr)_minmax(150px,.62fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}>
+                    <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}>
                       <span className="text-center" onClick={(event) => event.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggleSelected(student.id)} className="accent-[#0A84FF]" />
                       </span>
@@ -397,15 +396,7 @@ export function AdminStudents() {
                       </span>
                       <span>
                         {debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">баланс ок</span>}
-                        <span className="mt-1 block text-[12px] font-medium text-[#667085]">{missingDocs > 0 ? `${missingDocs} док. проверить` : 'документы готовы'}</span>
-                      </span>
-                      <span>
-                        <span className="flex min-w-[110px] items-center gap-2">
-                          <span className="h-2 w-20 overflow-hidden rounded-full bg-[#F2F4F7]">
-                            <span className="block h-full rounded-full bg-[#0A84FF]" style={{ width: `${Math.min((hours / 56) * 100, 100)}%` }} />
-                          </span>
-                          <span className="font-semibold tabular-nums text-[#111827]">{hours}ч</span>
-                        </span>
+                        <span className="mt-1 block text-[12px] font-medium text-[#667085]">{missingDocs > 0 ? `${missingDocs} док. проверить` : `${hours}ч практики · документы готовы`}</span>
                       </span>
                       <ChevronRight className="justify-self-end text-[#98A2B3]" width={18} height={18} />
                     </button>

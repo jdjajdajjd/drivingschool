@@ -328,11 +328,11 @@ export function AdminSchedule() {
         </div>
       </div>
 
-      <section className="v-schedule-command mx-3 mt-3 hidden gap-2 md:mx-5 md:grid md:grid-cols-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)_minmax(0,.9fr)]">
+      <section className="v-schedule-command mx-3 mt-2 hidden gap-2 md:mx-5 2xl:grid 2xl:grid-cols-[minmax(0,1.05fr)_150px_150px]">
         <button type="button" onClick={() => setShowCreateModal(true)} className="v-schedule-command-card is-action text-left">
           <span className="text-[12px] font-semibold text-[#075EBC]">Быстрое действие</span>
-          <strong className="mt-1 block text-[17px] font-semibold text-[#111827]">Открыть новые окна</strong>
-          <span className="mt-1 block text-[12px] font-medium text-[#667085]">Добавьте время на ближайшие дни, чтобы ученики сами выбирали слот.</span>
+          <strong className="mt-1 block text-[16px] font-semibold text-[#111827]">Открыть новые окна</strong>
+          <span className="mt-1 block text-[12px] font-medium text-[#667085]">Добавить время на неделю.</span>
         </button>
         <div className="v-schedule-command-card">
           <span className="text-[12px] font-semibold text-[#667085]">Сегодня</span>
@@ -342,24 +342,24 @@ export function AdminSchedule() {
         <div className="v-schedule-command-card">
           <span className="text-[12px] font-semibold text-[#667085]">Инструкторы в сетке</span>
           <strong className="mt-1 block text-[24px] font-semibold leading-none text-[#111827] tabular-nums">{schedulePressure.instructors}</strong>
-          <span className="mt-1 block text-[12px] font-medium text-[#667085]">с окнами сегодня</span>
+          <span className="mt-1 block text-[12px] font-medium text-[#667085]">сегодня</span>
         </div>
       </section>
 
-      <div className="mx-3 mt-3 hidden gap-2 lg:mx-5 lg:grid lg:grid-cols-7">
+      <div className="mx-3 mt-2 hidden gap-2 lg:mx-5 lg:grid lg:grid-cols-7">
         {dailySummary.map((day) => (
           <button
             key={day.date.toISOString()}
             onClick={() => { setSelectedDate(day.date); setViewMode('day') }}
-            className={`vroom-day-card rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 ${isSameDay(day.date, new Date()) ? 'is-today border-[rgba(10,132,255,0.28)] bg-[#EAF4FF]' : 'border-[rgba(15,23,42,0.07)] bg-white'}`}
+            className={`vroom-day-card rounded-[16px] border p-2.5 text-left transition hover:-translate-y-0.5 ${isSameDay(day.date, new Date()) ? 'is-today border-[rgba(10,132,255,0.28)] bg-[#EAF4FF]' : 'border-[rgba(15,23,42,0.07)] bg-white'}`}
           >
-            <span className="block text-[12px] font-medium text-[#667085]">{format(day.date, 'EEEEEE', { locale: ru })}</span>
-            <strong className="mt-1 block text-[21px] font-semibold text-[#111827]">{format(day.date, 'd MMM', { locale: ru })}</strong>
-            <span className="mt-2 flex gap-2 text-[12px] font-medium">
+            <span className="block text-[11px] font-medium text-[#667085]">{format(day.date, 'EEEEEE', { locale: ru })}</span>
+            <strong className="mt-0.5 block text-[18px] font-semibold text-[#111827]">{format(day.date, 'd MMM', { locale: ru })}</strong>
+            <span className="mt-1 flex gap-2 text-[11px] font-medium">
               <span className="text-[#075EBC]">{day.booked} занято</span>
               <span className="text-[#1F8F3F]">{day.free} свободно</span>
             </span>
-            <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-[#EEF2F7]">
+            <span className="mt-2 block h-1 overflow-hidden rounded-full bg-[#EEF2F7]">
               <span className="block h-full rounded-full bg-[#0A84FF]" style={{ width: `${day.total ? Math.round((day.booked / day.total) * 100) : 0}%` }} />
             </span>
           </button>
@@ -367,13 +367,13 @@ export function AdminSchedule() {
       </div>
 
       {upcomingBookings.length ? (
-        <div className="hidden px-3 py-3 md:px-5 lg:block">
+        <div className="hidden px-3 pb-1 pt-1 md:px-5 2xl:block">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {upcomingBookings.map(({ slot, booking, instructor }) => (
               <button
                 key={slot.id}
                 onClick={() => { setSelectedDate(getSlotDateTime(slot)); setViewMode('day'); setSelectedSlotId(slot.id) }}
-                className="vroom-upcoming-chip min-w-[220px] rounded-[20px] border border-white/70 bg-white/70 px-3 py-2 text-left shadow-[var(--shadow-card)] transition hover:-translate-y-0.5"
+                className="vroom-upcoming-chip min-w-[168px] rounded-[14px] border border-white/70 bg-white/70 px-2.5 py-1.5 text-left shadow-[0_8px_18px_rgba(15,23,42,0.035)] transition hover:-translate-y-0.5"
               >
                 <span className="block text-[12px] font-medium text-[#315A7C]">{format(getSlotDateTime(slot), 'd MMM, HH:mm', { locale: ru })}</span>
                 <span className="mt-1 line-clamp-1 text-[13px] font-semibold text-[#111315]">{booking?.studentName}</span>
