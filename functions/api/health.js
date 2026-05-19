@@ -44,8 +44,24 @@ async function checkSupabaseTables(env) {
 }
 
 async function checkSupabaseRpc(env) {
-  const requiredFunctions = ['public_open_staff_session', 'public_verify_staff_session', 'public_create_booking']
-  await Promise.all(requiredFunctions.map(async (name) => {
+  const requiredFunctions = [
+    {
+      name: 'public_open_staff_session',
+      body: { p_role: 'admin', p_login: '__health__', p_password: '__health__' },
+      validStatuses: [400],
+    },
+    {
+      name: 'public_verify_staff_session',
+      body: { p_role: 'admin', p_session_token: '__health__' },
+      validStatuses: [200],
+    },
+    {
+      name: 'public_create_booking',
+      body: { p_school_id: '__health__', p_student_name: '', p_student_phone: '', p_slot_ids: [] },
+      validStatuses: [400],
+    },
+  ]
+  await Promise.all(requiredFunctions.map(async ({ name, body, validStatuses }) => {
     const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL
     const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
@@ -55,12 +71,28 @@ async function checkSupabaseRpc(env) {
         authorization: `Bearer ${serviceRoleKey}`,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify(body),
     })
-    if (response.status === 400) return true
+    if (validStatuses.includes(response.status)) return true
     if (!response.ok) throw new Error(`${name} returned ${response.status}`)
     return true
   }))
+  return true
+}
+
+async function checkSupabaseHealthFunctions(env) {
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/public_verify_staff_session`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceRoleKey,
+      authorization: `Bearer ${serviceRoleKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ p_role: 'admin', p_session_token: '__health__' }),
+  })
+  if (!response.ok) throw new Error(`public_verify_staff_session returned ${response.status}`)
   return true
 }
 
@@ -81,7 +113,7 @@ export async function onRequestGet({ env }) {
       checks.supabaseTables = false
     }
     try {
-      checks.supabaseRpc = await checkSupabaseRpc(env)
+      checks.supabaseRpc = await checkSupabaseHealthFunctions(env)
     } catch {
       checks.supabaseRpc = false
     }

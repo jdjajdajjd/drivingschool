@@ -213,6 +213,8 @@ async function checkHealth() {
   expect(body?.ok === true, '/api/health: ok is not true')
   expect(body?.checks?.supabaseUrl === true, '/api/health: Supabase URL is not ready')
   expect(body?.checks?.supabaseServiceRole === true, '/api/health: Supabase service role is not ready')
+  if ('supabaseTables' in (body?.checks ?? {})) expect(body?.checks?.supabaseTables === true, '/api/health: Supabase tables are not ready')
+  if ('supabaseRpc' in (body?.checks ?? {})) expect(body?.checks?.supabaseRpc === true, '/api/health: Supabase RPC health is not ready')
   if (body?.checks?.telegramLeadDelivery !== true) note('/api/health: Telegram lead delivery is not configured; Supabase fallback must stay healthy.')
 }
 
