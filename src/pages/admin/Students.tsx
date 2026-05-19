@@ -5,9 +5,9 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { ADMIN_BASE_PATH, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import type { Student, TrainingStage } from '../../types'
+import type { Payment, Student, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { getSlotDateTime } from '../../services/bookingService'
@@ -76,9 +76,19 @@ const IMPORT_HEADERS: Record<string, string> = {
   группа: 'groupName',
   instructor: 'instructorName',
   инструктор: 'instructorName',
+  branch: 'branchName',
+  филиал: 'branchName',
   stage: 'trainingStage',
   этап: 'trainingStage',
+  debt: 'debt',
+  долг: 'debt',
+  остаток: 'debt',
+  notes: 'notes',
+  комментарий: 'notes',
 }
+
+const IMPORT_FIELDS = ['name', 'phone', 'email', 'category', 'groupName', 'instructorName', 'branchName', 'trainingStage', 'debt', 'notes', 'ignore'] as const
+type ImportField = typeof IMPORT_FIELDS[number]
 
 function splitCsvLine(line: string, delimiter: string): string[] {
   const cells: string[] = []
@@ -116,6 +126,82 @@ function parseStudentCsv(text: string): Record<string, string>[] {
       return row
     }, {})
   })
+}
+
+function normalizeHeader(header: string): string {
+  const normalized = header.trim().toLowerCase().replace(/ё/g, 'е')
+  return IMPORT_HEADERS[normalized] ?? IMPORT_HEADERS[normalized.replace(/\s+/g, '')] ?? header.trim()
+}
+
+function rowsToObjects(headers: string[], rows: string[][], mapping?: Record<string, ImportField>): Record<string, string>[] {
+  return rows.map((cells) => headers.reduce<Record<string, string>>((row, header, index) => {
+    const mapped = mapping?.[header] ?? normalizeHeader(header)
+    if (mapped && mapped !== 'ignore') row[mapped] = cells[index] ?? ''
+    return row
+  }, {}))
+}
+
+async function readStudentImportFile(file: File): Promise<{ headers: string[]; rows: string[][]; manualRows: Record<string, string>[] }> {
+  const isExcel = /\.(xlsx|xls)$/i.test(file.name) || file.type.includes('spreadsheet') || file.type.includes('excel')
+  if (isExcel) {
+    const { readSheet } = await import('read-excel-file/browser')
+    const sheetRows = await readSheet(file)
+    const normalizedRows = sheetRows.map((row: unknown[]) => row.map((cell: unknown) => cell == null ? '' : String(cell).trim()))
+    const headers = (normalizedRows[0] ?? []).map((header: string) => String(header).trim()).filter(Boolean)
+    const rows = normalizedRows.slice(1).filter((row: string[]) => row.some((cell: string) => String(cell).trim()))
+    return { headers, rows, manualRows: rowsToObjects(headers, rows) }
+  }
+
+  const text = await file.text()
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  if (lines.length < 2) return { headers: [], rows: [], manualRows: [] }
+  const delimiter = (lines[0].match(/;/g)?.length ?? 0) >= (lines[0].match(/,/g)?.length ?? 0) ? ';' : ','
+  const headers = splitCsvLine(lines[0], delimiter).map((header) => header.trim())
+  const rows = lines.slice(1).map((line) => splitCsvLine(line, delimiter))
+  return { headers, rows, manualRows: rowsToObjects(headers, rows) }
+}
+
+async function getAiImportMapping(headers: string[], rows: string[][]): Promise<Record<string, ImportField> | null> {
+  const token = getAccessSecret('admin')
+  const role = getWorkspaceStaffContext().role
+  const response = await fetch('/api/import-map', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-vroom-staff-token': token,
+      'x-vroom-staff-role': role,
+    },
+    body: JSON.stringify({ headers, sampleRows: rows.slice(0, 20) }),
+  })
+  if (!response.ok) return null
+  const data = await response.json() as { mapping?: Record<string, string> }
+  const mapping: Record<string, ImportField> = {}
+  headers.forEach((header) => {
+    const field = data.mapping?.[header]
+    mapping[header] = IMPORT_FIELDS.includes(field as ImportField) ? field as ImportField : 'ignore'
+  })
+  return mapping
+}
+
+function parseMoney(value: string): number {
+  const normalized = String(value ?? '').replace(/\s/g, '').replace(',', '.').replace(/[^0-9.-]/g, '')
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 0
+}
+
+function resolveStage(value: string): TrainingStage {
+  const source = String(value ?? '').trim().toLowerCase()
+  const byKey = Object.keys(STAGE_LABELS).find((key) => key.toLowerCase() === source)
+  if (byKey) return byKey as TrainingStage
+  const byLabel = Object.entries(STAGE_LABELS).find(([, label]) => label?.toLowerCase() === source)
+  if (byLabel) return byLabel[0] as TrainingStage
+  if (/долг/.test(source)) return 'has_debt'
+  if (/док/.test(source)) return 'missing_documents'
+  if (/экзамен|гибдд/.test(source)) return 'ready_for_gibdd'
+  if (/практи|вожд|город|площад/.test(source)) return 'practice_active'
+  if (/теор/.test(source)) return 'theory'
+  if (/архив|заверш/.test(source)) return 'archived'
+  return 'new_request'
 }
 
 function escapeCsvCell(value: string | number | undefined): string {
@@ -295,6 +381,102 @@ export function AdminStudents() {
     setImportSummary(`Экспортировано ${rows.length} учеников.`)
   }
 
+  const applyStudentImportRows = async (rows: Record<string, string>[], source: 'ai' | 'manual') => {
+    if (!school) return
+    let created = 0
+    let updated = 0
+    let skipped = 0
+    let paymentsCreated = 0
+    const activeInstructors = db.instructors.bySchool(school.id)
+    const branches = db.branches.bySchool(school.id)
+
+    for (const row of rows) {
+      const name = normalizePersonName(row.name ?? '')
+      const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
+      if (!name || normalizedPhone.length < 10) {
+        skipped += 1
+        continue
+      }
+
+      const category = (row.category ?? '').split(/[,. ]+/).map((item) => item.trim().toUpperCase()).filter(Boolean)
+      const instructor = activeInstructors.find((item) => item.name.toLowerCase() === (row.instructorName ?? '').trim().toLowerCase())
+      const branch = branches.find((item) => item.name.toLowerCase() === (row.branchName ?? '').trim().toLowerCase())
+      const stage = resolveStage(row.trainingStage ?? '')
+      const debt = parseMoney(row.debt ?? '')
+      const duplicate = db.students.bySchool(school.id).find((student) => student.normalizedPhone === normalizedPhone)
+      let studentId = duplicate?.id ?? `stu_${Date.now()}_${created}_${updated}_${skipped}`
+
+      if (duplicate) {
+        const result = await updateStudentAdminConfirmed(duplicate.id, {
+          name,
+          phone: row.phone?.trim() || duplicate.phone,
+          normalizedPhone,
+          email: row.email?.trim() ?? duplicate.email,
+          categoryCodes: category.length ? category : duplicate.categoryCodes,
+          groupName: row.groupName?.trim() || duplicate.groupName,
+          assignedInstructorId: instructor?.id ?? duplicate.assignedInstructorId,
+          assignedBranchId: branch?.id ?? duplicate.assignedBranchId,
+          trainingStage: debt > 0 ? 'has_debt' : stage,
+          notes: row.notes?.trim() || duplicate.notes,
+        })
+        if (result.ok) {
+          updated += 1
+          studentId = result.student?.id ?? duplicate.id
+        } else {
+          skipped += 1
+          continue
+        }
+      } else {
+        const student: Student = {
+          id: studentId,
+          schoolId: school.id,
+          name,
+          phone: row.phone?.trim() || normalizedPhone,
+          normalizedPhone,
+          email: row.email?.trim() ?? '',
+          categoryCodes: category.length ? category : ['B'],
+          groupName: row.groupName?.trim() || undefined,
+          assignedInstructorId: instructor?.id,
+          assignedBranchId: branch?.id,
+          trainingStage: debt > 0 ? 'has_debt' : stage,
+          notes: row.notes?.trim() || undefined,
+          createdAt: new Date().toISOString(),
+        }
+        const result = await createStudentAdminConfirmed(student)
+        if (result.ok) {
+          created += 1
+          studentId = result.student?.id ?? student.id
+        } else {
+          skipped += 1
+          continue
+        }
+      }
+
+      if (debt > 0) {
+        const payment: Payment = {
+          id: `pay_import_${Date.now()}_${paymentsCreated}`,
+          schoolId: school.id,
+          studentId,
+          amount: debt,
+          paidAmount: 0,
+          remainingAmount: debt,
+          status: 'unpaid',
+          description: 'Остаток по импорту',
+          createdAt: new Date().toISOString(),
+        }
+        try {
+          await adminPayments.upsertConfirmed(payment)
+          paymentsCreated += 1
+        } catch {
+          // Student import should not fail because a debt row could not be saved.
+        }
+      }
+    }
+
+    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', 'import', `Импорт учеников (${source}): +${created}, обновлено ${updated}, пропущено ${skipped}, долгов ${paymentsCreated}`)
+    setImportSummary(`Импорт завершён: добавлено ${created}, обновлено ${updated}, пропущено ${skipped}, долгов создано ${paymentsCreated}.`)
+  }
+
   const importStudentsCsv = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -308,59 +490,18 @@ export function AdminStudents() {
     setImporting(true)
     setImportSummary('')
     try {
-      const rows = parseStudentCsv(await file.text())
-      let created = 0
-      let updated = 0
-      let skipped = 0
-      const activeInstructors = db.instructors.bySchool(school.id)
-
-      for (const row of rows) {
-        const name = normalizePersonName(row.name ?? '')
-        const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
-        if (!name || normalizedPhone.length < 10) {
-          skipped += 1
-          continue
-        }
-
-        const category = (row.category ?? '').split(/[,. ]+/).map((item) => item.trim().toUpperCase()).filter(Boolean)
-        const instructor = activeInstructors.find((item) => item.name.toLowerCase() === (row.instructorName ?? '').trim().toLowerCase())
-        const stage = Object.keys(STAGE_LABELS).includes(row.trainingStage ?? '') ? row.trainingStage as TrainingStage : 'new_request'
-        const duplicate = db.students.bySchool(school.id).find((student) => student.normalizedPhone === normalizedPhone)
-
-        if (duplicate) {
-          const result = await updateStudentAdminConfirmed(duplicate.id, {
-            name,
-            phone: row.phone?.trim() || duplicate.phone,
-            email: row.email?.trim() ?? duplicate.email,
-            categoryCodes: category.length ? category : duplicate.categoryCodes,
-            groupName: row.groupName?.trim() || duplicate.groupName,
-            assignedInstructorId: instructor?.id ?? duplicate.assignedInstructorId,
-            trainingStage: stage,
-          })
-          if (result.ok) updated += 1
-          else skipped += 1
-        } else {
-          const student: Student = {
-            id: `stu_${Date.now()}_${created}_${updated}`,
-            schoolId: school.id,
-            name,
-            phone: row.phone?.trim() || normalizedPhone,
-            normalizedPhone,
-            email: row.email?.trim() ?? '',
-            categoryCodes: category.length ? category : ['B'],
-            groupName: row.groupName?.trim() || undefined,
-            assignedInstructorId: instructor?.id,
-            trainingStage: stage,
-            createdAt: new Date().toISOString(),
-          }
-          const result = await createStudentAdminConfirmed(student)
-          if (result.ok) created += 1
-          else skipped += 1
-        }
+      const parsed = await readStudentImportFile(file)
+      if (!parsed.rows.length) {
+        setImportSummary('В файле не нашлось строк для импорта.')
+        return
       }
-
-      createCurrentStaffAuditEntry(school.id, 'student_note', 'student', 'import', `Импорт учеников: +${created}, обновлено ${updated}, пропущено ${skipped}`)
-      setImportSummary(`Импорт завершён: добавлено ${created}, обновлено ${updated}, пропущено ${skipped}.`)
+      const aiMapping = await getAiImportMapping(parsed.headers, parsed.rows).catch(() => null)
+      const rows = aiMapping ? rowsToObjects(parsed.headers, parsed.rows, aiMapping) : parsed.manualRows.length ? parsed.manualRows : parseStudentCsv(await file.text())
+      await applyStudentImportRows(rows, aiMapping ? 'ai' : 'manual')
+      if (aiMapping) {
+        const used = Object.entries(aiMapping).filter(([, field]) => field !== 'ignore').map(([header, field]) => `${header} → ${field}`).join(', ')
+        setImportSummary((current) => `${current} Нейронка сопоставила колонки: ${used || 'ничего не выбрано'}.`)
+      }
     } catch (error) {
       setImportSummary(error instanceof Error ? error.message : 'Не удалось импортировать файл.')
     } finally {
@@ -406,10 +547,10 @@ export function AdminStudents() {
             <UserPlus width={16} height={16} />
             Добавить ученика
           </button>
-          <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(event) => void importStudentsCsv(event)} />
+          <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" className="hidden" onChange={(event) => void importStudentsCsv(event)} />
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing} className="v-admin-button-secondary disabled:opacity-50">
             <Upload width={16} height={16} />
-            {importing ? 'Импорт...' : 'Импорт CSV'}
+            {importing ? 'Импорт...' : 'Умный импорт'}
           </button>
           <button type="button" onClick={exportStudentsCsv} className="v-admin-button-secondary">
             <Download width={16} height={16} />
