@@ -141,14 +141,33 @@ function rowsToObjects(headers: string[], rows: string[][], mapping?: Record<str
   }, {}))
 }
 
+function looksLikeImportHeader(value: string): boolean {
+  const normalized = value.trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, '')
+  return Boolean(IMPORT_HEADERS[normalized] || IMPORT_HEADERS[value.trim().toLowerCase().replace(/ё/g, 'е')])
+}
+
+function normalizeImportMatrix(matrix: string[][]): { headers: string[]; rows: string[][] } {
+  const rows = matrix
+    .map((row) => row.map((cell) => String(cell ?? '').trim()))
+    .filter((row) => row.some(Boolean))
+  if (!rows.length) return { headers: [], rows: [] }
+
+  let headerIndex = rows.findIndex((row) => row.filter(looksLikeImportHeader).length >= 2)
+  if (headerIndex < 0) headerIndex = rows[0].filter(looksLikeImportHeader).length >= 1 ? 0 : -1
+  const widest = Math.max(...rows.map((row) => row.length), 1)
+  const sourceHeaders = headerIndex >= 0 ? rows[headerIndex] : Array.from({ length: widest }, (_, index) => `Колонка ${index + 1}`)
+  const headers = Array.from({ length: widest }, (_, index) => sourceHeaders[index]?.trim() || `Колонка ${index + 1}`)
+  const dataRows = rows.slice(headerIndex >= 0 ? headerIndex + 1 : 0).map((row) => headers.map((_, index) => row[index] ?? '')).filter((row) => row.some(Boolean))
+  return { headers, rows: dataRows }
+}
+
 async function readStudentImportFile(file: File): Promise<{ headers: string[]; rows: string[][]; manualRows: Record<string, string>[] }> {
   const isExcel = /\.(xlsx|xls)$/i.test(file.name) || file.type.includes('spreadsheet') || file.type.includes('excel')
   if (isExcel) {
     const { readSheet } = await import('read-excel-file/browser')
     const sheetRows = await readSheet(file)
     const normalizedRows = sheetRows.map((row: unknown[]) => row.map((cell: unknown) => cell == null ? '' : String(cell).trim()))
-    const headers = (normalizedRows[0] ?? []).map((header: string) => String(header).trim()).filter(Boolean)
-    const rows = normalizedRows.slice(1).filter((row: string[]) => row.some((cell: string) => String(cell).trim()))
+    const { headers, rows } = normalizeImportMatrix(normalizedRows)
     return { headers, rows, manualRows: rowsToObjects(headers, rows) }
   }
 
@@ -156,8 +175,8 @@ async function readStudentImportFile(file: File): Promise<{ headers: string[]; r
   const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
   if (lines.length < 2) return { headers: [], rows: [], manualRows: [] }
   const delimiter = (lines[0].match(/;/g)?.length ?? 0) >= (lines[0].match(/,/g)?.length ?? 0) ? ';' : ','
-  const headers = splitCsvLine(lines[0], delimiter).map((header) => header.trim())
-  const rows = lines.slice(1).map((line) => splitCsvLine(line, delimiter))
+  const matrix = lines.map((line) => splitCsvLine(line, delimiter))
+  const { headers, rows } = normalizeImportMatrix(matrix)
   return { headers, rows, manualRows: rowsToObjects(headers, rows) }
 }
 
@@ -575,6 +594,18 @@ export function AdminStudents() {
       </div>
 
       <div className="flex-1 overflow-auto p-3 md:p-5">
+        <div className="mb-3 hidden gap-3 rounded-[18px] border border-[#D7E2EC] bg-white p-4 shadow-[0_10px_24px_rgba(16,20,24,0.04)] md:grid lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="text-[14px] font-black text-[#111827]">Умный импорт для таблиц автошкол</p>
+            <p className="mt-1 text-[13px] font-semibold leading-5 text-[#667085]">
+              Загружайте CSV/XLS/XLSX даже с лишними строками сверху: vroom найдет шапку, нейронка сопоставит колонки, долги сразу попадут в оплаты.
+            </p>
+          </div>
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing} className="v-admin-button-secondary justify-center disabled:opacity-50">
+            <Upload width={16} height={16} />
+            {importing ? 'Разбираем файл...' : 'Загрузить таблицу'}
+          </button>
+        </div>
         {importSummary ? (
           <div className="mb-3 rounded-[14px] border border-[#D7E2EC] bg-[#F8FBFE] px-4 py-3 text-[13px] font-semibold text-[#38424D] shadow-[0_10px_24px_rgba(16,20,24,0.04)]">
             {importSummary}

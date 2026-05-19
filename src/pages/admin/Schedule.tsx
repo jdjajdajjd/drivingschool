@@ -4,7 +4,7 @@ import { ru } from 'date-fns/locale'
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus } from 'iconoir-react'
 import { useLocation } from 'react-router-dom'
 import { db } from '../../services/storage'
-import { cancelBookingConfirmed, completeBookingConfirmed, createBooking, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
+import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirmed, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
 import { createBulkSlotsConfirmed, createSlotConfirmed, updateSlotStatusConfirmed } from '../../services/slotService'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
@@ -609,7 +609,7 @@ function BookStudentForm({ schoolId, slot, students, onBooked }: { schoolId: str
     setPending(true)
     setError('')
     try {
-      const result = createBooking({
+      const result = await createBookingConfirmed({
         schoolId,
         branchId: freshSlot.branchId,
         instructorId: freshSlot.instructorId,

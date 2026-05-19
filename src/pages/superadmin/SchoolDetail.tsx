@@ -325,6 +325,29 @@ export function SuperAdminSchoolDetail() {
           </div>
         </Section>
 
+        <Section title="Ручная оплата и доступ" description="Первый запуск без платежного шлюза: деньги проверяются оператором, доступ продлевается вручную.">
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr]">
+            <div className="rounded-[14px] border border-[#DCE2E8] bg-[#F8FAFC] p-4">
+              <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Тариф</p>
+              <p className="mt-2 text-[24px] font-black text-[#111418]">{formatPrice(overview.billing.totalMonthlyPrice)}/мес</p>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-[#66717D]">Подключение держится в операторке, без онлайн-оплаты на сайте.</p>
+            </div>
+            <div className="rounded-[14px] border border-[#DCE2E8] bg-[#F8FAFC] p-4">
+              <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">После перевода</p>
+              <p className="mt-2 text-[15px] font-black text-[#111418]">Сохранить доступ и отправить директору</p>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-[#66717D]">Кнопка ниже собирает готовое сообщение с входом, паролем и ссылками.</p>
+            </div>
+            <div className="rounded-[14px] border border-[#DCE2E8] bg-white p-4">
+              <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Контроль запуска</p>
+              <p className={`mt-2 text-[15px] font-black ${launchReady ? 'text-[#188447]' : 'text-[#1D4ED8]'}`}>{launchReady ? 'Можно выдавать доступ' : 'Сначала закрыть чеклист'}</p>
+              <button type="button" onClick={copyDirectorLaunchMessage} disabled={!verifiedAccessLogin} className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#C9D2DC] bg-[#F8FAFC] px-3 text-[13px] font-black text-[#38424D] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">
+                <MessageSquareText width={15} height={15} />
+                Текст директору
+              </button>
+            </div>
+          </div>
+        </Section>
+
         <Section title="Доступ администратора школы" description="Доступ меняется только через режим редактирования. После сохранения логин и пароль проверяются реальным входом.">
           <div className="rounded-[14px] border border-[#DCE2E8] bg-[#F8FAFC] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">

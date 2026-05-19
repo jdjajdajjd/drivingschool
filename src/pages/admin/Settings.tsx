@@ -6,7 +6,7 @@ import { assertAdminPermission, canUseAdminPermission } from '../../services/adm
 
 const launchSteps = [
   'Заполнить филиалы, инструкторов и рабочие часы.',
-  'Импортировать учеников из CSV на странице «Ученики».',
+  'Импортировать учеников из CSV/XLS/XLSX на странице «Ученики» или добавить вручную.',
   'Создать свободные окна минимум на 7 дней вперёд.',
   'Проверить публичную ссылку школы и тестовую запись ученика.',
   'Назначить ответственного администратора и включить уведомления.',
@@ -70,7 +70,7 @@ export function AdminSettings() {
                 Этот блок закрывает подключение первой реальной автошколы: данные, расписание, тестовая запись, уведомления и операционный контроль.
               </p>
             </div>
-            <span className="rounded-full bg-[#EEF8F1] px-3 py-1.5 text-[12px] font-black text-[#2F6E4B]">готово к пилоту</span>
+            <span className="rounded-full bg-[#EEF8F1] px-3 py-1.5 text-[12px] font-black text-[#2F6E4B]">готово к продажам</span>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-2">

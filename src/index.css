@@ -2171,7 +2171,7 @@
   }
 
   .vroom-admin-shell main h1.text-gray-900,
-  .vroom-admin-shell main h1.text-ink {
+  .vroom-admin-shell main h1[class~="text-ink"] {
     color: #111827 !important;
     font-size: 25px !important;
     font-weight: 620 !important;

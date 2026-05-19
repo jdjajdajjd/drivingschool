@@ -11,6 +11,7 @@ import {
   persistSupabaseMutation,
   rescheduleSupabaseBooking,
 } from './supabaseAdminService'
+import { createSupabaseBooking } from './supabasePublicService'
 import { loadStudentProgress, saveStudentProgress } from './studentProfile'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
@@ -312,6 +313,44 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
   const result = saveBookingAndSlot(booking, nextSlot)
   releaseSlotLock(slot.id, params.sessionId)
   return result
+}
+
+export async function createBookingConfirmed(params: CreateBookingParams): Promise<BookingMutationResult> {
+  if (!isWorkspaceSupabaseReady()) return createBooking(params)
+
+  const slot = db.slots.byId(params.slotId)
+  if (!slot) return { ok: false, error: 'Выбранное время не найдено.' }
+
+  const remote = await createSupabaseBooking({
+    schoolId: params.schoolId,
+    studentName: params.studentName,
+    studentPhone: params.studentPhone,
+    slotIds: [params.slotId],
+  })
+  const remoteBookingId = remote.bookingIds[0]
+  if (!remoteBookingId) return { ok: false, error: 'Supabase не вернул номер записи.' }
+
+  const studentName = normalizePersonName(params.studentName)
+  const normalizedPhone = normalizePhone(params.studentPhone)
+  const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
+  const syncedBooking: Booking = {
+    schoolId: params.schoolId,
+    branchId: params.branchId,
+    instructorId: params.instructorId,
+    slotId: params.slotId,
+    studentId: student.id,
+    studentName: student.name,
+    studentPhone: student.normalizedPhone,
+    studentEmail: student.email,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    id: remoteBookingId,
+    bookingGroupId: remote.bookingGroupId || undefined,
+  }
+  db.bookings.upsert(syncedBooking)
+  db.slots.upsert({ ...slot, status: 'booked', bookingId: syncedBooking.id })
+  return { ok: true, booking: syncedBooking }
 }
 
 export function cancelBooking(bookingId: string, options: { skipRemote?: boolean } = {}): BookingMutationResult {

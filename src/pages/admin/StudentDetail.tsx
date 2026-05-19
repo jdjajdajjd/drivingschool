@@ -34,7 +34,11 @@ const STAGE_LABELS: Record<string, string> = {
   new_request: 'Новая заявка',
   awaiting_contract: 'Ожидает договора',
   contract_signed: 'Договор подписан',
+  theory: 'Теория',
   training_active: 'Обучение идёт',
+  practice_ground: 'Площадка',
+  city: 'Город',
+  exam_prep: 'Подготовка к экзамену',
   no_bookings: 'Нет записей',
   has_debt: 'Есть долг',
   missing_documents: 'Не хватает док-в',
@@ -180,61 +184,104 @@ export function AdminStudentDetail() {
     void navigator.clipboard?.writeText(student.phone)
   }
 
+  const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+  const nextBookingLabel = nextBooking?.slot
+    ? format(new Date(`${nextBooking.slot.date}T${nextBooking.slot.time}`), 'dd.MM, HH:mm', { locale: ru })
+    : 'нет записи'
+  const admissionTone = canGoToGIBDD
+    ? 'v-tone-ok'
+    : blockers.some((item) => item.tone === 'danger')
+      ? 'v-tone-danger'
+      : blockers.some((item) => item.tone === 'warning')
+        ? 'v-tone-warning'
+        : 'v-tone-info'
+  const admissionLabel = canGoToGIBDD
+    ? 'Допуск открыт'
+    : blockers.some((item) => item.tone === 'danger')
+      ? 'Есть блокер'
+      : blockers.some((item) => item.tone === 'warning')
+        ? 'Нужно проверить'
+        : 'В работе'
+  const profileRows = [
+    { label: 'Этап', value: STAGE_LABELS[stage] ?? stage },
+    { label: 'Долг', value: debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'нет', tone: debt > 0 ? 'danger' : 'ok' },
+    { label: 'Документы', value: missingDocs > 0 ? `${missingDocs} проверить` : 'готово', tone: missingDocs > 0 ? 'warning' : 'ok' },
+    { label: 'Практика', value: `${completedHours}/${totalHours} ч` },
+    { label: 'Следующее', value: nextBookingLabel },
+  ]
+
   return (
-    <div className="overflow-y-auto">
-      <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
+    <div className="v-student-detail-shell min-h-full overflow-y-auto bg-[#F5F7FA] pb-24 md:pb-8">
+      <div className="sticky top-0 z-10 border-b border-[#E5EAF1] bg-white/95 px-3 py-3 backdrop-blur md:px-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(`${getAdminBasePathForLocation()}/students`)} className="rounded-lg p-2 hover:bg-gray-100">
+          <button onClick={() => navigate(`${getAdminBasePathForLocation()}/students`)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E5EAF1] bg-[#F8FAFC] hover:bg-white">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <div className="flex-1">
-            <h1 className="text-[22px] font-black text-gray-900">{student.name}</h1>
-            <p className="text-[13px] font-semibold text-gray-400">{student.phone}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">карточка ученика</p>
+            <h1 className="truncate text-[21px] font-black tracking-[-0.03em] text-[#111827] md:text-[26px]">{student.name}</h1>
           </div>
-          <button onClick={copyPhone} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+          <button onClick={copyPhone} className="hidden min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC] sm:inline-flex sm:items-center">
             Копировать телефон
           </button>
-          <a href={`tel:${student.phone}`} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+          <a href={`tel:${student.phone}`} className="inline-flex min-h-10 items-center rounded-xl border border-[#D7DEE8] bg-white px-4 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC]">
             Звонок
           </a>
           {canManageStudents ? (
-            <button onClick={() => setShowEdit(true)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+            <button onClick={() => setShowEdit(true)} className="hidden min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC] md:inline-flex md:items-center">
               Редактировать
             </button>
           ) : null}
         </div>
       </div>
 
-      <div className="grid gap-3 border-b border-gray-100 bg-white px-4 py-3 md:grid-cols-5 md:px-6">
-        <div className="rounded-xl bg-gray-50 p-3">
-          <p className="text-[11px] font-black uppercase text-gray-400">Этап</p>
-          <p className="mt-1 truncate text-[14px] font-black text-gray-900">{STAGE_LABELS[stage] ?? stage}</p>
-        </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <p className="text-[11px] font-black uppercase text-gray-400">Долг</p>
-          <p className={`mt-1 text-[14px] font-black ${debt > 0 ? 'text-red-600' : 'text-green-700'}`}>{debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'нет'}</p>
-        </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <p className="text-[11px] font-black uppercase text-gray-400">Документы</p>
-          <p className={`mt-1 text-[14px] font-black ${missingDocs > 0 ? 'text-[#315A7C]' : 'text-green-700'}`}>{missingDocs > 0 ? `${missingDocs} не хватает` : 'готово'}</p>
-        </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <p className="text-[11px] font-black uppercase text-gray-400">Практика</p>
-          <p className="mt-1 text-[14px] font-black text-gray-900">{completedHours} / {totalHours} ч</p>
-        </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <p className="text-[11px] font-black uppercase text-gray-400">Следующее</p>
-          <p className="mt-1 truncate text-[14px] font-black text-gray-900">
-            {nextBooking?.slot ? format(new Date(`${nextBooking.slot.date}T${nextBooking.slot.time}`), 'dd.MM HH:mm') : 'нет'}
-          </p>
-        </div>
-      </div>
+      <div className="mx-auto max-w-7xl p-3 md:p-6">
+        <section className="v-student-crm-hero overflow-hidden rounded-[22px] border border-[#D7DEE8] bg-white shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="min-w-0 p-4 md:p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex min-w-0 gap-3">
+                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[22px] bg-[#EAF3FF] text-[22px] font-black text-[#075EBC]">{initials}</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-[25px] font-black tracking-[-0.04em] text-[#111827] md:text-[34px]">{student.name}</h2>
+                      <span className={`v-admin-pill ${admissionTone}`}>{admissionLabel}</span>
+                    </div>
+                    <p className="mt-1 text-[13px] font-semibold text-[#667085]">{student.phone}{student.email ? ` · ${student.email}` : ''}</p>
+                    <p className="mt-1 text-[13px] font-semibold text-[#667085]">{instructor?.name ?? 'Инструктор не назначен'} · {branch?.name ?? 'Филиал не назначен'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                  {canManageFinance ? <button onClick={() => setShowAddPayment(true)} className="v-admin-button min-h-10 px-3 text-[12px]">Оплата</button> : null}
+                  {canManageDocuments ? <button onClick={() => setShowAddDocument(true)} className="v-admin-button-secondary min-h-10 px-3 text-[12px]">Документ</button> : null}
+                  {canManageStudents ? <button onClick={() => setShowEdit(true)} className="v-admin-button-secondary min-h-10 px-3 text-[12px]">Править</button> : null}
+                  <button onClick={copyPhone} className="v-admin-button-secondary min-h-10 px-3 text-[12px]">Телефон</button>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                {profileRows.map((row) => (
+                  <div key={row.label} className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FAFC] p-3">
+                    <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">{row.label}</p>
+                    <p className={`mt-1 truncate text-[16px] font-black ${row.tone === 'danger' ? 'text-[#C92820]' : row.tone === 'warning' ? 'text-[#315A7C]' : row.tone === 'ok' ? 'text-[#188447]' : 'text-[#111827]'}`}>{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className={`border-t p-4 lg:border-l lg:border-t-0 ${nextBestAction.tone === 'danger' ? 'border-red-100 bg-red-50' : nextBestAction.tone === 'warning' ? 'border-blue-100 bg-[#EAF3FF]' : nextBestAction.tone === 'ok' ? 'border-green-100 bg-green-50' : 'border-[#E5EAF1] bg-[#F8FAFC]'}`}>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">следующее действие</p>
+              <h3 className="mt-2 text-[19px] font-black tracking-[-0.02em] text-[#111827]">{nextBestAction.title}</h3>
+              <p className="mt-2 text-[13px] font-semibold leading-5 text-[#667085]">{nextBestAction.text}</p>
+              <button onClick={nextBestAction.run} className="mt-4 w-full rounded-xl bg-[#111827] px-4 py-3 text-[13px] font-black text-white transition hover:bg-[#1D2633]">
+                {nextBestAction.action}
+              </button>
+            </div>
+          </div>
+        </section>
 
-      <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="rounded-2xl border border-gray-100 bg-[#F8FAFC] p-4">
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-[22px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-[16px] font-black text-gray-900">Маршрут ученика</h2>
@@ -254,18 +301,23 @@ export function AdminStudentDetail() {
               ))}
             </div>
           </div>
-          <div className={`rounded-2xl border p-4 ${nextBestAction.tone === 'danger' ? 'border-red-100 bg-red-50' : nextBestAction.tone === 'warning' ? 'border-blue-100 bg-[#EAF3FF]' : nextBestAction.tone === 'ok' ? 'border-green-100 bg-green-50' : 'border-gray-100 bg-white'}`}>
-            <p className="text-[12px] font-black uppercase text-gray-400">Что сделать дальше</p>
-            <h3 className="mt-2 text-[18px] font-black text-gray-900">{nextBestAction.title}</h3>
-            <p className="mt-2 text-[13px] font-semibold leading-5 text-gray-500">{nextBestAction.text}</p>
-            <button onClick={nextBestAction.run} className="mt-4 w-full rounded-xl bg-gray-900 px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-gray-700">
-              {nextBestAction.action}
-            </button>
+          <div className="grid gap-3">
+            {blockers.length ? blockers.slice(0, 4).map((blocker) => (
+              <button key={blocker.title} onClick={blocker.run} className={`rounded-[18px] border p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.035)] ${blocker.tone === 'danger' ? 'border-red-100 bg-red-50' : blocker.tone === 'warning' ? 'border-blue-100 bg-[#EAF3FF]' : blocker.tone === 'ok' ? 'border-green-100 bg-green-50' : 'border-[#D7DEE8] bg-white'}`}>
+                <span className="block text-[14px] font-black text-[#111827]">{blocker.title}</span>
+                <span className="mt-1 block text-[12px] font-semibold leading-5 text-[#667085]">{blocker.text}</span>
+                <span className="mt-3 inline-flex min-h-8 items-center rounded-full bg-white/75 px-3 text-[12px] font-black text-[#111827]">{blocker.action}</span>
+              </button>
+            )) : (
+              <div className="rounded-[18px] border border-green-100 bg-green-50 p-4">
+                <p className="text-[14px] font-black text-[#188447]">Критичных блокеров нет</p>
+                <p className="mt-1 text-[12px] font-semibold leading-5 text-[#667085]">Продолжайте вести расписание и оплаты ученика.</p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-4 p-4 md:grid-cols-[1fr_360px] md:p-6 lg:p-8">
+      <div className="grid gap-4 py-4 md:grid-cols-[1fr_360px]">
         {/* Left column */}
         <div className="space-y-4">
           {/* Progress */}
@@ -545,6 +597,7 @@ export function AdminStudentDetail() {
           </div>
         </div>
       </div>
+      </div>
 
       <Modal open={showEdit} onClose={() => setShowEdit(false)} title="Редактировать ученика" size="md">
         <StudentEditForm schoolId={school.id} student={student} onClose={() => setShowEdit(false)} />
@@ -638,7 +691,7 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
   const [paidAmount, setPaidAmount] = useState('5000')
   const [description, setDescription] = useState('Оплата обучения')
   const [status, setStatus] = useState<PaymentStatus>('paid')
-  const [method, setMethod] = useState<PaymentMethod>('card')
+  const [method, setMethod] = useState<PaymentMethod>('transfer')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
@@ -697,7 +750,7 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
         <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)} className="v-admin-input w-full">
           <option value="card">Карта</option>
           <option value="cash">Наличные</option>
-          <option value="transfer">Перевод</option>
+          <option value="transfer">Перевод на карту</option>
           <option value="receipt">Квитанция</option>
         </select>
       </div>

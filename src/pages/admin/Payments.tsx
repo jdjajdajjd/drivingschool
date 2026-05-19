@@ -302,7 +302,7 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
   const [studentId, setStudentId] = useState('')
   const [amount, setAmount] = useState('')
   const [paidAmount, setPaidAmount] = useState('')
-  const [method, setMethod] = useState<PaymentMethod>('cash')
+  const [method, setMethod] = useState<PaymentMethod>('transfer')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<PaymentStatus>('paid')
   const [error, setError] = useState('')
@@ -363,7 +363,7 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
           <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)} className="v-admin-input w-full">
             <option value="cash">Наличные</option>
             <option value="card">Карта</option>
-            <option value="transfer">Перевод</option>
+            <option value="transfer">Перевод на карту</option>
             <option value="receipt">Квитанция</option>
           </select>
         </label>
