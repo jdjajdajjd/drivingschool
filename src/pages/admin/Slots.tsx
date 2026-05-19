@@ -201,32 +201,32 @@ export function AdminSlots() {
   const selectedToggle = toggleId ? slots.find((entry) => entry.slot.id === toggleId) : null
 
   return (
-    <div className="min-h-dvh bg-[#E9EDF2] pb-4 text-[#0F172A]">
+    <div className="v-ops-shell min-h-dvh bg-[#F5F7FA] pb-4 text-[#0F172A]">
       <div className="mx-auto grid max-w-[1320px] gap-3 p-3 md:grid-cols-[380px_minmax(0,1fr)] md:p-5">
         <aside className="space-y-3">
-          <section className="border border-[#0F172A] bg-[#0F172A] text-white">
+          <section className="v-ops-hero border border-[#D7DEE8] bg-white text-[#0F172A]">
             <div className="p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">диспетчерская · {school.name}</p>
-              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.055em] text-white">Расписание</h1>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-white/62">Производственный табель: где есть свободное время, где занято, что провисло.</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">диспетчерская · {school.name}</p>
+              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.04em] text-[#111827]">Расписание</h1>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-[#667085]">Производственный табель: где есть свободное время, где занято, что провисло.</p>
             </div>
-            <div className="grid grid-cols-2 border-t border-white/10">
-              <button onClick={() => { setPeriod('today'); setStatus('all') }} className="min-h-[78px] border-r border-white/10 p-3 text-left">
-                <strong className="block text-[30px] font-black leading-none text-white">{stats.todayTotal}</strong><span className="text-[10px] font-black uppercase text-white/48">окон сегодня</span>
+            <div className="grid grid-cols-2 border-t border-[#E5EAF1]">
+              <button onClick={() => { setPeriod('today'); setStatus('all') }} className="min-h-[78px] border-r border-[#E5EAF1] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[30px] font-black leading-none text-[#111827]">{stats.todayTotal}</strong><span className="text-[10px] font-black uppercase text-[#667085]">окон сегодня</span>
               </button>
-              <button onClick={() => { setPeriod('today'); setStatus('booked') }} className="min-h-[78px] p-3 text-left">
-                <strong className="block text-[30px] font-black leading-none text-white">{stats.todayBooked}</strong><span className="text-[10px] font-black uppercase text-white/48">занято сегодня</span>
+              <button onClick={() => { setPeriod('today'); setStatus('booked') }} className="min-h-[78px] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[30px] font-black leading-none text-[#111827]">{stats.todayBooked}</strong><span className="text-[10px] font-black uppercase text-[#667085]">занято сегодня</span>
               </button>
-              <button onClick={() => { setPeriod('week'); setStatus('all') }} className="min-h-[78px] border-r border-t border-white/10 p-3 text-left">
-                <strong className="block text-[30px] font-black leading-none text-white">{stats.load}%</strong><span className="text-[10px] font-black uppercase text-white/48">загрузка недели</span>
+              <button onClick={() => { setPeriod('week'); setStatus('all') }} className="min-h-[78px] border-r border-t border-[#E5EAF1] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[30px] font-black leading-none text-[#111827]">{stats.load}%</strong><span className="text-[10px] font-black uppercase text-[#667085]">загрузка недели</span>
               </button>
-              <button onClick={() => { setPeriod('future'); setStatus('available') }} className="min-h-[78px] border-t border-white/10 p-3 text-left">
-                <strong className="block text-[30px] font-black leading-none text-white">{stats.futureAvailable}</strong><span className="text-[10px] font-black uppercase text-white/48">свободно впереди</span>
+              <button onClick={() => { setPeriod('future'); setStatus('available') }} className="min-h-[78px] border-t border-[#E5EAF1] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[30px] font-black leading-none text-[#111827]">{stats.futureAvailable}</strong><span className="text-[10px] font-black uppercase text-[#667085]">свободно впереди</span>
               </button>
             </div>
           </section>
 
-          <section className="border border-[#CBD5E1] bg-white">
+          <section className="v-ops-panel border border-[#D7DEE8] bg-white">
             <div className="grid grid-cols-2 border-b border-[#CBD5E1]">
               <button onClick={() => setCreateMode('bulk')} className={`min-h-12 border-r border-[#CBD5E1] text-[12px] font-black uppercase ${createMode === 'bulk' ? 'bg-[#0F172A] text-white' : 'bg-white text-[#334155]'}`}>Собрать сетку</button>
               <button onClick={() => setCreateMode('single')} className={`min-h-12 text-[12px] font-black uppercase ${createMode === 'single' ? 'bg-[#0F172A] text-white' : 'bg-white text-[#334155]'}`}>Одно окно</button>
@@ -284,7 +284,7 @@ export function AdminSlots() {
         </aside>
 
         <main className="space-y-3">
-          <section className="border border-[#CBD5E1] bg-white">
+          <section className="v-ops-panel border border-[#D7DEE8] bg-white">
             <div className="grid gap-2 border-b border-[#CBD5E1] p-3 md:grid-cols-[minmax(0,1fr)_170px]">
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск: инструктор, филиал, ученик, телефон, время" className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[14px] font-bold outline-none focus:border-[#0F172A]" />
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none" />
@@ -340,7 +340,7 @@ export function AdminSlots() {
           </section>
 
           {dayGroups.length > 0 ? (
-            <section className="border border-[#CBD5E1] bg-white">
+            <section className="v-ops-panel border border-[#D7DEE8] bg-white">
               <div className="border-b border-[#CBD5E1] px-4 py-3"><h2 className="text-[16px] font-black">Плотность по дням</h2></div>
               <div className="grid gap-0 md:grid-cols-4">
                 {dayGroups.map(([groupDate, entries]) => {

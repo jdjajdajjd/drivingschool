@@ -169,25 +169,28 @@ export function AdminReports() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Отчёты</h1>
-        <p className="text-[13px] font-semibold text-gray-400">{format(new Date(), 'MMMM yyyy', { locale: ru })}</p>
+    <div className="flex h-full flex-col bg-[#F5F7FA]">
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-[#E5EAF1] bg-white/92 px-4 py-3 md:px-6">
+        <div className="min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">контроль бизнеса</p>
+          <h1 className="text-[24px] font-black tracking-[-0.03em] text-[#111827]">Отчёты</h1>
+        </div>
+        <p className="rounded-full border border-[#D7DEE8] bg-[#F8FAFC] px-3 py-1 text-[12px] font-bold text-[#667085]">{format(new Date(), 'MMMM yyyy', { locale: ru })}</p>
         <div className="ml-auto">
-          <button onClick={exportCsv} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+          <button onClick={exportCsv} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 py-2 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC]">
             Скачать CSV
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-shrink-0 gap-1 border-b border-gray-100 bg-white px-4 md:px-6">
+      <div className="flex flex-shrink-0 gap-1 overflow-x-auto border-b border-[#E5EAF1] bg-white px-3 md:px-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`border-b-2 px-4 py-3 text-[13px] font-semibold transition ${
-              activeTab === tab.id ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'
+            className={`min-h-11 shrink-0 border-b-2 px-3 text-[13px] font-bold transition md:px-4 ${
+              activeTab === tab.id ? 'border-[#111827] text-[#111827]' : 'border-transparent text-[#667085] hover:text-[#111827]'
             }`}
           >
             {tab.label}
@@ -195,7 +198,7 @@ export function AdminReports() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="flex-1 overflow-auto p-3 md:p-6">
         {activeTab === 'overview' && (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -205,8 +208,8 @@ export function AdminReports() {
                 { label: 'Активных записей', value: data.activeBookings.toString(), color: 'text-gray-900' },
                 { label: 'Загрузка окон', value: `${data.slotUtilization}%`, color: data.slotUtilization < 60 ? 'text-red-500' : 'text-green-600' },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-gray-100 bg-white p-5">
-                  <p className="text-[13px] font-semibold text-gray-400">{stat.label}</p>
+                <div key={stat.label} className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+                  <p className="text-[13px] font-semibold text-[#667085]">{stat.label}</p>
                   <p className={`mt-1 text-[28px] font-black ${stat.color}`}>{stat.value}</p>
                 </div>
               ))}
@@ -222,7 +225,7 @@ export function AdminReports() {
             </div>
 
             {/* Revenue chart */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
               <h3 className="mb-4 text-[16px] font-bold text-gray-900">Выручка по дням</h3>
               <div className="flex items-end gap-1" style={{ height: 120 }}>
                 {data.revenueByDay.map((d, i) => (

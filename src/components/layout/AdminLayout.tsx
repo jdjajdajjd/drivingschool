@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Filter, Search, UserBadgeCheck, Group, Wallet, Xmark } from 'iconoir-react'
+import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Filter, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset } from 'iconoir-react'
 const Award = Medal
 const BarChart3 = GraphUp
 const Building2 = Building
@@ -48,6 +48,8 @@ function buildNavItems(basePath: string): AdminNavItem[] {
   return [
     { id: 'today', to: basePath, label: 'Сегодня', description: 'Рабочий день и ближайшие задачи.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
     { id: 'schedule', to: `${basePath}/schedule`, label: 'Расписание', description: 'Окна, записи и переносы занятий.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
+    { id: 'bookings', to: `${basePath}/bookings`, label: 'Записи', description: 'Журнал звонков, переносов и отмен.', icon: Headset, permission: permission('schedule.manage'), required: false },
+    { id: 'slots', to: `${basePath}/slots`, label: 'Окна', description: 'Сборка сетки и контроль свободного времени.', icon: Clock, permission: permission('schedule.manage'), required: false },
     { id: 'students', to: `${basePath}/students`, label: 'Ученики', description: 'Карточки учеников и обучение.', icon: Users, permission: permission('students.manage'), required: true },
     { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Инструкторы и их карточки.', icon: UserCog, permission: permission('branches.manage'), required: true },
     { id: 'branches', to: `${basePath}/branches`, label: 'Филиалы', description: 'Адреса, телефоны и активность филиалов.', icon: Building2, permission: permission('branches.manage'), required: false },

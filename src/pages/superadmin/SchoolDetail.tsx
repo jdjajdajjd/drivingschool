@@ -100,7 +100,7 @@ function readCreatedAccess(schoolId: string | undefined): { login: string; passw
 }
 
 function launchStepClass(done: boolean): string {
-  return done ? 'border-[#2DD4BF]/25 bg-[#0F2B2E] text-[#6EE7D8]' : 'border-[#60A5FA]/25 bg-[#0B1E3A] text-[#93C5FD]'
+  return done ? 'border-[#B9E8C9] bg-[#F0FAF3] text-[#188447]' : 'border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]'
 }
 
 export function SuperAdminSchoolDetail() {
@@ -303,7 +303,7 @@ export function SuperAdminSchoolDetail() {
 
       <div className="mt-6 space-y-5">
         <Section title="Готовность к запуску" description={`${launchDoneCount} из ${launchSteps.length}.`}>
-          <div className={`rounded-[14px] border p-4 ${launchReady ? 'border-[#2DD4BF]/25 bg-[#0F2B2E]' : 'border-[#60A5FA]/25 bg-[#0B1E3A]'}`}>
+          <div className={`rounded-[14px] border p-4 ${launchReady ? 'border-[#B9E8C9] bg-[#F0FAF3]' : 'border-[#BFDBFE] bg-[#EFF6FF]'}`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[18px] font-black text-[#111418]">{launchReady ? 'Можно запускать' : 'Нужно дозаполнить'}</p>

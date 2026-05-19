@@ -44,6 +44,8 @@ const AdminExams = lazy(() => import('./pages/admin/Exams').then((module) => ({ 
 const AdminReports = lazy(() => import('./pages/admin/Reports').then((module) => ({ default: module.AdminReports })))
 const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.AdminSettings })))
 const AdminUsers = lazy(() => import('./pages/admin/Users').then((module) => ({ default: module.AdminUsers })))
+const AdminBookings = lazy(() => import('./pages/admin/Bookings').then((module) => ({ default: module.AdminBookings })))
+const AdminSlots = lazy(() => import('./pages/admin/Slots').then((module) => ({ default: module.AdminSlots })))
 
 const SuperAdminLayout = lazy(() => import('./components/layout/SuperAdminLayout').then((module) => ({ default: module.SuperAdminLayout })))
 const SuperAdminOverview = lazy(() => import('./pages/SuperAdmin').then((module) => ({ default: module.SuperAdminOverview })))
@@ -89,8 +91,8 @@ function adminRoutes(basePath: string) {
       <Route path="reports" element={<AdminReports />} />
       <Route path="settings" element={<AdminSettings />} />
       <Route path="users" element={<AdminUsers />} />
-      <Route path="bookings" element={<Navigate to={`${basePath}/schedule`} replace />} />
-      <Route path="slots" element={<Navigate to={`${basePath}/schedule`} replace />} />
+      <Route path="bookings" element={<AdminBookings />} />
+      <Route path="slots" element={<AdminSlots />} />
       <Route path="people" element={<Navigate to={`${basePath}/students`} replace />} />
       <Route path="school" element={<Navigate to={`${basePath}/settings`} replace />} />
       <Route path="money" element={<Navigate to={`${basePath}/payments`} replace />} />
@@ -159,13 +161,13 @@ function App() {
           <Route path={SUPERADMIN_LOGIN_PATH} element={<StaffLoginPage role="superadmin" />} />
 
           <Route element={<ProtectedAccess role="admin" mode="demo" />}>
-            <Route path={DEMO_ADMIN_BASE_PATH} element={<AdminLayout mode="demo" basePath={DEMO_ADMIN_BASE_PATH} />}>
+            <Route path={`${DEMO_ADMIN_BASE_PATH}/*`} element={<AdminLayout mode="demo" basePath={DEMO_ADMIN_BASE_PATH} />}>
               {adminRoutes(DEMO_ADMIN_BASE_PATH)}
             </Route>
           </Route>
 
           <Route element={<ProtectedAccess role="admin" mode="workspace" />}>
-            <Route path={ADMIN_BASE_PATH} element={<AdminLayout mode="workspace" basePath={ADMIN_BASE_PATH} />}>
+            <Route path={`${ADMIN_BASE_PATH}/*`} element={<AdminLayout mode="workspace" basePath={ADMIN_BASE_PATH} />}>
               {adminRoutes(ADMIN_BASE_PATH)}
             </Route>
           </Route>
@@ -174,7 +176,7 @@ function App() {
           <Route path="/instructor/register" element={<Navigate to="/admin-panel/instructors" replace />} />
           <Route path="/instructor/:token" element={<InstructorPage />} />
           <Route element={<ProtectedAccess role="superadmin" />}>
-            <Route path={SUPERADMIN_BASE_PATH} element={<SuperAdminLayout />}>
+            <Route path={`${SUPERADMIN_BASE_PATH}/*`} element={<SuperAdminLayout />}>
               <Route index element={<SuperAdminOverview />} />
               <Route path="schools" element={<SuperAdminSchools />} />
               <Route path="schools/new" element={<SuperAdminSchoolNew />} />

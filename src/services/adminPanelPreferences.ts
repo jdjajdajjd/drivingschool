@@ -5,6 +5,8 @@ import { getWorkspaceStaffContext } from './accessControl'
 export type AdminNavItemId =
   | 'today'
   | 'schedule'
+  | 'slots'
+  | 'bookings'
   | 'students'
   | 'instructors'
   | 'branches'
@@ -26,7 +28,7 @@ export interface AdminNavDefinition {
 
 export const REQUIRED_ADMIN_NAV_IDS: AdminNavItemId[] = ['today', 'schedule', 'students', 'instructors']
 
-export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['branches', 'payments', 'reports', 'cars', 'documents', 'exams', 'settings', 'users']
+export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['bookings', 'slots', 'branches', 'payments', 'reports', 'cars', 'documents', 'exams', 'settings', 'users']
 
 export function getAdminPanelPreferencesKey(schoolId: string): string {
   const context = getWorkspaceStaffContext()

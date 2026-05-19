@@ -183,29 +183,29 @@ export function AdminBookings() {
   if (!school) return <div className="px-3 py-4"><p className="text-sm text-[#5F6875]">Данные школы не загружены</p></div>
 
   return (
-    <div className="min-h-dvh bg-[#E9EDF2] pb-4 text-[#0F172A]">
+    <div className="v-ops-shell min-h-dvh bg-[#F5F7FA] pb-4 text-[#0F172A]">
       <div className="mx-auto grid max-w-[1320px] gap-3 p-3 md:grid-cols-[360px_minmax(0,1fr)] md:p-5">
         <aside className="space-y-3">
-          <section className="border border-[#0F172A] bg-[#0F172A] text-white">
+          <section className="v-ops-hero border border-[#D7DEE8] bg-white text-[#0F172A]">
             <div className="p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">журнал оператора</p>
-              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.055em] text-white">Записи</h1>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-white/62">Ручная запись после звонка, переносы, отмены, закрытие занятий.</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">журнал оператора</p>
+              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.04em] text-[#111827]">Записи</h1>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-[#667085]">Ручная запись после звонка, переносы, отмены, закрытие занятий.</p>
             </div>
-            <div className="grid grid-cols-3 border-t border-white/10">
-              <button onClick={() => { setStatus('all'); setPeriod('all') }} className="min-h-[76px] border-r border-white/10 p-3 text-left">
-                <strong className="block text-[26px] font-black leading-none text-white">{allBookings.length}</strong><span className="text-[10px] font-black uppercase text-white/48">всего</span>
+            <div className="grid grid-cols-3 border-t border-[#E5EAF1]">
+              <button onClick={() => { setStatus('all'); setPeriod('all') }} className="min-h-[76px] border-r border-[#E5EAF1] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[26px] font-black leading-none text-[#111827]">{allBookings.length}</strong><span className="text-[10px] font-black uppercase text-[#667085]">всего</span>
               </button>
-              <button onClick={() => setPeriod('today')} className="min-h-[76px] border-r border-white/10 p-3 text-left">
-                <strong className="block text-[26px] font-black leading-none text-white">{todayCount}</strong><span className="text-[10px] font-black uppercase text-white/48">сегодня</span>
+              <button onClick={() => setPeriod('today')} className="min-h-[76px] border-r border-[#E5EAF1] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[26px] font-black leading-none text-[#111827]">{todayCount}</strong><span className="text-[10px] font-black uppercase text-[#667085]">сегодня</span>
               </button>
-              <button onClick={() => setStatus('active')} className="min-h-[76px] p-3 text-left">
-                <strong className="block text-[26px] font-black leading-none text-white">{activeCount}</strong><span className="text-[10px] font-black uppercase text-white/48">активно</span>
+              <button onClick={() => setStatus('active')} className="min-h-[76px] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
+                <strong className="block text-[26px] font-black leading-none text-[#111827]">{activeCount}</strong><span className="text-[10px] font-black uppercase text-[#667085]">активно</span>
               </button>
             </div>
           </section>
 
-          <section className="border border-[#CBD5E1] bg-white">
+          <section className="v-ops-panel border border-[#D7DEE8] bg-white">
             <div className="border-b border-[#CBD5E1] px-4 py-3">
               <h2 className="text-[16px] font-black">Принять звонок</h2>
               <p className="mt-1 text-[12px] font-bold text-[#64748B]">Телефон/SMS/любой канал связи → запись в окно.</p>
@@ -241,7 +241,7 @@ export function AdminBookings() {
         </aside>
 
         <main className="space-y-3">
-          <section className="border border-[#CBD5E1] bg-white">
+          <section className="v-ops-panel border border-[#D7DEE8] bg-white">
             <div className="grid gap-2 border-b border-[#CBD5E1] p-3 md:grid-cols-[minmax(0,1fr)_170px]">
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по ученику или телефону" className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[14px] font-bold outline-none focus:border-[#0F172A]" />
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none" />

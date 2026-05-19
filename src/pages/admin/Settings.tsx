@@ -49,16 +49,19 @@ export function AdminSettings() {
   if (!school) return null
 
   return (
-    <div className="overflow-y-auto">
-      <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Настройки школы</h1>
-        <button onClick={handleSave} disabled={!canManageSettings} className="v-admin-button px-5 disabled:cursor-not-allowed disabled:opacity-50">
+    <div className="min-h-full overflow-y-auto bg-[#F5F7FA] pb-24 md:pb-6">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#E5EAF1] bg-white/95 px-4 py-3 backdrop-blur md:px-6">
+        <div className="min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">правила работы</p>
+          <h1 className="truncate text-[24px] font-black tracking-[-0.03em] text-[#111827]">Настройки школы</h1>
+        </div>
+        <button onClick={handleSave} disabled={!canManageSettings} className="v-admin-button min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
           {saved ? '✓ Сохранено' : 'Сохранить'}
         </button>
       </div>
 
-      <div className="max-w-4xl space-y-6 p-4 md:p-6 lg:p-8">
-        <section className="rounded-2xl border border-[#D7E2EC] bg-white p-5 shadow-[0_14px_36px_rgba(37,51,68,0.06)]">
+      <div className="mx-auto max-w-5xl space-y-4 p-3 md:p-6 lg:p-8">
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#315A7C]">Запуск школы</p>
@@ -90,7 +93,7 @@ export function AdminSettings() {
         </section>
 
         {/* General */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-5">
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <h2 className="mb-4 text-[16px] font-bold text-gray-900">Общие настройки</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -105,7 +108,7 @@ export function AdminSettings() {
         </section>
 
         {/* Lesson rules */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-5">
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <h2 className="mb-4 text-[16px] font-bold text-gray-900">Правила записи</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
@@ -134,7 +137,7 @@ export function AdminSettings() {
             </div>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 grid gap-2 md:grid-cols-2">
             {[
               { key: 'allowBookingWithDebt', label: 'Разрешить запись при долге' },
               { key: 'allowBookingWithoutMedical', label: 'Разрешить запись без медсправки' },
@@ -146,7 +149,7 @@ export function AdminSettings() {
               { key: 'notifyAdminOnCancel', label: 'Уведомлять об отмене' },
               { key: 'notifyAdminOnNewBooking', label: 'Уведомлять о новой записи' },
             ].map((opt) => (
-              <label key={opt.key} className="flex cursor-pointer items-center gap-3 rounded-xl bg-gray-50 p-3">
+              <label key={opt.key} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-[#E5EAF1] bg-[#F8FAFC] p-3">
                 <input
                   type="checkbox"
                   checked={Boolean((settings as unknown as Record<string, unknown>)[opt.key])}
@@ -160,7 +163,7 @@ export function AdminSettings() {
         </section>
 
         {/* Work hours */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-5">
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <h2 className="mb-4 text-[16px] font-bold text-gray-900">Рабочие часы</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -174,7 +177,7 @@ export function AdminSettings() {
           </div>
           <div className="mt-4">
             <label className="mb-2 block text-[13px] font-semibold text-gray-600">Рабочие дни</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
               {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((day, i) => (
                 <button
                   key={i}
@@ -182,7 +185,7 @@ export function AdminSettings() {
                     const days = settings.workDays.includes(i) ? settings.workDays.filter((d) => d !== i) : [...settings.workDays, i]
                     update('workDays', days)
                   }}
-                  className={`h-10 w-12 rounded-xl text-[13px] font-semibold transition ${
+                  className={`h-10 rounded-xl text-[13px] font-semibold transition ${
                     settings.workDays.includes(i) ? 'bg-[#111827] text-white' : 'border border-gray-200 bg-gray-50 text-gray-500'
                   }`}
                 >
@@ -194,7 +197,7 @@ export function AdminSettings() {
         </section>
 
         {/* Debt */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-5">
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <h2 className="mb-4 text-[16px] font-bold text-gray-900">Финансы и долги</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
