@@ -5,7 +5,7 @@ import { CreditCard, Plus } from 'iconoir-react'
 import { db } from '../../services/storage'
 import { adminPayments, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types'
 
@@ -183,7 +183,7 @@ export function AdminPayments() {
                   return (
                   <div key={item.student?.id ?? item.payments[0]?.studentId} className="grid gap-3 p-4 transition hover:bg-[#F8FAFC] sm:grid-cols-[minmax(0,1fr)_160px_170px_180px] sm:items-center">
                     <span className="min-w-0">
-                      <a href={item.student ? `${ADMIN_BASE_PATH}/students/${item.student.id}` : '#'} className="block truncate text-[15px] font-black text-[#111418] hover:text-[#075EBC]">{item.student?.name ?? 'Ученик не найден'}</a>
+                      <a href={item.student ? `${getAdminBasePathForLocation()}/students/${item.student.id}` : '#'} className="block truncate text-[15px] font-black text-[#111418] hover:text-[#075EBC]">{item.student?.name ?? 'Ученик не найден'}</a>
                       <span className="mt-1 block text-[12px] font-bold text-[#66717D]">{item.student?.phone ?? 'телефон не указан'} · {item.payments.length} платежей</span>
                     </span>
                     <span className="text-[16px] font-black text-[#B42318]">{money(item.debt)}</span>

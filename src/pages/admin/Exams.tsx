@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminInternalExams, adminGIBDDExams } from '../../services/adminStorage'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 
 type ExamTab = 'internal' | 'gibdd'
 
@@ -92,7 +92,7 @@ export function AdminExams() {
                   <tr key={exam.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
                     <td className="px-4 py-3.5">
                       {student ? (
-                        <a href={`${ADMIN_BASE_PATH}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
+                        <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
                           {student.name}
                         </a>
                       ) : <span className="text-gray-400">—</span>}
@@ -147,7 +147,7 @@ export function AdminExams() {
                   <tr key={exam.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
                     <td className="px-4 py-3.5">
                       {student ? (
-                        <a href={`${ADMIN_BASE_PATH}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
+                        <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
                           {student.name}
                         </a>
                       ) : <span className="text-gray-400">—</span>}

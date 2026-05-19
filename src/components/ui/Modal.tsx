@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Xmark as X } from 'iconoir-react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ModalProps {
   open: boolean
@@ -11,7 +12,7 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
-  return (
+  const content = (
     <AnimatePresence>
       {open && (
         <>
@@ -63,4 +64,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       )}
     </AnimatePresence>
   )
+
+  if (typeof document === 'undefined') return content
+  return createPortal(content, document.body)
 }

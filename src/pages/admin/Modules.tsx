@@ -10,7 +10,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Section } from '../../components/ui/Section'
 import { useToast } from '../../components/ui/Toast'
 import { formatPrice } from '../../lib/utils'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import {
   BASE_FEATURES,
   MODULE_CATEGORY_LABELS,
@@ -233,7 +233,7 @@ export function AdminModules() {
                       >
                         {module.isComingSoon ? 'Скоро' : enabledState ? 'Отключить' : 'Подключить'}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`${ADMIN_BASE_PATH}/modules/${module.id}`)}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`${getAdminBasePathForLocation()}/modules/${module.id}`)}>
                         Подробнее
                       </Button>
                     </div>

@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
-import { ADMIN_BASE_PATH, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
+import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Payment, Student, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
@@ -637,7 +637,7 @@ export function AdminStudents() {
               return (
                 <button
                   key={student.id}
-                  onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}
+                  onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}
                   className="v-human-card w-full min-w-0 overflow-hidden p-3 text-left"
                 >
                   <div className="flex min-w-0 items-start gap-3">
@@ -697,7 +697,7 @@ export function AdminStudents() {
                   const stage = student.trainingStage
 
                   return (
-                    <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${ADMIN_BASE_PATH}/students/${student.id}`)}>
+                    <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
                       <span className="text-center" onClick={(event) => event.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggleSelected(student.id)} className="accent-[#0A84FF]" />
                       </span>
@@ -737,7 +737,7 @@ export function AdminStudents() {
           onClose={() => setShowAdd(false)}
           onCreated={(studentId) => {
             setShowAdd(false)
-            navigate(`${ADMIN_BASE_PATH}/students/${studentId}`)
+            navigate(`${getAdminBasePathForLocation()}/students/${studentId}`)
           }}
         />
       </Modal>

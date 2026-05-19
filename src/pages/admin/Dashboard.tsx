@@ -2,7 +2,7 @@ import { addDays, format, isBefore, isSameDay, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { getSlotDateTime, getUpcomingBookings } from '../../services/bookingService'
 import { loadStudentRequests, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 import { db } from '../../services/storage'
@@ -85,10 +85,10 @@ export function AdminDashboard() {
       return booking.status === 'active' && slot && isBefore(getSlotDateTime(slot), startOfDay(now))
     })
     const setup: SetupStep[] = [
-      { id: 'contacts', title: 'Контакты школы', text: 'Телефон и публичная страница, чтобы ученики понимали куда обращаться.', done: Boolean(school.phone), to: `${ADMIN_BASE_PATH}/settings`, action: 'Заполнить' },
-      { id: 'branch', title: 'Филиал и место встречи', text: 'Адрес начала занятия, который увидят ученик и инструктор.', done: branches.some((branch) => branch.isActive && branch.address), to: `${ADMIN_BASE_PATH}/branches`, action: 'Создать' },
-      { id: 'instructor', title: 'Инструктор', text: 'Кто проводит занятия, принимает звонки и закрывает уроки.', done: instructors.some((instructor) => instructor.isActive), to: `${ADMIN_BASE_PATH}/instructors`, action: 'Добавить' },
-      { id: 'schedule', title: 'Первые окна расписания', text: 'Свободное время, куда можно записать ученика.', done: freeWeek.length > 0, to: `${ADMIN_BASE_PATH}/slots`, action: 'Собрать' },
+      { id: 'contacts', title: 'Контакты школы', text: 'Телефон и публичная страница, чтобы ученики понимали куда обращаться.', done: Boolean(school.phone), to: `${getAdminBasePathForLocation()}/settings`, action: 'Заполнить' },
+      { id: 'branch', title: 'Филиал и место встречи', text: 'Адрес начала занятия, который увидят ученик и инструктор.', done: branches.some((branch) => branch.isActive && branch.address), to: `${getAdminBasePathForLocation()}/branches`, action: 'Создать' },
+      { id: 'instructor', title: 'Инструктор', text: 'Кто проводит занятия, принимает звонки и закрывает уроки.', done: instructors.some((instructor) => instructor.isActive), to: `${getAdminBasePathForLocation()}/instructors`, action: 'Добавить' },
+      { id: 'schedule', title: 'Первые окна расписания', text: 'Свободное время, куда можно записать ученика.', done: freeWeek.length > 0, to: `${getAdminBasePathForLocation()}/slots`, action: 'Собрать' },
     ]
     return { branches, instructors, slots, bookings, requests, integrityIssues, recentAudit, upcoming, today, freeWeek, overdue, setup }
   }, [school, requestRefresh])
@@ -111,7 +111,7 @@ export function AdminDashboard() {
       id: `overdue-${booking.id}`,
       title: 'Прошедшее занятие не закрыто',
       text: `${booking.studentName} · нужно отметить проведено или отменить`,
-      to: `${ADMIN_BASE_PATH}/bookings`,
+      to: `${getAdminBasePathForLocation()}/bookings`,
       action: 'Открыть',
       tone: 'danger' as const,
     })),
@@ -119,16 +119,16 @@ export function AdminDashboard() {
       id: request.id,
       title: request.type === 'reschedule' ? 'Ученик просит перенос' : 'Ученик просит отмену',
       text: request.reason || request.comment || 'Разберите запрос и ответьте ученику',
-      to: `${ADMIN_BASE_PATH}/students/${request.studentId}`,
+      to: `${getAdminBasePathForLocation()}/students/${request.studentId}`,
       action: 'Разобрать',
       tone: 'warning' as const,
     })),
-    data.freeWeek.length === 0 ? { id: 'no-slots', title: 'Нет свободных окон на 7 дней', text: 'Запись остановится, если не собрать расписание.', to: `${ADMIN_BASE_PATH}/slots`, action: 'Собрать', tone: 'warning' as const } : null,
+    data.freeWeek.length === 0 ? { id: 'no-slots', title: 'Нет свободных окон на 7 дней', text: 'Запись остановится, если не собрать расписание.', to: `${getAdminBasePathForLocation()}/slots`, action: 'Собрать', tone: 'warning' as const } : null,
     ...data.integrityIssues.filter((issue) => issue.level === 'error').slice(0, 3).map((issue) => ({
       id: issue.id,
       title: 'Ошибка в данных школы',
       text: issue.message,
-      to: `${ADMIN_BASE_PATH}/reports`,
+      to: `${getAdminBasePathForLocation()}/reports`,
       action: 'Проверить',
       tone: 'danger' as const,
     })),
@@ -148,7 +148,7 @@ export function AdminDashboard() {
             <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#667085]">Новая автошкола</p>
             <h1 className="mt-2 max-w-[760px] text-[32px] font-black leading-[0.95] tracking-[-0.055em] text-[#111827] md:text-[56px]">Запуск школы</h1>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button onClick={() => navigate(nextStep?.to ?? `${ADMIN_BASE_PATH}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">{nextStep ? `${nextStep.action}: ${nextStep.title}` : 'Перейти к работе'}</button>
+              <button onClick={() => navigate(nextStep?.to ?? `${getAdminBasePathForLocation()}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">{nextStep ? `${nextStep.action}: ${nextStep.title}` : 'Перейти к работе'}</button>
               <a href={`/school/${school.slug}`} className="inline-flex min-h-12 items-center rounded-[12px] border border-[#E4E7EC] bg-white px-5 text-[14px] font-black text-[#111827]">Посмотреть страницу</a>
             </div>
           </div>
@@ -189,20 +189,20 @@ export function AdminDashboard() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setBlockSettingsOpen(true)} className="min-h-12 rounded-[12px] border border-[#E4E7EC] bg-white px-5 text-[14px] font-black text-[#111827]">Блоки</button>
-              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">Записать ученика</button>
+              <button onClick={() => navigate(`${getAdminBasePathForLocation()}/bookings`)} className="min-h-12 rounded-[12px] bg-[#111827] px-5 text-[14px] font-black text-white">Записать ученика</button>
             </div>
           </div>
 
           <div className="mt-5 grid gap-2 md:grid-cols-3">
-            <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="rounded-[14px] border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-left">
+            <button onClick={() => navigate(`${getAdminBasePathForLocation()}/bookings`)} className="rounded-[14px] border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-left">
               <strong className="block text-[28px] font-black leading-none text-[#111827]">{data.today.length}</strong>
               <span className="mt-2 block text-[12px] font-black uppercase text-[#667085]">занятий сегодня</span>
             </button>
-            <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="rounded-[14px] border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-left">
+            <button onClick={() => navigate(`${getAdminBasePathForLocation()}/slots`)} className="rounded-[14px] border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-left">
               <strong className="block text-[28px] font-black leading-none text-[#111827]">{data.freeWeek.length}</strong>
               <span className="mt-2 block text-[12px] font-black uppercase text-[#667085]">окон на 7 дней</span>
             </button>
-            <button onClick={() => navigate(attention[0]?.to ?? `${ADMIN_BASE_PATH}/bookings`)} className="rounded-[14px] border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-left">
+            <button onClick={() => navigate(attention[0]?.to ?? `${getAdminBasePathForLocation()}/bookings`)} className="rounded-[14px] border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-left">
               <strong className="block text-[28px] font-black leading-none text-[#111827]">{attention.length}</strong>
               <span className="mt-2 block text-[12px] font-black uppercase text-[#667085]">требует внимания</span>
             </button>
@@ -212,7 +212,7 @@ export function AdminDashboard() {
         {hasBlock('nearest') ? <div className="rounded-[18px] border border-[#E4E7EC] bg-white p-5">
           <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#667085]">Ближайшее</p>
           {nextLesson?.slot ? (
-            <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="mt-4 w-full rounded-[16px] bg-[#111827] p-4 text-left text-white">
+            <button onClick={() => navigate(`${getAdminBasePathForLocation()}/bookings`)} className="mt-4 w-full rounded-[16px] bg-[#111827] p-4 text-left text-white">
               <span className="block text-[32px] font-black leading-none">{format(getSlotDateTime(nextLesson.slot), 'HH:mm', { locale: ru })}</span>
               <strong className="mt-3 block text-[16px] font-black">{nextLesson.booking.studentName}</strong>
               <span className="mt-1 block text-[13px] font-semibold text-white/70">{nextLesson.instructor?.name ?? 'Инструктор'} · {nextLesson.branch?.name ?? 'Филиал'}</span>
@@ -248,9 +248,9 @@ export function AdminDashboard() {
           {hasBlock('quickActions') ? <section className="rounded-[18px] border border-[#E4E7EC] bg-white">
             <div className="border-b border-[#E4E7EC] p-4"><h2 className="text-[18px] font-black text-[#111827]">Быстрые действия</h2></div>
             <div className="grid divide-y divide-[#E4E7EC]">
-              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/bookings`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Записать ученика</strong><span className="text-[13px] font-semibold text-[#667085]">Звонок → окно → запись</span></button>
-              <button onClick={() => navigate(`${ADMIN_BASE_PATH}/slots`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Создать окна</strong><span className="text-[13px] font-semibold text-[#667085]">Собрать неделю инструктору</span></button>
-              <button onClick={() => { window.location.href = firstInstructor ? `/instructor/${firstInstructor.token}` : `${ADMIN_BASE_PATH}/instructors` }} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Открыть инструктора</strong><span className="text-[13px] font-semibold text-[#667085]">Мобильный день занятий</span></button>
+              <button onClick={() => navigate(`${getAdminBasePathForLocation()}/bookings`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Записать ученика</strong><span className="text-[13px] font-semibold text-[#667085]">Звонок → окно → запись</span></button>
+              <button onClick={() => navigate(`${getAdminBasePathForLocation()}/slots`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Создать окна</strong><span className="text-[13px] font-semibold text-[#667085]">Собрать неделю инструктору</span></button>
+              <button onClick={() => { window.location.href = firstInstructor ? `/instructor/${firstInstructor.token}` : `${getAdminBasePathForLocation()}/instructors` }} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Открыть инструктора</strong><span className="text-[13px] font-semibold text-[#667085]">Мобильный день занятий</span></button>
             </div>
           </section> : null}
 

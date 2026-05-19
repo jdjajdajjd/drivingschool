@@ -17,6 +17,10 @@ export const ADMIN_LOGIN_PATH = '/demo/admin-login'
 export const WORKSPACE_ADMIN_LOGIN_PATH = '/admin-login'
 export const SUPERADMIN_LOGIN_PATH = '/operator/login'
 
+export function getAdminBasePathForLocation(pathname = typeof window === 'undefined' ? ADMIN_BASE_PATH : window.location.pathname): string {
+  return pathname === DEMO_ADMIN_BASE_PATH || pathname.startsWith(`${DEMO_ADMIN_BASE_PATH}/`) ? DEMO_ADMIN_BASE_PATH : ADMIN_BASE_PATH
+}
+
 const ACCESS_KEYS: Record<AccessRole, string> = {
   admin: 'dd:access:admin',
   superadmin: 'dd:access:superadmin',

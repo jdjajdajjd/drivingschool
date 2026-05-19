@@ -16,7 +16,7 @@ import {
   rescheduleBookingConfirmed,
   updateBookingComment,
 } from '../../services/bookingService'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { db } from '../../services/storage'
 import { getAvailableSlots } from '../../services/slotService'
 
@@ -281,7 +281,7 @@ export function AdminBookings() {
                         <p className="mt-1 text-[11px] font-black uppercase text-[#64748B]">{entry.slot ? formatHumanDate(entry.slot.date, false) : 'нет даты'}</p>
                       </div>
                       <div className="min-w-0">
-                        <a href={`${ADMIN_BASE_PATH}/students/${entry.student?.id ?? ''}`} className="text-[16px] font-black leading-5 text-[#0F172A]">{entry.booking.studentName}</a>
+                        <a href={`${getAdminBasePathForLocation()}/students/${entry.student?.id ?? ''}`} className="text-[16px] font-black leading-5 text-[#0F172A]">{entry.booking.studentName}</a>
                         <p className="mt-1 text-[13px] font-bold text-[#64748B]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор'} · {entry.branch?.name ?? 'Филиал'} · {entry.booking.studentPhone}</p>
                         {entry.booking.comment || entry.booking.notes ? <p className="mt-2 border-l-2 border-[#CBD5E1] pl-2 text-[12px] font-bold text-[#475569]">{entry.booking.comment || entry.booking.notes}</p> : null}
                       </div>

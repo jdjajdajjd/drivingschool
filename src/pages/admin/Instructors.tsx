@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { adminCars } from '../../services/adminStorage'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Transmission } from '../../types'
 import { createInstructorConfirmed } from '../../services/instructorService'
@@ -73,7 +73,7 @@ export function AdminInstructors() {
                 className={`min-w-0 cursor-pointer overflow-hidden rounded-2xl border p-5 transition hover:border-gray-200 hover:shadow-sm ${
                   instructor.isActive ? 'bg-white' : 'bg-gray-50 opacity-60'
                 }`}
-                onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors/${instructor.id}`)}
+                onClick={() => navigate(`${getAdminBasePathForLocation()}/instructors/${instructor.id}`)}
               >
                 <div className="mb-4 flex min-w-0 items-center gap-3">
                   <div
@@ -134,7 +134,7 @@ export function AdminInstructors() {
           onClose={() => setShowAdd(false)}
           onCreated={(instructorId) => {
             setShowAdd(false)
-            navigate(`${ADMIN_BASE_PATH}/instructors/${instructorId}`)
+            navigate(`${getAdminBasePathForLocation()}/instructors/${instructorId}`)
           }}
         />
       </Modal>

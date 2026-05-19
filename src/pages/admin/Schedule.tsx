@@ -1,11 +1,12 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { addDays, eachDayOfInterval, format, isSameDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus } from 'iconoir-react'
+import { useLocation } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { cancelBookingConfirmed, completeBookingConfirmed, createBooking, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
 import { createBulkSlotsConfirmed, createSlotConfirmed, updateSlotStatusConfirmed } from '../../services/slotService'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import { useToast } from '../../components/ui/Toast'
 import { createCurrentStaffAuditEntry } from '../../services/adminStorage'
@@ -51,6 +52,7 @@ function statusDotClass(status: Slot['status']) {
 
 export function AdminSchedule() {
   const { showToast } = useToast()
+  const location = useLocation()
   const school = db.schools.currentAdmin()
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === 'undefined') return 'week'
@@ -68,6 +70,10 @@ export function AdminSchedule() {
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [showBookModal, setShowBookModal] = useState(false)
   const [actionPending, setActionPending] = useState(false)
+
+  useEffect(() => {
+    if (location.search.includes('create=slot')) setShowCreateModal(true)
+  }, [location.search])
 
   const data = useMemo(() => {
     if (!school) return { slots: [] as Slot[], bookings: [] as Booking[], instructors: filterInstructors(db.instructors.all()), branches: filterBranches(db.branches.all()), students: [] as Student[] }
@@ -535,7 +541,7 @@ export function AdminSchedule() {
               ) : selectedSlot.status === 'available' ? (
                 <button onClick={() => setShowBookModal(true)} className="v-admin-button sm:col-span-2">Записать ученика</button>
               ) : (
-                <a href={`${ADMIN_BASE_PATH}/students`} className="v-admin-button sm:col-span-2">Открыть учеников</a>
+                <a href={`${getAdminBasePathForLocation()}/students`} className="v-admin-button sm:col-span-2">Открыть учеников</a>
               )}
             </div>
           </div>

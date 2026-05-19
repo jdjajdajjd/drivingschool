@@ -11,7 +11,7 @@ import { useToast } from '../../components/ui/Toast'
 import { formatPrice } from '../../lib/utils'
 import { MODULE_CATEGORY_LABELS, disableModule, enableModule, getModuleById, isModuleEnabled } from '../../services/modules'
 import { db } from '../../services/storage'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -41,7 +41,7 @@ export function AdminModuleDetail() {
         <EmptyState
           title="Дополнение не найден"
           description="Проверьте ссылку или вернитесь в каталог дополнений."
-          action={<Button onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}>К каталогу</Button>}
+          action={<Button onClick={() => navigate(`${getAdminBasePathForLocation()}/modules`)}>К каталогу</Button>}
         />
       </div>
     )
@@ -67,19 +67,19 @@ export function AdminModuleDetail() {
     if (enabled) {
       disableModule(currentSchool.id, currentModule.id)
       showToast('Дополнение отключено', 'success')
-      navigate(`${ADMIN_BASE_PATH}/modules`)
+      navigate(`${getAdminBasePathForLocation()}/modules`)
       return
     }
 
     enableModule(currentSchool.id, currentModule.id)
     showToast(currentModule.priceType === 'one_time' ? 'Разовая услуга добавлена' : 'Дополнение подключено', 'success')
-    navigate(`${ADMIN_BASE_PATH}/modules`)
+    navigate(`${getAdminBasePathForLocation()}/modules`)
   }
 
   return (
     <div className="max-w-5xl p-6 md:p-8">
       <button
-        onClick={() => navigate(`${ADMIN_BASE_PATH}/modules`)}
+        onClick={() => navigate(`${getAdminBasePathForLocation()}/modules`)}
         className="mb-4 inline-flex items-center gap-2 text-sm text-[#667085] transition hover:text-[#111827]"
       >
         <ArrowLeft width={15} height={15} />

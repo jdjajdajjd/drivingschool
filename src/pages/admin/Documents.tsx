@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminDocuments, getDebtForStudent, studentProgress } from '../../services/adminStorage'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import type { DocumentStatus } from '../../types'
 
 const DOC_LABELS: Record<string, string> = {
@@ -121,7 +121,7 @@ export function AdminDocuments() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {admissionQueue.map(({ student, blockers, debt, isNearExam, hours, total }) => (
-                  <a key={student.id} href={`${ADMIN_BASE_PATH}/students/${student.id}`} className="grid gap-3 p-4 transition hover:bg-gray-50 sm:grid-cols-[minmax(0,1fr)_160px_170px] sm:items-center">
+                  <a key={student.id} href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="grid gap-3 p-4 transition hover:bg-gray-50 sm:grid-cols-[minmax(0,1fr)_160px_170px] sm:items-center">
                     <span className="min-w-0">
                       <strong className="block truncate text-[15px] font-black text-gray-900">{student.name}</strong>
                       <span className="mt-1 block text-[12px] font-bold text-gray-400">Практика {hours}/{total} ч · {isNearExam ? 'близко к экзамену' : 'в обучении'}</span>
@@ -160,7 +160,7 @@ export function AdminDocuments() {
                 <tr key={doc.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
                   <td className="px-4 py-3.5">
                     {student ? (
-                      <a href={`${ADMIN_BASE_PATH}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
+                      <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
                         {student.name}
                       </a>
                     ) : <span className="text-gray-400">—</span>}

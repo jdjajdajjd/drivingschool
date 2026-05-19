@@ -4,7 +4,7 @@ import { format, eachDayOfInterval, startOfWeek, addDays } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminCars, createCurrentStaffAuditEntry } from '../../services/adminStorage'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Instructor, Transmission } from '../../types'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
@@ -59,7 +59,7 @@ export function AdminInstructorDetail() {
       {/* Header */}
       <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/instructors`)} className="rounded-lg p-2 hover:bg-gray-100">
+          <button onClick={() => navigate(`${getAdminBasePathForLocation()}/instructors`)} className="rounded-lg p-2 hover:bg-gray-100">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

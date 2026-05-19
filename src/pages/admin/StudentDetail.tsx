@@ -5,7 +5,7 @@ import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, studentProgress, getDebtForStudent, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
-import { ADMIN_BASE_PATH, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
+import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Document, DocumentStatus, DocumentType, Payment, PaymentMethod, PaymentStatus, Student, TrainingStage } from '../../types'
 import { filterBookings, filterStudents } from '../../services/staffScope'
@@ -159,11 +159,11 @@ export function AdminStudentDetail() {
     missingDocs > 0 ? { title: 'Документы не готовы', text: `${missingDocs} документа требуют проверки или загрузки`, action: 'Добавить документ', run: () => setShowAddDocument(true), tone: 'warning' as const } : null,
     !instructor ? { title: 'Нет инструктора', text: 'Ученик не попадет в нормальное расписание без назначенного инструктора', action: 'Назначить', run: () => setShowEdit(true), tone: 'warning' as const } : null,
     !branch ? { title: 'Нет филиала', text: 'Администратору сложнее вести ученика и расписание', action: 'Назначить', run: () => setShowEdit(true), tone: 'warning' as const } : null,
-    !nextBooking && completedHours < totalHours ? { title: 'Нет следующего занятия', text: `Практика ${completedHours}/${totalHours} ч, нужно записать ученика`, action: 'В расписание', run: () => navigate(`${ADMIN_BASE_PATH}/schedule`), tone: 'info' as const } : null,
-    completedHours >= totalHours && !internalExamPassed ? { title: 'Пора на внутренний экзамен', text: 'Практика закрыта, нужен следующий контрольный шаг', action: 'Экзамены', run: () => navigate(`${ADMIN_BASE_PATH}/exams`), tone: 'info' as const } : null,
-    canGoToGIBDD ? { title: 'Готов к ГИБДД', text: 'Можно назначать экзамен, критичных блокеров нет', action: 'Записать', run: () => navigate(`${ADMIN_BASE_PATH}/exams`), tone: 'ok' as const } : null,
+    !nextBooking && completedHours < totalHours ? { title: 'Нет следующего занятия', text: `Практика ${completedHours}/${totalHours} ч, нужно записать ученика`, action: 'В расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'info' as const } : null,
+    completedHours >= totalHours && !internalExamPassed ? { title: 'Пора на внутренний экзамен', text: 'Практика закрыта, нужен следующий контрольный шаг', action: 'Экзамены', run: () => navigate(`${getAdminBasePathForLocation()}/exams`), tone: 'info' as const } : null,
+    canGoToGIBDD ? { title: 'Готов к ГИБДД', text: 'Можно назначать экзамен, критичных блокеров нет', action: 'Записать', run: () => navigate(`${getAdminBasePathForLocation()}/exams`), tone: 'ok' as const } : null,
   ].filter(Boolean) as Array<{ title: string; text: string; action: string; run: () => void; tone: 'danger' | 'warning' | 'info' | 'ok' }>
-  const nextBestAction = blockers[0] ?? { title: 'Маршрут ученика чистый', text: 'Долги, документы и практика не показывают красных флагов', action: 'Открыть расписание', run: () => navigate(`${ADMIN_BASE_PATH}/schedule`), tone: 'ok' as const }
+  const nextBestAction = blockers[0] ?? { title: 'Маршрут ученика чистый', text: 'Долги, документы и практика не показывают красных флагов', action: 'Открыть расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'ok' as const }
 
   const saveNote = () => {
     const access = assertAdminPermission('students.manage')
@@ -184,7 +184,7 @@ export function AdminStudentDetail() {
     <div className="overflow-y-auto">
       <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(`${ADMIN_BASE_PATH}/students`)} className="rounded-lg p-2 hover:bg-gray-100">
+          <button onClick={() => navigate(`${getAdminBasePathForLocation()}/students`)} className="rounded-lg p-2 hover:bg-gray-100">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
