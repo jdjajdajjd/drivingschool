@@ -308,7 +308,7 @@ export function AdminBookings() {
       <ConfirmDialog open={Boolean(completeId)} title="Отметить проведённой" description="Занятие будет считаться проведённым." confirmLabel="Подтвердить" onClose={() => setCompleteId(null)} onConfirm={handleComplete} />
 
       <Modal open={Boolean(rescheduleId)} onClose={() => setRescheduleId(null)} title="Перенести запись">
-        <div className="space-y-4 px-5 pb-5">
+        <div className="space-y-4 p-5">
           <div className="grid grid-cols-2 gap-2">
             <select value={rescheduleBranchId} onChange={(e) => setRescheduleBranchId(e.target.value)} className="min-h-11 border border-[#CBD5E1] bg-white px-3 text-[13px] font-bold outline-none">
               <option value="all">Все филиалы</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}

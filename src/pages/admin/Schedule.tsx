@@ -563,7 +563,7 @@ export function AdminSchedule() {
         <div className="space-y-4 p-5">
           <p className="text-[14px] font-medium text-[#687381]">Занятие ученика <strong className="font-semibold text-[#111315]">{selectedBooking?.studentName}</strong> будет отменено.</p>
           <textarea value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Причина отмены" className="v-admin-input min-h-[94px] w-full resize-none py-3" />
-          <div className="flex gap-2"><button onClick={() => setShowCancelModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleCancel} disabled={actionPending} className="v-admin-button flex-1 bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Подтвердить'}</button></div>
+          <div className="v-modal-actions"><button onClick={() => setShowCancelModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleCancel} disabled={actionPending} className="v-admin-button flex-1 bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Подтвердить'}</button></div>
         </div>
       </Modal>
 
@@ -575,7 +575,7 @@ export function AdminSchedule() {
             <option value="">Выберите время</option>
             {HOURS.map((time) => <option key={time} value={time}>{time}</option>)}
           </select>
-          <div className="flex gap-2"><button onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Перенести'}</button></div>
+          <div className="v-modal-actions"><button onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Перенести'}</button></div>
         </div>
       </Modal>
     </div>
@@ -642,7 +642,7 @@ function BookStudentForm({ schoolId, slot, students, onBooked }: { schoolId: str
         </select>
       </label>
       {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onBooked} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Записываем...' : 'Записать'}</button>
       </div>
@@ -769,7 +769,7 @@ function SlotTemplateForm({
         ))}
       </div>
       {result ? <p className="rounded-[16px] bg-[#F2F6FA] px-3 py-2 text-[13px] font-medium text-[#2A2D2F]">{result}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Закрыть</button>
         <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаем...' : 'Создать'}</button>
       </div>
@@ -855,7 +855,7 @@ function CreateSlotForm({
         </div>
       </div>
       {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаем...' : 'Создать'}</button>
       </div>

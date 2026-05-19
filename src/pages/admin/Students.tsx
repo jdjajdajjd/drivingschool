@@ -816,7 +816,7 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
         </select>
       </label>
       {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>

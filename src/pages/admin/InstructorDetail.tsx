@@ -251,7 +251,7 @@ function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: strin
         </select>
         <input type="number" min="0" value={experience} onChange={(event) => setExperience(event.target.value)} className="v-admin-input w-full" placeholder="Стаж" />
       </div>
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
         <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>

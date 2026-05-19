@@ -188,7 +188,7 @@ function UserForm({
           </div>
         </div>
       ) : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">Отмена</button>
         <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
       </div>

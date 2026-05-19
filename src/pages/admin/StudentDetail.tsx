@@ -625,7 +625,7 @@ function StudentEditForm({ schoolId, student, onClose }: { schoolId: string; stu
         </select>
       </div>
       {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
@@ -702,7 +702,7 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
         </select>
       </div>
       {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
@@ -812,7 +812,7 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
       <input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} className="v-admin-input w-full" />
       <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Заметки по документу" rows={3} className="v-admin-input min-h-[92px] w-full resize-none py-3" />
       {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
-      <div className="flex gap-2 pt-2">
+      <div className="v-modal-actions">
         <button onClick={onClose} disabled={pending || scanning} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending || scanning} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
