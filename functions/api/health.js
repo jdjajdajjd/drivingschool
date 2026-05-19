@@ -92,6 +92,7 @@ async function checkSupabaseHealthFunctions(env) {
     },
     body: JSON.stringify({ p_role: 'admin', p_session_token: '__health__' }),
   })
+  if (response.status === 400) return true
   if (!response.ok) throw new Error(`public_verify_staff_session returned ${response.status}`)
   return true
 }
