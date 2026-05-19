@@ -68,6 +68,18 @@ function useTodayData(schoolId: string, version = 0) {
     const paidToday = payments
       .filter((payment) => payment.paidAt && isSameDay(new Date(payment.paidAt), now))
       .reduce((sum, payment) => sum + payment.paidAmount, 0)
+    const debtQueue = students
+      .map((student) => {
+        const debt = payments.filter((payment) => payment.studentId === student.id && ['overdue', 'partial', 'unpaid', 'disputed'].includes(payment.status) && payment.remainingAmount > 0).reduce((sum, payment) => sum + payment.remainingAmount, 0)
+        const nextBooking = bookings
+          .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+          .filter((entry) => entry.booking.studentId === student.id && entry.booking.status === 'active' && entry.slot && getSlotDateTime(entry.slot) > now)
+          .sort((left, right) => getSlotDateTime(left.slot!).getTime() - getSlotDateTime(right.slot!).getTime())[0]
+        return { student, debt, nextBooking }
+      })
+      .filter((entry) => entry.debt > 0)
+      .sort((left, right) => right.debt - left.debt)
+      .slice(0, 5)
 
     const overdueBookings = bookings.filter((booking) => {
       const slot = db.slots.byId(booking.slotId)
@@ -110,6 +122,8 @@ function useTodayData(schoolId: string, version = 0) {
       openProblems: problemCases.open(schoolId).length,
       examsSoon,
       openStudentRequests: studentRequests.filter((request) => request.status === 'new' || request.status === 'reviewing').length,
+      studentRequests: studentRequests.filter((request) => request.status === 'new' || request.status === 'reviewing').slice(0, 5),
+      debtQueue,
       idleInstructors: instructorLoads.filter((load) => load.total > 0 && load.booked === 0).length,
       busyInstructors: instructorLoads.filter((load) => load.booked >= 5).length,
     }
@@ -253,6 +267,11 @@ export function AdminToday() {
   const firstFreeSlot = freeSlots[0] ?? null
   const firstFreeInstructor = firstFreeSlot ? data.instructors.find((item) => item.id === firstFreeSlot.instructorId) : null
   const firstFreeBranch = firstFreeSlot ? data.branches.find((item) => item.id === firstFreeSlot.branchId) : null
+  const dayPlan = [
+    firstPriority ? { label: 'Сначала', title: firstPriority.title, text: firstPriority.text, to: firstPriority.to, tone: firstPriority.tone } : { label: 'Сначала', title: 'Открыть день', text: nextEntry ? `Ближайшее занятие в ${format(getSlotDateTime(nextEntry.slot), 'HH:mm')}` : 'Проверить свободные окна и записи', to: `${ADMIN_BASE_PATH}/schedule`, tone: 'info' as const },
+    data.debtQueue[0] ? { label: 'Деньги', title: data.debtQueue[0].student.name, text: `Долг ${money(data.debtQueue[0].debt)}${data.debtQueue[0].nextBooking?.slot ? ` · занятие ${format(getSlotDateTime(data.debtQueue[0].nextBooking.slot), 'dd.MM HH:mm')}` : ''}`, to: `${ADMIN_BASE_PATH}/students/${data.debtQueue[0].student.id}`, tone: 'danger' as const } : { label: 'Деньги', title: 'Нет срочной долговой очереди', text: `Поступило сегодня ${money(data.paidToday)}`, to: `${ADMIN_BASE_PATH}/payments`, tone: 'info' as const },
+    data.studentRequests[0] ? { label: 'Запрос', title: 'Ответить ученику', text: data.studentRequests[0].reason, to: `${ADMIN_BASE_PATH}/students`, tone: 'warning' as const } : { label: 'Запросы', title: 'Новых запросов нет', text: 'Переносы и отмены не ждут ответа', to: `${ADMIN_BASE_PATH}/students`, tone: 'info' as const },
+  ]
 
   return (
     <div className="v-admin-workspace vroom-admin-today">
@@ -285,6 +304,16 @@ export function AdminToday() {
         <TodayMetric label="свободных окон" value={data.freeSlotsToday} tone="green" to={`${ADMIN_BASE_PATH}/schedule`} />
         <TodayMetric label="ближайших записей" value={data.upcoming.length} tone="muted" to={`${ADMIN_BASE_PATH}/schedule`} />
         <TodayMetric label="запросов / долгов" value={data.openStudentRequests + data.debtStudentsCount} tone={data.openStudentRequests + data.debtStudentsCount ? 'red' : 'green'} to={`${ADMIN_BASE_PATH}/reports`} />
+      </section>
+
+      <section className="mt-4 grid gap-3 lg:grid-cols-3">
+        {dayPlan.map((item) => (
+          <Link key={item.label} to={item.to} className={`v-admin-panel p-4 transition hover:-translate-y-0.5 ${item.tone === 'danger' ? 'border-[rgba(255,59,48,0.18)]' : item.tone === 'warning' ? 'border-[rgba(10,132,255,0.18)]' : 'border-[rgba(15,23,42,0.07)]'}`}>
+            <span className={`v-route-pill ${item.tone === 'danger' ? 'bg-[rgba(255,59,48,0.10)] text-[#C92820]' : item.tone === 'warning' ? 'bg-[#EAF4FF] text-[#075EBC]' : 'bg-[#F2F4F7] text-[#667085]'}`}>{item.label}</span>
+            <strong className="mt-3 block text-[17px] font-semibold text-[#111827]">{item.title}</strong>
+            <span className="mt-1 line-clamp-2 block text-[13px] font-medium leading-5 text-[#667085]">{item.text}</span>
+          </Link>
+        ))}
       </section>
 
       {hasBlock('launchChecklist') ? <LaunchChecklist

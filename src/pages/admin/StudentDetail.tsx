@@ -121,6 +121,33 @@ export function AdminStudentDetail() {
     .filter((entry) => entry.booking.status === 'active' && entry.slot && new Date(`${entry.slot.date}T${entry.slot.time}`) > new Date())
     .sort((left, right) => new Date(`${left.slot?.date}T${left.slot?.time}`).getTime() - new Date(`${right.slot?.date}T${right.slot?.time}`).getTime())[0]
 
+  const hasVerifiedDoc = (type: DocumentType) => documents.some((doc) => doc.type === type && doc.status === 'verified')
+  const hasPaidSomething = payments.some((payment) => payment.paidAmount > 0 || payment.status === 'paid')
+  const internalExamPassed = progress?.internalExamPassed === true || internalExams.some((exam) => exam.status === 'passed')
+  const gibddStarted = gibddExams.some((exam) => exam.status === 'scheduled' || exam.status === 'passed')
+  const isGraduated = stage === 'training_completed' || stage === 'completed'
+  const pipelineSteps = [
+    { label: 'Заявка', done: true, blocked: false },
+    { label: 'Договор', done: hasVerifiedDoc('contract') || stage !== 'new_request', blocked: !hasVerifiedDoc('contract') },
+    { label: 'Оплата', done: debt === 0 && hasPaidSomething, blocked: debt > 0 },
+    { label: 'Группа', done: Boolean(student.groupName), blocked: !student.groupName },
+    { label: 'Инструктор', done: Boolean(instructor), blocked: !instructor },
+    { label: 'Практика', done: completedHours >= totalHours, blocked: !nextBooking && completedHours < totalHours },
+    { label: 'Внутренний', done: internalExamPassed, blocked: completedHours < totalHours || debt > 0 || missingDocs > 0 },
+    { label: 'ГИБДД', done: gibddStarted || canGoToGIBDD, blocked: !canGoToGIBDD },
+    { label: 'Выпуск', done: isGraduated, blocked: !isGraduated },
+  ]
+  const blockers = [
+    debt > 0 ? { title: 'Долг блокирует допуск', text: `${debt.toLocaleString('ru-RU')} ₽ нужно закрыть до экзамена`, action: 'Принять оплату', run: () => setShowAddPayment(true), tone: 'danger' as const } : null,
+    missingDocs > 0 ? { title: 'Документы не готовы', text: `${missingDocs} документа требуют проверки или загрузки`, action: 'Добавить документ', run: () => setShowAddDocument(true), tone: 'warning' as const } : null,
+    !instructor ? { title: 'Нет инструктора', text: 'Ученик не попадет в нормальное расписание без назначенного инструктора', action: 'Назначить', run: () => setShowEdit(true), tone: 'warning' as const } : null,
+    !branch ? { title: 'Нет филиала', text: 'Администратору сложнее вести ученика и расписание', action: 'Назначить', run: () => setShowEdit(true), tone: 'warning' as const } : null,
+    !nextBooking && completedHours < totalHours ? { title: 'Нет следующего занятия', text: `Практика ${completedHours}/${totalHours} ч, нужно записать ученика`, action: 'В расписание', run: () => navigate(`${ADMIN_BASE_PATH}/schedule`), tone: 'info' as const } : null,
+    completedHours >= totalHours && !internalExamPassed ? { title: 'Пора на внутренний экзамен', text: 'Практика закрыта, нужен следующий контрольный шаг', action: 'Экзамены', run: () => navigate(`${ADMIN_BASE_PATH}/exams`), tone: 'info' as const } : null,
+    canGoToGIBDD ? { title: 'Готов к ГИБДД', text: 'Можно назначать экзамен, критичных блокеров нет', action: 'Записать', run: () => navigate(`${ADMIN_BASE_PATH}/exams`), tone: 'ok' as const } : null,
+  ].filter(Boolean) as Array<{ title: string; text: string; action: string; run: () => void; tone: 'danger' | 'warning' | 'info' | 'ok' }>
+  const nextBestAction = blockers[0] ?? { title: 'Маршрут ученика чистый', text: 'Долги, документы и практика не показывают красных флагов', action: 'Открыть расписание', run: () => navigate(`${ADMIN_BASE_PATH}/schedule`), tone: 'ok' as const }
+
   const saveNote = () => {
     const access = assertAdminPermission('students.manage')
     if (!access.ok) return
@@ -185,6 +212,39 @@ export function AdminStudentDetail() {
           <p className="mt-1 truncate text-[14px] font-black text-gray-900">
             {nextBooking?.slot ? format(new Date(`${nextBooking.slot.date}T${nextBooking.slot.time}`), 'dd.MM HH:mm') : 'нет'}
           </p>
+        </div>
+      </div>
+
+      <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-2xl border border-gray-100 bg-[#F8FAFC] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-[16px] font-black text-gray-900">Маршрут ученика</h2>
+                <p className="mt-1 text-[13px] font-semibold text-gray-400">От заявки до выпуска без потери следующего шага</p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-[12px] font-black ${canGoToGIBDD ? 'bg-green-50 text-green-700' : blockers.some((item) => item.tone === 'danger') ? 'bg-red-50 text-red-600' : 'bg-[#EAF3FF] text-[#315A7C]'}`}>
+                {canGoToGIBDD ? 'Допуск открыт' : blockers.some((item) => item.tone === 'danger') ? 'Допуск заблокирован' : 'В работе'}
+              </span>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-9">
+              {pipelineSteps.map((step, index) => (
+                <div key={step.label} className={`rounded-xl border p-3 ${step.done ? 'border-green-100 bg-white' : step.blocked ? 'border-red-100 bg-red-50/70' : 'border-blue-100 bg-white'}`}>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-black ${step.done ? 'bg-green-100 text-green-700' : step.blocked ? 'bg-red-100 text-red-600' : 'bg-[#EAF3FF] text-[#315A7C]'}`}>{index + 1}</span>
+                  <p className="mt-2 text-[12px] font-black text-gray-900">{step.label}</p>
+                  <p className="mt-0.5 text-[11px] font-bold text-gray-400">{step.done ? 'готово' : step.blocked ? 'блокер' : 'далее'}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={`rounded-2xl border p-4 ${nextBestAction.tone === 'danger' ? 'border-red-100 bg-red-50' : nextBestAction.tone === 'warning' ? 'border-blue-100 bg-[#EAF3FF]' : nextBestAction.tone === 'ok' ? 'border-green-100 bg-green-50' : 'border-gray-100 bg-white'}`}>
+            <p className="text-[12px] font-black uppercase text-gray-400">Что сделать дальше</p>
+            <h3 className="mt-2 text-[18px] font-black text-gray-900">{nextBestAction.title}</h3>
+            <p className="mt-2 text-[13px] font-semibold leading-5 text-gray-500">{nextBestAction.text}</p>
+            <button onClick={nextBestAction.run} className="mt-4 w-full rounded-xl bg-gray-900 px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-gray-700">
+              {nextBestAction.action}
+            </button>
+          </div>
         </div>
       </div>
 

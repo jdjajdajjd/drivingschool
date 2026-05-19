@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { format } from 'date-fns'
+import { format, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { CreditCard, Plus } from 'iconoir-react'
 import { db } from '../../services/storage'
 import { adminPayments, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
+import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types'
 
@@ -27,6 +28,14 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 }
 
 type FilterTab = 'all' | 'overdue' | 'partial' | 'unpaid' | 'paid'
+type DebtStatus = 'not_reminded' | 'reminded' | 'promised' | 'disputed'
+
+const DEBT_STATUS_LABELS: Record<DebtStatus, string> = {
+  not_reminded: 'Не напоминали',
+  reminded: 'Напомнили',
+  promised: 'Обещал оплатить',
+  disputed: 'Спорный',
+}
 
 function money(value: number) {
   return `${value.toLocaleString('ru-RU')} ₽`
@@ -39,10 +48,25 @@ function statusTone(status: PaymentStatus) {
   return 'v-tone-danger'
 }
 
+function debtKey(paymentId: string) {
+  return `vroom:debt-status:${paymentId}`
+}
+
+function getDebtStatus(paymentId: string): DebtStatus {
+  if (typeof window === 'undefined') return 'not_reminded'
+  return (localStorage.getItem(debtKey(paymentId)) as DebtStatus | null) ?? 'not_reminded'
+}
+
+function setDebtStatusValue(paymentId: string, status: DebtStatus) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(debtKey(paymentId), status)
+}
+
 export function AdminPayments() {
   const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<FilterTab>('all')
   const [showAdd, setShowAdd] = useState(false)
+  const [debtVersion, setDebtVersion] = useState(0)
   const canManageFinance = canUseAdminPermission('finance.manage')
 
   const rows = useMemo(() => {
@@ -52,14 +76,36 @@ export function AdminPayments() {
 
   const totals = useMemo(() => {
     const paid = rows.reduce((sum, row) => sum + row.payment.paidAmount, 0)
+    const paidToday = rows.reduce((sum, row) => row.payment.paidAt && isSameDay(new Date(row.payment.paidAt), new Date()) ? sum + row.payment.paidAmount : sum, 0)
     const debt = rows.reduce((sum, row) => {
       if (row.payment.status === 'overdue' || row.payment.status === 'partial' || row.payment.status === 'unpaid') return sum + row.payment.remainingAmount
       return sum
     }, 0)
     const overdue = rows.filter((row) => row.payment.status === 'overdue')
     const unpaid = rows.filter((row) => row.payment.status === 'unpaid')
-    return { paid, debt, overdueCount: overdue.length, unpaidCount: unpaid.length }
+    const partial = rows.filter((row) => row.payment.status === 'partial')
+    return { paid, paidToday, debt, overdueCount: overdue.length, unpaidCount: unpaid.length, partialCount: partial.length }
   }, [rows])
+
+  const collectionQueue = useMemo(() => {
+    const byStudent = new Map<string, { student: ReturnType<typeof db.students.byId>; debt: number; overdue: number; payments: Payment[] }>()
+    rows.forEach((row) => {
+      if (!['overdue', 'partial', 'unpaid', 'disputed'].includes(row.payment.status) || row.payment.remainingAmount <= 0) return
+      const key = row.payment.studentId
+      const current = byStudent.get(key) ?? { student: row.student, debt: 0, overdue: 0, payments: [] }
+      current.debt += row.payment.remainingAmount
+      if (row.payment.status === 'overdue' || row.payment.status === 'disputed') current.overdue += row.payment.remainingAmount
+      current.payments.push(row.payment)
+      byStudent.set(key, current)
+    })
+    void debtVersion
+    return Array.from(byStudent.values()).sort((left, right) => right.debt - left.debt).slice(0, 8)
+  }, [rows, debtVersion])
+
+  const updateDebtStatus = (paymentId: string, status: DebtStatus) => {
+    setDebtStatusValue(paymentId, status)
+    setDebtVersion((value) => value + 1)
+  }
 
   const filtered = useMemo(() => {
     if (filter === 'all') return rows
@@ -88,6 +134,10 @@ export function AdminPayments() {
             <p className="text-[11px] font-black uppercase text-[#157347]">Оплачено</p>
             <p className="text-[18px] font-black text-[#111418]">{money(totals.paid)}</p>
           </div>
+          <div className="rounded-[10px] bg-[#EAF3FF] px-4 py-2">
+            <p className="text-[11px] font-black uppercase text-[#315A7C]">Сегодня</p>
+            <p className="text-[18px] font-black text-[#111418]">{money(totals.paidToday)}</p>
+          </div>
           <div className="rounded-[10px] bg-[#FFF3F2] px-4 py-2">
             <p className="text-[11px] font-black uppercase text-[#B42318]">Долг</p>
             <p className="text-[18px] font-black text-[#111418]">{money(totals.debt)}</p>
@@ -111,6 +161,56 @@ export function AdminPayments() {
       </div>
 
       <div className="flex-1 overflow-auto p-3 md:p-5">
+        <section className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="v-admin-panel overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#111827]/[0.07] p-4">
+              <div>
+                <h2 className="text-[18px] font-black text-[#111418]">Кого дожать по оплате</h2>
+                <p className="v-admin-note mt-1">Ручные переводы на карту, частичные оплаты и блокеры допуска</p>
+              </div>
+              <span className={`v-admin-pill ${collectionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{collectionQueue.length ? `${collectionQueue.length} в очереди` : 'чисто'}</span>
+            </div>
+            {collectionQueue.length === 0 ? (
+              <div className="v-admin-empty m-4 py-6">
+                <strong>Долговая очередь пустая</strong>
+                <span>Новые просрочки и частичные оплаты появятся здесь первыми.</span>
+              </div>
+            ) : (
+              <div className="divide-y divide-[#111827]/[0.06]">
+                {collectionQueue.map((item) => {
+                  const mainPayment = item.payments[0]
+                  const debtStatus = mainPayment ? getDebtStatus(mainPayment.id) : 'not_reminded'
+                  return (
+                  <div key={item.student?.id ?? item.payments[0]?.studentId} className="grid gap-3 p-4 transition hover:bg-[#F8FAFC] sm:grid-cols-[minmax(0,1fr)_160px_170px_180px] sm:items-center">
+                    <span className="min-w-0">
+                      <a href={item.student ? `${ADMIN_BASE_PATH}/students/${item.student.id}` : '#'} className="block truncate text-[15px] font-black text-[#111418] hover:text-[#075EBC]">{item.student?.name ?? 'Ученик не найден'}</a>
+                      <span className="mt-1 block text-[12px] font-bold text-[#66717D]">{item.student?.phone ?? 'телефон не указан'} · {item.payments.length} платежей</span>
+                    </span>
+                    <span className="text-[16px] font-black text-[#B42318]">{money(item.debt)}</span>
+                    <span className="flex flex-wrap gap-2">
+                      <a href={`tel:${item.student?.phone ?? ''}`} className="v-admin-button-secondary h-9 min-h-9 px-3">Звонок</a>
+                      {item.student?.phone ? <button onClick={() => void navigator.clipboard?.writeText(`Здравствуйте! Напоминаем об оплате в автошколе. Остаток: ${money(item.debt)}.`)} className="v-admin-button-secondary h-9 min-h-9 px-3">Текст</button> : null}
+                    </span>
+                    {mainPayment ? (
+                      <select value={debtStatus} onChange={(event) => updateDebtStatus(mainPayment.id, event.target.value as DebtStatus)} className="v-admin-input h-9 py-1 text-[12px]">
+                        {Object.entries(DEBT_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </select>
+                    ) : null}
+                  </div>
+                )})}
+              </div>
+            )}
+          </div>
+          <aside className="v-admin-panel p-4">
+            <h2 className="text-[18px] font-black text-[#111418]">Правило запуска</h2>
+            <div className="mt-3 grid gap-2 text-[13px] font-bold text-[#66717D]">
+              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#B42318]">Просрочка</span> блокирует экзамены и требует звонка.</div>
+              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#315A7C]">Частично</span> видно директору до закрытия остатка.</div>
+              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#157347]">Перевод</span> фиксируется вручную в день поступления.</div>
+            </div>
+          </aside>
+        </section>
+
         {filtered.length === 0 ? (
           <div className="v-admin-empty">
             <CreditCard className="mb-2 h-8 w-8 text-[#8D98A4]" />
@@ -145,7 +245,9 @@ export function AdminPayments() {
                     <td>{payment.remainingAmount > 0 ? <span className="v-admin-pill v-tone-danger">{money(payment.remainingAmount)}</span> : <span className="v-admin-pill v-tone-ok">нет</span>}</td>
                     <td><span className={`v-admin-pill ${statusTone(payment.status)}`}>{STATUS_LABELS[payment.status]}</span></td>
                     <td>{payment.method ? METHOD_LABELS[payment.method] : <span className="text-[#8D98A4]">не указан</span>}</td>
-                    <td>{payment.paidAt ? format(new Date(payment.paidAt), 'd MMM yyyy', { locale: ru }) : <span className="text-[#8D98A4]">ожидается</span>}</td>
+                    <td>
+                      {payment.paidAt ? format(new Date(payment.paidAt), 'd MMM yyyy', { locale: ru }) : payment.dueDate ? <span className={new Date(payment.dueDate) < new Date() ? 'font-black text-[#B42318]' : 'text-[#8D98A4]'}>до {format(new Date(payment.dueDate), 'd MMM', { locale: ru })}</span> : <span className="text-[#8D98A4]">ожидается</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -165,6 +267,7 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
   const students = db.students.bySchool(schoolId)
   const [studentId, setStudentId] = useState('')
   const [amount, setAmount] = useState('')
+  const [paidAmount, setPaidAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<PaymentStatus>('paid')
@@ -178,19 +281,21 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
     setError('')
 
     const parsed = Number.parseInt(amount, 10)
+    const parsedPaid = status === 'partial' ? Number.parseInt(paidAmount, 10) : status === 'paid' ? parsed : 0
     if (!studentId) { setError('Выберите ученика.'); return }
     if (!Number.isFinite(parsed) || parsed <= 0) { setError('Укажите корректную сумму.'); return }
+    if (!Number.isFinite(parsedPaid) || parsedPaid < 0 || parsedPaid > parsed) { setError('Укажите корректно оплаченную часть.'); return }
     const payment: Payment = {
       id: `pay_${Date.now()}`,
       schoolId,
       studentId,
       amount: parsed,
-      paidAmount: status === 'paid' ? parsed : 0,
-      remainingAmount: status === 'paid' ? 0 : parsed,
-      status,
+      paidAmount: parsedPaid,
+      remainingAmount: Math.max(parsed - parsedPaid, 0),
+      status: parsedPaid >= parsed ? 'paid' : status,
       method,
       description: description.trim() || 'Оплата обучения',
-      paidAt: status === 'paid' ? new Date().toISOString() : undefined,
+      paidAt: parsedPaid > 0 ? new Date().toISOString() : undefined,
       createdAt: new Date().toISOString(),
     }
     try {
@@ -237,6 +342,12 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
           </select>
         </label>
       </div>
+      {status === 'partial' ? (
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Сколько поступило</span>
+          <input type="number" value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} placeholder="5000" className="v-admin-input w-full" />
+        </label>
+      ) : null}
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Описание</span>
         <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Оплата за обучение" className="v-admin-input w-full" />

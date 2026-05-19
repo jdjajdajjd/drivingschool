@@ -3,14 +3,14 @@ import { addDays, eachDayOfInterval, format, isSameDay, startOfWeek } from 'date
 import { ru } from 'date-fns/locale'
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus } from 'iconoir-react'
 import { db } from '../../services/storage'
-import { cancelBookingConfirmed, completeBookingConfirmed, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
+import { cancelBookingConfirmed, completeBookingConfirmed, createBooking, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
 import { createBulkSlotsConfirmed, createSlotConfirmed, updateSlotStatusConfirmed } from '../../services/slotService'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import { useToast } from '../../components/ui/Toast'
 import { createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { filterBookings, filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
-import type { Booking, Branch, Instructor, Slot } from '../../types'
+import type { Booking, Branch, Instructor, Slot, Student } from '../../types'
 import { assertAdminPermission } from '../../services/adminAccess'
 
 type ViewMode = 'day' | 'week'
@@ -66,15 +66,17 @@ export function AdminSchedule() {
   const [rescheduleTime, setRescheduleTime] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [showBookModal, setShowBookModal] = useState(false)
   const [actionPending, setActionPending] = useState(false)
 
   const data = useMemo(() => {
-    if (!school) return { slots: [] as Slot[], bookings: [] as Booking[], instructors: filterInstructors(db.instructors.all()), branches: filterBranches(db.branches.all()) }
+    if (!school) return { slots: [] as Slot[], bookings: [] as Booking[], instructors: filterInstructors(db.instructors.all()), branches: filterBranches(db.branches.all()), students: [] as Student[] }
     return {
       slots: filterSlots(db.slots.bySchool(school.id)),
       bookings: filterBookings(db.bookings.bySchool(school.id)),
       instructors: filterInstructors(db.instructors.bySchool(school.id)),
       branches: filterBranches(db.branches.bySchool(school.id)),
+      students: db.students.bySchool(school.id),
     }
   }, [school?.id])
 
@@ -530,11 +532,24 @@ export function AdminSchedule() {
                   <button onClick={handleNoShow} disabled={actionPending} className="v-admin-button bg-[#315A7C] hover:bg-[#7E4706] disabled:opacity-50">Неявка</button>
                   <button onClick={() => setShowCancelModal(true)} disabled={actionPending} className="v-admin-button bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">Отменить</button>
                 </>
+              ) : selectedSlot.status === 'available' ? (
+                <button onClick={() => setShowBookModal(true)} className="v-admin-button sm:col-span-2">Записать ученика</button>
               ) : (
-                <a href={`${ADMIN_BASE_PATH}/students`} className="v-admin-button sm:col-span-2">Записать ученика</a>
+                <a href={`${ADMIN_BASE_PATH}/students`} className="v-admin-button sm:col-span-2">Открыть учеников</a>
               )}
             </div>
           </div>
+        ) : null}
+      </Modal>
+
+      <Modal open={showBookModal} onClose={() => setShowBookModal(false)} title="Записать ученика" size="md">
+        {selectedSlot ? (
+          <BookStudentForm
+            schoolId={school.id}
+            slot={selectedSlot}
+            students={data.students}
+            onBooked={() => { setShowBookModal(false); setSelectedSlotId(null) }}
+          />
         ) : null}
       </Modal>
 
@@ -557,6 +572,74 @@ export function AdminSchedule() {
           <div className="flex gap-2"><button onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Перенести'}</button></div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function BookStudentForm({ schoolId, slot, students, onBooked }: { schoolId: string; slot: Slot; students: Student[]; onBooked: () => void }) {
+  const [studentId, setStudentId] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+
+  const submit = async () => {
+    const access = assertAdminPermission('schedule.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+    const student = students.find((item) => item.id === studentId)
+    if (!student) { setError('Выберите ученика.'); return }
+    const freshSlot = db.slots.byId(slot.id)
+    if (!freshSlot || freshSlot.status !== 'available' || freshSlot.bookingId) {
+      setError('Это окно уже занято или недоступно. Обновите расписание.')
+      return
+    }
+    const duplicate = db.bookings.bySchool(schoolId).some((booking) => {
+      const bookingSlot = db.slots.byId(booking.slotId)
+      return booking.status === 'active' && booking.studentId === student.id && bookingSlot?.date === freshSlot.date && bookingSlot?.time === freshSlot.time
+    })
+    if (duplicate) {
+      setError('У ученика уже есть активная запись на это время.')
+      return
+    }
+    setPending(true)
+    setError('')
+    try {
+      const result = createBooking({
+        schoolId,
+        branchId: freshSlot.branchId,
+        instructorId: freshSlot.instructorId,
+        slotId: freshSlot.id,
+        studentName: student.name,
+        studentPhone: student.phone,
+        sessionId: `admin-${Date.now()}`,
+      })
+      if (!result.ok || !result.booking) throw new Error(result.error ?? 'Не удалось записать ученика.')
+      createCurrentStaffAuditEntry(schoolId, 'booking_created', 'booking', result.booking.id, `Админ записал ${student.name} на ${freshSlot.date} ${freshSlot.time}`)
+      onBooked()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось записать ученика.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <div className="rounded-[18px] bg-[#F2F6FA] p-4">
+        <p className="text-[24px] font-semibold leading-none text-[#111315]">{format(getSlotDateTime(slot), 'dd.MM HH:mm')}</p>
+        <p className="mt-1 text-[13px] font-medium text-[#687381]">Перед сохранением окно проверяется повторно, чтобы не посадить двух учеников на один слот.</p>
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Ученик</span>
+        <select value={studentId} onChange={(event) => setStudentId(event.target.value)} className="v-admin-input w-full">
+          <option value="">Выберите ученика</option>
+          {students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.phone}</option>)}
+        </select>
+      </label>
+      {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
+      <div className="flex gap-2 pt-2">
+        <button onClick={onBooked} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Записываем...' : 'Записать'}</button>
+      </div>
     </div>
   )
 }
