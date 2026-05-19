@@ -5,13 +5,30 @@ import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, studentProgress, getDebtForStudent, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
-import { ADMIN_BASE_PATH } from '../../services/accessControl'
+import { ADMIN_BASE_PATH, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import type { Document, DocumentStatus, DocumentType, Payment, PaymentMethod, PaymentStatus, Student, TrainingStage } from '../../types'
 import { filterBookings, filterStudents } from '../../services/staffScope'
 import { updateStudentAdminConfirmed } from '../../services/studentService'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
+
+function imageFileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('Загрузите фото документа.'))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      reject(new Error('Фото должно быть до 5 МБ.'))
+      return
+    }
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Не удалось прочитать фото.'))
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.readAsDataURL(file)
+  })
+}
 
 const STAGE_LABELS: Record<string, string> = {
   new_request: 'Новая заявка',
@@ -696,8 +713,42 @@ function PaymentForm({ schoolId, student, onClose }: { schoolId: string; student
 function DocumentForm({ schoolId, student, onClose }: { schoolId: string; student: Student; onClose: () => void }) {
   const [type, setType] = useState<DocumentType>('contract')
   const [status, setStatus] = useState<DocumentStatus>('uploaded')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [notes, setNotes] = useState('')
+  const [fileName, setFileName] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const [scanning, setScanning] = useState(false)
+
+  const scanDocument = async (file?: File) => {
+    if (!file) return
+    try {
+      setScanning(true)
+      setError('')
+      const imageDataUrl = await imageFileToDataUrl(file)
+      const response = await fetch('/api/document-scan', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-vroom-staff-token': getAccessSecret('admin'),
+          'x-vroom-staff-role': getWorkspaceStaffContext().role,
+        },
+        body: JSON.stringify({ imageDataUrl, fileName: file.name, studentName: student.name }),
+      })
+      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error ?? 'Не удалось распознать документ.')
+      const data = await response.json() as { scan?: { documentType?: DocumentType; status?: DocumentStatus; expiresAt?: string; notes?: string; summary?: string; confidence?: number } }
+      const scan = data.scan
+      if (scan?.documentType) setType(scan.documentType)
+      if (scan?.status) setStatus(scan.status)
+      if (scan?.expiresAt) setExpiresAt(scan.expiresAt)
+      setNotes([scan?.summary, scan?.notes, typeof scan?.confidence === 'number' ? `Уверенность: ${Math.round(scan.confidence * 100)}%` : ''].filter(Boolean).join('\n'))
+      setFileName(file.name)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось распознать документ.')
+    } finally {
+      setScanning(false)
+    }
+  }
 
   const handleSubmit = async () => {
     const access = assertAdminPermission('documents.manage')
@@ -710,8 +761,11 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
       studentId: student.id,
       type,
       status,
+      fileName: fileName || undefined,
       uploadedAt: status === 'uploaded' || status === 'verified' ? new Date().toISOString() : undefined,
       verifiedAt: status === 'verified' ? new Date().toISOString() : undefined,
+      expiresAt: expiresAt || undefined,
+      notes: notes.trim() || undefined,
       createdAt: new Date().toISOString(),
     }
     try {
@@ -729,6 +783,22 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
 
   return (
     <div className="space-y-4 p-5">
+      <label className="block rounded-2xl border border-dashed border-[#C9D6E2] bg-[#F8FAFC] p-4 text-center">
+        <span className="block text-[14px] font-black text-[#111827]">Сканировать фото документа</span>
+        <span className="mt-1 block text-[12px] font-semibold text-[#667085]">JPG, PNG или WEBP. Нейронка определит тип, статус и срок действия.</span>
+        <input
+          type="file"
+          accept="image/*"
+          className="mt-3 block w-full text-[13px] font-semibold text-[#667085] file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-[13px] file:font-bold file:text-white"
+          disabled={scanning || pending}
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            event.target.value = ''
+            void scanDocument(file)
+          }}
+        />
+        {scanning ? <span className="mt-2 block text-[12px] font-black text-[#315A7C]">Распознаём...</span> : null}
+      </label>
       <select value={type} onChange={(event) => setType(event.target.value as DocumentType)} className="v-admin-input w-full">
         {Object.entries(DOC_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select>
@@ -739,10 +809,12 @@ function DocumentForm({ schoolId, student, onClose }: { schoolId: string; studen
         <option value="missing">Не загружен</option>
         <option value="rejected">Отклонен</option>
       </select>
+      <input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} className="v-admin-input w-full" />
+      <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Заметки по документу" rows={3} className="v-admin-input min-h-[92px] w-full resize-none py-3" />
       {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="flex gap-2 pt-2">
-        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
-        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
+        <button onClick={onClose} disabled={pending || scanning} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending || scanning} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

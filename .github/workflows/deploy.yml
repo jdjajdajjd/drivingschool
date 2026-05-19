@@ -71,6 +71,7 @@ jobs:
           printf '%s' "$DEEPSEEK_API_KEY" | npx wrangler@latest pages secret put DEEPSEEK_API_KEY --project-name=drivingschool
           printf '%s' "$DEEPSEEK_BASE_URL" | npx wrangler@latest pages secret put DEEPSEEK_BASE_URL --project-name=drivingschool
           printf '%s' "$DEEPSEEK_MODEL" | npx wrangler@latest pages secret put DEEPSEEK_MODEL --project-name=drivingschool
+          printf '%s' "$DEEPSEEK_VISION_MODEL" | npx wrangler@latest pages secret put DEEPSEEK_VISION_MODEL --project-name=drivingschool
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -81,6 +82,7 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
           DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          DEEPSEEK_VISION_MODEL: ${{ secrets.DEEPSEEK_VISION_MODEL }}
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler@latest pages deploy dist --project-name=drivingschool --branch=main

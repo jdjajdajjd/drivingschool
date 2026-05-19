@@ -11,6 +11,19 @@ import { SUPERADMIN_BASE_PATH } from '../../services/accessControl'
 import { createSupabaseSchool } from '../../services/supabaseAdminService'
 import { closeSupabaseStaffSession, openSupabaseStaffSession, upsertSupabaseSchoolStaffCredential } from '../../services/staffSessionService'
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('Загрузите изображение.'))
+      return
+    }
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл.'))
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.readAsDataURL(file)
+  })
+}
+
 function generateStaffPassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
   const bytes = new Uint8Array(18)
@@ -98,7 +111,22 @@ export function SuperAdminSchoolNew() {
             <Input label="Название" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
             <Input label="Slug" value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.trim().toLowerCase() }))} />
             <Input label="Основной цвет" value={form.primaryColor} onChange={(event) => setForm((current) => ({ ...current, primaryColor: event.target.value }))} />
-            <Input label="Logo URL" value={form.logoUrl} onChange={(event) => setForm((current) => ({ ...current, logoUrl: event.target.value }))} />
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold text-[#38424D]">Логотип</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="block w-full rounded-2xl border border-[#D7E2EC] bg-white px-4 py-3 text-sm font-semibold text-[#38424D] file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-sm file:font-bold file:text-white"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ''
+                  if (!file) return
+                  void fileToDataUrl(file)
+                    .then((logoUrl) => setForm((current) => ({ ...current, logoUrl })))
+                    .catch((error) => showToast(error instanceof Error ? error.message : 'Не удалось загрузить логотип.', 'error'))
+                }}
+              />
+            </label>
           </div>
           <div className="mt-4">
             <Textarea label="Описание" rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
