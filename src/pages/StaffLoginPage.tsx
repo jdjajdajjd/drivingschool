@@ -9,6 +9,7 @@ import {
   AccessRole,
   ADMIN_BASE_PATH,
   DEMO_ADMIN_BASE_PATH,
+  canUseLegacyAccess,
   grantAccess,
   isAccessConfigured,
   isAccessGranted,
@@ -91,8 +92,8 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
     try {
       setPending(true)
       setDataNamespace(mode)
-      const canUseLegacyAccess = role !== 'admin' || mode === 'demo'
-      if (canUseLegacyAccess && isLegacyAccessConfigured(role) && login.trim() === legacyAccess.login && password.trim() === legacyAccess.password) {
+      const allowLegacyFallback = canUseLegacyAccess() && (role !== 'admin' || mode === 'demo')
+      if (allowLegacyFallback && isLegacyAccessConfigured(role) && login.trim() === legacyAccess.login && password.trim() === legacyAccess.password) {
         grantAccess(role, password.trim())
       } else {
         const session = await openSupabaseStaffSession(role, login, password.trim())

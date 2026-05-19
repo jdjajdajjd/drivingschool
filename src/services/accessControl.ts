@@ -46,6 +46,10 @@ const LEGACY_ACCESS: Record<AccessRole, { login: string; password: string; redir
   },
 }
 
+export function canUseLegacyAccess(): boolean {
+  return !isSupabaseRemoteConfigured()
+}
+
 function currentNamespace(): string {
   if (typeof window === 'undefined') return 'demo'
   return (
@@ -158,6 +162,7 @@ export function getLegacyAccessConfig(role: AccessRole) {
 }
 
 export function isLegacyAccessConfigured(role: AccessRole): boolean {
+  if (!canUseLegacyAccess()) return false
   const config = getLegacyAccessConfig(role)
   return Boolean(config.login && config.password)
 }

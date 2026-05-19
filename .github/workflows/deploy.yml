@@ -40,10 +40,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_ADMIN_LOGIN: ${{ secrets.VITE_ADMIN_LOGIN }}
-          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
-          VITE_SUPERADMIN_LOGIN: ${{ secrets.VITE_SUPERADMIN_LOGIN }}
-          VITE_SUPERADMIN_PASSWORD: ${{ secrets.VITE_SUPERADMIN_PASSWORD }}
 
       - name: Smoke local build
         shell: bash

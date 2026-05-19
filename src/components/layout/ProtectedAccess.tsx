@@ -5,6 +5,7 @@ import {
   ADMIN_LOGIN_PATH,
   WORKSPACE_ADMIN_LOGIN_PATH,
   SUPERADMIN_LOGIN_PATH,
+  canUseLegacyAccess,
   clearAccess,
   getAccessSecret,
   getLegacyAccessConfig,
@@ -41,6 +42,7 @@ export function ProtectedAccess({ role, mode = 'demo' }: ProtectedAccessProps) {
     const accessSecret = getAccessSecret(role)
     const legacyAccess = getLegacyAccessConfig(role)
     const isLegacySession =
+      canUseLegacyAccess() &&
       isLegacyAccessConfigured(role) &&
       Boolean(accessSecret) &&
       accessSecret === legacyAccess.password
