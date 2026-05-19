@@ -264,9 +264,10 @@ async function cleanupLead(record, { phone, schoolName }) {
 
 async function checkLeadDelivery() {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const phoneDigits = String(Date.now()).slice(-7).padStart(7, '0')
   const payload = {
     name: 'Launch Check',
-    phone: `+7 999 ${suffix.slice(-3)}-${suffix.slice(-2)}-${suffix.slice(-2)}`,
+    phone: `+7 999 ${phoneDigits.slice(0, 3)}-${phoneDigits.slice(3, 5)}-${phoneDigits.slice(5, 7)}`,
     schoolName: `Launch Check ${suffix}`,
     city: 'Launch City',
     comment: 'Disposable production launch verification lead.',
