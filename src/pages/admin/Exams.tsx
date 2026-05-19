@@ -7,6 +7,27 @@ import { getAdminBasePathForLocation } from '../../services/accessControl'
 
 type ExamTab = 'internal' | 'gibdd'
 
+function statusLabel(status: string) {
+  if (status === 'ready') return 'Готов'
+  if (status === 'scheduled') return 'Назначен'
+  if (status === 'passed') return 'Сдан'
+  if (status === 'failed') return 'Не сдан'
+  return 'Не готов'
+}
+
+function statusTone(status: string) {
+  if (status === 'passed') return 'v-tone-ok'
+  if (status === 'failed') return 'v-tone-danger'
+  if (status === 'scheduled' || status === 'ready') return 'v-tone-info'
+  return 'v-tone-muted'
+}
+
+function resultLabel(result?: string) {
+  if (result === 'passed') return 'Сдал'
+  if (result === 'failed') return 'Не сдал'
+  return 'ожидается'
+}
+
 export function AdminExams() {
   const school = db.schools.currentAdmin()
   const [tab, setTab] = useState<ExamTab>('internal')
@@ -41,147 +62,149 @@ export function AdminExams() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-shrink-0 items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Экзамены</h1>
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Экзамены</h1>
+          <p className="v-admin-note mt-1">Внутренний контроль и готовность к ГИБДД</p>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid flex-shrink-0 grid-cols-2 gap-3 border-b border-gray-100 bg-white px-4 py-3 md:px-6 md:grid-cols-6">
+      <div className="grid flex-shrink-0 grid-cols-2 gap-2 px-3 py-3 md:grid-cols-6 md:px-5">
         {[
-          { label: 'Готовы к внутр.', value: stats.internalReady, color: 'text-purple-600' },
-          { label: 'Назначены (внутр.)', value: stats.internalScheduled, color: 'text-blue-600' },
-          { label: 'Сдано (внутр.)', value: stats.internalPassed, color: 'text-green-600' },
-          { label: 'Готовы к ГИБДД', value: stats.gibddReady, color: 'text-purple-700' },
-          { label: 'Назначены (ГИБДД)', value: stats.gibddScheduled, color: 'text-blue-600' },
-          { label: 'Сдано (ГИБДД)', value: stats.gibddPassed, color: 'text-green-600' },
+          { label: 'Готовы к внутр.', value: stats.internalReady, tone: 'v-tone-info' },
+          { label: 'Назначены внутр.', value: stats.internalScheduled, tone: 'v-tone-info' },
+          { label: 'Сдано внутр.', value: stats.internalPassed, tone: 'v-tone-ok' },
+          { label: 'Готовы к ГИБДД', value: stats.gibddReady, tone: 'v-tone-info' },
+          { label: 'Назначены ГИБДД', value: stats.gibddScheduled, tone: 'v-tone-info' },
+          { label: 'Сдано ГИБДД', value: stats.gibddPassed, tone: 'v-tone-ok' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-center">
-            <p className={`text-[22px] font-black ${stat.color}`}>{stat.value}</p>
-            <p className="text-[11px] font-semibold text-gray-400">{stat.label}</p>
-          </div>
+          <button key={stat.label} type="button" className="v-human-card min-h-[78px] p-3 text-left md:text-center">
+            <span className={`v-admin-pill ${stat.tone}`}>{stat.label}</span>
+            <p className="mt-2 text-[24px] font-semibold leading-none text-[#111827]">{stat.value}</p>
+          </button>
         ))}
       </div>
 
-      {/* Tab switch */}
-      <div className="flex flex-shrink-0 gap-1 border-b border-gray-100 bg-white px-4 md:px-6">
-        <button onClick={() => setTab('internal')} className={`border-b-2 px-4 py-3 text-[13px] font-semibold transition ${tab === 'internal' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
-          Внутренние экзамены
+      <div className="v-tab-row v-tab-row-wrap">
+        <button onClick={() => setTab('internal')} className={`v-tab ${tab === 'internal' ? 'v-tab-active' : ''}`}>
+          Внутренние
         </button>
-        <button onClick={() => setTab('gibdd')} className={`border-b-2 px-4 py-3 text-[13px] font-semibold transition ${tab === 'gibdd' ? 'border-purple-700 text-purple-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
-          Экзамены ГИБДД
+        <button onClick={() => setTab('gibdd')} className={`v-tab ${tab === 'gibdd' ? 'v-tab-active' : ''}`}>
+          ГИБДД
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {tab === 'internal' ? (
           data.internal.length === 0 ? (
-            <div className="flex h-full items-center justify-center"><p className="text-gray-400">Нет записей</p></div>
+            <div className="v-admin-empty"><strong>Экзаменов нет</strong><span>Когда ученик будет готов, запись появится здесь.</span></div>
           ) : (
-            <table className="w-full min-w-[700px]">
+            <>
+            <div className="grid gap-2 md:hidden">
+              {data.internal.map(({ exam, student }) => (
+                <a key={exam.id} href={student ? `${getAdminBasePathForLocation()}/students/${student.id}` : '#'} className="v-human-card block p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <strong className="block truncate text-[15px] font-semibold text-[#111827]">{student?.name ?? 'Ученик не найден'}</strong>
+                      <span className="mt-0.5 block text-[12px] font-medium text-[#667085]">Внутренний экзамен · попытка {exam.attemptNumber}</span>
+                    </span>
+                    <span className={`v-admin-pill shrink-0 ${statusTone(exam.status)}`}>{statusLabel(exam.status)}</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                    <span className="rounded-[16px] bg-[#F8FAFC] p-2"><strong className="block text-[13px] font-semibold text-[#111827]">{exam.scheduledDate ? format(new Date(exam.scheduledDate), 'd MMM', { locale: ru }) : 'не назначен'}</strong><span className="text-[11px] font-medium text-[#667085]">дата</span></span>
+                    <span className="rounded-[16px] bg-[#F8FAFC] p-2"><strong className={`block text-[13px] font-semibold ${exam.result === 'failed' ? 'text-[#C92820]' : exam.result === 'passed' ? 'text-[#1F8F3F]' : 'text-[#111827]'}`}>{resultLabel(exam.result)}</strong><span className="text-[11px] font-medium text-[#667085]">результат</span></span>
+                  </div>
+                </a>
+              ))}
+            </div>
+            <div className="v-admin-panel hidden overflow-hidden md:block">
+            <table className="v-admin-table w-full min-w-[700px]">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50 text-left text-[12px] font-bold uppercase tracking-wider text-gray-400">
-                  <th className="px-4 py-3">Ученик</th>
-                  <th className="px-4 py-3">Статус</th>
-                  <th className="px-4 py-3">Дата</th>
-                  <th className="px-4 py-3">Попытка</th>
-                  <th className="px-4 py-3">Результат</th>
+                <tr>
+                  <th>Ученик</th>
+                  <th>Статус</th>
+                  <th>Дата</th>
+                  <th>Попытка</th>
+                  <th>Результат</th>
                 </tr>
               </thead>
               <tbody>
                 {data.internal.map(({ exam, student }) => (
-                  <tr key={exam.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5">
+                  <tr key={exam.id}>
+                    <td>
                       {student ? (
-                        <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
+                        <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-[#111827] hover:text-[#075EBC]">
                           {student.name}
                         </a>
-                      ) : <span className="text-gray-400">—</span>}
+                      ) : <span className="text-[#98A2B3]">-</span>}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
-                        exam.status === 'ready' ? 'bg-purple-50 text-purple-600' :
-                        exam.status === 'scheduled' ? 'bg-blue-50 text-blue-600' :
-                        exam.status === 'passed' ? 'bg-green-50 text-green-600' :
-                        exam.status === 'failed' ? 'bg-red-50 text-red-500' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
-                        {exam.status === 'ready' ? 'Готов' :
-                         exam.status === 'scheduled' ? 'Назначен' :
-                         exam.status === 'passed' ? 'Сдан' :
-                         exam.status === 'failed' ? 'Не сдан' : 'Не готов'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-400">
-                      {exam.scheduledDate ? format(new Date(exam.scheduledDate), 'd MMM yyyy', { locale: ru }) : 'Не назначена'}
-                    </td>
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-500">{exam.attemptNumber}</td>
-                    <td className="px-4 py-3.5">
-                      {exam.result && (
-                        <span className={`text-[13px] font-bold ${exam.result === 'passed' ? 'text-green-600' : 'text-red-500'}`}>
-                          {exam.result === 'passed' ? 'Сдал' : 'Не сдал'}
-                        </span>
-                      )}
-                    </td>
+                    <td><span className={`v-admin-pill ${statusTone(exam.status)}`}>{statusLabel(exam.status)}</span></td>
+                    <td>{exam.scheduledDate ? format(new Date(exam.scheduledDate), 'd MMM yyyy', { locale: ru }) : 'Не назначена'}</td>
+                    <td>{exam.attemptNumber}</td>
+                    <td>{resultLabel(exam.result)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+            </>
           )
         ) : (
           data.gibdd.length === 0 ? (
-            <div className="flex h-full items-center justify-center"><p className="text-gray-400">Нет записей</p></div>
+            <div className="v-admin-empty"><strong>Экзаменов ГИБДД нет</strong><span>Назначенные попытки появятся здесь.</span></div>
           ) : (
-            <table className="w-full min-w-[700px]">
+            <>
+            <div className="grid gap-2 md:hidden">
+              {data.gibdd.map(({ exam, student }) => (
+                <a key={exam.id} href={student ? `${getAdminBasePathForLocation()}/students/${student.id}` : '#'} className="v-human-card block p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <strong className="block truncate text-[15px] font-semibold text-[#111827]">{student?.name ?? 'Ученик не найден'}</strong>
+                      <span className="mt-0.5 block text-[12px] font-medium text-[#667085]">ГИБДД · попытка {exam.attemptNumber}</span>
+                    </span>
+                    <span className={`v-admin-pill shrink-0 ${statusTone(exam.status)}`}>{statusLabel(exam.status)}</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                    <span className="rounded-[16px] bg-[#F8FAFC] p-2"><strong className="block text-[13px] font-semibold text-[#111827]">{exam.examDate ? format(new Date(exam.examDate), 'd MMM', { locale: ru }) : 'не назначен'}</strong><span className="text-[11px] font-medium text-[#667085]">дата</span></span>
+                    <span className="rounded-[16px] bg-[#F8FAFC] p-2"><strong className={`block text-[13px] font-semibold ${exam.result === 'failed' ? 'text-[#C92820]' : exam.result === 'passed' ? 'text-[#1F8F3F]' : 'text-[#111827]'}`}>{resultLabel(exam.result)}</strong><span className="text-[11px] font-medium text-[#667085]">результат</span></span>
+                  </div>
+                  {exam.failureReason ? <p className="mt-3 rounded-[16px] bg-[#FEF2F2] p-2 text-[12px] font-medium text-[#C92820]">{exam.failureReason}</p> : null}
+                </a>
+              ))}
+            </div>
+            <div className="v-admin-panel hidden overflow-hidden md:block">
+            <table className="v-admin-table w-full min-w-[700px]">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50 text-left text-[12px] font-bold uppercase tracking-wider text-gray-400">
-                  <th className="px-4 py-3">Ученик</th>
-                  <th className="px-4 py-3">Статус</th>
-                  <th className="px-4 py-3">Дата экзамена</th>
-                  <th className="px-4 py-3">Попытка</th>
-                  <th className="px-4 py-3">Результат</th>
-                  <th className="px-4 py-3">Причина</th>
+                <tr>
+                  <th>Ученик</th>
+                  <th>Статус</th>
+                  <th>Дата экзамена</th>
+                  <th>Попытка</th>
+                  <th>Результат</th>
+                  <th>Причина</th>
                 </tr>
               </thead>
               <tbody>
                 {data.gibdd.map(({ exam, student }) => (
-                  <tr key={exam.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5">
+                  <tr key={exam.id}>
+                    <td>
                       {student ? (
-                        <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-gray-900 hover:text-blue-600">
+                        <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="font-bold text-[#111827] hover:text-[#075EBC]">
                           {student.name}
                         </a>
-                      ) : <span className="text-gray-400">—</span>}
+                      ) : <span className="text-[#98A2B3]">-</span>}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
-                        exam.status === 'ready' ? 'bg-purple-50 text-purple-700' :
-                        exam.status === 'scheduled' ? 'bg-blue-50 text-blue-600' :
-                        exam.status === 'passed' ? 'bg-green-50 text-green-600' :
-                        exam.status === 'failed' ? 'bg-red-50 text-red-500' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
-                        {exam.status === 'ready' ? 'Готов' :
-                         exam.status === 'scheduled' ? 'Назначен' :
-                         exam.status === 'passed' ? 'Сдан' :
-                         exam.status === 'failed' ? 'Не сдан' : 'Не готов'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-400">
-                      {exam.examDate ? format(new Date(exam.examDate), 'd MMM yyyy', { locale: ru }) : '—'}
-                    </td>
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-500">{exam.attemptNumber}</td>
-                    <td className="px-4 py-3.5">
-                      {exam.result && (
-                        <span className={`text-[13px] font-bold ${exam.result === 'passed' ? 'text-green-600' : 'text-red-500'}`}>
-                          {exam.result === 'passed' ? 'Сдал' : 'Не сдал'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-400">{exam.failureReason ?? '—'}</td>
+                    <td><span className={`v-admin-pill ${statusTone(exam.status)}`}>{statusLabel(exam.status)}</span></td>
+                    <td>{exam.examDate ? format(new Date(exam.examDate), 'd MMM yyyy', { locale: ru }) : '-'}</td>
+                    <td>{exam.attemptNumber}</td>
+                    <td>{resultLabel(exam.result)}</td>
+                    <td>{exam.failureReason ?? '-'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
+            </>
           )
         )}
       </div>

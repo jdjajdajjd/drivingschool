@@ -22,53 +22,55 @@ export function AdminBranches() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-[24px] font-black text-gray-900">Филиалы</h1>
-          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">{branches.length}</span>
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Филиалы</h1>
+          <p className="v-admin-note mt-1">Адреса, телефоны, инструкторы и окна по отделениям</p>
         </div>
+        <span className="v-admin-pill v-tone-muted">{branches.length}</span>
         <button onClick={() => setShowAdd(true)} className="v-admin-button">
           + Добавить филиал
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {branches.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <p className="text-[15px] font-semibold text-gray-400">Филиалов пока нет</p>
+          <div className="v-admin-empty">
+            <div>
+              <strong>Филиалов пока нет</strong>
+              <span>Добавьте первый филиал, чтобы инструкторы и окна были привязаны к адресу.</span>
               <button onClick={() => setShowAdd(true)} className="v-admin-button mt-3">
                 + Добавить филиал
               </button>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-2">
             {branches.map(({ branch, instructors, slotsToday }) => (
-              <div key={branch.id} className="rounded-2xl border border-gray-100 bg-white p-5 transition hover:border-gray-200">
-                <div className="flex items-start justify-between">
-                  <div>
+              <div key={branch.id} className="v-human-card p-4 transition hover:-translate-y-0.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-[18px] font-bold text-gray-900">{branch.name}</h2>
-                      <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${branch.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <h2 className="truncate text-[18px] font-semibold text-[#111827]">{branch.name}</h2>
+                      <span className={`v-admin-pill shrink-0 ${branch.isActive ? 'v-tone-ok' : 'v-tone-muted'}`}>
                         {branch.isActive ? 'Активен' : 'Неактивен'}
                       </span>
                     </div>
-                    <p className="mt-1 text-[13px] font-semibold text-gray-400">{branch.address}</p>
-                    {branch.phone && <p className="mt-0.5 text-[13px] font-semibold text-gray-400">{branch.phone}</p>}
+                    <p className="mt-1 truncate text-[13px] font-medium text-[#667085]">{branch.address}</p>
+                    {branch.phone && <p className="mt-0.5 text-[13px] font-medium text-[#667085]">{branch.phone}</p>}
                   </div>
-                  <button onClick={() => setEditingBranch(branch)} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
+                  <button onClick={() => setEditingBranch(branch)} className="v-admin-button-secondary shrink-0">
                     Редактировать
                   </button>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-2 gap-2">
                   {[
                     { label: 'Инструкторов', value: instructors },
                     { label: 'Окон сегодня', value: slotsToday },
                   ].map((stat) => (
-                    <div key={stat.label} className="rounded-xl bg-gray-50 p-3 text-center">
-                      <p className="text-[20px] font-black text-gray-900">{stat.value}</p>
-                      <p className="text-[11px] font-semibold text-gray-400">{stat.label}</p>
+                    <div key={stat.label} className="rounded-[16px] bg-[#F8FAFC] p-3 text-center">
+                      <p className="text-[22px] font-semibold text-[#111827]">{stat.value}</p>
+                      <p className="text-[11px] font-medium text-[#667085]">{stat.label}</p>
                     </div>
                   ))}
                 </div>

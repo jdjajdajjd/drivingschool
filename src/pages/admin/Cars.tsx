@@ -14,6 +14,13 @@ const STATUS_COLORS: Record<CarStatus, { bg: string; text: string; label: string
   written_off: { bg: 'bg-gray-100', text: 'text-gray-400', label: 'Списана' },
 }
 
+function carStatusTone(status: CarStatus) {
+  if (status === 'working') return 'v-tone-ok'
+  if (status === 'repair' || status === 'written_off') return 'v-tone-danger'
+  if (status === 'maintenance') return 'v-tone-warning'
+  return 'v-tone-info'
+}
+
 export function AdminCars() {
   const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<CarStatus | 'all'>('all')
@@ -29,50 +36,49 @@ export function AdminCars() {
   }, [school?.id])
 
   const filtered = filter === 'all' ? data : data.filter((d) => d.car.status === filter)
+  const unavailableCount = data.filter((item) => item.car.status === 'repair' || item.car.status === 'maintenance').length
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Машины</h1>
-        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">
-          {data.filter((d) => d.car.status === 'working').length}/{data.length}
-        </span>
-        <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-          <div className="no-scrollbar flex max-w-full gap-1 overflow-x-auto rounded-xl border border-gray-200 p-0.5">
-            {(['all', 'working', 'maintenance', 'repair', 'reserved'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${
-                  filter === f ? 'bg-[#111827] text-white' : 'text-gray-500 hover:bg-[#EAF3FF] hover:text-[#111315]'
-                }`}
-              >
-                {f === 'all' ? 'Все' : STATUS_COLORS[f].label}
-              </button>
-            ))}
-          </div>
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Машины</h1>
+          <p className="v-admin-note mt-1">Автопарк, статусы, страховки и привязка к филиалам</p>
+        </div>
+        <div className="ml-auto grid w-full grid-cols-3 gap-2 sm:w-auto">
+          <div className="rounded-[14px] bg-[#ECF8F1] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#1F8F3F]">Работают</p><p className="text-[20px] font-semibold text-[#111827]">{data.filter((d) => d.car.status === 'working').length}</p></div>
+          <div className="rounded-[14px] bg-[#FEF2F2] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#C92820]">Недоступны</p><p className="text-[20px] font-semibold text-[#111827]">{unavailableCount}</p></div>
+          <div className="rounded-[14px] bg-[#F2F6FA] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#667085]">Всего</p><p className="text-[20px] font-semibold text-[#111827]">{data.length}</p></div>
+          <div className="col-span-3 flex flex-wrap justify-end gap-2">
+            <div className="v-tab-row v-tab-row-wrap flex-1 border-0 bg-transparent p-0">
+              {(['all', 'working', 'maintenance', 'repair', 'reserved'] as const).map((f) => (
+                <button key={f} onClick={() => setFilter(f)} className={`v-tab ${filter === f ? 'v-tab-active' : ''}`}>{f === 'all' ? 'Все' : STATUS_COLORS[f].label}</button>
+              ))}
+            </div>
           <button onClick={() => setShowAdd(true)} className="v-admin-button">
             + Добавить
           </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-gray-400">Машины не найдены</p>
+          <div className="v-admin-empty">
+            <strong>Машины не найдены</strong>
+            <span>Смените фильтр или добавьте машину.</span>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(({ car, instructor, branch }) => {
               const st = STATUS_COLORS[car.status]
               return (
-                <div key={car.id} className="rounded-2xl border border-gray-100 bg-white p-5 transition hover:border-gray-200">
+                <div key={car.id} className="v-human-card p-4 transition hover:-translate-y-0.5">
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-[14px] font-black text-gray-600">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#F2F6FA] text-[14px] font-semibold text-[#667085]">
                       ТС
                     </div>
-                    <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${st.bg} ${st.text}`}>
+                    <span className={`v-admin-pill ${carStatusTone(car.status)}`}>
                       {st.label}
                     </span>
                   </div>

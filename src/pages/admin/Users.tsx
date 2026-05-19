@@ -24,56 +24,55 @@ export function AdminUsers() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-[#F6F8FB]">
-      <div className="flex flex-shrink-0 flex-col gap-3 border-b border-[#E4E7EC] bg-white px-4 py-4 md:px-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">{school.name}</p>
-            <h1 className="text-[24px] font-black text-gray-900">Команда школы</h1>
-          </div>
-          <button onClick={() => setShowAdd(true)} className="v-admin-button">
-            + Сотрудник
-          </button>
+    <div className="flex h-full flex-col">
+      <div className="v-admin-toolbar">
+        <div>
+          <p className="v-admin-note">{school.name}</p>
+          <h1 className="v-admin-heading">Команда школы</h1>
         </div>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-[110px_110px_130px_auto]">
           {[
             ['Всего', users.length],
             ['Активны', activeCount],
             ['По филиалам', branchAdmins],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-lg border border-[#E4E7EC] bg-[#F9FAFB] px-3 py-2">
-              <p className="text-[11px] font-bold uppercase text-[#667085]">{label}</p>
-              <p className="text-[20px] font-black text-[#111827]">{value}</p>
+            <div key={label} className="rounded-[14px] bg-[#F8FAFC] px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase text-[#667085]">{label}</p>
+              <p className="text-[20px] font-semibold text-[#111827]">{value}</p>
             </div>
           ))}
+          <button onClick={() => setShowAdd(true)} className="v-admin-button">
+            + Сотрудник
+          </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {users.length === 0 ? (
-          <div className="grid h-full place-items-center">
-            <div className="text-center">
-              <p className="text-[15px] font-semibold text-gray-500">Сотрудников пока нет</p>
+          <div className="v-admin-empty">
+            <div>
+              <strong>Сотрудников пока нет</strong>
+              <span>Добавьте администратора, бухгалтера или ответственного за филиал.</span>
               <button onClick={() => setShowAdd(true)} className="v-admin-button mt-3">
                 + Добавить
               </button>
             </div>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-3 lg:grid-cols-2">
             {users.map((user) => {
               const role = getRoleDefinition(user.role)
               const assignedBranches = branches.filter((branch) => user.branchIds.includes(branch.id))
               return (
-                <div key={user.id} className="rounded-lg border border-[#E4E7EC] bg-white p-4">
+                <div key={user.id} className="v-human-card p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#EEF2F6] text-[14px] font-black text-[#475467]">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[#EEF6FF] text-[14px] font-semibold text-[#075EBC]">
                       {user.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-black text-gray-900">{user.name}</p>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${user.isActive ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`v-admin-pill ${user.isActive ? 'v-tone-ok' : 'v-tone-muted'}`}>
                           {user.isActive ? 'Активен' : 'Отключен'}
                         </span>
                       </div>
@@ -86,7 +85,7 @@ export function AdminUsers() {
                         ))}
                       </div>
                     </div>
-                    <button onClick={() => setEditingUser(user)} className="rounded-lg border border-gray-200 px-3 py-2 text-[12px] font-bold text-gray-600 transition hover:bg-gray-50">
+                    <button onClick={() => setEditingUser(user)} className="v-admin-button-secondary">
                       Изменить
                     </button>
                   </div>

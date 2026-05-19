@@ -34,22 +34,25 @@ export function AdminInstructors() {
     const q = search.toLowerCase()
     return instructor.name.toLowerCase().includes(q) || instructor.phone.includes(q)
   })
+  const activeCount = filtered.filter((d) => d.instructor.isActive).length
+  const busyToday = filtered.filter((d) => d.todayBooked > 0).length
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-[24px] font-black text-gray-900">Инструкторы</h1>
-        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[12px] font-bold text-gray-500">
-          {filtered.filter((d) => d.instructor.isActive).length} активных
-        </span>
-        <div className="ml-auto flex items-center gap-3">
+      <div className="v-admin-toolbar">
+        <div>
+          <h1 className="v-admin-heading">Инструкторы</h1>
+          <p className="v-admin-note mt-1">Загрузка, категории, машины и доступность</p>
+        </div>
+        <div className="ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-[120px_120px_220px_auto]">
+          <div className="rounded-[14px] bg-[#ECF8F1] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#1F8F3F]">Активны</p><p className="text-[20px] font-semibold text-[#111827]">{activeCount}</p></div>
+          <div className="rounded-[14px] bg-[#EAF4FF] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#075EBC]">Сегодня</p><p className="text-[20px] font-semibold text-[#111827]">{busyToday}</p></div>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск..."
-            className="h-10 w-[200px] rounded-xl border border-gray-200 bg-gray-50 px-4 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none"
+            placeholder="Поиск"
+            className="v-admin-input w-full"
           />
           <button type="button" onClick={() => setShowAdd(true)} className="v-admin-button">
             + Добавить
@@ -57,21 +60,21 @@ export function AdminInstructors() {
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="flex-1 overflow-auto p-3 md:p-5">
         {filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-gray-400">Инструкторы не найдены</p>
+          <div className="v-admin-empty">
+            <strong>Инструкторы не найдены</strong>
+            <span>Смените поиск или добавьте инструктора.</span>
           </div>
         ) : (
-          <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(({ instructor, todayBooked, totalBookings, students, car }) => (
               <motion.div
                 key={instructor.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`min-w-0 cursor-pointer overflow-hidden rounded-2xl border p-5 transition hover:border-gray-200 hover:shadow-sm ${
-                  instructor.isActive ? 'bg-white' : 'bg-gray-50 opacity-60'
+                className={`v-human-card min-w-0 cursor-pointer overflow-hidden p-4 transition hover:-translate-y-0.5 ${
+                  instructor.isActive ? '' : 'opacity-60'
                 }`}
                 onClick={() => navigate(`${getAdminBasePathForLocation()}/instructors/${instructor.id}`)}
               >
@@ -86,9 +89,7 @@ export function AdminInstructors() {
                     <p className="truncate font-bold text-gray-900">{instructor.name}</p>
                     <p className="text-[12px] font-semibold text-gray-400">{instructor.phone}</p>
                   </div>
-                  <span className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold ${
-                    instructor.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'
-                  }`}>
+                  <span className={`v-admin-pill shrink-0 ${instructor.isActive ? 'v-tone-ok' : 'v-tone-muted'}`}>
                     {instructor.isActive ? 'Активен' : 'Неактивен'}
                   </span>
                 </div>
@@ -99,9 +100,9 @@ export function AdminInstructors() {
                     { label: 'Учеников', value: students },
                     { label: 'Записей', value: totalBookings },
                   ].map((stat) => (
-                    <div key={stat.label} className="rounded-xl bg-gray-50 p-2 text-center">
-                      <p className="text-[18px] font-black text-gray-900">{stat.value}</p>
-                      <p className="text-[11px] font-semibold text-gray-400">{stat.label}</p>
+                    <div key={stat.label} className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
+                      <p className="text-[18px] font-semibold text-[#111827]">{stat.value}</p>
+                      <p className="text-[11px] font-medium text-[#667085]">{stat.label}</p>
                     </div>
                   ))}
                 </div>
