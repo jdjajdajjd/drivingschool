@@ -653,11 +653,11 @@ export function StudentPage() {
       <main className="vroom-student-main mx-auto w-full max-w-[430px] px-4 pb-[180px] pt-5">
         {view === 'home' ? (
           <section className="space-y-6">
-            <header className="vroom-student-header flex items-center justify-between gap-3 pt-1">
-              <button className="flex min-w-0 flex-1 items-center gap-3 rounded-[22px] text-left active:scale-[0.98]" onClick={() => setView('profile')}>
+            <header className="vroom-student-header flex items-center justify-between gap-3">
+              <button className="vroom-student-profile-button flex min-w-0 flex-1 items-center gap-3 rounded-[22px] text-left active:scale-[0.98]" onClick={() => setView('profile')}>
                 <StudentAvatar name={profile.name} src={pendingAvatarUrl || profile.avatarUrl} size={48} />
-                <div className="min-w-0">
-                  <p className="truncate text-[18px] font-bold leading-5 text-[#111315]">{compactStudentName(profile.name)}</p>
+                <div className="min-w-0 py-1">
+                  <p className="truncate text-[18px] font-bold leading-[1.2] text-[#111315]">{compactStudentName(profile.name)}</p>
                   <p className="mt-1 text-[14px] font-medium leading-5 text-[#74787D]">Категория B</p>
                 </div>
               </button>

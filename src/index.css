@@ -419,9 +419,9 @@
     --student-road: #111315;
     --student-paper: #F8FBFD;
     background:
-      radial-gradient(360px 220px at 100% 0%, rgba(10,132,255,0.18), transparent 66%),
-      linear-gradient(90deg, rgba(17,24,39,0.035) 1px, transparent 1px) 0 0 / 42px 42px,
-      linear-gradient(180deg, #F8FBFD 0%, #EDF3F1 100%) !important;
+      radial-gradient(360px 220px at 100% 0%, rgba(10,132,255,0.13), transparent 66%),
+      radial-gradient(420px 260px at 0% 20%, rgba(234,244,255,0.76), transparent 70%),
+      linear-gradient(180deg, #F8FBFD 0%, #EEF4F8 100%) !important;
   }
 
   .vroom-student-main {
@@ -429,26 +429,22 @@
   }
 
   .vroom-student-main::before {
-    content: '';
-    position: fixed;
-    left: 50%;
-    top: 88px;
-    width: min(390px, calc(100vw - 34px));
-    height: 72px;
-    pointer-events: none;
-    border-radius: 999px;
-    background: repeating-linear-gradient(90deg, rgba(17,24,39,0.10) 0 28px, rgba(10,132,255,0.22) 28px 48px);
-    opacity: 0.18;
-    transform: translateX(-50%) rotate(-4deg);
+    content: none;
   }
 
   .vroom-student-header {
     border: 1px solid rgba(17,24,39,0.10);
     border-radius: 28px;
     background: rgba(255,255,255,0.62);
-    padding: 10px;
+    padding: 10px 10px 10px 12px;
     box-shadow: 0 16px 38px rgba(17,24,39,0.08);
     backdrop-filter: blur(18px);
+  }
+
+  .vroom-student-profile-button {
+    min-height: 54px;
+    align-items: center;
+    padding-block: 3px;
   }
 
   .vroom-student-shell .rounded-\[24px\],
