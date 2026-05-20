@@ -13,7 +13,7 @@ import { updateStudentAdminConfirmed } from '../../services/studentService'
 import { saveStudentProgressAdminConfirmed } from '../../services/studentProfile'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
-import { openStudentPrintForm } from '../../services/documentTemplates'
+import { openStudentPrintForm, openStudentPrintPacket } from '../../services/documentTemplates'
 
 function generateStudentPassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -96,6 +96,8 @@ export function AdminStudentDetail() {
   const [showEditProgress, setShowEditProgress] = useState(false)
   const [gibddExamError, setGibddExamError] = useState('')
   const [gibddExamPending, setGibddExamPending] = useState(false)
+  const [graduationPending, setGraduationPending] = useState(false)
+  const [graduationMessage, setGraduationMessage] = useState('')
   const [version, setVersion] = useState(0)
   const [showEdit, setShowEdit] = useState(false)
   const [note, setNote] = useState<string | null>(null)
@@ -182,6 +184,7 @@ export function AdminStudentDetail() {
   const hasPaidSomething = payments.some((payment) => payment.paidAmount > 0 || payment.status === 'paid')
   const internalExamPassed = progress?.internalExamPassed === true || internalExams.some((exam) => exam.status === 'passed')
   const gibddStarted = gibddExams.some((exam) => exam.status === 'scheduled' || exam.status === 'passed')
+  const gibddPassed = gibddExams.some((exam) => exam.status === 'passed' || exam.result === 'passed') || progress?.gibddExamStatus === 'passed'
   const isGraduated = stage === 'training_completed' || stage === 'completed'
   const pipelineSteps = [
     { label: 'Заявка', done: true, blocked: false },
@@ -192,7 +195,7 @@ export function AdminStudentDetail() {
     { label: 'Практика', done: completedHours >= totalHours, blocked: !nextBooking && completedHours < totalHours },
     { label: 'Внутренний', done: internalExamPassed, blocked: completedHours < totalHours || debt > 0 || missingDocs > 0 },
     { label: 'ГИБДД', done: gibddStarted || canGoToGIBDD, blocked: !canGoToGIBDD },
-    { label: 'Выпуск', done: isGraduated, blocked: !isGraduated },
+    { label: 'Выпуск', done: isGraduated, blocked: gibddPassed && !isGraduated },
   ]
   const blockers = [
     debt > 0 ? { title: 'Долг блокирует допуск', text: `${debt.toLocaleString('ru-RU')} ₽ нужно закрыть до экзамена`, action: 'Принять оплату', run: () => setShowAddPayment(true), tone: 'danger' as const } : null,
@@ -202,6 +205,7 @@ export function AdminStudentDetail() {
     !nextBooking && completedHours < totalHours ? { title: 'Нет следующего занятия', text: `Практика ${completedHours}/${totalHours} ч, нужно записать ученика`, action: 'В расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'info' as const } : null,
     completedHours >= totalHours && !internalExamPassed ? { title: 'Пора на внутренний экзамен', text: 'Практика закрыта, нужен следующий контрольный шаг', action: 'Экзамены', run: () => navigate(`${getAdminBasePathForLocation()}/exams`), tone: 'info' as const } : null,
     canGoToGIBDD ? { title: 'Готов к ГИБДД', text: 'Можно назначать экзамен, критичных блокеров нет', action: 'Записать', run: () => navigate(`${getAdminBasePathForLocation()}/exams`), tone: 'ok' as const } : null,
+    gibddPassed && !isGraduated ? { title: 'Закрыть выпуск', text: 'ГИБДД сдан, можно перевести ученика в выпуск и убрать из рабочих хвостов', action: 'Закрыть выпуск', run: () => void closeGraduation(), tone: 'ok' as const } : null,
   ].filter(Boolean) as Array<{ title: string; text: string; action: string; run: () => void; tone: 'danger' | 'warning' | 'info' | 'ok' }>
   const nextBestAction = blockers[0] ?? { title: 'Маршрут ученика чистый', text: 'Долги, документы и практика не показывают красных флагов', action: 'Открыть расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'ok' as const }
 
@@ -218,6 +222,26 @@ export function AdminStudentDetail() {
 
   const copyPhone = () => {
     void navigator.clipboard?.writeText(student.phone)
+  }
+
+  const closeGraduation = async () => {
+    const access = assertAdminPermission('students.manage')
+    if (!access.ok) { setGraduationMessage(access.error ?? 'Недостаточно прав.'); return }
+    if (graduationPending) return
+    setGraduationPending(true)
+    setGraduationMessage('')
+    const result = await updateStudentAdminConfirmed(student.id, {
+      trainingStage: 'training_completed',
+      trainingEndDate: new Date().toISOString().slice(0, 10),
+    })
+    setGraduationPending(false)
+    if (!result.ok) {
+      setGraduationMessage(result.error ?? 'Не удалось закрыть выпуск.')
+      return
+    }
+    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', student.id, `Закрыт выпуск ученика ${student.name}`)
+    setGraduationMessage('Выпуск закрыт, ученик переведен в завершивших обучение.')
+    setVersion((value) => value + 1)
   }
 
   const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
@@ -415,8 +439,9 @@ export function AdminStudentDetail() {
           {/* Documents */}
           <div className="rounded-2xl border border-gray-100 bg-white p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[16px] font-bold text-gray-900">Документы</h2>
+                <h2 className="text-[16px] font-bold text-gray-900">Документы</h2>
               <div className="flex flex-wrap gap-2">
+                <button onClick={() => openStudentPrintPacket({ school, student, branch, instructor })} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Пакет PDF</button>
                 <button onClick={() => openStudentPrintForm('contract', { school, student, branch, instructor })} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Договор PDF</button>
                 <button onClick={() => openStudentPrintForm('application', { school, student, branch, instructor })} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Заявление</button>
                 {canManageDocuments ? (
@@ -604,6 +629,7 @@ export function AdminStudentDetail() {
                 { label: 'Филиал', value: branch?.name ?? '—' },
                 { label: 'Группа', value: student.groupName ?? '—' },
                 { label: 'Начало обучения', value: student.trainingStartDate ? format(new Date(student.trainingStartDate), 'd MMM yyyy', { locale: ru }) : '—' },
+                { label: 'Выпуск', value: student.trainingEndDate ? format(new Date(student.trainingEndDate), 'd MMM yyyy', { locale: ru }) : isGraduated ? 'закрыт' : '—' },
                 { label: 'Email', value: student.email || '—' },
               ].map((row) => (
                 <div key={row.label} className="flex items-start justify-between gap-2">
@@ -613,6 +639,20 @@ export function AdminStudentDetail() {
               ))}
             </div>
           </div>
+
+          {(gibddPassed || isGraduated) ? (
+            <div className={`rounded-2xl border p-5 ${isGraduated ? 'border-green-100 bg-green-50' : 'border-blue-100 bg-[#EAF3FF]'}`}>
+              <p className="text-[13px] font-semibold text-[#667085]">Финальный шаг</p>
+              <p className="mt-1 text-[18px] font-black text-[#111827]">{isGraduated ? 'Выпуск закрыт' : 'ГИБДД сдан, выпуск не закрыт'}</p>
+              <p className="mt-2 text-[12px] font-semibold leading-5 text-[#667085]">После закрытия выпускник уйдет из рабочих хвостов директора, но история останется в карточке.</p>
+              {!isGraduated && canManageStudents ? (
+                <button onClick={() => void closeGraduation()} disabled={graduationPending} className="v-admin-button mt-3 w-full min-h-10 text-[13px] disabled:opacity-50">
+                  {graduationPending ? 'Закрываем...' : 'Закрыть выпуск'}
+                </button>
+              ) : null}
+              {graduationMessage ? <p className="mt-2 text-[12px] font-bold text-[#315A7C]">{graduationMessage}</p> : null}
+            </div>
+          ) : null}
 
           {/* Debt */}
           <div className={`rounded-2xl border p-5 ${debt > 0 ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-white'}`}>

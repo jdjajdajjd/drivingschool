@@ -10,7 +10,7 @@ import { getAccessSecret, getAdminBasePathForLocation, getWorkspaceStaffContext 
 import type { Document, DocumentStatus, DocumentType, Student } from '../../types'
 import { imageFileToDataUrl } from '../student/studentUtils'
 import { filterStudents } from '../../services/staffScope'
-import { openStudentPrintForm } from '../../services/documentTemplates'
+import { openStudentPrintPacket } from '../../services/documentTemplates'
 
 const DOC_LABELS: Record<string, string> = {
   contract: 'Договор', passport: 'Паспорт', medical_certificate: 'Медсправка',
@@ -216,8 +216,7 @@ export function AdminDocuments() {
     if (!school) return
     const branch = db.branches.byId(student.assignedBranchId ?? '')
     const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
-    openStudentPrintForm('contract', { school, student, branch, instructor })
-    window.setTimeout(() => openStudentPrintForm('application', { school, student, branch, instructor }), 250)
+    openStudentPrintPacket({ school, student, branch, instructor })
   }
 
   return (

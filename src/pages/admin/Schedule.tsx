@@ -130,6 +130,9 @@ export function AdminSchedule() {
     instructors: new Set(todayVisibleSlots.map((slot) => slot.instructorId)).size,
   }
   const staleFreeSlots = data.slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) < new Date())
+  const staleActiveBookings = data.bookings
+    .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+    .filter((entry): entry is { booking: Booking; slot: Slot } => entry.booking.status === 'active' && entry.slot !== null && getSlotDateTime(entry.slot) < new Date())
 
   const dailySummary = viewRange.map((date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
@@ -320,6 +323,20 @@ export function AdminSchedule() {
     showToast(`Скрыто прошедших свободных окон: ${changed}`, 'success')
   }
 
+  const completeStaleActiveBookings = async () => {
+    const access = assertAdminPermission('schedule.manage')
+    if (!access.ok || !school || staleActiveBookings.length === 0 || actionPending) return
+    setActionPending(true)
+    let changed = 0
+    for (const entry of staleActiveBookings) {
+      const result = await completeBookingConfirmed(entry.booking.id)
+      if (result.ok) changed += 1
+    }
+    setActionPending(false)
+    createCurrentStaffAuditEntry(school.id, 'booking_completed', 'booking', 'bulk-stale', `Закрыты прошедшие занятия: ${changed}`)
+    showToast(`Зачтено прошедших занятий: ${changed}`, 'success')
+  }
+
   const hideSelectedFreeSlot = async () => {
     const access = assertAdminPermission('schedule.manage')
     if (!access.ok || !selectedSlot || selectedSlot.status !== 'available' || actionPending) return
@@ -406,6 +423,11 @@ export function AdminSchedule() {
           {staleFreeSlots.length ? (
             <button onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">
               Скрыть прошедшие: {staleFreeSlots.length}
+            </button>
+          ) : null}
+          {staleActiveBookings.length ? (
+            <button onClick={() => void completeStaleActiveBookings()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">
+              Зачесть прошедшие: {staleActiveBookings.length}
             </button>
           ) : null}
         </div>
