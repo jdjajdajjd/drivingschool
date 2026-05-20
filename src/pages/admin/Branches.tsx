@@ -47,10 +47,10 @@ export function AdminBranches() {
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             {branches.map(({ branch, instructors, slotsToday }) => (
-              <div key={branch.id} className="v-human-card p-4 transition hover:-translate-y-0.5">
-                <div className="flex items-start justify-between gap-3">
+              <div key={branch.id} className="v-human-card min-w-0 p-4 transition hover:-translate-y-0.5">
+                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <h2 className="truncate text-[18px] font-semibold text-[#111827]">{branch.name}</h2>
                       <span className={`v-admin-pill shrink-0 ${branch.isActive ? 'v-tone-ok' : 'v-tone-muted'}`}>
                         {branch.isActive ? 'Активен' : 'Неактивен'}
@@ -59,7 +59,7 @@ export function AdminBranches() {
                     <p className="mt-1 truncate text-[13px] font-medium text-[#667085]">{branch.address}</p>
                     {branch.phone && <p className="mt-0.5 text-[13px] font-medium text-[#667085]">{branch.phone}</p>}
                   </div>
-                  <button onClick={() => setEditingBranch(branch)} className="v-admin-button-secondary shrink-0">
+                  <button onClick={() => setEditingBranch(branch)} className="v-admin-button-secondary w-full shrink-0 sm:w-auto">
                     Редактировать
                   </button>
                 </div>
@@ -121,19 +121,19 @@ function BranchForm({ schoolId, branch, onClose }: { schoolId: string; branch: B
     <div className="space-y-4 p-5">
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Название</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Центральный" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Центральный" className="v-admin-input w-full px-4" />
       </div>
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Адрес</label>
-        <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="ул. Пушкина, 10" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" />
+        <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="ул. Пушкина, 10" className="v-admin-input w-full px-4" />
       </div>
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Телефон</label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (999) 123-45-67" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 placeholder-gray-300 transition focus:border-gray-900 focus:bg-white focus:outline-none" />
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (999) 123-45-67" className="v-admin-input w-full px-4" />
       </div>
       {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{error}</p> : null}
       <div className="v-modal-actions">
-        <button onClick={onClose} disabled={pending} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50">Отмена</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>

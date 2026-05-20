@@ -185,6 +185,15 @@ export async function completeSupabaseBooking(bookingId: string): Promise<void> 
   )
 }
 
+export async function noShowSupabaseBooking(bookingId: string): Promise<void> {
+  await runAdminMutation(
+    supabase.rpc('public_no_show_booking', {
+      p_booking_id: bookingId,
+      p_staff_password: getAdminSecret(),
+    }),
+  )
+}
+
 export async function rescheduleSupabaseBooking(bookingId: string, newSlotId: string): Promise<void> {
   await runAdminMutation(
     supabase.rpc('public_reschedule_booking', {

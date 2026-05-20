@@ -82,6 +82,20 @@ create index if not exists student_progress_school_id_idx on public.student_prog
 create index if not exists student_requests_school_id_idx on public.student_requests(school_id);
 create index if not exists student_requests_student_id_idx on public.student_requests(student_id);
 
+do $$
+begin
+  alter table public.students drop constraint if exists students_training_stage_check;
+  alter table public.students
+    add constraint students_training_stage_check
+    check (training_stage is null or training_stage in ('new_request', 'awaiting_contract', 'contract_signed', 'theory', 'training_active', 'no_bookings', 'has_debt', 'missing_documents', 'practice_ground', 'city', 'theory_completed', 'practice_active', 'practice_completed', 'exam_prep', 'ready_for_internal_exam', 'internal_exam_passed', 'ready_for_gibdd', 'exam', 'training_completed', 'completed', 'archived', 'refused', 'frozen'));
+
+  alter table public.bookings drop constraint if exists bookings_status_check;
+  alter table public.bookings
+    add constraint bookings_status_check
+    check (status in ('active', 'cancelled', 'completed', 'no_show'));
+end;
+$$;
+
 
 alter table public.slots
   add column if not exists lesson_type text not null default 'driving';
@@ -168,6 +182,7 @@ $$;
 
 drop function if exists public.public_cancel_booking(text, text);
 drop function if exists public.public_complete_booking(text, text);
+drop function if exists public.public_no_show_booking(text, text);
 drop function if exists public.public_reschedule_booking(text, text, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text);
@@ -235,7 +250,7 @@ begin
     raise exception 'Student name is required.';
   end if;
 
-  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+  if p_training_stage is not null and p_training_stage not in ('new_request', 'awaiting_contract', 'contract_signed', 'theory', 'training_active', 'no_bookings', 'has_debt', 'missing_documents', 'practice_ground', 'city', 'theory_completed', 'practice_active', 'practice_completed', 'exam_prep', 'ready_for_internal_exam', 'internal_exam_passed', 'ready_for_gibdd', 'exam', 'training_completed', 'completed', 'archived', 'refused', 'frozen') then
     raise exception 'Student training stage is invalid.';
   end if;
 
@@ -406,6 +421,46 @@ begin
 
   update public.bookings
     set status = 'completed',
+        updated_at = now()
+    where id = p_booking_id;
+
+  booking_id := p_booking_id;
+  return next;
+end;
+$$;
+
+create or replace function public.public_no_show_booking(
+  p_booking_id text,
+  p_staff_password text
+)
+returns table (
+  booking_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_booking public.bookings%rowtype;
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+
+  select *
+    into v_booking
+    from public.bookings
+    where id = p_booking_id
+    for update;
+
+  if not found then
+    raise exception 'Booking not found.';
+  end if;
+
+  if v_booking.status <> 'active' then
+    raise exception 'Only active bookings can be marked as no-show.';
+  end if;
+
+  update public.bookings
+    set status = 'no_show',
         updated_at = now()
     where id = p_booking_id;
 
@@ -972,6 +1027,8 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_existing_id text;
 begin
   perform public.private_assert_admin_password(p_staff_password);
 
@@ -979,36 +1036,97 @@ begin
     raise exception 'Student name is required.';
   end if;
 
-  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+  if coalesce(p_normalized_phone, '') !~ '^7[0-9]{10}$' then
+    raise exception 'Student phone is invalid.';
+  end if;
+
+  if p_training_stage is not null and p_training_stage not in ('new_request', 'awaiting_contract', 'contract_signed', 'theory', 'training_active', 'no_bookings', 'has_debt', 'missing_documents', 'practice_ground', 'city', 'theory_completed', 'practice_active', 'practice_completed', 'exam_prep', 'ready_for_internal_exam', 'internal_exam_passed', 'ready_for_gibdd', 'exam', 'training_completed', 'completed', 'archived', 'refused', 'frozen') then
     raise exception 'Student training stage is invalid.';
   end if;
 
-  update public.students
-    set name = trim(p_name),
-        phone = coalesce(p_phone, ''),
-        normalized_phone = coalesce(p_normalized_phone, ''),
-        email = coalesce(p_email, ''),
-        avatar_url = p_avatar_url,
-        assigned_branch_id = p_assigned_branch_id,
-        assigned_instructor_id = p_assigned_instructor_id,
-        category_codes = coalesce(nullif(p_category_codes, '{}'), array['B']),
-        training_stage = p_training_stage,
-        group_name = p_group_name,
-        training_start_date = p_training_start_date,
-        driving_start_date = p_driving_start_date,
-        training_end_date = p_training_end_date,
-        driving_end_date = p_driving_end_date,
-        branch_change_requested_at = p_branch_change_requested_at,
-        branch_change_note = p_branch_change_note,
-        updated_at = now()
-    where id = p_student_id
-      and school_id = p_school_id;
-
-  if not found then
-    raise exception 'Student not found.';
+  if p_assigned_instructor_id is not null and not exists (
+    select 1
+    from public.instructors
+    where id = p_assigned_instructor_id
+      and school_id = p_school_id
+      and (p_assigned_branch_id is null or branch_id = p_assigned_branch_id)
+  ) then
+    raise exception 'Assigned instructor is invalid.';
   end if;
 
-  student_id := p_student_id;
+  if p_assigned_branch_id is not null and not exists (
+    select 1 from public.branches where id = p_assigned_branch_id and school_id = p_school_id
+  ) then
+    raise exception 'Assigned branch is invalid.';
+  end if;
+
+  select id
+    into v_existing_id
+    from public.students
+    where school_id = p_school_id
+      and normalized_phone = p_normalized_phone
+    limit 1
+    for update;
+
+  if v_existing_id is not null and v_existing_id <> p_student_id then
+    update public.students
+      set name = trim(p_name),
+          phone = coalesce(p_phone, ''),
+          normalized_phone = coalesce(p_normalized_phone, ''),
+          email = coalesce(p_email, ''),
+          avatar_url = p_avatar_url,
+          assigned_branch_id = p_assigned_branch_id,
+          assigned_instructor_id = p_assigned_instructor_id,
+          category_codes = coalesce(nullif(p_category_codes, '{}'), array['B']),
+          training_stage = p_training_stage,
+          group_name = coalesce(p_group_name, ''),
+          training_start_date = p_training_start_date,
+          driving_start_date = p_driving_start_date,
+          training_end_date = p_training_end_date,
+          driving_end_date = p_driving_end_date,
+          branch_change_requested_at = p_branch_change_requested_at,
+          branch_change_note = p_branch_change_note,
+          updated_at = now()
+      where id = v_existing_id
+        and school_id = p_school_id;
+
+    student_id := v_existing_id;
+    return next;
+    return;
+  end if;
+
+  insert into public.students (
+    id, school_id, name, phone, normalized_phone, email, avatar_url,
+    assigned_branch_id, assigned_instructor_id, category_codes, training_stage, group_name,
+    training_start_date, driving_start_date, training_end_date, driving_end_date,
+    branch_change_requested_at, branch_change_note
+  ) values (
+    p_student_id, p_school_id, trim(p_name), coalesce(p_phone, ''), coalesce(p_normalized_phone, ''), coalesce(p_email, ''), p_avatar_url,
+    p_assigned_branch_id, p_assigned_instructor_id, coalesce(nullif(p_category_codes, '{}'), array['B']), p_training_stage, coalesce(p_group_name, ''),
+    p_training_start_date, p_driving_start_date, p_training_end_date, p_driving_end_date,
+    p_branch_change_requested_at, p_branch_change_note
+  )
+  on conflict (id)
+  do update set
+    name = excluded.name,
+    phone = excluded.phone,
+    normalized_phone = excluded.normalized_phone,
+    email = excluded.email,
+    avatar_url = excluded.avatar_url,
+    assigned_branch_id = excluded.assigned_branch_id,
+    assigned_instructor_id = excluded.assigned_instructor_id,
+    category_codes = excluded.category_codes,
+    training_stage = excluded.training_stage,
+    group_name = excluded.group_name,
+    training_start_date = excluded.training_start_date,
+    driving_start_date = excluded.driving_start_date,
+    training_end_date = excluded.training_end_date,
+    driving_end_date = excluded.driving_end_date,
+    branch_change_requested_at = excluded.branch_change_requested_at,
+    branch_change_note = excluded.branch_change_note,
+    updated_at = now()
+  returning id into student_id;
+
   return next;
 end;
 $$;
@@ -1250,6 +1368,7 @@ alter table public.staff_access_credentials enable row level security;
 grant usage on schema public to anon, authenticated;
 grant execute on function public.public_cancel_booking(text, text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
+grant execute on function public.public_no_show_booking(text, text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text, text) to anon, authenticated;
 grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text) to anon, authenticated;
 grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text, text) to anon, authenticated;
@@ -1381,6 +1500,8 @@ drop function if exists public.public_cancel_booking(text);
 drop function if exists public.public_cancel_booking(text, text);
 drop function if exists public.public_complete_booking(text);
 drop function if exists public.public_complete_booking(text, text);
+drop function if exists public.public_no_show_booking(text);
+drop function if exists public.public_no_show_booking(text, text);
 drop function if exists public.public_reschedule_booking(text, text);
 drop function if exists public.public_reschedule_booking(text, text, text);
 drop function if exists public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer);
@@ -1510,7 +1631,7 @@ create table public.students (
   assigned_branch_id text references public.branches(id) on delete set null,
   assigned_instructor_id text references public.instructors(id) on delete set null,
   category_codes text[],
-  training_stage text check (training_stage in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed')),
+  training_stage text check (training_stage in ('new_request', 'awaiting_contract', 'contract_signed', 'theory', 'training_active', 'no_bookings', 'has_debt', 'missing_documents', 'practice_ground', 'city', 'theory_completed', 'practice_active', 'practice_completed', 'exam_prep', 'ready_for_internal_exam', 'internal_exam_passed', 'ready_for_gibdd', 'exam', 'training_completed', 'completed', 'archived', 'refused', 'frozen')),
   group_name text,
   training_start_date date,
   driving_start_date date,
@@ -1559,7 +1680,7 @@ create table public.bookings (
   student_name text not null,
   student_phone text not null,
   student_email text not null default '',
-  status text not null default 'active' check (status in ('active', 'cancelled', 'completed')),
+  status text not null default 'active' check (status in ('active', 'cancelled', 'completed', 'no_show')),
   notes text,
   comment text,
   rescheduled_at timestamptz,
@@ -1971,6 +2092,46 @@ begin
 end;
 $$;
 
+create or replace function public.public_no_show_booking(
+  p_booking_id text,
+  p_staff_password text
+)
+returns table (
+  booking_id text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_booking public.bookings%rowtype;
+begin
+  perform public.private_assert_admin_password(p_staff_password);
+
+  select *
+    into v_booking
+    from public.bookings
+    where id = p_booking_id
+    for update;
+
+  if not found then
+    raise exception 'Booking not found.';
+  end if;
+
+  if v_booking.status <> 'active' then
+    raise exception 'Only active bookings can be marked as no-show.';
+  end if;
+
+  update public.bookings
+    set status = 'no_show',
+        updated_at = now()
+    where id = p_booking_id;
+
+  booking_id := p_booking_id;
+  return next;
+end;
+$$;
+
 create or replace function public.public_reschedule_booking(
   p_booking_id text,
   p_new_slot_id text,
@@ -2546,7 +2707,7 @@ begin
     raise exception 'Student name is required.';
   end if;
 
-  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+  if p_training_stage is not null and p_training_stage not in ('new_request', 'awaiting_contract', 'contract_signed', 'theory', 'training_active', 'no_bookings', 'has_debt', 'missing_documents', 'practice_ground', 'city', 'theory_completed', 'practice_active', 'practice_completed', 'exam_prep', 'ready_for_internal_exam', 'internal_exam_passed', 'ready_for_gibdd', 'exam', 'training_completed', 'completed', 'archived', 'refused', 'frozen') then
     raise exception 'Student training stage is invalid.';
   end if;
 
@@ -2888,6 +3049,8 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_existing_id text;
 begin
   perform public.private_assert_admin_password(p_staff_password);
 
@@ -2895,40 +3058,100 @@ begin
     raise exception 'Student name is required.';
   end if;
 
-  if p_training_stage is not null and p_training_stage not in ('theory', 'practice_ground', 'city', 'exam_prep', 'exam', 'completed') then
+  if coalesce(p_normalized_phone, '') !~ '^7[0-9]{10}$' then
+    raise exception 'Student phone is invalid.';
+  end if;
+
+  if p_training_stage is not null and p_training_stage not in ('new_request', 'awaiting_contract', 'contract_signed', 'theory', 'training_active', 'no_bookings', 'has_debt', 'missing_documents', 'practice_ground', 'city', 'theory_completed', 'practice_active', 'practice_completed', 'exam_prep', 'ready_for_internal_exam', 'internal_exam_passed', 'ready_for_gibdd', 'exam', 'training_completed', 'completed', 'archived', 'refused', 'frozen') then
     raise exception 'Student training stage is invalid.';
   end if;
 
-  update public.students
-    set name = trim(p_name),
-        phone = coalesce(p_phone, ''),
-        normalized_phone = coalesce(p_normalized_phone, ''),
-        email = coalesce(p_email, ''),
-        avatar_url = p_avatar_url,
-        assigned_branch_id = p_assigned_branch_id,
-        assigned_instructor_id = p_assigned_instructor_id,
-        category_codes = coalesce(nullif(p_category_codes, '{}'), array['B']),
-        training_stage = p_training_stage,
-        group_name = p_group_name,
-        training_start_date = p_training_start_date,
-        driving_start_date = p_driving_start_date,
-        training_end_date = p_training_end_date,
-        driving_end_date = p_driving_end_date,
-        branch_change_requested_at = p_branch_change_requested_at,
-        branch_change_note = p_branch_change_note,
-        updated_at = now()
-    where id = p_student_id
-      and school_id = p_school_id;
-
-  if not found then
-    raise exception 'Student not found.';
+  if p_assigned_instructor_id is not null and not exists (
+    select 1
+    from public.instructors
+    where id = p_assigned_instructor_id
+      and school_id = p_school_id
+      and (p_assigned_branch_id is null or branch_id = p_assigned_branch_id)
+  ) then
+    raise exception 'Assigned instructor is invalid.';
   end if;
 
-  student_id := p_student_id;
+  if p_assigned_branch_id is not null and not exists (
+    select 1 from public.branches where id = p_assigned_branch_id and school_id = p_school_id
+  ) then
+    raise exception 'Assigned branch is invalid.';
+  end if;
+
+  select id
+    into v_existing_id
+    from public.students
+    where school_id = p_school_id
+      and normalized_phone = p_normalized_phone
+    limit 1
+    for update;
+
+  if v_existing_id is not null and v_existing_id <> p_student_id then
+    update public.students
+      set name = trim(p_name),
+          phone = coalesce(p_phone, ''),
+          normalized_phone = coalesce(p_normalized_phone, ''),
+          email = coalesce(p_email, ''),
+          avatar_url = p_avatar_url,
+          assigned_branch_id = p_assigned_branch_id,
+          assigned_instructor_id = p_assigned_instructor_id,
+          category_codes = coalesce(nullif(p_category_codes, '{}'), array['B']),
+          training_stage = p_training_stage,
+          group_name = coalesce(p_group_name, ''),
+          training_start_date = p_training_start_date,
+          driving_start_date = p_driving_start_date,
+          training_end_date = p_training_end_date,
+          driving_end_date = p_driving_end_date,
+          branch_change_requested_at = p_branch_change_requested_at,
+          branch_change_note = p_branch_change_note,
+          updated_at = now()
+      where id = v_existing_id
+        and school_id = p_school_id;
+
+    student_id := v_existing_id;
+    return next;
+    return;
+  end if;
+
+  insert into public.students (
+    id, school_id, name, phone, normalized_phone, email, avatar_url,
+    assigned_branch_id, assigned_instructor_id, category_codes, training_stage, group_name,
+    training_start_date, driving_start_date, training_end_date, driving_end_date,
+    branch_change_requested_at, branch_change_note
+  ) values (
+    p_student_id, p_school_id, trim(p_name), coalesce(p_phone, ''), coalesce(p_normalized_phone, ''), coalesce(p_email, ''), p_avatar_url,
+    p_assigned_branch_id, p_assigned_instructor_id, coalesce(nullif(p_category_codes, '{}'), array['B']), p_training_stage, coalesce(p_group_name, ''),
+    p_training_start_date, p_driving_start_date, p_training_end_date, p_driving_end_date,
+    p_branch_change_requested_at, p_branch_change_note
+  )
+  on conflict (id)
+  do update set
+    name = excluded.name,
+    phone = excluded.phone,
+    normalized_phone = excluded.normalized_phone,
+    email = excluded.email,
+    avatar_url = excluded.avatar_url,
+    assigned_branch_id = excluded.assigned_branch_id,
+    assigned_instructor_id = excluded.assigned_instructor_id,
+    category_codes = excluded.category_codes,
+    training_stage = excluded.training_stage,
+    group_name = excluded.group_name,
+    training_start_date = excluded.training_start_date,
+    driving_start_date = excluded.driving_start_date,
+    training_end_date = excluded.training_end_date,
+    driving_end_date = excluded.driving_end_date,
+    branch_change_requested_at = excluded.branch_change_requested_at,
+    branch_change_note = excluded.branch_change_note,
+    updated_at = now()
+  returning id into student_id;
+
   return next;
 end;
 $$;
-
 create or replace function public.public_admin_list_student_requests(
   p_school_id text,
   p_staff_password text
@@ -3097,6 +3320,7 @@ grant select on public.slots to anon, authenticated;
 grant execute on function public.public_create_booking(text, text, text, text[]) to anon, authenticated;
 grant execute on function public.public_cancel_booking(text, text) to anon, authenticated;
 grant execute on function public.public_complete_booking(text, text) to anon, authenticated;
+grant execute on function public.public_no_show_booking(text, text) to anon, authenticated;
 grant execute on function public.public_reschedule_booking(text, text, text) to anon, authenticated;
 grant execute on function public.public_update_school_settings(text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], text) to anon, authenticated;
 grant execute on function public.public_create_slot(text, text, text, text, text, text, integer, text, text) to anon, authenticated;

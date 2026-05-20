@@ -4,7 +4,7 @@ import { ru } from 'date-fns/locale'
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from 'iconoir-react'
 import { useLocation } from 'react-router-dom'
 import { db } from '../../services/storage'
-import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirmed, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
+import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirmed, getSlotDateTime, markBookingNoShowConfirmed, rescheduleBookingConfirmed } from '../../services/bookingService'
 import { createBulkSlotsConfirmed, createSlotConfirmed, updateSlotStatusConfirmed } from '../../services/slotService'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
@@ -14,6 +14,7 @@ import { filterBookings, filterBranches, filterInstructors, filterSlots } from '
 import type { Booking, Branch, Instructor, Slot, Student } from '../../types'
 import { assertAdminPermission } from '../../services/adminAccess'
 import { formatDuration } from '../../lib/utils'
+import { getPreference, setPreference } from '../../services/preferenceStorage'
 
 type ViewMode = 'day' | 'week'
 type ScheduleFilter = 'all' | 'booked' | 'available' | 'cancelled'
@@ -64,7 +65,7 @@ export function AdminSchedule() {
   const school = db.schools.currentAdmin()
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === 'undefined') return 'week'
-    return (localStorage.getItem('dd:admin_schedule_view') as ViewMode | null) ?? (window.innerWidth < 760 ? 'day' : 'week')
+    return (getPreference('dd:admin_schedule_view') as ViewMode | null) ?? (window.innerWidth < 760 ? 'day' : 'week')
   })
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [slotFilter, setSlotFilter] = useState<ScheduleFilter>('all')
@@ -231,12 +232,19 @@ export function AdminSchedule() {
     setRescheduleTime('')
   }
 
-  const handleNoShow = () => {
+  const handleNoShow = async () => {
     const access = assertAdminPermission('schedule.manage')
     if (!access.ok) return
+    if (actionPending) return
 
     if (!school || !selectedBooking) return
-    db.bookings.upsert({ ...selectedBooking, status: 'no_show' })
+    setActionPending(true)
+    const result = await markBookingNoShowConfirmed(selectedBooking.id)
+    setActionPending(false)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось отметить неявку.', 'error')
+      return
+    }
     createCurrentStaffAuditEntry(school.id, 'booking_no_show', 'booking', selectedBooking.id, `Отмечена неявка: ${selectedBooking.studentName}`)
     setSelectedSlotId(null)
   }
@@ -260,7 +268,7 @@ export function AdminSchedule() {
 
   const setViewModePersisted = (mode: ViewMode) => {
     setViewMode(mode)
-    localStorage.setItem('dd:admin_schedule_view', mode)
+    setPreference('dd:admin_schedule_view', mode)
   }
 
   const duplicateSelectedSlotTomorrow = async () => {
@@ -578,7 +586,7 @@ export function AdminSchedule() {
                 <>
                   <button onClick={() => setShowRescheduleModal(true)} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">Перенести</button>
                   <button onClick={handleComplete} disabled={actionPending} className="v-admin-button bg-[#247A4B] hover:bg-[#1C623C] disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Засчитать'}</button>
-                  <button onClick={handleNoShow} disabled={actionPending} className="v-admin-button bg-[#315A7C] hover:bg-[#7E4706] disabled:opacity-50">Неявка</button>
+                  <button onClick={() => void handleNoShow()} disabled={actionPending} className="v-admin-button bg-[#315A7C] hover:bg-[#244760] disabled:opacity-50">Неявка</button>
                   <button onClick={() => setShowCancelModal(true)} disabled={actionPending} className="v-admin-button bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">Отменить</button>
                 </>
               ) : selectedSlot.status === 'available' ? (

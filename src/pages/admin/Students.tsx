@@ -10,10 +10,11 @@ import { Modal } from '../../components/ui/Modal'
 import type { Payment, Student, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
-import { getSlotDateTime } from '../../services/bookingService'
+import { getSlotDateTime, normalizePhone, validateRussianPhone } from '../../services/bookingService'
 import { createStudentAdminConfirmed, updateStudentAdminConfirmed } from '../../services/studentService'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
+import { getPreference, setPreference } from '../../services/preferenceStorage'
 
 type FilterTab = 'all' | 'active' | 'problem' | 'debt' | 'no_docs' | 'no_instructor' | 'no_group' | 'ready_exam' | 'inactive'
 type ImportSource = 'ai' | 'manual'
@@ -249,8 +250,8 @@ function getImportPreviewStats(rows: Record<string, string>[], schoolId: string)
 
   rows.forEach((row, index) => {
     const name = normalizePersonName(row.name ?? '')
-    const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
-    if (!name || normalizedPhone.length < 10) {
+    const normalizedPhone = normalizePhone(row.phone ?? '')
+    if (!name || !validateRussianPhone(normalizedPhone)) {
       skipped += 1
       invalidRows.push(index + 1)
       return
@@ -273,7 +274,7 @@ export function AdminStudents() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterTab>(() => {
     if (typeof window === 'undefined') return 'all'
-    return (localStorage.getItem('dd:admin_students_filter') as FilterTab | null) ?? 'all'
+    return (getPreference('dd:admin_students_filter') as FilterTab | null) ?? 'all'
   })
   const [showAdd, setShowAdd] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -283,7 +284,8 @@ export function AdminStudents() {
   const [importSummary, setImportSummary] = useState('')
   const [importing, setImporting] = useState(false)
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
-  const [compactTable, setCompactTable] = useState(() => localStorage.getItem('dd:admin_students_compact') === 'true')
+  const [bulkPending, setBulkPending] = useState(false)
+  const [compactTable, setCompactTable] = useState(() => getPreference('dd:admin_students_compact') === 'true')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
   const canManageStudents = canUseAdminPermission('students.manage')
@@ -357,7 +359,7 @@ export function AdminStudents() {
 
   const setFilterPersisted = (value: FilterTab) => {
     setFilter(value)
-    localStorage.setItem('dd:admin_students_filter', value)
+    setPreference('dd:admin_students_filter', value)
   }
 
   const problemCount = data.rows.filter((student) =>
@@ -380,6 +382,7 @@ export function AdminStudents() {
   ]
   const instructors = school ? db.instructors.bySchool(school.id).filter((item) => item.isActive) : []
   const selectedStudents = data.rows.filter((student) => selectedIds.includes(student.id))
+  const selectedBulkInstructor = instructors.find((instructor) => instructor.id === bulkInstructorId) ?? null
   const visibleIds = filtered.map((student) => student.id)
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id))
 
@@ -396,19 +399,26 @@ export function AdminStudents() {
 
   const toggleCompactTable = () => {
     setCompactTable((current) => {
-      localStorage.setItem('dd:admin_students_compact', String(!current))
+      setPreference('dd:admin_students_compact', String(!current))
       return !current
     })
   }
 
-  const updateSelectedStudents = (patch: Partial<Student>, action: string) => {
+  const updateSelectedStudents = async (patch: Partial<Student>, action: string) => {
     const access = assertAdminPermission('students.manage')
-    if (!access.ok || !school || selectedStudents.length === 0) return
-    selectedStudents.forEach((student) => {
-      void updateStudentAdminConfirmed(student.id, patch)
-    })
-    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', 'bulk', `${action}: ${selectedStudents.length}`)
+    if (!access.ok || !school || selectedStudents.length === 0 || bulkPending) return
+    setBulkPending(true)
+    let updated = 0
+    let failed = 0
+    for (const student of selectedStudents) {
+      const result = await updateStudentAdminConfirmed(student.id, patch)
+      if (result.ok) updated += 1
+      else failed += 1
+    }
+    setBulkPending(false)
+    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', 'bulk', `${action}: ${updated}`)
     setSelectedIds([])
+    setImportSummary(failed ? `${action}: обновлено ${updated}, не сохранено ${failed}.` : `${action}: обновлено ${updated}.`)
   }
 
   const exportStudentsCsv = () => {
@@ -452,8 +462,8 @@ export function AdminStudents() {
 
     for (const row of rows) {
       const name = normalizePersonName(row.name ?? '')
-      const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
-      if (!name || normalizedPhone.length < 10) {
+      const normalizedPhone = normalizePhone(row.phone ?? '')
+      if (!name || !validateRussianPhone(normalizedPhone)) {
         skipped += 1
         continue
       }
@@ -622,9 +632,9 @@ export function AdminStudents() {
             Добавить ученика
           </button>
           <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" className="hidden" onChange={(event) => void importStudentsCsv(event)} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing} className="v-admin-button-secondary disabled:opacity-50">
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing || bulkPending} className="v-admin-button-secondary disabled:opacity-50">
             <Upload width={16} height={16} />
-            {importing ? 'Импорт...' : 'Умный импорт'}
+            {importing ? 'Импорт...' : bulkPending ? 'Сохраняем...' : 'Умный импорт'}
           </button>
           <button type="button" onClick={exportStudentsCsv} className="v-admin-button-secondary">
             <Download width={16} height={16} />
@@ -690,18 +700,18 @@ export function AdminStudents() {
               <button type="button" onClick={() => setSelectedIds([])} className="text-[12px] font-black text-[#66717D] hover:text-[#111418]">Снять</button>
             </div>
             <div className="grid gap-2 lg:grid-cols-[minmax(150px,1fr)_auto_minmax(160px,1fr)_auto_minmax(140px,1fr)_auto_auto] lg:items-center">
-              <select value={bulkStage} onChange={(event) => setBulkStage(event.target.value as TrainingStage)} disabled={!canManageStudents} className="v-admin-input w-full">
+              <select value={bulkStage} onChange={(event) => setBulkStage(event.target.value as TrainingStage)} disabled={!canManageStudents || bulkPending} className="v-admin-input w-full">
                 {Object.entries(STAGE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
-              <button type="button" disabled={!canManageStudents} onClick={() => updateSelectedStudents({ trainingStage: bulkStage }, 'Изменен этап')} className="v-admin-button-secondary disabled:opacity-50">Применить</button>
-              <select value={bulkInstructorId} onChange={(event) => setBulkInstructorId(event.target.value)} disabled={!canManageStudents} className="v-admin-input w-full">
+              <button type="button" disabled={!canManageStudents || bulkPending} onClick={() => void updateSelectedStudents({ trainingStage: bulkStage }, 'Изменен этап')} className="v-admin-button-secondary disabled:opacity-50">Применить</button>
+              <select value={bulkInstructorId} onChange={(event) => setBulkInstructorId(event.target.value)} disabled={!canManageStudents || bulkPending} className="v-admin-input w-full">
                 <option value="">Инструктор</option>
                 {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
               </select>
-              <button type="button" disabled={!canManageStudents || !bulkInstructorId} onClick={() => updateSelectedStudents({ assignedInstructorId: bulkInstructorId }, 'Назначен инструктор')} className="v-admin-button-secondary disabled:opacity-50">Назначить</button>
-              <input value={bulkGroupName} onChange={(event) => setBulkGroupName(event.target.value)} disabled={!canManageStudents} placeholder="Группа" className="v-admin-input w-full" />
-              <button type="button" disabled={!canManageStudents || !bulkGroupName.trim()} onClick={() => updateSelectedStudents({ groupName: bulkGroupName.trim() }, 'Назначена группа')} className="v-admin-button-secondary disabled:opacity-50">Группа</button>
-              <button type="button" disabled={!canManageStudents} onClick={() => updateSelectedStudents({ trainingStage: 'archived' }, 'Перенесены в архив')} className="v-admin-button-secondary disabled:opacity-50"><Archive width={15} height={15} /> Архив</button>
+              <button type="button" disabled={!canManageStudents || bulkPending || !bulkInstructorId} onClick={() => void updateSelectedStudents({ assignedInstructorId: bulkInstructorId, assignedBranchId: selectedBulkInstructor?.branchId }, 'Назначен инструктор')} className="v-admin-button-secondary disabled:opacity-50">Назначить</button>
+              <input value={bulkGroupName} onChange={(event) => setBulkGroupName(event.target.value)} disabled={!canManageStudents || bulkPending} placeholder="Группа" className="v-admin-input w-full" />
+              <button type="button" disabled={!canManageStudents || bulkPending || !bulkGroupName.trim()} onClick={() => void updateSelectedStudents({ groupName: bulkGroupName.trim() }, 'Назначена группа')} className="v-admin-button-secondary disabled:opacity-50">Группа</button>
+              <button type="button" disabled={!canManageStudents || bulkPending} onClick={() => void updateSelectedStudents({ trainingStage: 'archived' }, 'Перенесены в архив')} className="v-admin-button-secondary disabled:opacity-50"><Archive width={15} height={15} /> Архив</button>
             </div>
           </div>
         ) : null}
@@ -896,8 +906,8 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
           <span>Ученик</span><span>Телефон</span><span>Группа</span><span>Долг</span>
         </div>
         {sample.map((row, index) => {
-          const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
-          const valid = normalizePersonName(row.name ?? '') && normalizedPhone.length >= 10
+          const normalizedPhone = normalizePhone(row.phone ?? '')
+          const valid = Boolean(normalizePersonName(row.name ?? '') && validateRussianPhone(normalizedPhone))
           return (
             <div key={`${row.name}-${index}`} className="grid min-w-[520px] grid-cols-[minmax(170px,1fr)_120px_90px_90px] gap-3 border-b border-[#EEF2F5] px-4 py-3 text-[13px] font-semibold last:border-b-0">
               <span className={valid ? 'text-[#111827]' : 'text-[#C92820]'}>{row.name || 'без имени'}</span>
@@ -932,10 +942,10 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
     if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
     if (pending) return
 
-    const normalizedPhone = phone.replace(/\D/g, '')
+    const normalizedPhone = normalizePhone(phone)
     const normalizedName = normalizePersonName(name)
     setError('')
-    if (!normalizedName || normalizedPhone.length < 10) {
+    if (!normalizedName || !validateRussianPhone(normalizedPhone)) {
       setError('Проверьте ФИО и телефон.')
       return
     }

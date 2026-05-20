@@ -6,6 +6,7 @@ import { db } from '../../services/storage'
 import { adminPayments, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
+import { getPreference, setPreference } from '../../services/preferenceStorage'
 import { Modal } from '../../components/ui/Modal'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types'
 
@@ -41,6 +42,12 @@ function money(value: number) {
   return `${value.toLocaleString('ru-RU')} ₽`
 }
 
+function parseMoneyInput(value: string): number {
+  const normalized = value.replace(/\s/g, '').replace(',', '.').replace(/[^0-9.-]/g, '')
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? Math.round(parsed) : NaN
+}
+
 function statusTone(status: PaymentStatus) {
   if (status === 'paid') return 'v-tone-ok'
   if (status === 'partial' || status === 'frozen') return 'v-tone-warning'
@@ -54,12 +61,12 @@ function debtKey(paymentId: string) {
 
 function getDebtStatus(paymentId: string): DebtStatus {
   if (typeof window === 'undefined') return 'not_reminded'
-  return (localStorage.getItem(debtKey(paymentId)) as DebtStatus | null) ?? 'not_reminded'
+  return (getPreference(debtKey(paymentId)) as DebtStatus | null) ?? 'not_reminded'
 }
 
 function setDebtStatusValue(paymentId: string, status: DebtStatus) {
   if (typeof window === 'undefined') return
-  localStorage.setItem(debtKey(paymentId), status)
+  setPreference(debtKey(paymentId), status)
 }
 
 export function AdminPayments() {
@@ -314,8 +321,8 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
     if (pending) return
     setError('')
 
-    const parsed = Number.parseInt(amount, 10)
-    const parsedPaid = status === 'partial' ? Number.parseInt(paidAmount, 10) : status === 'paid' ? parsed : 0
+    const parsed = parseMoneyInput(amount)
+    const parsedPaid = status === 'partial' ? parseMoneyInput(paidAmount) : status === 'paid' ? parsed : 0
     if (!studentId) { setError('Выберите ученика.'); return }
     if (!Number.isFinite(parsed) || parsed <= 0) { setError('Укажите корректную сумму.'); return }
     if (!Number.isFinite(parsedPaid) || parsedPaid < 0 || parsedPaid > parsed) { setError('Укажите корректно оплаченную часть.'); return }

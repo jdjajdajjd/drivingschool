@@ -27,6 +27,7 @@ import {
   type StudentProfile,
 } from '../services/studentProfile'
 import { getInstructorPhoto } from '../services/instructorPhotos'
+import { getPreference, setPreference } from '../services/preferenceStorage'
 import type { Booking, Instructor, School, Slot } from '../types'
 import { cn, formatInstructorName } from '../lib/utils'
 import { normalizePersonName } from '../lib/nameFormat'
@@ -435,7 +436,7 @@ export function StudentPage() {
       setSelectedInstructorId(assignedInstructorId)
       return
     }
-    const storedInstructorId = localStorage.getItem(selectedInstructorStorageKey(school.id)) ?? ''
+    const storedInstructorId = getPreference(selectedInstructorStorageKey(school.id)) ?? ''
     if (storedInstructorId && instructors.some((instructor) => instructor.id === storedInstructorId)) {
       setSelectedInstructorId(storedInstructorId)
       return
@@ -448,7 +449,7 @@ export function StudentPage() {
 
   useEffect(() => {
     if (!school || !selectedInstructorId) return
-    localStorage.setItem(selectedInstructorStorageKey(school.id), selectedInstructorId)
+    setPreference(selectedInstructorStorageKey(school.id), selectedInstructorId)
   }, [school, selectedInstructorId])
 
   if (!school || !profile) return <div className="min-h-dvh bg-[#F3F7FB]" />

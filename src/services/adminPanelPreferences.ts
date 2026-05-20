@@ -1,6 +1,7 @@
 import type { StaffPermission } from '../types'
 import { getDataNamespace } from './storage'
 import { getWorkspaceStaffContext } from './accessControl'
+import { getPreference, setPreference } from './preferenceStorage'
 
 export type AdminNavItemId =
   | 'today'
@@ -37,17 +38,12 @@ export function getAdminPanelPreferencesKey(schoolId: string): string {
   return `dd:${getDataNamespace()}:admin_panel:${schoolId}:${actor}`
 }
 
-function preferencesStorage(): Storage | null {
-  if (typeof window === 'undefined') return null
-  return getDataNamespace() === 'demo' ? window.sessionStorage : window.localStorage
-}
-
 export function getEnabledAdminNavIds(schoolId: string, definitions: AdminNavDefinition[]): AdminNavItemId[] {
   const required = definitions.filter((item) => item.required).map((item) => item.id)
   const defaults = Array.from(new Set([...required, ...DEFAULT_OPTIONAL_ADMIN_NAV_IDS]))
 
   try {
-    const raw = preferencesStorage()?.getItem(getAdminPanelPreferencesKey(schoolId))
+    const raw = getPreference(getAdminPanelPreferencesKey(schoolId))
     if (!raw) return defaults
     const parsed = JSON.parse(raw) as { enabledIds?: unknown }
     const enabled = Array.isArray(parsed.enabledIds) ? parsed.enabledIds.filter((id): id is AdminNavItemId => typeof id === 'string') : defaults
@@ -59,7 +55,7 @@ export function getEnabledAdminNavIds(schoolId: string, definitions: AdminNavDef
 
 export function saveEnabledAdminNavIds(schoolId: string, enabledIds: AdminNavItemId[]): void {
   try {
-    preferencesStorage()?.setItem(
+    setPreference(
       getAdminPanelPreferencesKey(schoolId),
       JSON.stringify({ enabledIds: Array.from(new Set([...REQUIRED_ADMIN_NAV_IDS, ...enabledIds])) }),
     )
@@ -106,7 +102,7 @@ function getAdminDashboardBlocksKey(schoolId: string): string {
 
 export function getEnabledDashboardBlockIds(schoolId: string): AdminDashboardBlockId[] {
   try {
-    const raw = preferencesStorage()?.getItem(getAdminDashboardBlocksKey(schoolId))
+    const raw = getPreference(getAdminDashboardBlocksKey(schoolId))
     if (!raw) return DEFAULT_DASHBOARD_BLOCK_IDS
     const parsed = JSON.parse(raw) as { enabledIds?: unknown }
     return Array.isArray(parsed.enabledIds)
@@ -119,7 +115,7 @@ export function getEnabledDashboardBlockIds(schoolId: string): AdminDashboardBlo
 
 export function saveEnabledDashboardBlockIds(schoolId: string, enabledIds: AdminDashboardBlockId[]): void {
   try {
-    preferencesStorage()?.setItem(getAdminDashboardBlocksKey(schoolId), JSON.stringify({ enabledIds: Array.from(new Set(enabledIds)) }))
+    setPreference(getAdminDashboardBlocksKey(schoolId), JSON.stringify({ enabledIds: Array.from(new Set(enabledIds)) }))
   } catch {
     // Preferences are convenience-only; ignore storage failures.
   }

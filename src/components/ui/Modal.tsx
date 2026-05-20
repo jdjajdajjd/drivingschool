@@ -42,7 +42,10 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <motion.div
-              className="flex max-h-[calc(100dvh-24px)] w-full flex-col overflow-hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-label={title ?? 'Окно'}
+              className="flex max-h-[calc(100dvh-24px)] w-full flex-col overflow-hidden overscroll-contain"
               style={{
                 background: 'white',
                 border: '1px solid rgba(0,0,0,0.06)',

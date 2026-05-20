@@ -8,6 +8,7 @@ import { db } from './storage'
 import {
   cancelSupabaseBooking,
   completeSupabaseBooking,
+  noShowSupabaseBooking,
   persistSupabaseMutation,
   rescheduleSupabaseBooking,
 } from './supabaseAdminService'
@@ -513,6 +514,26 @@ export function completeBooking(bookingId: string, options: { skipRemote?: boole
 export async function completeBookingConfirmed(bookingId: string): Promise<BookingMutationResult> {
   if (isWorkspaceSupabaseReady()) await completeSupabaseBooking(bookingId)
   return completeBooking(bookingId, { skipRemote: true })
+}
+
+export function markBookingNoShow(bookingId: string, options: { skipRemote?: boolean } = {}): BookingMutationResult {
+  const booking = db.bookings.byId(bookingId)
+  if (!booking) return { ok: false, error: 'Запись не найдена.' }
+  if (booking.status !== 'active') return { ok: false, error: 'Неявку можно отметить только для активной записи.' }
+
+  const nextBooking: Booking = {
+    ...booking,
+    status: 'no_show',
+    updatedAt: new Date().toISOString(),
+  }
+  db.bookings.upsert(nextBooking)
+  if (!options.skipRemote) persistSupabaseMutation(noShowSupabaseBooking(bookingId))
+  return { ok: true, booking: nextBooking }
+}
+
+export async function markBookingNoShowConfirmed(bookingId: string): Promise<BookingMutationResult> {
+  if (isWorkspaceSupabaseReady()) await noShowSupabaseBooking(bookingId)
+  return markBookingNoShow(bookingId, { skipRemote: true })
 }
 
 export function rescheduleBooking(params: RescheduleBookingParams, options: { skipRemote?: boolean } = {}): BookingMutationResult {
