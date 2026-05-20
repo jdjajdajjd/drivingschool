@@ -11,6 +11,7 @@ import { assertAdminPermission, canUseAdminPermission } from '../../services/adm
 import { filterBookings, filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
+import { updateInstructorConfirmed } from '../../services/instructorService'
 
 export function AdminInstructorDetail() {
   const { id } = useParams()
@@ -204,23 +205,47 @@ function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: strin
   const [category, setCategory] = useState(instructor.categories[0] ?? 'B')
   const [transmission, setTransmission] = useState<Transmission>(instructor.transmission ?? 'auto')
   const [experience, setExperience] = useState(String(instructor.experience))
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const access = assertAdminPermission('branches.manage')
     if (!access.ok) return
+    if (pending) return
 
     const normalizedName = normalizePersonName(name)
-    if (!normalizedName || !phone.trim() || !branchId) return
+    if (!normalizedName) { setError('Укажите ФИО инструктора.'); return }
+    if (!phone.trim()) { setError('Укажите телефон инструктора.'); return }
+    if (!branchId) { setError('Выберите филиал.'); return }
     const initials = normalizedName
       .split(/\s+/)
       .map((part) => part[0])
       .join('')
       .slice(0, 2)
       .toUpperCase() || instructor.avatarInitials
-    const nextInstructor = {
-      ...instructor,
+    setPending(true)
+    setError('')
+    const result = await updateInstructorConfirmed(instructor.id, {
+      branchId,
       name: normalizedName,
-      phone: phone.trim(),
+      phone,
+      email,
+      categories: [category.trim() || 'B'],
+      transmission,
+      isActive: instructor.isActive,
+      bio: instructor.bio,
+      car: instructor.car,
+    })
+    setPending(false)
+    if (!result.ok || !result.instructor) {
+      setError(result.error ?? 'Не удалось сохранить инструктора.')
+      return
+    }
+
+    const nextInstructor = {
+      ...result.instructor,
+      name: normalizedName,
+      phone: result.instructor.phone,
       email: email.trim(),
       branchId,
       categories: [category.trim() || 'B'],
@@ -251,9 +276,10 @@ function InstructorEditForm({ schoolId, instructor, onClose }: { schoolId: strin
         </select>
         <input type="number" min="0" value={experience} onChange={(event) => setExperience(event.target.value)} className="v-admin-input w-full" placeholder="Стаж" />
       </div>
+      {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{error}</p> : null}
       <div className="v-modal-actions">
-        <button onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button onClick={handleSubmit} className="v-admin-button flex-1">Сохранить</button>
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={() => void handleSubmit()} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
       </div>
     </div>
   )

@@ -223,6 +223,25 @@ function checkBookingLimit(school: School, normalizedPhone: string): string | nu
   return null
 }
 
+export function getSchoolAccessError(school: Pick<School, 'isActive' | 'accessStatus' | 'accessPaidUntil'>): string | null {
+  if (school.isActive === false || school.accessStatus === 'blocked') {
+    return 'Запись закрыта: доступ автошколы остановлен оператором vroom.'
+  }
+
+  if (school.accessStatus === 'overdue') {
+    return 'Запись закрыта: у автошколы закончился оплаченный доступ.'
+  }
+
+  if (school.accessPaidUntil) {
+    const paidUntil = new Date(`${school.accessPaidUntil}T23:59:59`)
+    if (Number.isFinite(paidUntil.getTime()) && paidUntil < new Date()) {
+      return 'Запись закрыта: у автошколы закончился оплаченный доступ.'
+    }
+  }
+
+  return null
+}
+
 function slotMinutes(slot: Pick<Slot, 'time' | 'duration'>): { start: number; duration: number } {
   const [hours, minutes] = slot.time.split(':').map(Number)
   return { start: hours * 60 + minutes, duration: slot.duration }
@@ -307,7 +326,8 @@ export function validateBookingForSlot(params: CreateBookingParams): BookingMuta
   const branch = db.branches.byId(params.branchId)
 
   if (!school || !slot || !instructor || !branch) return { ok: false, error: 'Не удалось найти данные для записи.' }
-  if (!school.isActive || school.accessStatus === 'blocked' || school.accessStatus === 'overdue') return { ok: false, error: 'Автошкола недоступна для записи.' }
+  const accessError = getSchoolAccessError(school)
+  if (accessError) return { ok: false, error: accessError }
   if (slot.schoolId !== params.schoolId || branch.schoolId !== params.schoolId || instructor.schoolId !== params.schoolId) return { ok: false, error: 'Выбранные ресурсы не относятся к этой автошколе.' }
   if (!branch.isActive || !instructor.isActive) return { ok: false, error: 'Это время больше недоступно для записи.' }
   if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) return { ok: false, error: 'Данные выбранного времени изменились. Выберите другое время.' }
@@ -392,16 +412,23 @@ export async function createBookingConfirmed(params: CreateBookingParams): Promi
   const slot = db.slots.byId(params.slotId)
   if (!slot) return { ok: false, error: 'Выбранное время не найдено.' }
 
-  const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
+  let remoteBookingId = ''
+  let remoteBookingGroupId = ''
+  try {
+    const remote = await createSupabaseBooking({
+      schoolId: params.schoolId,
+      studentName,
+      studentPhone: normalizedPhone,
+      slotIds: [params.slotId],
+    })
+    remoteBookingId = remote.bookingIds[0] ?? ''
+    remoteBookingGroupId = remote.bookingGroupId
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить запись в базе.' }
+  }
+  if (!remoteBookingId) return { ok: false, error: 'База не подтвердила запись. Обновите расписание и попробуйте ещё раз.' }
 
-  const remote = await createSupabaseBooking({
-    schoolId: params.schoolId,
-    studentName: params.studentName,
-    studentPhone: params.studentPhone,
-    slotIds: [params.slotId],
-  })
-  const remoteBookingId = remote.bookingIds[0]
-  if (!remoteBookingId) return { ok: false, error: 'Supabase не вернул номер записи.' }
+  const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
 
   const syncedBooking: Booking = {
     schoolId: params.schoolId,
@@ -416,7 +443,7 @@ export async function createBookingConfirmed(params: CreateBookingParams): Promi
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     id: remoteBookingId,
-    bookingGroupId: remote.bookingGroupId || undefined,
+    bookingGroupId: remoteBookingGroupId || undefined,
   }
   db.bookings.upsert(syncedBooking)
   db.slots.upsert({ ...slot, status: 'booked', bookingId: syncedBooking.id })

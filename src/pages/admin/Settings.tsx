@@ -4,6 +4,7 @@ import { adminSettings, createCurrentStaffAuditEntry } from '../../services/admi
 import type { SchoolSettings as SchoolSettingsType } from '../../types'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { formatDuration } from '../../lib/utils'
+import { updateSchoolConfirmed } from '../../services/schoolService'
 
 const launchSteps = [
   'Заполнить филиалы, инструкторов и рабочие часы.',
@@ -27,6 +28,8 @@ const CANCEL_HOURS_OPTIONS = [2, 4, 6, 12, 24]
 export function AdminSettings() {
   const school = db.schools.currentAdmin()
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [schoolPhone, setSchoolPhone] = useState(school?.phone ?? '')
   const canManageSettings = canUseAdminPermission('settings.manage')
 
@@ -41,13 +44,45 @@ export function AdminSettings() {
     setSettings((s) => ({ ...s, [key]: value }))
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const access = assertAdminPermission('settings.manage')
     if (!access.ok || !school) return
+    if (saving) return
 
-    db.schools.upsert({ ...school, phone: schoolPhone.trim() })
-    adminSettings.save(settings)
+    setSaving(true)
+    setSaveError('')
+    const schoolResult = await updateSchoolConfirmed(school.id, {
+      name: school.name,
+      slug: school.slug,
+      description: school.description,
+      phone: schoolPhone.trim(),
+      email: school.email,
+      address: school.address,
+      primaryColor: school.primaryColor,
+      logoUrl: school.logoUrl,
+      bookingLimitEnabled: school.bookingLimitEnabled,
+      maxActiveBookingsPerStudent: school.maxActiveBookingsPerStudent,
+      branchSelectionMode: school.branchSelectionMode,
+      maxSlotsPerBooking: school.maxSlotsPerBooking,
+      defaultLessonDuration: settings.defaultLessonDuration,
+      enabledCategoryCodes: school.enabledCategoryCodes,
+      isActive: school.isActive,
+    })
+    if (!schoolResult.ok) {
+      setSaving(false)
+      setSaveError(schoolResult.error ?? 'Не удалось сохранить настройки школы.')
+      return
+    }
+
+    try {
+      await adminSettings.saveConfirmed(settings)
+    } catch (error) {
+      setSaving(false)
+      setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить правила записи.')
+      return
+    }
     createCurrentStaffAuditEntry(school.id, 'settings_changed', 'school_settings', school.id, 'Изменены настройки школы')
+    setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -61,12 +96,13 @@ export function AdminSettings() {
           <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">правила работы</p>
           <h1 className="truncate text-[24px] font-black tracking-[-0.03em] text-[#111827]">Настройки школы</h1>
         </div>
-        <button onClick={handleSave} disabled={!canManageSettings} className="v-admin-button min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
-          {saved ? '✓ Сохранено' : 'Сохранить'}
+        <button onClick={() => void handleSave()} disabled={!canManageSettings || saving} className="v-admin-button min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
+          {saving ? 'Сохраняем...' : saved ? '✓ Сохранено' : 'Сохранить'}
         </button>
       </div>
 
       <div className="mx-auto max-w-5xl space-y-4 p-3 md:p-6 lg:p-8">
+        {saveError ? <div className="rounded-[18px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-semibold text-[#B42318]">{saveError}</div> : null}
         <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>

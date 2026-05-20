@@ -17,6 +17,8 @@ export function BottomSheet({ open, onClose, title, children, className = '' }: 
     if (!open) return undefined
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const active = document.activeElement
+    if (active instanceof HTMLElement) active.blur()
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }

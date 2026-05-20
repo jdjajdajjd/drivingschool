@@ -140,7 +140,7 @@ async function upsertConfirmed<T extends { id: string }>(key: string, item: T): 
       schoolId,
       branchId: getBranchId(item),
       studentId: getStudentId(item),
-      payload: item as Record<string, unknown>,
+      payload: getRemotePayload(item),
     })
   }
 
@@ -178,6 +178,15 @@ function getSchoolId(item: unknown): string | null {
   return typeof value === 'string' ? value : null
 }
 
+function getRemotePayload(item: { id: string }): Record<string, unknown> {
+  const payload = item as Record<string, unknown>
+  if (typeof payload.schoolId === 'string' && item.id === `settings-${payload.schoolId}`) {
+    const { id: _id, ...rest } = payload
+    return rest
+  }
+  return payload
+}
+
 function persistRemote<T extends { id: string }>(key: string, item: T): void {
   const kind = REMOTE_KIND_BY_KEY[key as (typeof ADMIN_KEYS)[keyof typeof ADMIN_KEYS]]
   const schoolId = getSchoolId(item)
@@ -189,7 +198,7 @@ function persistRemote<T extends { id: string }>(key: string, item: T): void {
       schoolId,
       branchId: getBranchId(item),
       studentId: getStudentId(item),
-      payload: item as Record<string, unknown>,
+      payload: getRemotePayload(item),
     }),
   )
 }
@@ -295,6 +304,7 @@ export const adminUsers = {
   byRole: (schoolId: string, role: UserRole) =>
     read<User>(ADMIN_KEYS.USERS).filter((u) => u.schoolId === schoolId && (u.roleId ?? u.role) === role).map(normalizeStaffMember),
   upsert: (user: User) => upsert(ADMIN_KEYS.USERS, normalizeStaffMember(user)),
+  upsertConfirmed: (user: User) => upsertConfirmed(ADMIN_KEYS.USERS, normalizeStaffMember(user)),
   remove: (id: string) => remove(ADMIN_KEYS.USERS, id),
 }
 
@@ -385,6 +395,21 @@ export const adminSettings = {
     if (idx >= 0) all[idx] = settings
     else all.push(settings)
     write(ADMIN_KEYS.SETTINGS, all)
+  },
+  saveConfirmed: async (settings: SchoolSettings): Promise<SchoolSettings> => {
+    if (!canWriteKey(ADMIN_KEYS.SETTINGS)) throw new Error('Недостаточно прав для сохранения.')
+    if (isWorkspaceSupabaseReady()) {
+      await upsertSupabaseAdminRecord({
+        kind: 'settings',
+        id: `settings-${settings.schoolId}`,
+        schoolId: settings.schoolId,
+        branchId: null,
+        studentId: null,
+        payload: settings as unknown as Record<string, unknown>,
+      })
+    }
+    adminSettings.save(settings)
+    return settings
   },
 }
 

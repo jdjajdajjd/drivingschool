@@ -20,10 +20,10 @@ import {
 import { getInstructorPhoto } from '../services/instructorPhotos'
 import { getFutureAvailableSlots, loadPublicSchoolData, refreshPublicSlots } from '../services/publicSchoolData'
 import { db, findSchoolNamespaceBySlug, setDataNamespace } from '../services/storage'
-import { createSupabaseBooking } from '../services/supabasePublicService'
 import {
   acquireSlotLock,
   createBooking,
+  createBookingConfirmed,
   validateBookingForSlot,
   generateIcs,
   getAvailableSlots as getInstructorSlots,
@@ -584,24 +584,24 @@ export function BookingFlowPage() {
       let bookingId = ''
       let bookingGroupId = ''
 
-      try {
-        if (isLocalSchool) throw new Error('Local school uses local booking')
-        const result = await createSupabaseBooking({
+      if (!isLocalSchool && isSupabaseConfigured()) {
+        const result = await createBookingConfirmed({
           schoolId: school.id,
+          branchId: bookingSlot.branchId,
+          instructorId: bookingSlot.instructorId,
+          slotId: bookingSlot.id,
           studentName: normalizePersonName(form.name),
           studentPhone: form.phone,
-          slotIds: [bookingSlot.id],
+          sessionId: sessionId.current,
         })
-        bookingId = result.bookingIds[0] ?? ''
-        bookingGroupId = result.bookingGroupId
-      } catch (error) {
-        if (!isLocalSchool && isSupabaseConfigured()) {
+        if (!result.ok || !result.booking) {
           await refreshPublicSlots(school.id, { preferLocal: false }).catch(() => undefined)
           setSlotsVersion((current) => current + 1)
-          const message = error instanceof Error && error.message ? error.message : 'Не удалось создать запись. Обновите расписание и попробуйте ещё раз.'
-          throw new Error(message)
+          throw new Error(result.error ?? 'Не удалось создать запись. Обновите расписание и попробуйте ещё раз.')
         }
-
+        bookingId = result.booking.id
+        bookingGroupId = result.booking.bookingGroupId ?? ''
+      } else {
         const freshData = await loadPublicSchoolData(slug, { preferLocal: isLocalSchool })
         const freshLocalSlot = db.slots.byId(bookingSlot.id)
         const freshBranchActive = freshLocalSlot

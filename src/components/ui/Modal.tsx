@@ -27,6 +27,13 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     }
   }, [onClose, open])
 
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined
+    const active = document.activeElement
+    if (active instanceof HTMLElement) active.blur()
+    return undefined
+  }, [open])
+
   const content = (
     <AnimatePresence>
       {open && (

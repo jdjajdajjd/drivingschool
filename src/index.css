@@ -2348,6 +2348,66 @@
     backdrop-filter: blur(18px);
   }
 
+  body:has([role="dialog"]) {
+    overflow: hidden;
+  }
+
+  [role="dialog"] .v-modal-actions {
+    box-shadow: 0 -12px 24px rgba(15, 23, 42, 0.045);
+  }
+
+  [role="dialog"] > div:last-child > .v-modal-actions,
+  [role="dialog"] > div:last-child > form > .v-modal-actions,
+  [role="dialog"] > div:last-child > .space-y-4 > .v-modal-actions,
+  [role="dialog"] > div:last-child > div[class*="p-5"] > .v-modal-actions {
+    margin-top: 0.75rem;
+  }
+
+  [role="dialog"] > div:last-child button[aria-label="Закрыть"] {
+    min-width: 36px;
+  }
+
+  @media (max-width: 640px) {
+    [role="dialog"] {
+      width: min(100%, calc(100vw - 16px)) !important;
+      max-height: calc(100dvh - 16px) !important;
+      border-radius: 18px !important;
+    }
+
+    [role="dialog"] > div:first-child {
+      padding: 0.8rem 0.9rem !important;
+    }
+
+    [role="dialog"] > div:first-child h2 {
+      font-size: 16px !important;
+      line-height: 1.15 !important;
+    }
+
+    [role="dialog"] > div:last-child > .space-y-4,
+    [role="dialog"] > div:last-child > div[class*="p-5"] {
+      padding: 0.9rem !important;
+    }
+
+    [role="dialog"] > div:last-child {
+      overscroll-behavior: contain;
+    }
+
+    .v-modal-actions {
+      position: sticky;
+      bottom: 0;
+      flex-direction: column-reverse;
+      margin: 0 -0.9rem -0.9rem;
+      padding: 0.7rem 0.9rem max(0.8rem, env(safe-area-inset-bottom));
+    }
+
+    .v-modal-actions .v-admin-button,
+    .v-modal-actions .v-admin-button-secondary,
+    .v-modal-actions button {
+      width: 100%;
+      min-height: 44px;
+    }
+  }
+
   .v-ops-shell section,
   .v-ops-shell .v-ops-panel,
   .v-ops-shell .v-ops-hero {

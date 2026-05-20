@@ -37,6 +37,72 @@ async function assertNoHorizontalOverflow(page, routeLabel) {
   assert(!overflow, `${routeLabel}: horizontal overflow`)
 }
 
+async function assertModalFitsViewport(page, routeLabel) {
+  const result = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]')
+    if (!dialog) return { ok: false, reason: 'dialog missing' }
+    const rect = dialog.getBoundingClientRect()
+    const action = dialog.querySelector('.v-modal-actions')
+    const actionRect = action?.getBoundingClientRect()
+    const width = window.innerWidth
+    const height = window.innerHeight
+    if (rect.top < -1 || rect.left < -1 || rect.right > width + 1 || rect.bottom > height + 1) {
+      return { ok: false, reason: `dialog out of viewport: ${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.right)},${Math.round(rect.bottom)} / ${width}x${height}` }
+    }
+    if (actionRect && (actionRect.bottom > height + 1 || actionRect.top < -1)) {
+      return { ok: false, reason: `actions out of viewport: ${Math.round(actionRect.top)}-${Math.round(actionRect.bottom)} / ${height}` }
+    }
+    return { ok: true, reason: '' }
+  })
+  assert(result.ok, `${routeLabel}: ${result.reason}`)
+}
+
+async function seedLaunchWorkspace(page) {
+  await page.addInitScript(() => {
+    const now = new Date()
+    const today = now.toISOString().slice(0, 10)
+    const todayDate = new Date(now)
+    todayDate.setHours(23, 0, 0, 0)
+    if (todayDate.getTime() <= now.getTime()) todayDate.setDate(todayDate.getDate() + 1)
+    const todaySlotDate = todayDate.toISOString().slice(0, 10)
+    const school = {
+      id: 'school-workspace', name: 'Рабочая автошкола', slug: 'workspace', description: 'Рабочий контур', phone: '+7 999 000-10-10', email: 'office@example.test', address: 'Москва', createdAt: now.toISOString(), primaryColor: '#111827', bookingLimitEnabled: true, maxActiveBookingsPerStudent: 2, branchSelectionMode: 'student_choice', maxSlotsPerBooking: 1, defaultLessonDuration: 90, enabledCategoryCodes: ['B'], isActive: true, accessStatus: 'active', accessPaidUntil: '2099-12-31',
+    }
+    const branch = { id: 'branch-main', schoolId: school.id, name: 'Главный филиал', address: 'Москва, Тестовая 1', phone: '+7 999 000-11-11', isActive: true }
+    const instructor = { id: 'inst-main', schoolId: school.id, branchId: branch.id, name: 'Мария Инструкторова', phone: '79990001111', email: '', token: 'tok-main', bio: '', experience: 7, isActive: true, categories: ['B'], avatarInitials: 'МИ', avatarColor: '#111827', car: 'Solaris', transmission: 'manual' }
+    const students = [
+      { id: 'stu-main', schoolId: school.id, name: 'Ирина Готовая', phone: '79995550000', normalizedPhone: '79995550000', email: '', assignedBranchId: branch.id, assignedInstructorId: instructor.id, categoryCodes: ['B'], trainingStage: 'city', hasPassword: true, createdAt: now.toISOString() },
+      { id: 'stu-debt', schoolId: school.id, name: 'Дмитрий Должников', phone: '79994440000', normalizedPhone: '79994440000', email: '', assignedBranchId: branch.id, assignedInstructorId: instructor.id, categoryCodes: ['B'], trainingStage: 'city', hasPassword: true, createdAt: now.toISOString() },
+    ]
+    const slots = [
+      { id: 'slot-free', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: todaySlotDate, time: '23:00', duration: 60, lessonType: 'city', status: 'available', createdAt: now.toISOString() },
+      { id: 'slot-booked', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: today, time: '16:00', duration: 90, lessonType: 'city', status: 'booked', bookingId: 'booking-active', createdAt: now.toISOString() },
+      { id: 'slot-overlap', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: todaySlotDate, time: '23:30', duration: 60, lessonType: 'city', status: 'available', createdAt: now.toISOString() },
+    ]
+    const bookings = [{ id: 'booking-active', schoolId: school.id, slotId: 'slot-booked', instructorId: instructor.id, branchId: branch.id, studentId: 'stu-main', studentName: 'Ирина Готовая', studentPhone: '79995550000', studentEmail: '', status: 'active', createdAt: now.toISOString(), updatedAt: now.toISOString() }]
+    const settings = [{ schoolId: school.id, defaultLessonDuration: 90, maxDaysAheadForBooking: 14, minHoursBeforeCancel: 4, maxActiveBookingsPerStudent: 2, allowBookingWithDebt: false, allowBookingWithoutMedical: false, allowBookingWithoutContract: false, requireManualModeration: false, allowChangeInstructor: true, allowStudentChooseInstructor: true, allowDifferentInstructors: true, maxLessonsPerDay: 2, maxLessonsPerWeek: 6, breakBetweenLessons: 15, workDays: [1,2,3,4,5], workStartHour: 8, workEndHour: 20, defaultPricingPlans: [], blockBookingOnDebt: true, debtGracePeriodDays: 7, notifyAdminOnNoShow: true, notifyAdminOnCancel: true, notifyAdminOnNewBooking: true, notifyAdminOnDebt: true, requiredDocuments: ['contract', 'medical_certificate'], documentExpiryWarningDays: 14 }]
+    const documents = [
+      { id: 'doc-contract', schoolId: school.id, studentId: 'stu-main', type: 'contract', status: 'verified', fileName: 'dogovor.pdf', uploadedAt: now.toISOString(), verifiedAt: now.toISOString(), createdAt: now.toISOString(), updatedAt: now.toISOString() },
+      { id: 'doc-med', schoolId: school.id, studentId: 'stu-main', type: 'medical_certificate', status: 'verified', fileName: 'med.pdf', uploadedAt: now.toISOString(), verifiedAt: now.toISOString(), expiresAt: '2099-12-31', createdAt: now.toISOString(), updatedAt: now.toISOString() },
+    ]
+    const payments = [{ id: 'pay-debt', schoolId: school.id, studentId: 'stu-debt', amount: 5000, paidAmount: 0, remainingAmount: 5000, status: 'overdue', method: 'transfer', paidAt: today, dueDate: today, comment: 'Долг для проверки блокировки', createdAt: now.toISOString(), updatedAt: now.toISOString() }]
+
+    sessionStorage.setItem('dd:data_namespace', 'workspace')
+    sessionStorage.setItem('dd:access:admin:workspace', 'granted')
+    sessionStorage.setItem('dd:access_secret:admin:workspace', 'qa-password')
+    sessionStorage.setItem('dd:staff_context:workspace', JSON.stringify({ role: 'director', schoolId: school.id, branchIds: [], name: 'QA запуск' }))
+    localStorage.setItem('dd:workspace:schools', JSON.stringify([school]))
+    localStorage.setItem('dd:workspace:branches', JSON.stringify([branch]))
+    localStorage.setItem('dd:workspace:instructors', JSON.stringify([instructor]))
+    localStorage.setItem('dd:workspace:students', JSON.stringify(students))
+    localStorage.setItem('dd:workspace:slots', JSON.stringify(slots))
+    localStorage.setItem('dd:workspace:bookings', JSON.stringify(bookings))
+    localStorage.setItem('workspace:admin:settings', JSON.stringify(settings))
+    localStorage.setItem('workspace:admin:documents', JSON.stringify(documents))
+    localStorage.setItem('workspace:admin:payments', JSON.stringify(payments))
+  })
+}
+
 async function withPage(browser, routeLabel, viewport, callback) {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 1 })
 
@@ -403,7 +469,7 @@ async function checkBookingPolicy(browser) {
   await withPage(browser, 'booking policy guardrails', { width: 390, height: 844 }, async (page) => {
     await grantWorkspaceBookingPolicyData(page)
     await openRoute(page, '/admin-panel/schedule', ['Расписание', 'Свободно'])
-    await page.getByRole('button', { name: /Свободно/ }).first().click()
+    await page.locator('.v-mobile-slot-row, .vroom-slot-card', { hasText: 'Свободно' }).first().click()
     await page.getByRole('button', { name: /Записать ученика/ }).click()
     await page.locator('select').last().selectOption('stu-policy')
     await page.getByRole('button', { name: /^Записать$/ }).click()
@@ -425,6 +491,60 @@ async function checkBookingPolicy(browser) {
     const bookedSlot = stored.slots.find((slot) => slot.id === 'slot-policy-free')
     assert(bookedSlot?.status === 'booked' && Boolean(bookedSlot.bookingId), 'booking policy: verified student did not book free slot')
     assert(stored.bookings.filter((booking) => booking.slotId === 'slot-policy-free' && booking.status === 'active').length === 1, 'booking policy: expected exactly one active booking for slot')
+  })
+}
+
+async function checkLaunchCriticalFlow(browser) {
+  await withPage(browser, 'launch critical flow mobile', { width: 390, height: 844 }, async (page) => {
+    await seedLaunchWorkspace(page)
+    await openRoute(page, '/admin-panel/schedule', ['Расписание', 'Свободно'])
+
+    await page.getByRole('button', { name: /Создать окна/ }).first().click()
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'create slot modal mobile')
+    await page.keyboard.press('Escape')
+
+    await page.locator('.v-mobile-slot-row, .vroom-slot-card', { hasText: 'Свободно' }).first().click()
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'slot detail modal mobile')
+    await page.getByRole('button', { name: /Записать ученика/ }).click()
+    await assertModalFitsViewport(page, 'book student modal mobile')
+    await page.locator('select').last().selectOption('stu-main')
+    await page.getByRole('button', { name: /^Записать$/ }).click()
+    await page.waitForTimeout(300)
+    const afterBook = await page.evaluate(() => ({
+      slot: JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]').find((item) => item.id === 'slot-free'),
+      bookings: JSON.parse(localStorage.getItem('dd:workspace:bookings') || '[]').filter((item) => item.slotId === 'slot-free' && item.status === 'active'),
+    }))
+    assert(afterBook.slot?.status === 'booked', 'launch flow: admin booking did not mark slot as booked')
+    assert(afterBook.bookings.length === 1, 'launch flow: admin booking did not create exactly one active booking')
+
+    await openRoute(page, '/admin-panel/payments', ['Оплаты'])
+    await page.getByRole('button', { name: /Принять оплату/ }).first().click()
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'payment modal mobile')
+    await page.keyboard.press('Escape')
+
+    await openRoute(page, '/admin-panel', ['Сегодня'])
+    await page.getByRole('button', { name: /Блоки/ }).click()
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'today blocks modal mobile')
+  })
+}
+
+async function checkDemoIsolation(browser) {
+  await withPage(browser, 'demo session isolation', { width: 390, height: 844 }, async (page) => {
+    await grantDemoAdmin(page)
+    await openRoute(page, '/demo/admin/schedule', ['Расписание'])
+    await page.evaluate(() => sessionStorage.setItem('dd:demo:qa-marker', 'only-this-session'))
+    assert(await page.evaluate(() => localStorage.getItem('dd:demo:qa-marker') === null), 'demo isolation: demo marker leaked to localStorage')
+  })
+
+  await withPage(browser, 'demo clean second session', { width: 390, height: 844 }, async (page) => {
+    await grantDemoAdmin(page)
+    await openRoute(page, '/demo/admin/schedule', ['Расписание'])
+    const marker = await page.evaluate(() => sessionStorage.getItem('dd:demo:qa-marker'))
+    assert(marker === null, 'demo isolation: another browser session sees previous demo changes')
   })
 }
 
@@ -456,6 +576,8 @@ try {
   await checkBranchAdminScope(browser)
   await checkRolePermissions(browser)
   await checkBookingPolicy(browser)
+  await checkLaunchCriticalFlow(browser)
+  await checkDemoIsolation(browser)
   await checkDemoAdmin(browser, { width: 390, height: 844 }, 'mobile')
 } finally {
   await browser.close()
