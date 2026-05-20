@@ -2,12 +2,21 @@ import { useMemo, useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminPayments, adminCars, adminDocuments, adminGIBDDExams, adminInternalExams, adminSettings, auditLog, problemCases, studentProgress } from '../../services/adminStorage'
+import { adminPayments, adminCars, adminDocuments, adminGIBDDExams, adminInternalExams, adminSettings, auditLog, getDebtForStudent, problemCases, studentProgress } from '../../services/adminStorage'
+import { getSlotDateTime } from '../../services/bookingService'
 import type { AuditAction } from '../../types'
 
 type AuditFilter = 'all' | AuditAction
 
 type ReportTab = 'overview' | 'finance' | 'instructors' | 'cars' | 'audit'
+
+function formatHours(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  if (hours > 0 && rest > 0) return `${hours}ч ${rest}м`
+  if (hours > 0) return `${hours}ч`
+  return `${rest}м`
+}
 
 export function AdminReports() {
   const school = db.schools.currentAdmin()
@@ -24,6 +33,8 @@ export function AdminReports() {
     const instructors = db.instructors.bySchool(school.id)
     const payments = adminPayments.all(school.id)
     const cars = adminCars.all(school.id)
+    const documents = adminDocuments.all(school.id)
+    const problems = problemCases.all(school.id)
     const now = new Date()
     const activeBookings = bookings.filter((booking) => booking.status === 'active').length
     const completedBookings = bookings.filter((booking) => booking.status === 'completed').length
@@ -56,6 +67,13 @@ export function AdminReports() {
     // Overdue
     const overduePayments = payments.filter((p) => p.status === 'overdue')
     const totalDebt = overduePayments.reduce((s, p) => s + p.remainingAmount, 0)
+    const studentsWithDebt = students.filter((student) => getDebtForStudent(student.id) > 0)
+    const studentsWithoutFutureBooking = students.filter((student) => !bookings.some((booking) => {
+      const slot = db.slots.byId(booking.slotId)
+      return booking.studentId === student.id && booking.status === 'active' && slot !== null && getSlotDateTime(slot) > now
+    }))
+    const documentsNeedAttention = documents.filter((doc) => doc.status === 'missing' || doc.status === 'rejected' || doc.status === 'expired')
+    const activeProblems = problems.filter((problem) => problem.status === 'open' || problem.status === 'in_progress')
 
     // Instructor stats
     const instructorStats = instructors.map((instructor) => {
@@ -72,11 +90,18 @@ export function AdminReports() {
 
     // Car stats
     const carStats = cars.map((car) => {
+      const carInstructorIds = instructors.filter((instructor) => instructor.car === car.id).map((instructor) => instructor.id)
       const usingBookings = bookings.filter((b) => {
         const slot = db.slots.byId(b.slotId)
-        return slot && car.id
+        return slot && carInstructorIds.includes(b.instructorId)
       }).length
-      return { car, usingBookings }
+      const completedMinutes = bookings.filter((b) => b.status === 'completed' && carInstructorIds.includes(b.instructorId)).reduce((sum, booking) => {
+        const slot = db.slots.byId(booking.slotId)
+        return sum + (slot?.duration ?? 0)
+      }, 0)
+      const hasExpiredInsurance = car.insuranceExpiry ? new Date(car.insuranceExpiry) < now : false
+      const serviceSoon = car.nextServiceDate ? new Date(car.nextServiceDate) <= new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000) : false
+      return { car, usingBookings, instructorsCount: carInstructorIds.length, completedMinutes, hasExpiredInsurance, serviceSoon }
     })
 
     // Recent audit
@@ -90,6 +115,10 @@ export function AdminReports() {
       noShowBookings,
       slotUtilization,
       totalDebt,
+      studentsWithDebt: studentsWithDebt.length,
+      studentsWithoutFutureBooking: studentsWithoutFutureBooking.length,
+      documentsNeedAttention: documentsNeedAttention.length,
+      activeProblems: activeProblems.length,
       overdueCount: overduePayments.length,
       monthPayments: monthPayments.length,
       studentCount: students.length,
@@ -122,16 +151,27 @@ export function AdminReports() {
     booking_no_show: 'Неявка',
     booking_completed: 'Занятие засчитано',
     payment_added: 'Оплата',
+    payment_refund: 'Возврат',
     student_created: 'Новый ученик',
+    student_note: 'Заметка по ученику',
     student_updated: 'Изменение ученика',
     instructor_created: 'Новый инструктор',
     instructor_updated: 'Изменение инструктора',
     car_created: 'Новая машина',
+    car_status_changed: 'Статус машины',
     car_updated: 'Изменение машины',
+    document_uploaded: 'Документ загружен',
+    document_verified: 'Документ проверен',
+    document_rejected: 'Документ отклонён',
+    exam_result_set: 'Результат экзамена',
     settings_changed: 'Настройки',
     user_created: 'Новый сотрудник',
     user_updated: 'Изменение сотрудника',
+    slot_created: 'Окно создано',
+    slot_cancelled: 'Окно отменено',
   }
+
+  const auditOptions = Object.entries(actionLabels)
 
   const tabs: { id: ReportTab; label: string }[] = [
     { id: 'overview', label: 'Обзор' },
@@ -146,6 +186,12 @@ export function AdminReports() {
     data.totalDebt > 0 ? `${data.totalDebt.toLocaleString('ru-RU')} ₽ зависло в долгах` : 'Долги не обнаружены',
     data.noShowBookings > 0 ? `${data.noShowBookings} неявок требуют реакции` : 'Неявок не видно',
     data.slotUtilization < 60 ? `Загрузка окон ${data.slotUtilization}%: есть резерв продаж` : `Загрузка окон ${data.slotUtilization}%`,
+  ]
+  const controlQueue = [
+    { label: 'Ученики без будущей записи', value: data.studentsWithoutFutureBooking, tone: data.studentsWithoutFutureBooking ? 'text-[#075EBC]' : 'text-[#188447]', hint: 'Их надо вернуть в расписание или закрыть обучение.' },
+    { label: 'Документы требуют внимания', value: data.documentsNeedAttention, tone: data.documentsNeedAttention ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Отказы, просрочки и отсутствующие документы.' },
+    { label: 'Открытые проблемы', value: data.activeProblems, tone: data.activeProblems ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Жалобы, переносы, просрочки и ручные задачи.' },
+    { label: 'Ученики с долгом', value: data.studentsWithDebt, tone: data.studentsWithDebt ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Кому нельзя давать новые занятия без решения.' },
   ]
 
 
@@ -258,6 +304,24 @@ export function AdminReports() {
               ))}
             </div>
 
+            <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#111827]">Что директор должен держать под контролем</h3>
+                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Не общий шум, а четыре зоны, где школа реально теряет деньги и порядок.</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {controlQueue.map((item) => (
+                  <div key={item.label} className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FBFE] p-4">
+                    <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">{item.label}</p>
+                    <strong className={`mt-2 block text-[30px] font-black ${item.tone}`}>{item.value}</strong>
+                    <span className="mt-1 block text-[12px] font-semibold leading-4 text-[#667085]">{item.hint}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Revenue chart */}
             <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
               <h3 className="mb-4 text-[16px] font-bold text-gray-900">Выручка по дням</h3>
@@ -310,7 +374,7 @@ export function AdminReports() {
                 <div className="flex gap-4">
                   {[
                     { label: 'Проведено', value: completed },
-                    { label: 'Часы', value: Math.round(totalHours / 60) },
+                    { label: 'Время', value: formatHours(totalHours) },
                     { label: 'Неявки', value: noShow },
                     { label: 'Отмены', value: cancelled },
                   ].map((s) => (
@@ -327,18 +391,33 @@ export function AdminReports() {
 
         {activeTab === 'cars' && (
           <div className="space-y-3">
-            {data.carStats.map(({ car, usingBookings }) => (
-              <div key={car.id} className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-gray-100 text-[14px] font-black text-gray-600">ТС</div>
+            {data.carStats.length === 0 ? (
+              <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-6 text-center shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+                <p className="text-[15px] font-black text-[#111827]">Машины пока не добавлены</p>
+                <p className="mt-2 text-[13px] font-semibold text-[#667085]">После добавления автопарка здесь будет видно, какие машины работают, где ремонт и у кого скоро сервис.</p>
+              </div>
+            ) : data.carStats.map(({ car, usingBookings, instructorsCount, completedMinutes, hasExpiredInsurance, serviceSoon }) => (
+              <div key={car.id} className="flex flex-col gap-3 rounded-2xl border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#F1F5F9] text-[14px] font-black text-[#475569]">ТС</div>
                 <div className="flex-1">
                   <p className="font-bold text-gray-900">{car.brand} {car.model}</p>
-                  <p className="text-[12px] font-semibold text-gray-400">{car.licensePlate}</p>
+                  <p className="text-[12px] font-semibold text-gray-400">{car.licensePlate} · {car.transmission === 'auto' ? 'АКПП' : 'МКПП'}</p>
                 </div>
-                <div className="text-right">
+                <div className="grid grid-cols-3 gap-3 text-left sm:text-right">
+                  <div>
+                    <p className="text-[18px] font-black text-gray-900">{instructorsCount}</p>
+                    <p className="text-[11px] font-semibold text-gray-400">инструкторов</p>
+                  </div>
+                  <div>
                   <p className="text-[18px] font-black text-gray-900">{usingBookings}</p>
                   <p className="text-[11px] font-semibold text-gray-400">записей</p>
+                  </div>
+                  <div>
+                    <p className="text-[18px] font-black text-gray-900">{formatHours(completedMinutes)}</p>
+                    <p className="text-[11px] font-semibold text-gray-400">проведено</p>
+                  </div>
                 </div>
-                <span className={`rounded-lg px-2.5 py-1 text-[12px] font-bold ${
+                <span className={`w-fit rounded-lg px-2.5 py-1 text-[12px] font-bold ${
                   car.status === 'working' ? 'bg-green-50 text-green-600' :
                   car.status === 'repair' ? 'bg-red-50 text-red-500' :
                   car.status === 'maintenance' ? 'bg-[#EAF3FF] text-[#315A7C]' :
@@ -346,6 +425,11 @@ export function AdminReports() {
                 }`}>
                   {car.status === 'working' ? 'Работает' : car.status === 'repair' ? 'Ремонт' : car.status === 'maintenance' ? 'Обслуживание' : car.status}
                 </span>
+                {(hasExpiredInsurance || serviceSoon) ? (
+                  <span className="w-fit rounded-lg bg-[#FFF7D6] px-2.5 py-1 text-[12px] font-bold text-[#8A6100]">
+                    {hasExpiredInsurance ? 'ОСАГО просрочено' : 'Скоро сервис'}
+                  </span>
+                ) : null}
               </div>
             ))}
           </div>
@@ -368,17 +452,7 @@ export function AdminReports() {
                 className="rounded-xl border border-gray-200 px-4 py-2 text-[13px]"
               >
                 <option value="all">Все действия</option>
-                <option value="booking_created">Создание записи</option>
-                <option value="booking_cancelled">Отмена записи</option>
-                <option value="booking_rescheduled">Перенос записи</option>
-                <option value="booking_no_show">Неявка</option>
-                <option value="booking_completed">Занятие засчитано</option>
-                <option value="payment_added">Оплата</option>
-                <option value="student_created">Новый ученик</option>
-                <option value="instructor_created">Новый инструктор</option>
-                <option value="car_created">Новая машина</option>
-                <option value="settings_changed">Настройки</option>
-                <option value="user_created">Новый сотрудник</option>
+                {auditOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="text-[12px] text-gray-400">{filteredAudit.length} записей</span>
             </div>

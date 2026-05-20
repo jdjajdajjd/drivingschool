@@ -182,9 +182,10 @@ export function StaffLoginPage({ role, mode = 'demo' }: StaffLoginPageProps) {
               </div>
 
               {role === 'admin' ? (
-                <p className="mt-3 text-[13px] font-normal leading-5 text-[#7A8794]">
-                  Демо и рабочая школа разделены. Этот вход открывает только рабочий кабинет школы.
-                </p>
+                <div className="mt-3 rounded-[18px] border border-[#D7E2EC] bg-[#F8FBFE] px-4 py-3 text-[13px] font-normal leading-5 text-[#667381]">
+                  <p>Демо и рабочая школа разделены. Этот вход открывает только рабочий кабинет школы.</p>
+                  <p className="mt-1 font-semibold text-[#334155]">Если пароль потеряли, доступ сбрасывается оператором vroom в карточке школы.</p>
+                </div>
               ) : null}
 
               <Button

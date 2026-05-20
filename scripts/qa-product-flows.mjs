@@ -70,6 +70,8 @@ async function seedLaunchWorkspace(page) {
     }
     const branch = { id: 'branch-main', schoolId: school.id, name: 'Главный филиал', address: 'Москва, Тестовая 1', phone: '+7 999 000-11-11', isActive: true }
     const instructor = { id: 'inst-main', schoolId: school.id, branchId: branch.id, name: 'Мария Инструкторова', phone: '79990001111', email: '', token: 'tok-main', bio: '', experience: 7, isActive: true, categories: ['B'], avatarInitials: 'МИ', avatarColor: '#111827', car: 'Solaris', transmission: 'manual' }
+    const car = { id: 'car-main', schoolId: school.id, branchId: branch.id, instructorId: instructor.id, brand: 'Hyundai', model: 'Solaris', licensePlate: 'А123ВС777', category: 'B', transmission: 'manual', status: 'working', insuranceExpiry: '2099-12-31', nextServiceDate: '2099-12-31', createdAt: now.toISOString(), updatedAt: now.toISOString() }
+    instructor.car = car.id
     const students = [
       { id: 'stu-main', schoolId: school.id, name: 'Ирина Готовая', phone: '79995550000', normalizedPhone: '79995550000', email: '', assignedBranchId: branch.id, assignedInstructorId: instructor.id, categoryCodes: ['B'], trainingStage: 'city', hasPassword: true, createdAt: now.toISOString() },
       { id: 'stu-debt', schoolId: school.id, name: 'Дмитрий Должников', phone: '79994440000', normalizedPhone: '79994440000', email: '', assignedBranchId: branch.id, assignedInstructorId: instructor.id, categoryCodes: ['B'], trainingStage: 'city', hasPassword: true, createdAt: now.toISOString() },
@@ -97,9 +99,12 @@ async function seedLaunchWorkspace(page) {
     localStorage.setItem('dd:workspace:students', JSON.stringify(students))
     localStorage.setItem('dd:workspace:slots', JSON.stringify(slots))
     localStorage.setItem('dd:workspace:bookings', JSON.stringify(bookings))
+    localStorage.setItem('workspace:admin:cars', JSON.stringify([car]))
     localStorage.setItem('workspace:admin:settings', JSON.stringify(settings))
     localStorage.setItem('workspace:admin:documents', JSON.stringify(documents))
     localStorage.setItem('workspace:admin:payments', JSON.stringify(payments))
+    localStorage.setItem('workspace:admin:problem_cases', JSON.stringify([{ id: 'problem-main', schoolId: school.id, studentId: 'stu-debt', title: 'Нет будущей записи после долга', description: 'Нужно связаться с учеником', type: 'debt', priority: 'high', status: 'open', createdAt: now.toISOString(), updatedAt: now.toISOString() }]))
+    localStorage.setItem('workspace:admin:audit_log', JSON.stringify([{ id: 'audit-doc', schoolId: school.id, userId: 'qa', userName: 'QA запуск', action: 'document_verified', entityType: 'document', entityId: 'doc-contract', description: 'Документ проверен перед запуском', createdAt: now.toISOString() }]))
   })
 }
 
@@ -573,6 +578,22 @@ async function checkLaunchCriticalFlow(browser) {
     await page.getByRole('button', { name: /Блоки/ }).click()
     await page.getByRole('dialog').waitFor({ timeout })
     await assertModalFitsViewport(page, 'today blocks modal mobile')
+
+    await openRoute(page, '/admin-panel/launch', ['Готовность к работе', 'Связи данных', 'Рабочая очередь директора'])
+    const launchText = await page.locator('body').innerText()
+    assert(launchText.includes('Доступ школы') && launchText.includes('Документы'), 'launch readiness: key checks missing')
+
+    await openRoute(page, '/admin-panel/reports', ['Отчёты'])
+    const reportsText = await page.locator('body').innerText()
+    assert(reportsText.toLowerCase().includes('ученики без будущей записи') && reportsText.toLowerCase().includes('открытые проблемы'), `reports overview: director control queue missing. Text: ${reportsText.slice(0, 900)}`)
+    await page.getByRole('button', { name: 'Машины' }).click()
+    await page.locator('body', { hasText: 'Hyundai Solaris' }).waitFor({ timeout })
+    const carReportText = await page.locator('body').innerText()
+    assert(carReportText.includes('инструкторов') && carReportText.includes('проведено'), 'reports cars: real car utilization columns missing')
+    await page.getByRole('button', { name: 'Журнал' }).click()
+    await page.locator('select').selectOption('document_verified')
+    const auditText = await page.locator('body').innerText()
+    assert(auditText.includes('Документ проверен'), 'reports audit: document audit action is not filterable/readable')
   })
 }
 
