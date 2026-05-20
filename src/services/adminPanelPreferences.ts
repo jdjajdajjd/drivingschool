@@ -30,7 +30,16 @@ export interface AdminNavDefinition {
 
 export const REQUIRED_ADMIN_NAV_IDS: AdminNavItemId[] = ['today', 'schedule', 'students', 'instructors']
 
-export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['payments', 'documents', 'exams', 'reports', 'cars', 'settings', 'users']
+export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['branches', 'settings']
+
+export const BOOKING_TOOL_ADMIN_NAV_IDS: AdminNavItemId[] = [
+  'today',
+  'schedule',
+  'students',
+  'instructors',
+  'branches',
+  'settings',
+]
 
 export function getAdminPanelPreferencesKey(schoolId: string): string {
   const context = getWorkspaceStaffContext()
@@ -39,14 +48,15 @@ export function getAdminPanelPreferencesKey(schoolId: string): string {
 }
 
 export function getEnabledAdminNavIds(schoolId: string, definitions: AdminNavDefinition[]): AdminNavItemId[] {
-  const required = definitions.filter((item) => item.required).map((item) => item.id)
+  const allowed = new Set(BOOKING_TOOL_ADMIN_NAV_IDS)
+  const required = definitions.filter((item) => item.required && allowed.has(item.id)).map((item) => item.id)
   const defaults = Array.from(new Set([...required, ...DEFAULT_OPTIONAL_ADMIN_NAV_IDS]))
 
   try {
     const raw = getPreference(getAdminPanelPreferencesKey(schoolId))
     if (!raw) return defaults
     const parsed = JSON.parse(raw) as { enabledIds?: unknown }
-    const enabled = Array.isArray(parsed.enabledIds) ? parsed.enabledIds.filter((id): id is AdminNavItemId => typeof id === 'string') : defaults
+    const enabled = Array.isArray(parsed.enabledIds) ? parsed.enabledIds.filter((id): id is AdminNavItemId => typeof id === 'string' && allowed.has(id as AdminNavItemId)) : defaults
     return Array.from(new Set([...required, ...enabled]))
   } catch {
     return defaults
@@ -94,7 +104,7 @@ export const ADMIN_DASHBOARD_BLOCKS: AdminDashboardBlockDefinition[] = [
   { id: 'dataCheck', label: 'Проверка данных', description: 'Ошибки связей.' },
 ]
 
-const DEFAULT_DASHBOARD_BLOCK_IDS: AdminDashboardBlockId[] = ['stats', 'finance', 'attention', 'quickActions']
+const DEFAULT_DASHBOARD_BLOCK_IDS: AdminDashboardBlockId[] = ['stats', 'quickActions']
 
 function getAdminDashboardBlocksKey(schoolId: string): string {
   return `${getAdminPanelPreferencesKey(schoolId)}:dashboard_blocks`

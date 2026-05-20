@@ -23,6 +23,7 @@ import { getWorkspaceStaffContext, isBranchAdminContext } from '../../services/a
 import { roleHasPermission } from '../../services/schoolStaff'
 import type { StaffPermission } from '../../types'
 import {
+  BOOKING_TOOL_ADMIN_NAV_IDS,
   getEnabledAdminNavIds,
   saveEnabledAdminNavIds,
   type AdminNavDefinition,
@@ -46,20 +47,20 @@ type AdminNavItem = AdminNavDefinition & {
 
 function buildNavItems(basePath: string): AdminNavItem[] {
   return [
-    { id: 'today', to: basePath, label: 'Сегодня', description: 'Рабочий день и ближайшие задачи.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
+    { id: 'today', to: basePath, label: 'Главная', description: 'Записи, свободные окна и ссылка для учеников.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
     { id: 'schedule', to: `${basePath}/schedule`, label: 'Расписание', description: 'Окна, записи и переносы занятий.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
     { id: 'bookings', to: `${basePath}/bookings`, label: 'Записи', description: 'Журнал звонков, переносов и отмен.', icon: Headset, permission: permission('schedule.manage'), required: false },
     { id: 'slots', to: `${basePath}/slots`, label: 'Окна', description: 'Сборка сетки и контроль свободного времени.', icon: Clock, permission: permission('schedule.manage'), required: false },
-    { id: 'students', to: `${basePath}/students`, label: 'Ученики', description: 'Карточки учеников и обучение.', icon: Users, permission: permission('students.manage'), required: true },
-    { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Инструкторы и их карточки.', icon: UserCog, permission: permission('branches.manage'), required: true },
-    { id: 'branches', to: `${basePath}/branches`, label: 'Филиалы', description: 'Адреса, телефоны и активность филиалов.', icon: Building2, permission: permission('branches.manage'), required: false },
+    { id: 'students', to: `${basePath}/students`, label: 'Ученики', description: 'Кому доступна самостоятельная запись.', icon: Users, permission: permission('students.manage'), required: true },
+    { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Кто проводит занятия и открывает окна.', icon: UserCog, permission: permission('branches.manage'), required: true },
+    { id: 'branches', to: `${basePath}/branches`, label: 'Филиалы', description: 'Где проходят занятия.', icon: Building2, permission: permission('branches.manage'), required: false },
     { id: 'cars', to: `${basePath}/cars`, label: 'Машины', description: 'Автопарк, статусы, страховки.', icon: Car, permission: permission('vehicles.manage'), required: false },
     { id: 'payments', to: `${basePath}/payments`, label: 'Оплаты', description: 'Задолженности, поступления и частичные оплаты.', icon: Wallet, permission: permission('finance.view'), required: false },
     { id: 'documents', to: `${basePath}/documents`, label: 'Документы', description: 'Договоры, справки и проверки.', icon: FileText, permission: permission('documents.manage'), required: false },
     { id: 'exams', to: `${basePath}/exams`, label: 'Экзамены', description: 'Внутренние и ГИБДД экзамены.', icon: Award, permission: permission('exams.manage'), required: false },
     { id: 'reports', to: `${basePath}/reports`, label: 'Отчёты', description: 'Сводки и показатели школы.', icon: BarChart3, permission: permission('reports.view'), required: false },
     { id: 'launch', to: `${basePath}/launch`, label: 'Запуск', description: 'Готовность школы к работе.', icon: CheckCircle, permission: permission('reports.view'), required: false },
-    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки', description: 'Параметры школы и записи.', icon: Settings, permission: permission('settings.manage'), required: false },
+    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки', description: 'Публичная ссылка и данные школы.', icon: Settings, permission: permission('settings.manage'), required: false },
     { id: 'users', to: `${basePath}/users`, label: 'Команда', description: 'Сотрудники, роли и филиалы.', icon: ShieldCheck, permission: permission('staff.manage'), required: false },
   ]
 }
@@ -87,7 +88,7 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-2 text-[11px] font-medium text-[#9AA6B2]">Операции</p>
+        <p className="mb-2 px-2 text-[11px] font-medium text-[#9AA6B2]">Запись учеников</p>
         <div className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon
@@ -176,13 +177,15 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   const allNavItems = buildNavItems(basePath)
   const school = ready ? db.schools.currentAdmin() : null
   const enabledIds = school ? getEnabledAdminNavIds(school.id, allNavItems) : []
-  const permittedNavItems = allNavItems.filter((item) => {
+  const bookingToolNavIds = new Set(BOOKING_TOOL_ADMIN_NAV_IDS)
+  const permittedRouteItems = allNavItems.filter((item) => {
     if (mode === 'demo') return true
     return roleHasPermission(staffContext.role, item.permission)
   })
+  const permittedNavItems = permittedRouteItems.filter((item) => bookingToolNavIds.has(item.id as AdminNavItemId))
   const navItems = permittedNavItems.filter((item) => item.required || enabledIds.includes(item.id as AdminNavItemId))
   const mobileNavItems = navItems.filter((item) =>
-    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/payments`, `${basePath}/launch`].includes(item.to),
+    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/instructors`].includes(item.to),
   )
 
   useEffect(() => {
@@ -224,7 +227,11 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
     .slice()
     .sort((left, right) => right.to.length - left.to.length)
     .find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
-  const pageTitle = currentNavItem?.label ?? 'Рабочий день'
+  const currentPermittedRouteItem = permittedRouteItems
+    .slice()
+    .sort((left, right) => right.to.length - left.to.length)
+    .find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
+  const pageTitle = currentNavItem?.label ?? currentRouteItem?.label ?? 'Рабочий день'
   const setupSteps = school ? [
     { label: 'Филиал', done: db.branches.bySchool(school.id).length > 0, to: `${basePath}/branches` },
     { label: 'Инструктор', done: db.instructors.bySchool(school.id).some((item) => item.isActive), to: `${basePath}/instructors` },
@@ -269,7 +276,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
     return <AccessBlockedState schoolName={school.name} reason={accessBlockReason} onSignOut={signOut} />
   }
 
-  const accessDenied = mode === 'workspace' && Boolean(currentRouteItem && !currentNavItem)
+  const accessDenied = mode === 'workspace' && Boolean(currentRouteItem && !currentPermittedRouteItem)
   const fallbackPath = navItems[0]?.to ?? basePath
 
   return (
@@ -481,7 +488,7 @@ function AdminMenuSettingsModal({
   return (
     <Modal open={open} onClose={onClose} title="Разделы" size="md">
       <div className="border-b border-[#111827]/[0.07] bg-[#F8FAFC] px-5 py-3 text-[13px] font-medium leading-5 text-[#687381]">
-        Выберите разделы для бокового меню. Обязательные уже закреплены, остальные можно включить сейчас или позже.
+        Здесь только разделы, нужные для самостоятельной записи учеников. Остальные CRM-разделы временно скрыты.
       </div>
       <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4 sm:p-5">
           {items.map((item) => (

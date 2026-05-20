@@ -344,39 +344,6 @@ export function AdminSchedule() {
   }
 
 
-  const exportScheduleCsv = () => {
-    if (!school) return
-    const rows = [
-      ['Дата', 'Время', 'Длительность', 'Статус', 'Ученик', 'Телефон', 'Инструктор', 'Филиал', 'Тип'],
-      ...filteredSlots
-        .slice()
-        .sort((left, right) => getSlotDateTime(left).getTime() - getSlotDateTime(right).getTime())
-        .map((slot) => {
-          const booking = slot.bookingId ? data.bookings.find((item) => item.id === slot.bookingId) ?? null : null
-          const instructor = data.instructors.find((item) => item.id === slot.instructorId)
-          const branch = data.branches.find((item) => item.id === slot.branchId)
-          return [
-            slot.date,
-            slot.time,
-            formatDuration(slot.duration),
-            getSlotStatusLabel(slot.status),
-            booking?.studentName ?? '',
-            booking?.studentPhone ?? '',
-            instructor?.name ?? '',
-            branch?.name ?? '',
-            LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие',
-          ]
-        }),
-    ]
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `vroom-schedule-${school.slug}-${format(selectedDate, 'yyyy-MM-dd')}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
-  }
-
   if (!school) return null
 
   return (
@@ -406,10 +373,7 @@ export function AdminSchedule() {
             Создать окна
           </button>
           <button onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
-            Шаблон
-          </button>
-          <button onClick={exportScheduleCsv} className="v-admin-button-secondary">
-            Экспорт
+            Повторить неделю
           </button>
         </div>
       </div>
@@ -467,8 +431,8 @@ export function AdminSchedule() {
         {filteredSlots.length === 0 ? (
           <div className="v-admin-empty mb-3">
             <div>
-              <h2 className="text-[18px] font-black text-[#111418]">Нет окон</h2>
-              <p className="mt-1 text-[13px] font-bold text-[#66717D]">Смените фильтр или создайте окна.</p>
+              <h2 className="text-[18px] font-semibold text-[#111418]">Окон не найдено</h2>
+              <p className="mt-1 text-[13px] font-medium text-[#66717D]">Создайте свободное время или смените фильтр.</p>
             </div>
           </div>
         ) : null}
@@ -614,7 +578,7 @@ export function AdminSchedule() {
         />
       </Modal>
 
-      <Modal open={showTemplateModal} onClose={() => setShowTemplateModal(false)} title="Шаблон окон" size="md">
+      <Modal open={showTemplateModal} onClose={() => setShowTemplateModal(false)} title="Повторить расписание" size="md">
         <SlotTemplateForm
           schoolId={school.id}
           instructors={data.instructors}
@@ -643,7 +607,7 @@ export function AdminSchedule() {
               <div className="flex justify-between gap-4"><span className="text-[#687381]">Длительность</span><span className="text-[#111315]">{formatDuration(selectedSlot.duration)}</span></div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <button onClick={duplicateSelectedSlotTomorrow} disabled={actionPending} className="v-admin-button-secondary sm:col-span-2 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Дубль завтра'}</button>
+              <button onClick={duplicateSelectedSlotTomorrow} disabled={actionPending} className="v-admin-button-secondary sm:col-span-2 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Повторить завтра'}</button>
               {selectedSlot.status === 'booked' && selectedBooking ? (
                 <>
                   <button onClick={() => setShowRescheduleModal(true)} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">Перенести</button>
