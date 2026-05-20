@@ -16,6 +16,9 @@ export interface School {
   defaultLessonDuration?: number
   enabledCategoryCodes?: string[]
   isActive?: boolean
+  salesStatus?: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk'
+  salesNextContact?: string
+  salesNote?: string
 }
 
 export interface Branch {

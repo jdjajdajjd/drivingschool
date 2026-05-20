@@ -83,6 +83,46 @@ type CreatedAccessState = {
   }
 }
 
+type SalesState = {
+  status: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk'
+  nextContact: string
+  note: string
+}
+
+const SALES_STATUS_LABELS: Record<SalesState['status'], string> = {
+  lead: 'Лид',
+  thinking: 'Думает',
+  paid: 'Оплатил',
+  onboarding: 'Подключаем',
+  active: 'Активен',
+  risk: 'Риск',
+}
+
+function readSalesState(schoolId: string | undefined): SalesState {
+  const fallback: SalesState = { status: 'lead', nextContact: '', note: '' }
+  const school = schoolId ? db.schools.byId(schoolId) : null
+  const schoolState: SalesState = {
+    status: school?.salesStatus ?? fallback.status,
+    nextContact: school?.salesNextContact ?? fallback.nextContact,
+    note: school?.salesNote ?? fallback.note,
+  }
+  if (!schoolId || typeof window === 'undefined') return fallback
+  try {
+    const raw = localStorage.getItem(`vroom:sales-state:${schoolId}`)
+    return raw ? { ...schoolState, ...JSON.parse(raw) as Partial<SalesState> } : schoolState
+  } catch {
+    return schoolState
+  }
+}
+
+function saveSalesState(schoolId: string, state: SalesState): void {
+  const school = db.schools.byId(schoolId)
+  if (school) {
+    db.schools.upsert({ ...school, salesStatus: state.status, salesNextContact: state.nextContact, salesNote: state.note })
+  }
+  localStorage.setItem(`vroom:sales-state:${schoolId}`, JSON.stringify(state))
+}
+
 function readCreatedAccess(schoolId: string | undefined): { login: string; password: string } | null {
   if (!schoolId || typeof window === 'undefined') return null
   try {
@@ -118,6 +158,7 @@ export function SuperAdminSchoolDetail() {
   const [accessPending, setAccessPending] = useState(false)
   const [accessEditing, setAccessEditing] = useState(false)
   const [verifiedAccessLogin, setVerifiedAccessLogin] = useState(initialCreatedAccess?.login ?? '')
+  const [salesState, setSalesState] = useState<SalesState>(() => readSalesState(schoolId))
 
   const collections = useMemo(() => {
     if (!schoolId) return null
@@ -274,6 +315,11 @@ export function SuperAdminSchoolDetail() {
     await copyAccessValue(buildDirectorLaunchMessage())
   }
 
+  function persistSalesState(): void {
+    saveSalesState(school.id, salesState)
+    showToast('Статус продажи сохранён.', 'success')
+  }
+
   return (
     <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
@@ -345,6 +391,31 @@ export function SuperAdminSchoolDetail() {
                 Текст директору
               </button>
             </div>
+          </div>
+        </Section>
+
+        <Section title="Продажа и следующий контакт" description="Лёгкая CRM для ручной продажи без платежки: кому написать, что обещано и когда дожимать.">
+          <div className="grid gap-3 lg:grid-cols-[220px_220px_minmax(0,1fr)_auto] lg:items-end">
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Статус</span>
+              <select value={salesState.status} onChange={(event) => setSalesState((current) => ({ ...current, status: event.target.value as SalesState['status'] }))} className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]">
+                {Object.entries(SALES_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Следующий контакт</span>
+              <input type="date" value={salesState.nextContact} onChange={(event) => setSalesState((current) => ({ ...current, nextContact: event.target.value }))} className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]" />
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Заметка</span>
+              <input value={salesState.note} onChange={(event) => setSalesState((current) => ({ ...current, note: event.target.value }))} placeholder="Например: директор попросил показать импорт и расписание" className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]" />
+            </label>
+            <Button onClick={persistSalesState}>Сохранить</Button>
+          </div>
+          <div className="mt-3 rounded-[14px] border border-[#DCE2E8] bg-[#F8FAFC] p-4">
+            <p className="text-[13px] font-bold leading-5 text-[#66717D]">
+              Текущий фокус: {salesState.status === 'paid' || salesState.status === 'onboarding' ? 'после оплаты быстро выдать доступ и провести первую настройку.' : salesState.status === 'risk' ? 'разобрать возражение и назначить короткий созвон.' : 'довести до оплаты переводом и сразу открыть кабинет.'}
+            </p>
           </div>
         </Section>
 

@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { addDays, eachDayOfInterval, format, isSameDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus } from 'iconoir-react'
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from 'iconoir-react'
 import { useLocation } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirmed, getSlotDateTime, rescheduleBookingConfirmed } from '../../services/bookingService'
@@ -49,6 +49,12 @@ function statusDotClass(status: Slot['status']) {
   if (status === 'available') return 'bg-[#34C759]'
   if (status === 'cancelled') return 'bg-[#98A2B3]'
   return 'bg-[#0A84FF]'
+}
+
+function getSlotStatusLabel(status: Slot['status']): string {
+  if (status === 'available') return 'Свободно'
+  if (status === 'cancelled') return 'Отменено'
+  return 'Занято'
 }
 
 export function AdminSchedule() {
@@ -110,6 +116,7 @@ export function AdminSchedule() {
     todayFree: todayVisibleSlots.filter((slot) => slot.status === 'available').length,
     instructors: new Set(todayVisibleSlots.map((slot) => slot.instructorId)).size,
   }
+  const staleFreeSlots = data.slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) < new Date())
 
   const dailySummary = viewRange.map((date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
@@ -284,6 +291,35 @@ export function AdminSchedule() {
     setSelectedSlotId(result.slot.id)
   }
 
+  const hideStaleFreeSlots = async () => {
+    const access = assertAdminPermission('schedule.manage')
+    if (!access.ok || !school || staleFreeSlots.length === 0 || actionPending) return
+    setActionPending(true)
+    let changed = 0
+    for (const slot of staleFreeSlots) {
+      const result = await updateSlotStatusConfirmed(slot.id, 'cancelled')
+      if (result.ok) changed += 1
+    }
+    setActionPending(false)
+    createCurrentStaffAuditEntry(school.id, 'slot_cancelled', 'slot', 'bulk-stale', `Скрыты прошедшие свободные окна: ${changed}`)
+    showToast(`Скрыто прошедших свободных окон: ${changed}`, 'success')
+  }
+
+  const hideSelectedFreeSlot = async () => {
+    const access = assertAdminPermission('schedule.manage')
+    if (!access.ok || !selectedSlot || selectedSlot.status !== 'available' || actionPending) return
+    setActionPending(true)
+    const result = await updateSlotStatusConfirmed(selectedSlot.id, 'cancelled')
+    setActionPending(false)
+    if (!result.ok) {
+      showToast(result.error ?? 'Не удалось скрыть окно.', 'error')
+      return
+    }
+    createCurrentStaffAuditEntry(selectedSlot.schoolId, 'slot_cancelled', 'slot', selectedSlot.id, `Скрыто свободное окно ${selectedSlot.date} ${selectedSlot.time}`)
+    showToast('Свободное окно скрыто.', 'success')
+    setSelectedSlotId(null)
+  }
+
   if (!school) return null
 
   return (
@@ -315,6 +351,11 @@ export function AdminSchedule() {
           <button onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
             Шаблон
           </button>
+          {staleFreeSlots.length ? (
+            <button onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">
+              Скрыть прошедшие: {staleFreeSlots.length}
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -429,7 +470,7 @@ export function AdminSchedule() {
                         <span className="min-w-0">
                           <span className="flex min-w-0 items-center gap-2">
                             <span className="v-route-title">{booking?.studentName ?? `Свободно · ${formatDuration(slot.duration)}`}</span>
-                            <span className={`v-admin-pill shrink-0 ${slot.status === 'available' ? 'v-tone-ok' : slot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{slot.status === 'available' ? 'Свободно' : slot.status === 'cancelled' ? 'Отменено' : 'Занято'}</span>
+                            <span className={`v-admin-pill shrink-0 ${slot.status === 'available' ? 'v-tone-ok' : slot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{getSlotStatusLabel(slot.status)}</span>
                           </span>
                           <span className="v-route-meta">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
                         </span>
@@ -519,7 +560,7 @@ export function AdminSchedule() {
               <p className="mt-1 text-[14px] font-medium text-[#687381]">{format(getSlotDateTime(selectedSlot), 'EEEE, d MMMM', { locale: ru })}</p>
             </div>
             <div className="grid gap-3 text-[14px] font-medium">
-              <div className="flex justify-between gap-4"><span className="text-[#687381]">Статус</span><span className={`v-admin-pill ${selectedSlot.status === 'available' ? 'v-tone-ok' : selectedSlot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{selectedSlot.status === 'available' ? 'Свободно' : selectedSlot.status === 'cancelled' ? 'Отменено' : 'Занято'}</span></div>
+              <div className="flex justify-between gap-4"><span className="text-[#687381]">Статус</span><span className={`v-admin-pill ${selectedSlot.status === 'available' ? 'v-tone-ok' : selectedSlot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{getSlotStatusLabel(selectedSlot.status)}</span></div>
               <div className="flex justify-between gap-4"><span className="text-[#687381]">Инструктор</span><span className="text-right text-[#111315]">{selectedInstructor?.name ?? 'Не назначен'}</span></div>
               <div className="flex justify-between gap-4"><span className="text-[#687381]">Филиал</span><span className="text-right text-[#111315]">{selectedBranch?.name ?? 'Не указан'}</span></div>
               {selectedBooking ? (
@@ -540,7 +581,10 @@ export function AdminSchedule() {
                   <button onClick={() => setShowCancelModal(true)} disabled={actionPending} className="v-admin-button bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">Отменить</button>
                 </>
               ) : selectedSlot.status === 'available' ? (
-                <button onClick={() => setShowBookModal(true)} className="v-admin-button sm:col-span-2">Записать ученика</button>
+                <>
+                  <button onClick={() => setShowBookModal(true)} className="v-admin-button">Записать ученика</button>
+                  <button onClick={() => void hideSelectedFreeSlot()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50"><Trash width={15} height={15} /> Скрыть окно</button>
+                </>
               ) : (
                 <a href={`${getAdminBasePathForLocation()}/students`} className="v-admin-button sm:col-span-2">Открыть учеников</a>
               )}

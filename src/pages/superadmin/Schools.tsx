@@ -19,6 +19,22 @@ import { SUPERADMIN_BASE_PATH, WORKSPACE_ADMIN_LOGIN_PATH } from '../../services
 
 type LaunchStep = { label: string; done: boolean }
 
+const SALES_STATUS_LABELS: Record<NonNullable<School['salesStatus']>, string> = {
+  lead: 'Лид',
+  thinking: 'Думает',
+  paid: 'Оплатил',
+  onboarding: 'Подключаем',
+  active: 'Активен',
+  risk: 'Риск',
+}
+
+function getSalesVariant(status: School['salesStatus']): 'success' | 'warning' | 'error' | 'default' {
+  if (status === 'active' || status === 'paid') return 'success'
+  if (status === 'risk') return 'error'
+  if (status === 'thinking' || status === 'onboarding') return 'warning'
+  return 'default'
+}
+
 function getLaunchSteps(item: NonNullable<ReturnType<typeof getSchoolOverview>>): LaunchStep[] {
   return [
     { label: 'Активна', done: item.school.isActive !== false },
@@ -109,7 +125,7 @@ export function SuperAdminSchools() {
               {rows.map((item) => (
                 <DataRow key={item.school.id} className="p-4">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-7">
                       <div>
                         <p className="caption">Школа</p>
                         <p className="mt-1 text-base font-bold #111418">{item.school.name}</p>
@@ -121,6 +137,13 @@ export function SuperAdminSchools() {
                           const status = getLaunchStatus(item)
                           return <div className="mt-1 flex flex-wrap items-center gap-2"><Badge variant={status.variant}>{status.label}</Badge><span className="text-[12px] font-black text-[#66717D]">{status.done}/{status.total}</span></div>
                         })()}
+                      </div>
+                      <div>
+                        <p className="caption">Продажа</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <Badge variant={getSalesVariant(item.school.salesStatus)}>{SALES_STATUS_LABELS[item.school.salesStatus ?? 'lead']}</Badge>
+                          {item.school.salesNextContact ? <span className="text-[12px] font-black text-[#66717D]">{item.school.salesNextContact}</span> : null}
+                        </div>
                       </div>
                       <div>
                         <p className="caption">Ученики / записи</p>

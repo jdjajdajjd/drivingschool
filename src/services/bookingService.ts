@@ -13,6 +13,7 @@ import {
 } from './supabaseAdminService'
 import { createSupabaseBooking } from './supabasePublicService'
 import { loadStudentProgress, saveStudentProgress } from './studentProfile'
+import { adminSettings, getDebtForStudent } from './adminStorage'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
 
@@ -289,6 +290,12 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
   }
 
   const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
+  const settings = adminSettings.get(params.schoolId)
+  const debt = getDebtForStudent(student.id)
+  if (settings.blockBookingOnDebt && debt > 0) {
+    releaseSlotLock(slot.id, params.sessionId)
+    return { ok: false, error: `Запись закрыта из-за долга ${debt.toLocaleString('ru-RU')} ₽. Обратитесь в автошколу.` }
+  }
   const booking: Booking = {
     id: generateId('booking'),
     schoolId: params.schoolId,
@@ -318,8 +325,59 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
 export async function createBookingConfirmed(params: CreateBookingParams): Promise<BookingMutationResult> {
   if (!isWorkspaceSupabaseReady()) return createBooking(params)
 
+  const studentName = normalizePersonName(params.studentName)
+  const normalizedPhone = normalizePhone(params.studentPhone)
+
+  if (!params.branchId || !params.instructorId || !params.slotId) {
+    return { ok: false, error: 'Выберите филиал, инструктора и время.' }
+  }
+
+  if (!studentName) {
+    return { ok: false, error: 'Введите имя ученика.' }
+  }
+
+  if (!validateRussianPhone(normalizedPhone)) {
+    return { ok: false, error: 'Введите корректный номер телефона в российском формате.' }
+  }
+
+  const school = db.schools.byId(params.schoolId)
   const slot = db.slots.byId(params.slotId)
-  if (!slot) return { ok: false, error: 'Выбранное время не найдено.' }
+  const instructor = db.instructors.byId(params.instructorId)
+  const branch = db.branches.byId(params.branchId)
+
+  if (!school || !slot || !instructor || !branch) {
+    return { ok: false, error: 'Не удалось найти данные для записи.' }
+  }
+
+  if (!school.isActive) {
+    return { ok: false, error: 'Автошкола недоступна для записи.' }
+  }
+
+  if (slot.schoolId !== params.schoolId || branch.schoolId !== params.schoolId || instructor.schoolId !== params.schoolId) {
+    return { ok: false, error: 'Выбранные ресурсы не относятся к этой автошколе.' }
+  }
+
+  if (!branch.isActive || !instructor.isActive) {
+    return { ok: false, error: 'Это время больше недоступно для записи.' }
+  }
+
+  if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) {
+    return { ok: false, error: 'Данные выбранного времени изменились. Выберите другое время.' }
+  }
+
+  if (slot.status !== 'available' || slot.bookingId) {
+    return { ok: false, error: 'Это время уже занято. Выберите другое время.' }
+  }
+
+  const limitError = checkBookingLimit(school, normalizedPhone)
+  if (limitError) return { ok: false, error: limitError }
+
+  const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
+  const settings = adminSettings.get(params.schoolId)
+  const debt = getDebtForStudent(student.id)
+  if (settings.blockBookingOnDebt && debt > 0) {
+    return { ok: false, error: `Запись закрыта из-за долга ${debt.toLocaleString('ru-RU')} ₽. Обратитесь в автошколу.` }
+  }
 
   const remote = await createSupabaseBooking({
     schoolId: params.schoolId,
@@ -330,9 +388,6 @@ export async function createBookingConfirmed(params: CreateBookingParams): Promi
   const remoteBookingId = remote.bookingIds[0]
   if (!remoteBookingId) return { ok: false, error: 'Supabase не вернул номер записи.' }
 
-  const studentName = normalizePersonName(params.studentName)
-  const normalizedPhone = normalizePhone(params.studentPhone)
-  const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
   const syncedBooking: Booking = {
     schoolId: params.schoolId,
     branchId: params.branchId,

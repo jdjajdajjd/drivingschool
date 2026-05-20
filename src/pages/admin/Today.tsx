@@ -213,14 +213,23 @@ function LaunchChecklist({
   if (isReady) return null
 
   return (
-    <section className="v-admin-panel v-launch-compact mt-4 p-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="v-admin-pill v-tone-warning">Настройка {doneCount}/{items.length}</span>
-        <div className="min-w-0 flex-1">
-          <strong className="block truncate text-[14px] font-semibold text-[#111827]">Следующий шаг: {nextItem?.title}</strong>
-          <span className="block truncate text-[12px] font-medium text-[#667085]">{nextItem?.text}</span>
+    <section className="v-admin-panel v-launch-compact mt-4 p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <span className="v-admin-pill v-tone-warning">Мастер запуска {doneCount}/{items.length}</span>
+          <h2 className="mt-3 text-[20px] font-semibold text-[#111827]">Довести школу до рабочего состояния</h2>
+          <p className="mt-1 max-w-2xl text-[13px] font-medium leading-5 text-[#667085]">Это путь первого директора: заполнить базу, открыть окна, проверить запись и уже после этого продавать доступ ученикам.</p>
         </div>
-        {nextItem ? <Link to={nextItem.to} className="v-admin-button-secondary h-9 min-h-9 px-3">Открыть</Link> : null}
+        {nextItem ? <Link to={nextItem.to} className="v-admin-button is-blue justify-center">Следующий шаг: {nextItem.title}</Link> : null}
+      </div>
+      <div className="mt-4 grid gap-2 md:grid-cols-5">
+        {items.map((item, index) => (
+          <Link key={item.title} to={item.to} className={`rounded-[16px] border p-3 transition hover:-translate-y-0.5 ${item.done ? 'border-[rgba(52,199,89,0.18)] bg-[rgba(52,199,89,0.08)]' : nextItem?.title === item.title ? 'border-[rgba(10,132,255,0.24)] bg-[#EAF4FF]' : 'border-[#E5EAF1] bg-white'}`}>
+            <span className={`grid h-7 w-7 place-items-center rounded-full text-[12px] font-black ${item.done ? 'bg-[#188447] text-white' : 'bg-white text-[#075EBC]'}`}>{item.done ? '✓' : index + 1}</span>
+            <strong className="mt-3 block text-[13px] font-black text-[#111827]">{item.title}</strong>
+            <span className="mt-1 line-clamp-2 block text-[12px] font-semibold leading-4 text-[#667085]">{item.text}</span>
+          </Link>
+        ))}
       </div>
     </section>
   )

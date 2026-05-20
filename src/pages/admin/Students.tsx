@@ -16,6 +16,15 @@ import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 
 type FilterTab = 'all' | 'active' | 'problem' | 'debt' | 'no_docs' | 'no_instructor' | 'no_group' | 'ready_exam' | 'inactive'
+type ImportSource = 'ai' | 'manual'
+
+type ImportPreview = {
+  fileName: string
+  rows: Record<string, string>[]
+  source: ImportSource
+  mapping: Record<string, ImportField> | null
+  headers: string[]
+}
 
 const STAGE_LABELS: Partial<Record<TrainingStage, string>> = {
   new_request: 'Новая заявка',
@@ -228,6 +237,37 @@ function escapeCsvCell(value: string | number | undefined): string {
   return /[;"\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
+function getImportPreviewStats(rows: Record<string, string>[], schoolId: string) {
+  const existingPhones = new Set(db.students.bySchool(schoolId).map((student) => student.normalizedPhone).filter(Boolean))
+  let created = 0
+  let updated = 0
+  let skipped = 0
+  let debtRows = 0
+  const seenPhones = new Set<string>()
+  const duplicatePhones = new Set<string>()
+  const invalidRows: number[] = []
+
+  rows.forEach((row, index) => {
+    const name = normalizePersonName(row.name ?? '')
+    const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
+    if (!name || normalizedPhone.length < 10) {
+      skipped += 1
+      invalidRows.push(index + 1)
+      return
+    }
+    if (seenPhones.has(normalizedPhone)) {
+      duplicatePhones.add(normalizedPhone)
+      return
+    }
+    seenPhones.add(normalizedPhone)
+    if (existingPhones.has(normalizedPhone)) updated += 1
+    else created += 1
+    if (parseMoney(row.debt ?? '') > 0) debtRows += 1
+  })
+
+  return { created, updated, skipped, debtRows, total: rows.length, duplicateRows: duplicatePhones.size, invalidRows }
+}
+
 export function AdminStudents() {
   const school = db.schools.currentAdmin()
   const [search, setSearch] = useState('')
@@ -242,6 +282,7 @@ export function AdminStudents() {
   const [bulkGroupName, setBulkGroupName] = useState('')
   const [importSummary, setImportSummary] = useState('')
   const [importing, setImporting] = useState(false)
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
   const [compactTable, setCompactTable] = useState(() => localStorage.getItem('dd:admin_students_compact') === 'true')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
@@ -400,7 +441,7 @@ export function AdminStudents() {
     setImportSummary(`Экспортировано ${rows.length} учеников.`)
   }
 
-  const applyStudentImportRows = async (rows: Record<string, string>[], source: 'ai' | 'manual') => {
+  const applyStudentImportRows = async (rows: Record<string, string>[], source: ImportSource) => {
     if (!school) return
     let created = 0
     let updated = 0
@@ -516,13 +557,27 @@ export function AdminStudents() {
       }
       const aiMapping = await getAiImportMapping(parsed.headers, parsed.rows).catch(() => null)
       const rows = aiMapping ? rowsToObjects(parsed.headers, parsed.rows, aiMapping) : parsed.manualRows.length ? parsed.manualRows : parseStudentCsv(await file.text())
-      await applyStudentImportRows(rows, aiMapping ? 'ai' : 'manual')
-      if (aiMapping) {
-        const used = Object.entries(aiMapping).filter(([, field]) => field !== 'ignore').map(([header, field]) => `${header} → ${field}`).join(', ')
-        setImportSummary((current) => `${current} Нейронка сопоставила колонки: ${used || 'ничего не выбрано'}.`)
-      }
+      setImportPreview({ fileName: file.name, rows, source: aiMapping ? 'ai' : 'manual', mapping: aiMapping, headers: parsed.headers })
+      setImportSummary('Проверьте предпросмотр импорта перед сохранением.')
     } catch (error) {
       setImportSummary(error instanceof Error ? error.message : 'Не удалось импортировать файл.')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const confirmImportPreview = async () => {
+    if (!school || !importPreview || importing) return
+    setImporting(true)
+    try {
+      await applyStudentImportRows(importPreview.rows, importPreview.source)
+      if (importPreview.mapping) {
+        const used = Object.entries(importPreview.mapping).filter(([, field]) => field !== 'ignore').map(([header, field]) => `${header} → ${field}`).join(', ')
+        setImportSummary((current) => `${current} Нейронка сопоставила колонки: ${used || 'ничего не выбрано'}.`)
+      }
+      setImportPreview(null)
+    } catch (error) {
+      setImportSummary(error instanceof Error ? error.message : 'Не удалось сохранить импорт.')
     } finally {
       setImporting(false)
     }
@@ -772,6 +827,94 @@ export function AdminStudents() {
           }}
         />
       </Modal>
+
+      <Modal open={Boolean(importPreview)} onClose={() => !importing && setImportPreview(null)} title="Проверка импорта" size="lg">
+        {importPreview ? (
+          <ImportPreviewModal
+            schoolId={school.id}
+            preview={importPreview}
+            pending={importing}
+            onCancel={() => setImportPreview(null)}
+            onConfirm={() => void confirmImportPreview()}
+          />
+        ) : null}
+      </Modal>
+    </div>
+  )
+}
+
+function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }: { schoolId: string; preview: ImportPreview; pending: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const stats = getImportPreviewStats(preview.rows, schoolId)
+  const sample = preview.rows.slice(0, 6)
+  const mappingRows = preview.mapping ? Object.entries(preview.mapping).filter(([, field]) => field !== 'ignore') : []
+
+  return (
+    <div className="p-5">
+      <div className="rounded-[18px] border border-[#D7E2EC] bg-[#F8FBFE] p-4">
+        <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">{preview.fileName}</p>
+        <h3 className="mt-2 text-[20px] font-black text-[#111827]">Перед сохранением проверьте, что попадёт в базу</h3>
+        <p className="mt-2 text-[13px] font-semibold leading-5 text-[#667085]">
+          {preview.source === 'ai' ? 'Колонки сопоставлены нейронкой. Если цифры выглядят странно, отмените импорт и поправьте файл.' : 'Использовано локальное сопоставление колонок без нейронки.'}
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-4">
+        {[
+          ['Создать', stats.created, 'text-[#188447]'],
+          ['Обновить', stats.updated, 'text-[#075EBC]'],
+          ['Пропустить', stats.skipped, 'text-[#C92820]'],
+          ['Долги', stats.debtRows, 'text-[#8A5A00]'],
+        ].map(([label, value, color]) => (
+          <div key={label} className="rounded-[16px] border border-[#E5EAF1] bg-white p-3">
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">{label}</p>
+            <p className={`mt-1 text-[24px] font-black tabular-nums ${color}`}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {(stats.duplicateRows > 0 || stats.invalidRows.length > 0) ? (
+        <div className="mt-4 rounded-[16px] border border-[#FFD6A3] bg-[#FFF8EC] p-4">
+          <p className="text-[13px] font-black text-[#8A5A00]">Нужно проверить перед сохранением</p>
+          <p className="mt-1 text-[13px] font-semibold leading-5 text-[#8A5A00]">
+            {stats.duplicateRows > 0 ? `Повторы телефонов в файле: ${stats.duplicateRows}. ` : ''}
+            {stats.invalidRows.length > 0 ? `Строки без имени или телефона: ${stats.invalidRows.slice(0, 8).join(', ')}${stats.invalidRows.length > 8 ? '...' : ''}.` : ''}
+          </p>
+        </div>
+      ) : null}
+
+      {mappingRows.length ? (
+        <div className="mt-4 rounded-[16px] border border-[#E5EAF1] bg-white p-4">
+          <p className="text-[13px] font-black text-[#111827]">Как распознаны колонки</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {mappingRows.map(([header, field]) => <span key={header} className="rounded-full bg-[#F2F6FA] px-3 py-1 text-[12px] font-bold text-[#38424D]">{header} → {field}</span>)}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-4 overflow-x-auto rounded-[16px] border border-[#E5EAF1] bg-white">
+        <div className="grid min-w-[520px] grid-cols-[minmax(170px,1fr)_120px_90px_90px] gap-3 border-b border-[#E5EAF1] bg-[#F8FAFC] px-4 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">
+          <span>Ученик</span><span>Телефон</span><span>Группа</span><span>Долг</span>
+        </div>
+        {sample.map((row, index) => {
+          const normalizedPhone = (row.phone ?? '').replace(/\D/g, '')
+          const valid = normalizePersonName(row.name ?? '') && normalizedPhone.length >= 10
+          return (
+            <div key={`${row.name}-${index}`} className="grid min-w-[520px] grid-cols-[minmax(170px,1fr)_120px_90px_90px] gap-3 border-b border-[#EEF2F5] px-4 py-3 text-[13px] font-semibold last:border-b-0">
+              <span className={valid ? 'text-[#111827]' : 'text-[#C92820]'}>{row.name || 'без имени'}</span>
+              <span className="truncate text-[#667085]">{row.phone || '—'}</span>
+              <span className="truncate text-[#667085]">{row.groupName || '—'}</span>
+              <span className={parseMoney(row.debt ?? '') > 0 ? 'text-[#C92820]' : 'text-[#667085]'}>{parseMoney(row.debt ?? '') || '—'}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row">
+        <button type="button" onClick={onCancel} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button type="button" onClick={onConfirm} disabled={pending || stats.created + stats.updated === 0} className="v-admin-button flex-1 disabled:opacity-50">
+          {pending ? 'Сохраняем...' : `Сохранить ${stats.created + stats.updated} строк`}
+        </button>
+      </div>
     </div>
   )
 }
