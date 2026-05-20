@@ -10,7 +10,7 @@ import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import {
   cancelBookingConfirmed,
   completeBookingConfirmed,
-  createBooking,
+  createBookingConfirmed,
   getBookingsBySchool,
   getSlotDateTime,
   rescheduleBookingConfirmed,
@@ -160,11 +160,11 @@ export function AdminBookings() {
     setSelectedSlotId('')
   }
 
-  function handleIntakeSubmit() {
+  async function handleIntakeSubmit() {
     if (!school) return
     const slot = db.slots.byId(intakeForm.slotId)
     if (!slot) { showToast('Выберите свободное окно', 'error'); return }
-    const r = createBooking({
+    const r = await createBookingConfirmed({
       schoolId: school.id,
       branchId: slot.branchId,
       instructorId: slot.instructorId,
