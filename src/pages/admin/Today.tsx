@@ -611,7 +611,7 @@ function TodayBlocksModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Блоки главной" size="md">
-      <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4">
+      <div className="v-today-blocks-modal grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4">
         {TODAY_BLOCKS.map((block) => {
           const enabled = draft.includes(block.id)
           return (
@@ -619,20 +619,20 @@ function TodayBlocksModal({
               key={block.id}
               type="button"
               onClick={() => toggle(block.id)}
-              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-[20px] border p-4 text-left transition ${enabled ? 'border-[#111827]/20 bg-[#EAF3FF]' : 'border-white/70 bg-white/75 hover:border-[#111827]/15'}`}
+              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-[20px] border p-4 text-left transition ${enabled ? 'border-[#0A84FF]/25 bg-[#EAF3FF]' : 'border-[#D7E2EC] bg-white hover:border-[#0A84FF]/20'}`}
             >
               <span className="min-w-0">
                 <strong className="block text-[14px] font-semibold text-[#111315]">{block.label}</strong>
                 <span className="mt-1 block text-[13px] font-medium leading-5 text-[#687381]">{block.description}</span>
               </span>
-              <span className={`mt-0.5 h-6 w-10 rounded-full p-1 transition ${enabled ? 'bg-[#111827]' : 'bg-[#DCE2E8]'}`}>
+              <span className={`mt-0.5 h-6 w-10 rounded-full p-1 transition ${enabled ? 'bg-[#0A84FF]' : 'bg-[#DCE2E8]'}`}>
                 <span className={`block h-4 w-4 rounded-full bg-white transition ${enabled ? 'translate-x-4' : ''}`} />
               </span>
             </button>
           )
         })}
       </div>
-      <div className="flex shrink-0 gap-2 border-t border-[#111827]/[0.07] bg-white/95 p-4 backdrop-blur-2xl">
+      <div className="v-modal-actions">
         <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">
           Отмена
         </button>

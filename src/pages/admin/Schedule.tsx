@@ -344,7 +344,7 @@ export function AdminSchedule() {
           <h1 className="v-admin-heading">Расписание</h1>
           <p className="v-admin-note mt-1">{format(selectedDate, 'LLLL yyyy', { locale: ru })} · слоты школы</p>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="v-schedule-toolbar-actions ml-auto flex flex-wrap items-center gap-2">
           <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
             <ChevronLeft width={16} height={16} />
           </button>
@@ -352,7 +352,7 @@ export function AdminSchedule() {
           <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? 1 : 7))} className="v-admin-button-secondary px-3" aria-label="Вперёд">
             <ChevronRight width={16} height={16} />
           </button>
-          <div className="flex rounded-full border border-[#111827]/[0.07] bg-white/70 p-1">
+          <div className="v-schedule-view-toggle flex rounded-full border border-[#111827]/[0.07] bg-white/70 p-1">
             {(['day', 'week'] as ViewMode[]).map((mode) => (
               <button key={mode} onClick={() => setViewModePersisted(mode)} className={`rounded-full px-3 py-2 text-[13px] font-medium ${viewMode === mode ? 'bg-[#111827] text-white' : 'text-[#687381]'}`}>
                 {mode === 'day' ? 'День' : 'Неделя'}

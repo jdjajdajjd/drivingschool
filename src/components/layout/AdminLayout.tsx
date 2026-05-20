@@ -481,20 +481,23 @@ function AdminMenuSettingsModal({
   return (
     <Modal open={open} onClose={onClose} title="Разделы" size="md">
       <div className="border-b border-[#111827]/[0.07] bg-[#F8FAFC] px-5 py-3 text-[13px] font-medium leading-5 text-[#687381]">
-        Оставьте только рабочие разделы. Основные разделы закреплены, остальное можно включать по мере запуска.
+        Выберите разделы для бокового меню. Обязательные уже закреплены, остальные можно включить сейчас или позже.
       </div>
       <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4 sm:p-5">
           {items.map((item) => (
-            <label key={item.id} className="flex items-start gap-3 rounded-[20px] border border-white/70 bg-white/75 p-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
+            <label key={item.id} className="v-menu-section-option flex items-start gap-3 rounded-[20px] border border-white/70 bg-white/75 p-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
               <input
                 type="checkbox"
-                className="mt-0.5 h-5 w-5 shrink-0 accent-[#111827]"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#0A84FF]"
                 checked={item.required || draft.includes(item.id as AdminNavItemId)}
                 disabled={item.required}
                 onChange={() => toggle(item.id as AdminNavItemId)}
               />
               <span className="min-w-0">
-                <span className="block text-[14px] font-semibold text-[#111315]">{item.label}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="block truncate text-[14px] font-semibold text-[#111315]">{item.label}</span>
+                  {item.required ? <span className="v-admin-pill v-tone-muted shrink-0">основной</span> : null}
+                </span>
                 <span className="mt-0.5 block text-[12px] leading-5 text-[#687381]">{item.required ? 'Основной раздел' : item.description}</span>
               </span>
             </label>

@@ -264,7 +264,7 @@ export function AdminReports() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-shrink-0 gap-1 overflow-x-auto border-b border-[#E5EAF1] bg-white px-3 md:px-6">
+      <div className="v-reports-tabs flex flex-shrink-0 gap-1 overflow-x-auto border-b border-[#E5EAF1] bg-white px-3 md:px-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}

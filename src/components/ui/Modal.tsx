@@ -39,7 +39,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       {open && (
         <>
           <motion.div
-            className="fixed inset-0 z-40"
+            className="v-modal-overlay fixed inset-0 z-40"
             style={{ background: 'rgba(17,20,24,0.4)', backdropFilter: 'blur(4px)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -47,12 +47,12 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             transition={{ duration: 0.2 }}
             onClick={onClose}
           />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="v-modal-shell fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-2 pt-[max(10px,env(safe-area-inset-top))] sm:items-center sm:p-4">
             <motion.div
               role="dialog"
               aria-modal="true"
               aria-label={title ?? 'Окно'}
-              className="flex max-h-[calc(100dvh-24px)] w-full flex-col overflow-hidden overscroll-contain"
+              className="v-modal-card flex max-h-[calc(100dvh-20px)] w-full flex-col overflow-hidden overscroll-contain sm:max-h-[calc(100dvh-32px)]"
               style={{
                 background: 'white',
                 border: '1px solid rgba(0,0,0,0.06)',
@@ -67,16 +67,16 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             >
               {title && (
                 <div
-                  className="flex shrink-0 items-center justify-between gap-3 px-5 py-4"
+                  className="v-modal-header flex shrink-0 items-center justify-between gap-3 px-5 py-4"
                   style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
                 >
-                  <h2 className="text-[18px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</h2>
+                  <h2 className="v-modal-title min-w-0 text-[18px] font-extrabold tracking-tight" style={{ color: '#111418' }}>{title}</h2>
                   <button
                     type="button"
                     aria-label="Закрыть"
                     onClick={onClose}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#111827]/10 bg-[#F8FAFC] transition-colors"
-                    style={{ color: '#9EA3A8' }}
+                    className="v-modal-close flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#111827]/10 bg-[#F8FAFC] transition-colors"
+                    style={{ color: '#667085' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = '#F4F5F6'; e.currentTarget.style.color = '#111418' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#9EA3A8' }}
                   >
@@ -84,7 +84,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
                   </button>
                 </div>
               )}
-              <div className="min-h-0 overflow-y-auto">{children}</div>
+              <div className="v-modal-body min-h-0 overflow-y-auto">{children}</div>
             </motion.div>
           </div>
         </>
