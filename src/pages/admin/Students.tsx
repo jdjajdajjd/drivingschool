@@ -482,6 +482,7 @@ export function AdminStudents() {
     let paymentsCreated = 0
     const activeInstructors = db.instructors.bySchool(school.id)
     const branches = db.branches.bySchool(school.id)
+    const seenPhones = new Set<string>()
 
     for (const row of rows) {
       const name = normalizePersonName(row.name ?? '')
@@ -490,6 +491,11 @@ export function AdminStudents() {
         skipped += 1
         continue
       }
+      if (seenPhones.has(normalizedPhone)) {
+        skipped += 1
+        continue
+      }
+      seenPhones.add(normalizedPhone)
 
       const category = (row.category ?? '').split(/[,. ]+/).map((item) => item.trim().toUpperCase()).filter(Boolean)
       const instructor = activeInstructors.find((item) => item.name.toLowerCase() === (row.instructorName ?? '').trim().toLowerCase())
@@ -941,7 +947,7 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
         <div className="mt-4 rounded-[16px] border border-[#FFD6A3] bg-[#FFF8EC] p-4">
           <p className="text-[13px] font-black text-[#8A5A00]">Нужно проверить перед сохранением</p>
           <p className="mt-1 text-[13px] font-semibold leading-5 text-[#8A5A00]">
-            {stats.duplicateRows > 0 ? `Повторы телефонов в файле: ${stats.duplicateRows}. ` : ''}
+            {stats.duplicateRows > 0 ? `Повторы телефонов в файле: ${stats.duplicateRows}. Повторные строки не будут сохранены. ` : ''}
             {stats.invalidRows.length > 0 ? `Строки без имени или телефона: ${stats.invalidRows.slice(0, 8).join(', ')}${stats.invalidRows.length > 8 ? '...' : ''}.` : ''}
           </p>
         </div>

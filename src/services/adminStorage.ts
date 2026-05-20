@@ -327,6 +327,7 @@ export const auditLog = {
     entries.unshift(full)
     // keep last 2000 entries
     write(ADMIN_KEYS.AUDIT_LOG, entries.slice(0, 2000))
+    persistRemote(ADMIN_KEYS.AUDIT_LOG, full)
     return full
   },
 }

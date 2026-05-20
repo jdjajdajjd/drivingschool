@@ -144,8 +144,8 @@ export function SuperAdminSchools() {
                     <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-8">
                       <div>
                         <p className="caption">Школа</p>
-                        <p className="mt-1 text-base font-bold #111418">{item.school.name}</p>
-                        <p className="text-sm #9EA3A8">/{item.school.slug}</p>
+                        <p className="mt-1 text-base font-bold text-[#111418]">{item.school.name}</p>
+                        <p className="text-sm text-[#9EA3A8]">/{item.school.slug}</p>
                       </div>
                       <div>
                         <p className="caption">Запуск</p>
@@ -170,15 +170,15 @@ export function SuperAdminSchools() {
                       </div>
                       <div>
                         <p className="caption">Ученики / записи</p>
-                        <p className="mt-1 text-sm font-bold #111418">{item.studentCount} / {item.activeBookingsCount}</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">{item.studentCount} / {item.activeBookingsCount}</p>
                       </div>
                       <div>
                         <p className="caption">30 дней / время на 7 дней</p>
-                        <p className="mt-1 text-sm font-bold #111418">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">{item.bookingsLast30Days} / {item.freeSlots7Days}</p>
                       </div>
                       <div>
                         <p className="caption">Модули / MRR</p>
-                        <p className="mt-1 text-sm font-bold #111418">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
+                        <p className="mt-1 text-sm font-bold text-[#111418]">{item.enabledModulesCount} / {formatPrice(item.billing.totalMonthlyPrice)}</p>
                       </div>
                       <div>
                         <p className="caption">Что осталось</p>

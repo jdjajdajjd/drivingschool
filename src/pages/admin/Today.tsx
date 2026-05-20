@@ -69,6 +69,16 @@ function useTodayData(schoolId: string, version = 0) {
     const paidToday = payments
       .filter((payment) => payment.paidAt && isSameDay(new Date(payment.paidAt), now))
       .reduce((sum, payment) => sum + payment.paidAmount, 0)
+    const studentNextBookings = new Map<string, Date>()
+    bookings
+      .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+      .filter((entry): entry is { booking: typeof bookings[number]; slot: NonNullable<ReturnType<typeof db.slots.byId>> } => Boolean(entry.slot && entry.booking.status === 'active' && getSlotDateTime(entry.slot) > now))
+      .sort((left, right) => getSlotDateTime(left.slot).getTime() - getSlotDateTime(right.slot).getTime())
+      .forEach((entry) => {
+        const studentId = entry.booking.studentId
+        if (studentId && !studentNextBookings.has(studentId)) studentNextBookings.set(studentId, getSlotDateTime(entry.slot))
+      })
+
     const debtQueue = students
       .map((student) => {
         const debt = payments.filter((payment) => payment.studentId === student.id && ['overdue', 'partial', 'unpaid', 'disputed'].includes(payment.status) && payment.remainingAmount > 0).reduce((sum, payment) => sum + payment.remainingAmount, 0)
@@ -81,6 +91,14 @@ function useTodayData(schoolId: string, version = 0) {
       .filter((entry) => entry.debt > 0)
       .sort((left, right) => right.debt - left.debt)
       .slice(0, 5)
+
+    const studentsWithoutInstructor = students.filter((student) => !student.assignedInstructorId).length
+    const studentsWithoutNextBooking = students.filter((student) => !studentNextBookings.has(student.id) && !['archived', 'refused', 'completed', 'training_completed'].includes(student.trainingStage ?? '')).length
+    const requiredDocuments = ['contract', 'medical_certificate']
+    const studentsWithMissingDocs = students.filter((student) => requiredDocuments.some((type) => {
+      const doc = adminDocuments.byType(student.id, type as 'contract' | 'medical_certificate')
+      return !doc || ['missing', 'rejected', 'expired', 'required'].includes(doc.status)
+    })).length
 
     const overdueBookings = bookings.filter((booking) => {
       const slot = db.slots.byId(booking.slotId)
@@ -123,6 +141,9 @@ function useTodayData(schoolId: string, version = 0) {
       openProblems: problemCases.open(schoolId).length,
       examsSoon,
       openStudentRequests: studentRequests.filter((request) => request.status === 'new' || request.status === 'reviewing').length,
+      studentsWithoutInstructor,
+      studentsWithoutNextBooking,
+      studentsWithMissingDocs,
       studentRequests: studentRequests.filter((request) => request.status === 'new' || request.status === 'reviewing').slice(0, 5),
       debtQueue,
       idleInstructors: instructorLoads.filter((load) => load.total > 0 && load.booked === 0).length,
@@ -269,6 +290,9 @@ export function AdminToday() {
     data.carsInRepair > 0 ? { title: 'Машины недоступны', text: `${data.carsInRepair} машин в ремонте или обслуживании`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/cars` } : null,
     data.docsExpiring > 0 ? { title: 'Документы скоро истекут', text: `${data.docsExpiring} документов проверить за 14 дней`, tone: 'info' as const, to: `${getAdminBasePathForLocation()}/documents` } : null,
     data.openStudentRequests > 0 ? { title: 'Запросы учеников', text: `${data.openStudentRequests} переносов или отмен ждут ответа`, tone: 'info' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
+    data.studentsWithoutInstructor > 0 ? { title: 'Ученики без инструктора', text: `${data.studentsWithoutInstructor} учеников не закреплены за инструктором`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
+    data.studentsWithoutNextBooking > 0 ? { title: 'Ученики без ближайшей записи', text: `${data.studentsWithoutNextBooking} учеников могут выпасть из обучения`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
+    data.studentsWithMissingDocs > 0 ? { title: 'Документы мешают допуску', text: `${data.studentsWithMissingDocs} учеников без договора или медсправки`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/documents` } : null,
     data.availableFutureSlots < Math.max(6, data.activeInstructors * 2) ? { title: 'Мало свободных окон', text: `Открыто ${data.availableFutureSlots} будущих окон: ученикам сложнее записаться`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/schedule` } : null,
   ].filter(Boolean)
   const freeSlots = data.todaySlots

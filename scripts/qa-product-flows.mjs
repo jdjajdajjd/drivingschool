@@ -519,6 +519,50 @@ async function checkLaunchCriticalFlow(browser) {
     assert(afterBook.slot?.status === 'booked', 'launch flow: admin booking did not mark slot as booked')
     assert(afterBook.bookings.length === 1, 'launch flow: admin booking did not create exactly one active booking')
 
+    const rescheduleDate = await page.evaluate(() => JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]').find((item) => item.id === 'slot-overlap')?.date)
+    await page.locator('.v-mobile-slot-row, .vroom-slot-card', { hasText: 'Ирина Готовая' }).first().click()
+    await page.getByRole('button', { name: /Перенести/ }).click()
+    await page.getByRole('dialog').last().waitFor({ timeout })
+    await assertModalFitsViewport(page, 'reschedule modal mobile')
+    await page.locator('input[type="date"]').last().fill(rescheduleDate)
+    await page.locator('select').last().selectOption('slot-overlap')
+    await page.getByRole('dialog').last().getByRole('button', { name: /^Перенести$/ }).click()
+    await page.waitForTimeout(300)
+    const afterReschedule = await page.evaluate(() => ({
+      moved: JSON.parse(localStorage.getItem('dd:workspace:bookings') || '[]').find((item) => item.slotId === 'slot-overlap' && item.status === 'active'),
+      oldFreeSlot: JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]').find((item) => item.id === 'slot-free'),
+      oldBookedSlot: JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]').find((item) => item.id === 'slot-booked'),
+      nextSlot: JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]').find((item) => item.id === 'slot-overlap'),
+    }))
+    assert(Boolean(afterReschedule.moved), 'launch flow: reschedule did not move booking to selected free slot')
+    assert(afterReschedule.oldFreeSlot?.status === 'available' || afterReschedule.oldBookedSlot?.status === 'available', 'launch flow: reschedule did not free old slot')
+    assert(afterReschedule.nextSlot?.status === 'booked', 'launch flow: reschedule did not book new slot')
+
+    await openRoute(page, '/admin-panel/students', ['Ученики'])
+    await page.locator('input[type="file"]').first().setInputFiles({
+      name: 'students.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('ФИО;Телефон;Группа;Долг\nМария Импортова;+7 999 123-45-67;B-26;4500\nМария Импортова дубль;+7 999 123-45-67;B-26;4500\n', 'utf8'),
+    })
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'student import preview mobile')
+    const importText = await page.locator('body').innerText()
+    assert(importText.includes('Повторы телефонов') && importText.includes('Долги'), 'student import: preview does not warn about duplicates/debts')
+    await page.keyboard.press('Escape')
+
+    await openRoute(page, '/admin-panel/documents', ['Документы'])
+    await page.getByRole('button', { name: /Загрузить документ/ }).first().click()
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'document upload modal mobile')
+    await page.locator('input[type="file"]').last().setInputFiles({
+      name: 'contract.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lW7kSwAAAABJRU5ErkJggg==', 'base64'),
+    })
+    await page.locator('body', { hasText: 'contract.png' }).waitFor({ timeout })
+    await assertModalFitsViewport(page, 'document upload after file mobile')
+    await page.keyboard.press('Escape')
+
     await openRoute(page, '/admin-panel/payments', ['Оплаты'])
     await page.getByRole('button', { name: /Принять оплату/ }).first().click()
     await page.getByRole('dialog').waitFor({ timeout })

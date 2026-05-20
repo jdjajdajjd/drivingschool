@@ -105,6 +105,17 @@ export function AdminSchedule() {
   const selectedBooking = selectedSlot?.bookingId ? data.bookings.find((booking) => booking.id === selectedSlot.bookingId) ?? null : null
   const selectedInstructor = selectedSlot ? data.instructors.find((item) => item.id === selectedSlot.instructorId) ?? null : null
   const selectedBranch = selectedSlot ? data.branches.find((item) => item.id === selectedSlot.branchId) ?? null : null
+  const rescheduleOptions = selectedSlot && rescheduleDate
+    ? data.slots
+      .filter((slot) =>
+        slot.status === 'available' &&
+        slot.date === rescheduleDate &&
+        slot.instructorId === selectedSlot.instructorId &&
+        slot.id !== selectedSlot.id &&
+        getSlotDateTime(slot) > new Date(),
+      )
+      .sort((left, right) => left.time.localeCompare(right.time))
+    : []
   const filteredSlots = slotFilter === 'all' ? data.slots : data.slots.filter((slot) => slot.status === slotFilter)
   const visibleSummary = {
     total: filteredSlots.length,
@@ -202,12 +213,7 @@ export function AdminSchedule() {
     if (actionPending) return
 
     if (!school || !selectedSlot || !selectedBooking || !rescheduleDate || !rescheduleTime) return
-    const newSlot = data.slots.find((slot) =>
-      slot.date === rescheduleDate &&
-      slot.time === rescheduleTime &&
-      slot.instructorId === selectedSlot.instructorId &&
-      slot.status === 'available',
-    )
+    const newSlot = rescheduleOptions.find((slot) => slot.id === rescheduleTime)
     if (!newSlot) {
       showToast('Свободное время не найдено. Сначала добавьте окно в расписании.', 'error')
       return
@@ -626,9 +632,10 @@ export function AdminSchedule() {
           <p className="text-[14px] font-medium text-[#687381]">Перенести занятие ученика <strong className="font-semibold text-[#111315]">{selectedBooking?.studentName}</strong>.</p>
           <input type="date" value={rescheduleDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={(event) => setRescheduleDate(event.target.value)} className="v-admin-input w-full" />
           <select value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} className="v-admin-input w-full">
-            <option value="">Выберите время</option>
-            {HOURS.map((time) => <option key={time} value={time}>{time}</option>)}
+            <option value="">Выберите свободное окно</option>
+            {rescheduleOptions.map((slot) => <option key={slot.id} value={slot.id}>{slot.time} · {formatDuration(slot.duration)} · {data.branches.find((branch) => branch.id === slot.branchId)?.name ?? 'филиал'}</option>)}
           </select>
+          {rescheduleDate && rescheduleOptions.length === 0 ? <p className="rounded-[14px] bg-[#FFF8EC] px-3 py-2 text-[13px] font-medium text-[#8A5A00]">На эту дату у инструктора нет свободных окон. Сначала создайте окно.</p> : null}
           <div className="v-modal-actions"><button onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Перенести'}</button></div>
         </div>
       </Modal>
