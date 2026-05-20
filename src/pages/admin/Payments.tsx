@@ -9,6 +9,7 @@ import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { getPreference, setPreference } from '../../services/preferenceStorage'
 import { Modal } from '../../components/ui/Modal'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types'
+import { filterStudents } from '../../services/staffScope'
 
 const STATUS_LABELS: Record<PaymentStatus, string> = {
   paid: 'Оплачен',
@@ -157,6 +158,28 @@ export function AdminPayments() {
     { id: 'paid', label: 'Оплаченные' },
   ]
 
+
+  const exportDebtQueueCsv = () => {
+    if (!school) return
+    const rows = [
+      ['Ученик', 'Телефон', 'Долг', 'Просрочка', 'Платежей'],
+      ...collectionQueue.map((item) => [
+        item.student?.name ?? 'Ученик не найден',
+        item.student?.phone ?? '',
+        String(item.debt),
+        String(item.overdue),
+        String(item.payments.length),
+      ]),
+    ]
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `vroom-debts-${school.slug}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   if (!school) return null
 
   return (
@@ -206,7 +229,10 @@ export function AdminPayments() {
                 <h2 className="text-[18px] font-black text-[#111418]">Кого дожать по оплате</h2>
                 <p className="v-admin-note mt-1">Ручные переводы на карту, частичные оплаты и блокеры допуска</p>
               </div>
-              <span className={`v-admin-pill ${collectionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{collectionQueue.length ? `${collectionQueue.length} в очереди` : 'чисто'}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button onClick={exportDebtQueueCsv} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Экспорт долгов</button>
+                <span className={`v-admin-pill ${collectionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{collectionQueue.length ? `${collectionQueue.length} в очереди` : 'чисто'}</span>
+              </div>
             </div>
             {collectionQueue.length === 0 ? (
               <div className="v-admin-empty m-4 py-6">
@@ -352,7 +378,7 @@ export function AdminPayments() {
 }
 
 function AddPaymentForm({ schoolId, onSaved, onClose }: { schoolId: string; onSaved: () => void; onClose: () => void }) {
-  const students = db.students.bySchool(schoolId)
+  const students = filterStudents(db.students.bySchool(schoolId))
   const [studentId, setStudentId] = useState('')
   const [amount, setAmount] = useState('')
   const [paidAmount, setPaidAmount] = useState('')

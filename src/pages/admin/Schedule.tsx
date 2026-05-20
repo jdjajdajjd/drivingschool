@@ -10,7 +10,7 @@ import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
 import { useToast } from '../../components/ui/Toast'
 import { createCurrentStaffAuditEntry } from '../../services/adminStorage'
-import { filterBookings, filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
+import { filterBookings, filterBranches, filterInstructors, filterSlots, filterStudents } from '../../services/staffScope'
 import type { Booking, Branch, Instructor, Slot, Student } from '../../types'
 import { assertAdminPermission } from '../../services/adminAccess'
 import { formatDuration } from '../../lib/utils'
@@ -91,7 +91,7 @@ export function AdminSchedule() {
       bookings: filterBookings(db.bookings.bySchool(school.id)),
       instructors: filterInstructors(db.instructors.bySchool(school.id)),
       branches: filterBranches(db.branches.bySchool(school.id)),
-      students: db.students.bySchool(school.id),
+      students: filterStudents(db.students.bySchool(school.id)),
     }
   }, [school?.id])
 
@@ -335,6 +335,40 @@ export function AdminSchedule() {
     setSelectedSlotId(null)
   }
 
+
+  const exportScheduleCsv = () => {
+    if (!school) return
+    const rows = [
+      ['Дата', 'Время', 'Длительность', 'Статус', 'Ученик', 'Телефон', 'Инструктор', 'Филиал', 'Тип'],
+      ...filteredSlots
+        .slice()
+        .sort((left, right) => getSlotDateTime(left).getTime() - getSlotDateTime(right).getTime())
+        .map((slot) => {
+          const booking = slot.bookingId ? data.bookings.find((item) => item.id === slot.bookingId) ?? null : null
+          const instructor = data.instructors.find((item) => item.id === slot.instructorId)
+          const branch = data.branches.find((item) => item.id === slot.branchId)
+          return [
+            slot.date,
+            slot.time,
+            formatDuration(slot.duration),
+            getSlotStatusLabel(slot.status),
+            booking?.studentName ?? '',
+            booking?.studentPhone ?? '',
+            instructor?.name ?? '',
+            branch?.name ?? '',
+            LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие',
+          ]
+        }),
+    ]
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `vroom-schedule-${school.slug}-${format(selectedDate, 'yyyy-MM-dd')}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   if (!school) return null
 
   return (
@@ -365,6 +399,9 @@ export function AdminSchedule() {
           </button>
           <button onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
             Шаблон
+          </button>
+          <button onClick={exportScheduleCsv} className="v-admin-button-secondary">
+            Экспорт
           </button>
           {staleFreeSlots.length ? (
             <button onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">

@@ -4,6 +4,7 @@ import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import type { BulkSlotCreateResult, LessonType, ResolvedSlot, Slot, SlotStatus } from '../types'
 import { db } from './storage'
 import { getBookingById, getSlotDateTime } from './bookingService'
+import { findInstructorSlotConflict, getSlotCreationConflictError, minutesFromTime } from './scheduleConflicts'
 import {
   createSupabaseSlot,
   deleteSupabaseSlot,
@@ -78,10 +79,6 @@ export function getAvailableSlots(
     .sort((left, right) => getSlotDateTime(left).getTime() - getSlotDateTime(right).getTime())
 }
 
-function minutesFromTime(value: string): number {
-  const [hours, minutes] = value.split(':').map(Number)
-  return hours * 60 + minutes
-}
 
 function isValidTime(value: string): boolean {
   return /^\d{2}:\d{2}$/.test(value) && minutesFromTime(value) >= 0 && minutesFromTime(value) < 24 * 60
@@ -96,16 +93,9 @@ function validateSlotTiming(startTime: string, duration: number): string | null 
   return null
 }
 
-function rangesOverlap(startA: number, durationA: number, startB: number, durationB: number): boolean {
-  return startA < startB + durationB && startB < startA + durationA
-}
 
 export function findSlotConflict(params: { instructorId: string; date: string; startTime: string; duration: number; excludeSlotId?: string }): Slot | null {
-  const start = minutesFromTime(params.startTime)
-  return db.slots
-    .byInstructorAndDate(params.instructorId, params.date)
-    .filter((slot) => slot.id !== params.excludeSlotId && slot.status !== 'cancelled')
-    .find((slot) => rangesOverlap(start, params.duration, minutesFromTime(slot.time), slot.duration)) ?? null
+  return findInstructorSlotConflict(params)
 }
 
 export function checkSlotDuplicate(instructorId: string, date: string, startTime: string): boolean {
@@ -150,10 +140,15 @@ export function createSlot(params: CreateSlotParams, options: { skipRemote?: boo
     return { ok: false, error: 'Нельзя создать время в прошлом.' }
   }
 
-  const conflict = findSlotConflict({ instructorId: params.instructorId, date: params.date, startTime: params.startTime, duration: params.duration })
-  if (conflict) {
-    return { ok: false, error: `Окно пересекается с занятием ${conflict.time} на ${formatDuration(conflict.duration)}.` }
-  }
+  const conflictError = getSlotCreationConflictError({
+    schoolId: params.schoolId,
+    instructorId: params.instructorId,
+    date: params.date,
+    startTime: params.startTime,
+    duration: params.duration,
+    formatDuration,
+  })
+  if (conflictError) return { ok: false, error: conflictError }
 
   const slot: Slot = {
     id: generateId('slot'),
@@ -295,7 +290,15 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
         continue
       }
 
-      if (findSlotConflict({ instructorId: params.instructorId, date: entry.date, startTime: entry.time, duration: params.duration })) {
+      const conflictError = getSlotCreationConflictError({
+        schoolId: params.schoolId,
+        instructorId: params.instructorId,
+        date: entry.date,
+        startTime: entry.time,
+        duration: params.duration,
+        formatDuration,
+      })
+      if (conflictError) {
         skippedDuplicates += 1
         continue
       }

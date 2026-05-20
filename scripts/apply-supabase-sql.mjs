@@ -19,6 +19,7 @@ const safeMigrationPaths = [
   path.join(rootDir, 'supabase', 'migrations', '010_staff_role_credentials.sql'),
   path.join(rootDir, 'supabase', 'migrations', '011_staff_session_verify_roles.sql'),
   path.join(rootDir, 'supabase', 'migrations', '012_booking_access_and_overlap_guardrails.sql'),
+  path.join(rootDir, 'supabase', 'migrations', '013_schedule_conflicts_and_staff_scope.sql'),
 ]
 
 function loadLocalEnv() {

@@ -9,6 +9,7 @@ import { assertAdminPermission } from '../../services/adminAccess'
 import { getAccessSecret, getAdminBasePathForLocation, getWorkspaceStaffContext } from '../../services/accessControl'
 import type { Document, DocumentStatus, DocumentType, Student } from '../../types'
 import { imageFileToDataUrl } from '../student/studentUtils'
+import { filterStudents } from '../../services/staffScope'
 
 const DOC_LABELS: Record<string, string> = {
   contract: 'Договор', passport: 'Паспорт', medical_certificate: 'Медсправка',
@@ -168,7 +169,7 @@ export function AdminDocuments() {
   const [version, setVersion] = useState(0)
   const { showToast } = useToast()
 
-  const students = useMemo(() => school ? db.students.bySchool(school.id) : [], [school?.id, version])
+  const students = useMemo(() => school ? filterStudents(db.students.bySchool(school.id)) : [], [school?.id, version])
 
   const data = useMemo(() => {
     if (!school) return []
@@ -190,7 +191,7 @@ export function AdminDocuments() {
 
   const admissionQueue = useMemo(() => {
     if (!school) return []
-    return db.students.bySchool(school.id).map((student) => {
+    return filterStudents(db.students.bySchool(school.id)).map((student) => {
       const docs = data.filter((entry) => entry.student?.id === student.id).map((entry) => entry.doc)
       const missing = REQUIRED_FOR_EXAM.filter((type) => !docs.some((doc) => doc.type === type && doc.status === 'verified'))
       const broken = docs.filter((doc) => REQUIRED_FOR_EXAM.includes(doc.type as typeof REQUIRED_FOR_EXAM[number]) && isBlockingStatus(doc.status)).map((doc) => doc.type)

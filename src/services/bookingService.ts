@@ -15,6 +15,7 @@ import {
 import { createSupabaseBooking } from './supabasePublicService'
 import { loadStudentProgress, saveStudentProgress } from './studentProfile'
 import { adminDocuments, adminSettings, getDebtForStudent } from './adminStorage'
+import { findActiveBookingResourceConflict } from './scheduleConflicts'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
 
@@ -343,6 +344,12 @@ export function validateBookingForSlot(params: CreateBookingParams): BookingMuta
   const policyError = getStudentSlotPolicyError(school, student, normalizedPhone, slot)
   if (policyError) return { ok: false, error: policyError }
 
+  const resourceConflict = findActiveBookingResourceConflict(slot, {
+    studentId: student?.id,
+    studentPhone: normalizedPhone,
+  })
+  if (resourceConflict) return { ok: false, error: resourceConflict.message }
+
   return { ok: true }
 }
 
@@ -613,6 +620,13 @@ export function rescheduleBooking(params: RescheduleBookingParams, options: { sk
   if (nextSlot.schoolId !== booking.schoolId || nextBranch.schoolId !== booking.schoolId || nextInstructor.schoolId !== booking.schoolId) {
     return { ok: false, error: 'Новое время не относится к автошколе этой записи.' }
   }
+
+  const resourceConflict = findActiveBookingResourceConflict(nextSlot, {
+    excludeBookingId: booking.id,
+    studentId: booking.studentId,
+    studentPhone: booking.studentPhone,
+  })
+  if (resourceConflict) return { ok: false, error: resourceConflict.message }
 
   if (school && !params.ignoreLimits && school.bookingLimitEnabled && school.maxActiveBookingsPerStudent) {
     const futureCount = getStudentActiveFutureBookingsCount(booking.schoolId, booking.studentPhone)

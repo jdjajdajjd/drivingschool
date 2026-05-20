@@ -12,6 +12,7 @@ import { filterBookings, filterStudents } from '../../services/staffScope'
 import { updateStudentAdminConfirmed } from '../../services/studentService'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
+import { openStudentPrintForm } from '../../services/documentTemplates'
 
 function generateStudentPassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -380,13 +381,17 @@ export function AdminStudentDetail() {
 
           {/* Documents */}
           <div className="rounded-2xl border border-gray-100 bg-white p-5">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-[16px] font-bold text-gray-900">Документы</h2>
-              {canManageDocuments ? (
-                <button onClick={() => setShowAddDocument(true)} className="text-[13px] font-bold text-blue-600">
-                  + Добавить
-                </button>
-              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => openStudentPrintForm('contract', { school, student, branch, instructor })} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Договор PDF</button>
+                <button onClick={() => openStudentPrintForm('application', { school, student, branch, instructor })} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Заявление</button>
+                {canManageDocuments ? (
+                  <button onClick={() => setShowAddDocument(true)} className="v-admin-button min-h-9 px-3 text-[12px]">
+                    Добавить
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div className="space-y-2">
               {documents.length === 0 ? (

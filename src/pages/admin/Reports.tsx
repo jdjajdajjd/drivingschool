@@ -4,6 +4,8 @@ import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
 import { adminPayments, adminCars, adminDocuments, adminGIBDDExams, adminInternalExams, adminSettings, auditLog, getDebtForStudent, problemCases, studentProgress } from '../../services/adminStorage'
 import { getSlotDateTime } from '../../services/bookingService'
+import { getSchoolLifecycleStates } from '../../services/studentLifecycle'
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 import type { AuditAction } from '../../types'
 
 type AuditFilter = 'all' | AuditAction
@@ -35,6 +37,7 @@ export function AdminReports() {
     const cars = adminCars.all(school.id)
     const documents = adminDocuments.all(school.id)
     const problems = problemCases.all(school.id)
+    const lifecycleStates = getSchoolLifecycleStates(school.id)
     const now = new Date()
     const activeBookings = bookings.filter((booking) => booking.status === 'active').length
     const completedBookings = bookings.filter((booking) => booking.status === 'completed').length
@@ -74,6 +77,10 @@ export function AdminReports() {
     }))
     const documentsNeedAttention = documents.filter((doc) => doc.status === 'missing' || doc.status === 'rejected' || doc.status === 'expired')
     const activeProblems = problems.filter((problem) => problem.status === 'open' || problem.status === 'in_progress')
+    const lifecycleBlocked = lifecycleStates.filter((state) => state.blockers.length > 0)
+    const lowestReadiness = lifecycleStates.slice(0, 8)
+    const debtQueue = lifecycleStates.filter((state) => state.debt > 0).sort((left, right) => right.debt - left.debt).slice(0, 8)
+    const noFutureQueue = lifecycleStates.filter((state) => state.futureLessons === 0 && !['Выпуск'].includes(state.currentStep)).slice(0, 8)
 
     // Instructor stats
     const instructorStats = instructors.map((instructor) => {
@@ -129,6 +136,10 @@ export function AdminReports() {
       carStats,
       recentAudit,
       days,
+      lifecycleBlocked,
+      lowestReadiness,
+      debtQueue,
+      noFutureQueue,
     }
   }, [school?.id])
 
@@ -182,6 +193,7 @@ export function AdminReports() {
   ]
 
   const maxRevenue = Math.max(...data.revenueByDay.map((d) => d.revenue), 1)
+  const adminBasePath = getAdminBasePathForLocation()
   const directorRisks = [
     data.totalDebt > 0 ? `${data.totalDebt.toLocaleString('ru-RU')} ₽ зависло в долгах` : 'Долги не обнаружены',
     data.noShowBookings > 0 ? `${data.noShowBookings} неявок требуют реакции` : 'Неявок не видно',
@@ -193,6 +205,32 @@ export function AdminReports() {
     { label: 'Открытые проблемы', value: data.activeProblems, tone: data.activeProblems ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Жалобы, переносы, просрочки и ручные задачи.' },
     { label: 'Ученики с долгом', value: data.studentsWithDebt, tone: data.studentsWithDebt ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Кому нельзя давать новые занятия без решения.' },
   ]
+  const directorActionQueue = [
+    ...data.debtQueue.map((state) => ({
+      id: `debt-${state.student.id}`,
+      studentId: state.student.id,
+      title: state.student.name,
+      meta: `Долг ${state.debt.toLocaleString('ru-RU')} ₽`,
+      action: 'Связаться по оплате',
+      tone: 'danger',
+    })),
+    ...data.noFutureQueue.map((state) => ({
+      id: `future-${state.student.id}`,
+      studentId: state.student.id,
+      title: state.student.name,
+      meta: state.blockers.slice(0, 2).join(' · ') || state.currentStep,
+      action: 'Поставить занятие',
+      tone: 'info',
+    })),
+    ...data.lowestReadiness.filter((state) => state.blockers.length).map((state) => ({
+      id: `path-${state.student.id}`,
+      studentId: state.student.id,
+      title: state.student.name,
+      meta: `${state.readiness}% готовности · ${state.blockers.slice(0, 2).join(' · ')}`,
+      action: state.nextAction,
+      tone: 'warning',
+    })),
+  ].filter((item, index, items) => items.findIndex((current) => current.studentId === item.studentId && current.action === item.action) === index).slice(0, 10)
 
 
   function exportBackupJson() {
@@ -320,6 +358,31 @@ export function AdminReports() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#111827]">Очередь действий директора</h3>
+                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Кого дожать по деньгам, кого вернуть в расписание и кто застрял на пути обучения.</p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-[12px] font-black ${directorActionQueue.length ? 'bg-[#FFF3F2] text-[#B42318]' : 'bg-[#EAF7EF] text-[#157347]'}`}>{directorActionQueue.length ? `${directorActionQueue.length} задач` : 'всё чисто'}</span>
+              </div>
+              {directorActionQueue.length === 0 ? (
+                <div className="mt-4 rounded-[16px] border border-[#E5EAF1] bg-[#F8FBFE] p-4 text-[13px] font-bold text-[#667085]">Критичных хвостов не видно. Следующий фокус — загрузка свободных окон и качество выпусков.</div>
+              ) : (
+                <div className="mt-4 divide-y divide-[#111827]/[0.06] overflow-hidden rounded-[16px] border border-[#E5EAF1]">
+                  {directorActionQueue.map((item) => (
+                    <a key={item.id} href={`${adminBasePath}/students/${item.studentId}`} className="grid gap-2 bg-white p-3 transition hover:bg-[#F8FAFC] sm:grid-cols-[minmax(0,1fr)_170px]">
+                      <span className="min-w-0">
+                        <strong className="block truncate text-[14px] font-black text-[#111827]">{item.title}</strong>
+                        <span className="mt-1 block text-[12px] font-semibold leading-4 text-[#667085]">{item.meta}</span>
+                      </span>
+                      <span className={`self-center rounded-[12px] px-3 py-2 text-center text-[12px] font-black ${item.tone === 'danger' ? 'bg-[#FFF3F2] text-[#B42318]' : item.tone === 'warning' ? 'bg-[#FFF7D6] text-[#8A6100]' : 'bg-[#EAF3FF] text-[#315A7C]'}`}>{item.action}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Revenue chart */}

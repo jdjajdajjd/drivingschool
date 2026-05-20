@@ -61,6 +61,7 @@ async function seedLaunchWorkspace(page) {
   await page.addInitScript(() => {
     const now = new Date()
     const today = now.toISOString().slice(0, 10)
+    const tomorrowKey = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     const todayDate = new Date(now)
     todayDate.setHours(23, 0, 0, 0)
     if (todayDate.getTime() <= now.getTime()) todayDate.setDate(todayDate.getDate() + 1)
@@ -79,7 +80,7 @@ async function seedLaunchWorkspace(page) {
     const slots = [
       { id: 'slot-free', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: todaySlotDate, time: '23:00', duration: 60, lessonType: 'city', status: 'available', createdAt: now.toISOString() },
       { id: 'slot-booked', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: today, time: '16:00', duration: 90, lessonType: 'city', status: 'booked', bookingId: 'booking-active', createdAt: now.toISOString() },
-      { id: 'slot-overlap', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: todaySlotDate, time: '23:30', duration: 60, lessonType: 'city', status: 'available', createdAt: now.toISOString() },
+      { id: 'slot-overlap', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: tomorrowKey, time: '10:00', duration: 60, lessonType: 'city', status: 'available', createdAt: now.toISOString() },
     ]
     const bookings = [{ id: 'booking-active', schoolId: school.id, slotId: 'slot-booked', instructorId: instructor.id, branchId: branch.id, studentId: 'stu-main', studentName: 'Ирина Готовая', studentPhone: '79995550000', studentEmail: '', status: 'active', createdAt: now.toISOString(), updatedAt: now.toISOString() }]
     const settings = [{ schoolId: school.id, defaultLessonDuration: 90, maxDaysAheadForBooking: 14, minHoursBeforeCancel: 4, maxActiveBookingsPerStudent: 2, allowBookingWithDebt: false, allowBookingWithoutMedical: false, allowBookingWithoutContract: false, requireManualModeration: false, allowChangeInstructor: true, allowStudentChooseInstructor: true, allowDifferentInstructors: true, maxLessonsPerDay: 2, maxLessonsPerWeek: 6, breakBetweenLessons: 15, workDays: [1,2,3,4,5], workStartHour: 8, workEndHour: 20, defaultPricingPlans: [], blockBookingOnDebt: true, debtGracePeriodDays: 7, notifyAdminOnNoShow: true, notifyAdminOnCancel: true, notifyAdminOnNewBooking: true, notifyAdminOnDebt: true, requiredDocuments: ['contract', 'medical_certificate'], documentExpiryWarningDays: 14 }]
@@ -488,14 +489,15 @@ async function checkBookingPolicy(browser) {
       ]))
     })
     await page.getByRole('button', { name: /^Записать$/ }).click()
-    await page.waitForTimeout(400)
+    await page.locator('body', { hasText: /инструктора уже есть занятие|конфликт|Машина уже занята/ }).waitFor({ timeout })
+    await page.waitForTimeout(200)
     const stored = await page.evaluate(() => ({
       slots: JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]'),
       bookings: JSON.parse(localStorage.getItem('dd:workspace:bookings') || '[]'),
     }))
     const bookedSlot = stored.slots.find((slot) => slot.id === 'slot-policy-free')
-    assert(bookedSlot?.status === 'booked' && Boolean(bookedSlot.bookingId), 'booking policy: verified student did not book free slot')
-    assert(stored.bookings.filter((booking) => booking.slotId === 'slot-policy-free' && booking.status === 'active').length === 1, 'booking policy: expected exactly one active booking for slot')
+    assert(bookedSlot?.status === 'available' && !bookedSlot.bookingId, 'booking policy: conflict slot was booked anyway')
+    assert(stored.bookings.filter((booking) => booking.slotId === 'slot-policy-free' && booking.status === 'active').length === 0, 'booking policy: conflict created an active booking')
   })
 }
 
