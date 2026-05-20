@@ -126,14 +126,34 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
   )
 }
 
-function AccessBlockedState({ schoolName, onSignOut }: { schoolName: string; onSignOut: () => void }) {
+function getAccessBlockReason(school: { accessStatus?: string; accessPaidUntil?: string; isActive?: boolean }): 'blocked' | 'overdue' | null {
+  if (school.isActive === false || school.accessStatus === 'blocked') return 'blocked'
+  if (school.accessStatus === 'overdue') return 'overdue'
+  if (school.accessPaidUntil) {
+    const paidUntil = new Date(school.accessPaidUntil + 'T23:59:59')
+    if (Number.isFinite(paidUntil.getTime()) && paidUntil < new Date()) return 'overdue'
+  }
+  return null
+}
+
+function getAccessNotice(school: { accessStatus?: string; accessPaidUntil?: string }): { tone: 'warning' | 'info'; text: string } | null {
+  if (school.accessStatus === 'expires_soon') {
+    return { tone: 'warning', text: school.accessPaidUntil ? 'Доступ оплачен до ' + school.accessPaidUntil + '. Продление фиксирует оператор vroom после перевода.' : 'Доступ скоро закончится. Продление фиксирует оператор vroom после перевода.' }
+  }
+  if (school.accessStatus === 'trial') {
+    return { tone: 'info', text: school.accessPaidUntil ? 'Пробный доступ до ' + school.accessPaidUntil + '. После оплаты оператор переведет школу в активные.' : 'Пробный доступ. После оплаты оператор переведет школу в активные.' }
+  }
+  return null
+}
+
+function AccessBlockedState({ schoolName, reason, onSignOut }: { schoolName: string; reason: 'blocked' | 'overdue'; onSignOut: () => void }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[var(--admin-bg)] p-4 text-[#111315]">
       <section className="w-full max-w-[520px] rounded-[28px] border border-[rgba(255,59,48,0.16)] bg-white p-5 shadow-[var(--shadow-card)] md:p-7">
-        <span className="v-admin-pill v-tone-danger">Доступ остановлен</span>
+        <span className="v-admin-pill v-tone-danger">{reason === 'blocked' ? 'Доступ остановлен' : 'Доступ просрочен'}</span>
         <h1 className="mt-4 text-[28px] font-semibold leading-none text-[#111827]">Кабинет {schoolName} сейчас недоступен</h1>
         <p className="mt-3 text-[14px] font-medium leading-6 text-[#667085]">
-          Доступ продлевает оператор vroom после ручной оплаты. Данные школы сохранены, но рабочие действия временно закрыты.
+          {reason === 'blocked' ? 'Оператор vroom заблокировал кабинет вручную. Данные школы сохранены, но рабочие действия закрыты.' : 'Срок оплаты закончился. После ручного перевода оператор vroom продлит доступ, данные школы сохранятся.'}
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <button type="button" onClick={onSignOut} className="v-admin-button flex-1 justify-center">Выйти</button>
@@ -242,8 +262,11 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
     return <SchoolRequiredState onSignOut={signOut} />
   }
 
-  if (mode === 'workspace' && school && (school.isActive === false || school.accessStatus === 'blocked')) {
-    return <AccessBlockedState schoolName={school.name} onSignOut={signOut} />
+  const accessBlockReason = mode === 'workspace' && school ? getAccessBlockReason(school) : null
+  const accessNotice = mode === 'workspace' && school ? getAccessNotice(school) : null
+
+  if (mode === 'workspace' && school && accessBlockReason) {
+    return <AccessBlockedState schoolName={school.name} reason={accessBlockReason} onSignOut={signOut} />
   }
 
   const accessDenied = mode === 'workspace' && Boolean(currentRouteItem && !currentNavItem)
@@ -365,6 +388,11 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
+          {accessNotice ? (
+            <div className={'mx-3 mt-3 rounded-[18px] border px-4 py-3 text-[13px] font-semibold md:mx-5 ' + (accessNotice.tone === 'warning' ? 'border-[#F6D58B] bg-[#FFF8E8] text-[#8A5A00]' : 'border-[#B8D8FF] bg-[#EEF7FF] text-[#075EBC]')}>
+              {accessNotice.text}
+            </div>
+          ) : null}
           <Suspense fallback={<AdminContentLoader />}>
             <div key={location.pathname} className="admin-route-stage">
               {accessDenied ? <AdminAccessDenied to={fallbackPath} /> : <Outlet />}

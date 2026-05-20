@@ -3,7 +3,7 @@ import { NavArrowRight as ChevronRight, CheckCircle, WarningTriangle } from 'ico
 import { Link } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
-import { adminDocuments, adminSettings, getDebtForStudent } from '../../services/adminStorage'
+import { adminCars, adminDocuments, adminSettings, getDebtForStudent } from '../../services/adminStorage'
 import { loadStudentRequests } from '../../services/studentProfile'
 import { getSlotDateTime } from '../../services/bookingService'
 import { validateDataIntegrity } from '../../services/integrityService'
@@ -39,6 +39,8 @@ export function AdminLaunchReadiness() {
   const instructors = db.instructors.bySchool(school.id)
   const activeInstructors = instructors.filter((instructor) => instructor.isActive)
   const students = db.students.bySchool(school.id)
+  const cars = adminCars.all(school.id)
+  const activeCars = cars.filter((car) => car.status !== 'written_off')
   const slots = db.slots.bySchool(school.id)
   const bookings = db.bookings.bySchool(school.id)
   const activeFutureBookings = bookings.filter((booking) => {
@@ -65,6 +67,8 @@ export function AdminLaunchReadiness() {
   const lowWeekSlots = activeInstructors.length > 0 && weekFreeSlots.length < Math.max(10, activeInstructors.length * 5)
   const idleInstructors = activeInstructors.filter((instructor) => !slots.some((slot) => slot.instructorId === instructor.id && getSlotDateTime(slot) > now && getSlotDateTime(slot) <= sevenDays))
   const studentsWithoutInstructor = students.filter((student) => !student.assignedInstructorId)
+  const studentsWithoutAccess = students.filter((student) => !student.hasPassword)
+  const accessLooksActive = school.isActive !== false && school.accessStatus !== 'blocked' && school.accessStatus !== 'overdue'
   const studentsWithoutFutureBooking = students.filter((student) => !bookings.some((booking) => {
     const slot = db.slots.byId(booking.slotId)
     return booking.studentId === student.id && booking.status === 'active' && slot !== null && getSlotDateTime(slot) > now
@@ -75,9 +79,12 @@ export function AdminLaunchReadiness() {
     { title: 'Данные школы', text: school.name && school.phone ? 'Название и телефон заполнены' : 'Заполните название и телефон школы', done: Boolean(school.name && school.phone), to: `${basePath}/settings` },
     { title: 'Филиалы', text: activeBranches.length ? `${activeBranches.length} активных филиалов` : 'Добавьте хотя бы один активный филиал', done: activeBranches.length > 0, to: `${basePath}/branches` },
     { title: 'Инструкторы', text: activeInstructors.length ? `${activeInstructors.length} инструкторов в работе` : 'Добавьте инструкторов, иначе расписание не стартует', done: activeInstructors.length > 0, to: `${basePath}/instructors` },
+    { title: 'Машины', text: activeCars.length ? `${activeCars.length} машин в учете` : 'Добавьте хотя бы одну учебную машину, если ведете автопарк', done: activeCars.length > 0, to: `${basePath}/cars`, tone: 'warning' },
     { title: 'Ученики', text: students.length ? `${students.length} учеников в базе` : 'Загрузите учеников или добавьте первого вручную', done: students.length > 0, to: `${basePath}/students` },
     { title: 'Свободные окна', text: weekFreeSlots.length ? `${weekFreeSlots.length} окон на ближайшие 7 дней` : 'Откройте время в расписании на неделю', done: weekFreeSlots.length > 0 && !lowWeekSlots, to: `${basePath}/schedule`, tone: lowWeekSlots ? 'warning' : 'ok' },
     { title: 'Тестовая запись', text: activeFutureBookings.length ? 'Есть будущая активная запись' : 'Сделайте тестовую запись ученика на будущее время', done: activeFutureBookings.length > 0, to: `${basePath}/schedule`, tone: 'warning' },
+    { title: 'Доступ учеников', text: studentsWithoutAccess.length ? `${studentsWithoutAccess.length} учеников без пароля` : 'Ученикам можно выдать личные кабинеты', done: students.length > 0 && studentsWithoutAccess.length === 0, to: `${basePath}/students`, tone: 'warning' },
+    { title: 'Доступ школы', text: accessLooksActive ? 'Кабинет школы доступен' : 'Доступ школы просрочен или заблокирован', done: accessLooksActive, to: `${basePath}/launch`, tone: accessLooksActive ? 'ok' : 'danger' },
     { title: 'Долги', text: debtStudents.length ? `${debtStudents.length} учеников должны ${money(totalDebt)}` : 'Критичных долгов не видно', done: debtStudents.length === 0, to: `${basePath}/payments`, tone: debtStudents.length ? 'danger' : 'ok' },
     { title: 'Документы', text: missingDocuments.length ? `${missingDocuments.length} документов требуют внимания` : docsExpiringSoon.length ? `${docsExpiringSoon.length} документов скоро истекают` : 'Документы без красных флагов', done: missingDocuments.length === 0 && docsExpiringSoon.length === 0, to: `${basePath}/documents`, tone: missingDocuments.length ? 'warning' : docsExpiringSoon.length ? 'warning' : 'ok' },
     { title: 'Запросы учеников', text: pendingStudentRequests.length ? `${pendingStudentRequests.length} запросов ждут ответа` : 'Новых запросов нет', done: pendingStudentRequests.length === 0, to: `${basePath}/students`, tone: pendingStudentRequests.length ? 'warning' : 'ok' },
@@ -93,6 +100,7 @@ export function AdminLaunchReadiness() {
   const directorQueueItems = [
     debtStudents.length ? { label: 'Разобрать долги', text: `${debtStudents.length} учеников, сумма ${money(totalDebt)}`, to: `${basePath}/payments`, danger: true } : null,
     studentsWithoutInstructor.length ? { label: 'Назначить инструкторов', text: `${studentsWithoutInstructor.length} учеников без инструктора`, to: `${basePath}/students`, danger: false } : null,
+    studentsWithoutAccess.length ? { label: 'Выдать доступ ученикам', text: `${studentsWithoutAccess.length} учеников без личного кабинета`, to: `${basePath}/students`, danger: false } : null,
     studentsWithoutFutureBooking.length ? { label: 'Вернуть учеников в график', text: `${studentsWithoutFutureBooking.length} учеников без будущей записи`, to: `${basePath}/students`, danger: false } : null,
     overdueBookings.length ? { label: 'Закрыть прошедшие занятия', text: `${overdueBookings.length} занятий не отмечены`, to: `${basePath}/schedule`, danger: true } : null,
     freeSlotsToday.length ? { label: 'Пустые окна сегодня', text: `${freeSlotsToday.length} свободных окон можно заполнить`, to: `${basePath}/schedule`, danger: false } : null,

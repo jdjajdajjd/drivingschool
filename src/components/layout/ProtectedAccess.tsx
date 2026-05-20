@@ -68,7 +68,7 @@ export function ProtectedAccess({ role, mode = 'demo' }: ProtectedAccessProps) {
 
     const workspaceRole = getWorkspaceStaffContext().role
     const staffRole = role === 'admin' && mode === 'workspace'
-      ? (workspaceRole === 'branch_admin' ? 'branch_admin' : 'admin')
+      ? workspaceRole
       : role
     verifySupabaseStaffSession(staffRole, accessSecret).then((isValid) => {
       if (disposed) return

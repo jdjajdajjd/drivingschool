@@ -135,6 +135,42 @@ async function grantWorkspaceAdmin(page) {
   })
 }
 
+async function grantWorkspaceRole(page, role, options = {}) {
+  await page.addInitScript(({ role, options }) => {
+    const now = new Date()
+    const school = {
+      id: 'school-workspace',
+      name: 'Рабочая автошкола',
+      slug: 'workspace',
+      description: 'Рабочий тестовый контур',
+      phone: '+7 999 000-10-10',
+      email: 'office@example.test',
+      address: 'Москва',
+      createdAt: now.toISOString(),
+      primaryColor: '#1f5b43',
+      bookingLimitEnabled: true,
+      maxActiveBookingsPerStudent: 2,
+      branchSelectionMode: 'student_choice',
+      maxSlotsPerBooking: 1,
+      defaultLessonDuration: 90,
+      enabledCategoryCodes: ['B'],
+      isActive: options.isActive ?? true,
+      accessStatus: options.accessStatus ?? 'active',
+      accessPaidUntil: options.accessPaidUntil,
+    }
+    sessionStorage.setItem('dd:data_namespace', 'workspace')
+    sessionStorage.setItem('dd:access:admin:workspace', 'granted')
+    sessionStorage.setItem('dd:access_secret:admin:workspace', 'qa-password')
+    sessionStorage.setItem('dd:staff_context:workspace', JSON.stringify({ role, schoolId: school.id, branchIds: options.branchIds ?? [], name: 'QA роль' }))
+    localStorage.setItem('dd:workspace:schools', JSON.stringify([school]))
+    localStorage.setItem('dd:workspace:branches', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:instructors', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:students', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:slots', JSON.stringify([]))
+    localStorage.setItem('dd:workspace:bookings', JSON.stringify([]))
+  }, { role, options })
+}
+
 async function grantBranchAdminWithWorkspaceData(page) {
   await page.addInitScript(() => {
     const now = new Date()
@@ -295,6 +331,21 @@ async function checkBranchAdminScope(browser) {
   })
 }
 
+async function checkRolePermissions(browser) {
+  await withPage(browser, 'accountant role permissions', { width: 1440, height: 900 }, async (page) => {
+    await grantWorkspaceRole(page, 'accountant')
+    await openRoute(page, '/admin-panel/payments', ['Оплаты'])
+    const deniedText = await openRoute(page, '/admin-panel/students', ['Недостаточно прав'])
+    assert(!deniedText.includes('Добавить ученика'), 'accountant: can use students section')
+  })
+
+  await withPage(browser, 'overdue school access', { width: 390, height: 844 }, async (page) => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    await grantWorkspaceRole(page, 'admin', { accessStatus: 'overdue', accessPaidUntil: yesterday })
+    await openRoute(page, '/admin-panel', ['Доступ просрочен', 'сейчас недоступен'])
+  })
+}
+
 async function checkDemoAdmin(browser, viewport, label) {
   await withPage(browser, `demo admin ${label}`, viewport, async (page) => {
     await grantDemoAdmin(page)
@@ -321,6 +372,7 @@ try {
   await checkWorkspaceAdmin(browser, { width: 390, height: 844 }, 'mobile')
   await checkWorkspaceAdmin(browser, { width: 1440, height: 900 }, 'desktop')
   await checkBranchAdminScope(browser)
+  await checkRolePermissions(browser)
   await checkDemoAdmin(browser, { width: 390, height: 844 }, 'mobile')
 } finally {
   await browser.close()
