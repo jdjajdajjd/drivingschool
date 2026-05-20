@@ -591,6 +591,14 @@ async function checkLaunchCriticalFlow(browser) {
     const partialPayment = await page.evaluate(() => JSON.parse(localStorage.getItem('workspace:admin:payments') || '[]').find((item) => item.description === 'Рассрочка за практику'))
     assert(partialPayment?.status === 'partial' && partialPayment.paidAmount === 4000 && partialPayment.remainingAmount === 8000 && Boolean(partialPayment.dueDate), 'payments: partial manual payment was not saved correctly')
 
+    await openRoute(page, '/admin-panel/cars', ['Машины'])
+    await page.getByRole('button', { name: /Добавить/ }).first().click()
+    await page.getByRole('dialog').waitFor({ timeout })
+    await assertModalFitsViewport(page, 'car form modal mobile')
+    const carModalText = await page.locator('body').innerText()
+    assert(carModalText.includes('ОСАГО до') && carModalText.includes('Сервис до'), 'cars: form does not collect insurance/service dates')
+    await page.keyboard.press('Escape')
+
     await openRoute(page, '/admin-panel', ['Сегодня'])
     await page.getByRole('button', { name: /Блоки/ }).click()
     await page.getByRole('dialog').waitFor({ timeout })

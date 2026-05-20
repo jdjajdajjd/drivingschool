@@ -262,7 +262,10 @@ export function AdminDocuments() {
               <span className={`v-admin-pill ${admissionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{admissionQueue.length ? `${admissionQueue.length} проверить` : 'чисто'}</span>
             </div>
             {admissionQueue.length === 0 ? (
-              <div className="p-5 text-[13px] font-semibold text-gray-400">Блокеров допуска сейчас не видно.</div>
+              <div className="v-admin-empty m-4 min-h-[132px] py-6">
+                <strong>Допуск выглядит чисто</strong>
+                <span>Ученики с долгом, просрочкой справки или неполным пакетом документов появятся здесь первыми.</span>
+              </div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {admissionQueue.map(({ student, blockers, debt, isNearExam, hours, total }) => (
@@ -288,7 +291,13 @@ export function AdminDocuments() {
         </section>
 
         {filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center"><p className="text-gray-400">Документов не найдено</p></div>
+          <div className="px-3 pb-5 md:px-5">
+            <div className="v-admin-empty">
+              <strong>Документов не найдено</strong>
+              <span>Смените фильтр или загрузите файл с устройства.</span>
+              <button type="button" onClick={() => setShowAddDocument(true)} className="v-admin-button mt-3">Загрузить документ</button>
+            </div>
+          </div>
         ) : (
           <>
           <div className="grid gap-2 px-3 pb-4 md:hidden">

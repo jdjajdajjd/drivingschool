@@ -25,6 +25,7 @@ export function AdminCars() {
   const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<CarStatus | 'all'>('all')
   const [showAdd, setShowAdd] = useState(false)
+  const [version, setVersion] = useState(0)
 
   const data = useMemo(() => {
     if (!school) return []
@@ -33,7 +34,7 @@ export function AdminCars() {
       const branch = db.branches.byId(car.branchId)
       return { car, instructor, branch }
     })
-  }, [school?.id])
+  }, [school?.id, version])
 
   const filtered = filter === 'all' ? data : data.filter((d) => d.car.status === filter)
   const unavailableCount = data.filter((item) => item.car.status === 'repair' || item.car.status === 'maintenance').length
@@ -72,6 +73,9 @@ export function AdminCars() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(({ car, instructor, branch }) => {
               const st = STATUS_COLORS[car.status]
+              const insuranceExpired = car.insuranceExpiry ? new Date(car.insuranceExpiry) < new Date() : false
+              const serviceSoon = car.nextServiceDate ? new Date(car.nextServiceDate) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) : false
+              const missingDates = !car.insuranceExpiry || !car.nextServiceDate
               return (
                 <div key={car.id} className="v-human-card p-4 transition hover:-translate-y-0.5">
                   <div className="mb-3 flex items-center justify-between">
@@ -110,7 +114,20 @@ export function AdminCars() {
                         </span>
                       </div>
                     )}
+                    {car.nextServiceDate && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-semibold text-gray-400">Сервис</span>
+                        <span className={`text-[13px] font-semibold ${serviceSoon ? 'text-[#8A6100]' : 'text-gray-700'}`}>
+                          до {car.nextServiceDate}
+                        </span>
+                      </div>
+                    )}
                   </div>
+                  {(insuranceExpired || serviceSoon || missingDates) ? (
+                    <div className={`mt-3 rounded-[16px] px-3 py-2 text-[12px] font-black ${insuranceExpired ? 'bg-red-50 text-red-600' : serviceSoon ? 'bg-[#FFF7D6] text-[#8A6100]' : 'bg-[#F8FAFC] text-[#667085]'}`}>
+                      {insuranceExpired ? 'Проверьте ОСАГО: срок вышел' : serviceSoon ? 'Скоро обслуживание' : 'Заполните сроки ОСАГО и сервиса'}
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
@@ -119,16 +136,16 @@ export function AdminCars() {
       </div>
 
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Добавить машину" size="md">
-        <CarForm schoolId={school?.id ?? ''} onClose={() => setShowAdd(false)} />
+        <CarForm schoolId={school?.id ?? ''} onSaved={() => setVersion((value) => value + 1)} onClose={() => setShowAdd(false)} />
       </Modal>
     </div>
   )
 }
 
-function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void }) {
+function CarForm({ schoolId, onSaved, onClose }: { schoolId: string; onSaved: () => void; onClose: () => void }) {
   const [form, setForm] = useState({
     brand: '', model: '', licensePlate: '', category: 'B',
-    transmission: 'auto' as 'manual' | 'auto', color: '', year: '',
+    transmission: 'auto' as 'manual' | 'auto', color: '', year: '', insuranceExpiry: '', nextServiceDate: '',
     insuranceNumber: '', notes: '',
   })
   const [error, setError] = useState('')
@@ -158,6 +175,8 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
       color: form.color.trim(),
       year: form.year ? parseInt(form.year) : undefined,
       insuranceNumber: form.insuranceNumber.trim(),
+      insuranceExpiry: form.insuranceExpiry || undefined,
+      nextServiceDate: form.nextServiceDate || undefined,
       notes: form.notes.trim(),
       createdAt: new Date().toISOString(),
     }
@@ -165,6 +184,7 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
       setPending(true)
       await adminCars.upsertConfirmed(car)
       createCurrentStaffAuditEntry(schoolId, 'car_created', 'car', car.id, `Добавлена машина ${car.brand} ${car.licensePlate}`)
+      onSaved()
       onClose()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не удалось сохранить машину.')
@@ -193,6 +213,17 @@ function CarForm({ schoolId, onClose }: { schoolId: string; onClose: () => void 
           />
         </div>
       ))}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">ОСАГО до</label>
+          <input type="date" value={form.insuranceExpiry} onChange={(e) => setForm((f) => ({ ...f, insuranceExpiry: e.target.value }))} className="v-admin-input w-full" />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Сервис до</label>
+          <input type="date" value={form.nextServiceDate} onChange={(e) => setForm((f) => ({ ...f, nextServiceDate: e.target.value }))} className="v-admin-input w-full" />
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
