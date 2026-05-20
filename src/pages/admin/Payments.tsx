@@ -77,6 +77,7 @@ export function AdminPayments() {
   const [debtVersion, setDebtVersion] = useState(0)
   const [version, setVersion] = useState(0)
   const [closingPaymentId, setClosingPaymentId] = useState<string | null>(null)
+  const [topUpPayment, setTopUpPayment] = useState<Payment | null>(null)
   const [error, setError] = useState('')
   const canManageFinance = canUseAdminPermission('finance.manage')
 
@@ -260,7 +261,7 @@ export function AdminPayments() {
                         <select value={debtStatus} onChange={(event) => updateDebtStatus(mainPayment.id, event.target.value as DebtStatus)} className="v-admin-input h-9 py-1 text-[12px]">
                           {Object.entries(DEBT_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
-                        {canManageFinance ? <button type="button" disabled={closingPaymentId === mainPayment.id} onClick={() => void closePaymentDebt(mainPayment)} className="v-admin-button h-9 min-h-9 px-3 text-[12px] disabled:opacity-50">{closingPaymentId === mainPayment.id ? 'Закрываем...' : 'Закрыть долг'}</button> : null}
+                        {canManageFinance ? <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setTopUpPayment(mainPayment)} className="v-admin-button-secondary h-9 min-h-9 px-3 text-[12px]">Часть</button><button type="button" disabled={closingPaymentId === mainPayment.id} onClick={() => void closePaymentDebt(mainPayment)} className="v-admin-button h-9 min-h-9 px-3 text-[12px] disabled:opacity-50">{closingPaymentId === mainPayment.id ? '...' : 'Закрыть долг'}</button></div> : null}
                       </div>
                     ) : null}
                   </div>
@@ -315,9 +316,12 @@ export function AdminPayments() {
                   <span className="shrink-0">{payment.paidAt ? format(new Date(payment.paidAt), 'd MMM', { locale: ru }) : payment.dueDate ? `до ${format(new Date(payment.dueDate), 'd MMM', { locale: ru })}` : 'ожидается'}</span>
                 </div>
                 {canManageFinance && payment.remainingAmount > 0 ? (
-                  <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button mt-3 w-full min-h-10 text-[13px] disabled:opacity-50">
-                    {closingPaymentId === payment.id ? 'Закрываем...' : 'Закрыть долг'}
-                  </button>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setTopUpPayment(payment)} className="v-admin-button-secondary min-h-10 text-[13px]">Внести часть</button>
+                    <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button min-h-10 text-[13px] disabled:opacity-50">
+                      {closingPaymentId === payment.id ? 'Закрываем...' : 'Закрыть долг'}
+                    </button>
+                  </div>
                 ) : null}
               </article>
             ))}
@@ -356,9 +360,12 @@ export function AdminPayments() {
                     </td>
                     <td>
                       {canManageFinance && payment.remainingAmount > 0 ? (
-                        <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button-secondary min-h-9 px-3 text-[12px] disabled:opacity-50">
-                          {closingPaymentId === payment.id ? '...' : 'Закрыть'}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={() => setTopUpPayment(payment)} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Часть</button>
+                          <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button-secondary min-h-9 px-3 text-[12px] disabled:opacity-50">
+                            {closingPaymentId === payment.id ? '...' : 'Закрыть долг'}
+                          </button>
+                        </div>
                       ) : <span className="text-[#8D98A4]">—</span>}
                     </td>
                   </tr>
@@ -373,6 +380,80 @@ export function AdminPayments() {
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Принять оплату" size="md">
         <AddPaymentForm schoolId={school.id} onSaved={() => setVersion((value) => value + 1)} onClose={() => setShowAdd(false)} />
       </Modal>
+      <Modal open={Boolean(topUpPayment)} onClose={() => setTopUpPayment(null)} title="Внести часть оплаты" size="md">
+        {topUpPayment ? <TopUpPaymentForm payment={topUpPayment} onSaved={() => setVersion((value) => value + 1)} onClose={() => setTopUpPayment(null)} /> : null}
+      </Modal>
+    </div>
+  )
+}
+
+function TopUpPaymentForm({ payment, onSaved, onClose }: { payment: Payment; onSaved: () => void; onClose: () => void }) {
+  const [paidNow, setPaidNow] = useState(String(payment.remainingAmount))
+  const [method, setMethod] = useState<PaymentMethod>(payment.method ?? 'transfer')
+  const [nextDueDate, setNextDueDate] = useState(payment.dueDate ?? '')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+
+  const save = async () => {
+    const access = assertAdminPermission('finance.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+    const amount = parseMoneyInput(paidNow)
+    if (!Number.isFinite(amount) || amount <= 0) { setError('Укажите сумму поступления.'); return }
+    if (amount > payment.remainingAmount) { setError('Сумма больше остатка долга.'); return }
+    const remaining = Math.max(payment.remainingAmount - amount, 0)
+    const next: Payment = {
+      ...payment,
+      paidAmount: payment.paidAmount + amount,
+      remainingAmount: remaining,
+      status: remaining === 0 ? 'paid' : 'partial',
+      method,
+      dueDate: remaining > 0 ? nextDueDate || payment.dueDate : undefined,
+      paidAt: remaining === 0 ? new Date().toISOString() : payment.paidAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    try {
+      setPending(true)
+      setError('')
+      await adminPayments.upsertConfirmed(next)
+      createCurrentStaffAuditEntry(payment.schoolId, 'payment_added', 'payment', payment.id, `Внесена часть оплаты ${money(amount)}, остаток ${money(remaining)}`)
+      onSaved()
+      onClose()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось сохранить оплату.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <div className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FAFC] p-4">
+        <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">остаток</p>
+        <p className="mt-1 text-[26px] font-black text-[#B42318]">{money(payment.remainingAmount)}</p>
+        <p className="mt-1 text-[13px] font-semibold text-[#667085]">{payment.description}</p>
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Сколько поступило сейчас</span>
+        <input type="number" value={paidNow} onChange={(event) => setPaidNow(event.target.value)} className="v-admin-input w-full" />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Способ</span>
+          <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)} className="v-admin-input w-full">
+            {Object.entries(METHOD_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Новый срок остатка</span>
+          <input type="date" value={nextDueDate} onChange={(event) => setNextDueDate(event.target.value)} className="v-admin-input w-full" />
+        </label>
+      </div>
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
+      <div className="v-modal-actions">
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={() => void save()} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
+      </div>
     </div>
   )
 }

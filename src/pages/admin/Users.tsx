@@ -3,12 +3,28 @@ import { db } from '../../services/storage'
 import { Modal } from '../../components/ui/Modal'
 import { SCHOOL_STAFF_ROLES, getRoleDefinition } from '../../services/schoolStaff'
 import { listSchoolStaff, saveSchoolStaffMemberConfirmed } from '../../services/schoolStaffService'
-import type { User, UserRole } from '../../types'
+import type { StaffPermission, User, UserRole } from '../../types'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { useToast } from '../../components/ui/Toast'
 import { isWorkspaceSupabaseReady } from '../../lib/supabase'
 
 const roleOptions = SCHOOL_STAFF_ROLES.filter((role) => role.id !== 'superadmin')
+
+const PERMISSION_LABELS: Record<StaffPermission, string> = {
+  'school.manage': 'Школа',
+  'branches.manage': 'Филиалы',
+  'staff.manage': 'Команда',
+  'students.manage': 'Ученики',
+  'schedule.manage': 'Расписание',
+  'finance.view': 'Видит финансы',
+  'finance.manage': 'Ведет оплаты',
+  'vehicles.manage': 'Машины',
+  'documents.manage': 'Документы',
+  'exams.manage': 'Экзамены',
+  'reports.view': 'Отчеты',
+  'settings.manage': 'Настройки',
+  'data.delete': 'Удаление',
+}
 
 function digitsOnly(value: string): string {
   return value.replace(/\D/g, '')
@@ -79,7 +95,17 @@ export function AdminUsers() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
+          <>
+            <div className="mb-4 grid gap-3 lg:grid-cols-5">
+              {roleOptions.map((role) => (
+                <button key={role.id} type="button" onClick={() => setShowAdd(true)} className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.035)] transition hover:-translate-y-0.5">
+                  <p className="text-[15px] font-black text-[#111827]">{role.label}</p>
+                  <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-5 text-[#667085]">{role.description}</p>
+                  <p className="mt-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#98A2B3]">{role.permissions.length} прав</p>
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
             {users.map((user) => {
               const role = getRoleDefinition(user.role)
               const assignedBranches = branches.filter((branch) => user.branchIds.includes(branch.id))
@@ -105,6 +131,12 @@ export function AdminUsers() {
                           <span key={label} className="rounded-md bg-[#F2F4F7] px-2 py-1 text-[11px] font-bold text-[#475467]">{label}</span>
                         ))}
                       </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {role.permissions.slice(0, 6).map((permission) => (
+                          <span key={permission} className="rounded-full bg-[#EAF3FF] px-2.5 py-1 text-[11px] font-black text-[#315A7C]">{PERMISSION_LABELS[permission]}</span>
+                        ))}
+                        {role.permissions.length > 6 ? <span className="rounded-full bg-[#F2F4F7] px-2.5 py-1 text-[11px] font-black text-[#667085]">+{role.permissions.length - 6}</span> : null}
+                      </div>
                     </div>
                     <button onClick={() => setEditingUser(user)} className="v-admin-button-secondary">
                       Изменить
@@ -113,7 +145,8 @@ export function AdminUsers() {
                 </div>
               )
             })}
-          </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -253,6 +286,14 @@ function UserForm({
         </select>
         <span className="mt-1.5 block text-[12px] leading-5 text-gray-500">{roleDefinition.description}</span>
       </label>
+      <div className="rounded-[14px] border border-[#E4E7EC] bg-white p-3">
+        <p className="text-[13px] font-black text-gray-900">Что увидит сотрудник</p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {roleDefinition.permissions.map((permission) => (
+            <span key={permission} className="rounded-full bg-[#F2F6FA] px-2.5 py-1 text-[11px] font-black text-[#38424D]">{PERMISSION_LABELS[permission]}</span>
+          ))}
+        </div>
+      </div>
       {roleDefinition.branchScoped ? (
         <div>
           <p className="mb-2 text-[13px] font-semibold text-gray-600">Филиалы</p>
