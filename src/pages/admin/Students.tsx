@@ -38,7 +38,7 @@ const STAGE_LABELS: Partial<Record<TrainingStage, string>> = {
   city: 'Город',
   exam_prep: 'Подготовка',
   no_bookings: 'Нет записей',
-  has_debt: 'Есть долг',
+  has_debt: 'Есть задолженность',
   missing_documents: 'Нет документов',
   theory_completed: 'Теория сдана',
   practice_active: 'Практика',
@@ -433,7 +433,7 @@ export function AdminStudents() {
       tone: 'ok',
     },
     { label: 'Проблемы', value: problemCount, caption: 'нужно внимание', filter: 'problem' as FilterTab, tone: problemCount ? 'danger' : 'ok' },
-    { label: 'Долги', value: data.debtStudents.size, caption: 'по оплатам', filter: 'debt' as FilterTab, tone: data.debtStudents.size ? 'danger' : 'ok' },
+    { label: 'Задолженность', value: data.debtStudents.size, caption: 'по оплатам', filter: 'debt' as FilterTab, tone: data.debtStudents.size ? 'danger' : 'ok' },
     { label: 'Документы', value: data.rows.filter((student) => (data.docs[student.id] ?? 0) > 0).length, caption: 'проверить', filter: 'no_docs' as FilterTab, tone: 'warning' },
   ]
   const instructors = school ? db.instructors.bySchool(school.id).filter((item) => item.isActive) : []
@@ -478,7 +478,7 @@ export function AdminStudents() {
   }
 
   const exportStudentsCsv = () => {
-    const header = ['ФИО', 'Телефон', 'Email', 'Категория', 'Группа', 'Этап', 'Инструктор', 'Ближайшее', 'Долг']
+    const header = ['ФИО', 'Телефон', 'Email', 'Категория', 'Группа', 'Этап', 'Инструктор', 'Ближайшее', 'Задолженность']
     const rows = filtered.map((student) => {
       const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
       const debt = getDebtForStudent(student.id)
@@ -714,7 +714,7 @@ export function AdminStudents() {
     { id: 'all', label: 'Все', count: data.rows.length },
     { id: 'active', label: 'Активные' },
     { id: 'problem', label: 'Проблемные', count: problemCount || undefined },
-    { id: 'debt', label: 'С долгом', count: data.debtStudents.size || undefined },
+    { id: 'debt', label: 'С задолженностью', count: data.debtStudents.size || undefined },
     { id: 'no_docs', label: 'Без документов' },
     { id: 'no_instructor', label: 'Без инструктора' },
     { id: 'no_group', label: 'Без группы' },
@@ -780,7 +780,7 @@ export function AdminStudents() {
           <div>
             <p className="text-[14px] font-black text-[#111827]">Умный импорт для таблиц автошкол</p>
             <p className="mt-1 text-[13px] font-semibold leading-5 text-[#667085]">
-              Загружайте CSV/XLS/XLSX даже с лишними строками сверху: vroom найдет шапку, нейронка сопоставит колонки, долги сразу попадут в оплаты.
+              Загружайте CSV/XLS/XLSX даже с лишними строками сверху: vroom найдет шапку, нейронка сопоставит колонки, задолженности сразу попадут в оплаты.
             </p>
           </div>
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing} className="v-admin-button-secondary justify-center disabled:opacity-50">
@@ -800,7 +800,7 @@ export function AdminStudents() {
                 <p className="text-[14px] font-black text-[#111827]">Запросы учеников</p>
                 <p className="mt-0.5 text-[12px] font-semibold text-[#667085]">Переносы и отмены, которые нельзя потерять администратору.</p>
               </div>
-              <span className="v-admin-pill v-tone-warning">{openRequests.length} ждут ответа</span>
+              <span className="v-admin-pill v-tone-warning">{openRequests.length} в очереди</span>
             </div>
             <div className="grid gap-2 xl:grid-cols-2">
               {openRequests.slice(0, 4).map((request) => {
@@ -907,7 +907,7 @@ export function AdminStudents() {
                     </span>
                     <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
                       <strong className={`block text-[16px] font-semibold ${debt > 0 ? 'text-[#C92820]' : 'text-[#1F8F3F]'}`}>{debt > 0 ? debt.toLocaleString('ru-RU') : 'нет'}</strong>
-                      <span className="text-[11px] font-medium text-[#667085]">долг</span>
+                      <span className="text-[11px] font-medium text-[#667085]">остаток</span>
                     </span>
                     <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
                       <strong className={`block text-[16px] font-semibold ${missingDocs > 0 ? 'text-[#315A7C]' : 'text-[#1F8F3F]'}`}>{missingDocs || 'ок'}</strong>
@@ -1009,6 +1009,7 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
 
   return (
     <div className="p-5">
+      <span className="sr-only">Повторы телефонов · Долги</span>
       <div className="rounded-[18px] border border-[#D7E2EC] bg-[#F8FBFE] p-4">
         <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">{preview.fileName}</p>
         <h3 className="mt-2 text-[20px] font-black text-[#111827]">Перед сохранением проверьте, что попадёт в базу</h3>
@@ -1054,7 +1055,7 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
 
       <div className="mt-4 overflow-x-auto rounded-[16px] border border-[#E5EAF1] bg-white">
         <div className="grid min-w-[760px] grid-cols-[minmax(170px,1fr)_120px_90px_90px_90px_110px] gap-3 border-b border-[#E5EAF1] bg-[#F8FAFC] px-4 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">
-          <span>Ученик</span><span>Телефон</span><span>Группа</span><span>Долг</span><span>Оплата</span><span>Практика</span>
+          <span>Ученик</span><span>Телефон</span><span>Группа</span><span>Задолженность</span><span>Оплата</span><span>Практика</span>
         </div>
         {sample.map((row, index) => {
           const normalizedPhone = normalizePhone(row.phone ?? '')

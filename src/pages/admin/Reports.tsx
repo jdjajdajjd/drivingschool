@@ -238,23 +238,23 @@ export function AdminReports() {
   const payrollTotal = instructorPayroll.reduce((sum, stat) => sum + stat.payout, 0)
   const completedInstructorMinutes = instructorPayroll.reduce((sum, stat) => sum + stat.totalHours, 0)
   const directorRisks = [
-    data.totalDebt > 0 ? `${data.totalDebt.toLocaleString('ru-RU')} ₽ зависло в долгах` : 'Долги не обнаружены',
+    data.totalDebt > 0 ? `${data.totalDebt.toLocaleString('ru-RU')} ₽ в задолженности` : 'Задолженностей не видно',
     data.noShowBookings > 0 ? `${data.noShowBookings} неявок требуют реакции` : 'Неявок не видно',
     data.slotUtilization < 60 ? `Загрузка окон ${data.slotUtilization}%: есть резерв продаж` : `Загрузка окон ${data.slotUtilization}%`,
   ]
   const controlQueue = [
-    { label: 'Ученики без будущей записи', value: data.studentsWithoutFutureBooking, tone: data.studentsWithoutFutureBooking ? 'text-[#075EBC]' : 'text-[#188447]', hint: 'Их надо вернуть в расписание или закрыть обучение.' },
+    { label: 'Ученики без будущей записи', value: data.studentsWithoutFutureBooking, tone: data.studentsWithoutFutureBooking ? 'text-[#075EBC]' : 'text-[#188447]', hint: 'Нужно проверить запись или статус обучения.' },
     { label: 'Документы требуют внимания', value: data.documentsNeedAttention, tone: data.documentsNeedAttention ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Отказы, просрочки и отсутствующие документы.' },
-    { label: 'Открытые проблемы', value: data.activeProblems, tone: data.activeProblems ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Жалобы, переносы, просрочки и ручные задачи.' },
-    { label: 'Ученики с долгом', value: data.studentsWithDebt, tone: data.studentsWithDebt ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Кому нельзя давать новые занятия без решения.' },
+    { label: 'Открытые проблемы', value: data.activeProblems, tone: data.activeProblems ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Жалобы, переносы, просрочки и рабочие вопросы.' },
+    { label: 'Ученики с задолженностью', value: data.studentsWithDebt, tone: data.studentsWithDebt ? 'text-[#C92820]' : 'text-[#188447]', hint: 'Кому нужно проверить оплату перед дальнейшими занятиями.' },
   ]
   const directorActionQueue = [
     ...data.debtQueue.map((state) => ({
       id: `debt-${state.student.id}`,
       studentId: state.student.id,
       title: state.student.name,
-      meta: `Долг ${state.debt.toLocaleString('ru-RU')} ₽`,
-      action: 'Связаться по оплате',
+      meta: `Задолженность ${state.debt.toLocaleString('ru-RU')} ₽`,
+      action: 'Проверить оплату',
       tone: 'danger',
     })),
     ...data.noFutureQueue.map((state) => ({
@@ -262,7 +262,7 @@ export function AdminReports() {
       studentId: state.student.id,
       title: state.student.name,
       meta: state.blockers.slice(0, 2).join(' · ') || state.currentStep,
-      action: 'Поставить занятие',
+      action: 'Проверить запись',
       tone: 'info',
     })),
     ...data.practiceQueue.map((state) => ({
@@ -270,7 +270,7 @@ export function AdminReports() {
       studentId: state.student.id,
       title: state.student.name,
       meta: 'Практика не закрыта, будущей записи нет',
-      action: 'Дать окно',
+      action: 'Назначить окно',
       tone: 'warning',
     })),
     ...data.examQueue.map((state) => ({
@@ -336,7 +336,7 @@ export function AdminReports() {
     const rows = [
       ['Показатель', 'Значение'],
       ['Выручка за месяц', String(reportData.monthRevenue)],
-      ['Долг', String(reportData.totalDebt)],
+      ['Задолженность', String(reportData.totalDebt)],
       ['Активные записи', String(reportData.activeBookings)],
       ['Проведено занятий', String(reportData.completedBookings)],
       ['Отмены', String(reportData.cancelledBookings)],
@@ -390,7 +390,7 @@ export function AdminReports() {
     <div className="flex h-full flex-col bg-[#F5F7FA]">
       <div className="v-reports-header flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-[#E5EAF1] bg-white/92 px-4 py-3 md:px-6">
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">контроль бизнеса</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">сводка школы</p>
           <h1 className="text-[24px] font-black tracking-[-0.03em] text-[#111827]">Отчёты</h1>
         </div>
         <p className="rounded-full border border-[#D7DEE8] bg-[#F8FAFC] px-3 py-1 text-[12px] font-bold text-[#667085]">{format(new Date(), 'MMMM yyyy', { locale: ru })}</p>
@@ -425,7 +425,7 @@ export function AdminReports() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: 'Выручка за месяц', value: `${data.monthRevenue.toLocaleString('ru-RU')} ₽`, color: 'text-green-600' },
-                { label: 'Общий долг', value: `${data.totalDebt.toLocaleString('ru-RU')} ₽`, color: data.totalDebt > 0 ? 'text-red-500' : 'text-green-600' },
+                { label: 'Задолженность', value: `${data.totalDebt.toLocaleString('ru-RU')} ₽`, color: data.totalDebt > 0 ? 'text-red-500' : 'text-green-600' },
                 { label: 'Активных записей', value: data.activeBookings.toString(), color: 'text-gray-900' },
                 { label: 'Загрузка окон', value: `${data.slotUtilization}%`, color: data.slotUtilization < 60 ? 'text-red-500' : 'text-green-600' },
               ].map((stat) => (
@@ -448,8 +448,8 @@ export function AdminReports() {
             <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h3 className="text-[16px] font-bold text-[#111827]">Что директор должен держать под контролем</h3>
-                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Не общий шум, а четыре зоны, где школа реально теряет деньги и порядок.</p>
+                  <h3 className="text-[16px] font-bold text-[#111827]">Основные показатели</h3>
+                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Финансы, документы, записи и рабочие вопросы в одной сводке.</p>
                 </div>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -466,13 +466,13 @@ export function AdminReports() {
             <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-[16px] font-bold text-[#111827]">Очередь действий директора</h3>
-                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Кого дожать по деньгам, кого вернуть в расписание и кто застрял на пути обучения.</p>
+                  <h3 className="text-[16px] font-bold text-[#111827]">Рабочие вопросы</h3>
+                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Ученики и процессы, которые требуют проверки сотрудником школы.</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-[12px] font-black ${directorActionQueue.length ? 'bg-[#FFF3F2] text-[#B42318]' : 'bg-[#EAF7EF] text-[#157347]'}`}>{directorActionQueue.length ? `${directorActionQueue.length} задач` : 'всё чисто'}</span>
               </div>
               {directorActionQueue.length === 0 ? (
-                <div className="mt-4 rounded-[16px] border border-[#E5EAF1] bg-[#F8FBFE] p-4 text-[13px] font-bold text-[#667085]">Критичных хвостов не видно. Следующий фокус — загрузка свободных окон и качество выпусков.</div>
+                <div className="mt-4 rounded-[16px] border border-[#E5EAF1] bg-[#F8FBFE] p-4 text-[13px] font-bold text-[#667085]">Проверки без замечаний. Можно сверить загрузку расписания и выпускные этапы.</div>
               ) : (
                 <div className="mt-4 divide-y divide-[#111827]/[0.06] overflow-hidden rounded-[16px] border border-[#E5EAF1]">
                   {directorActionQueue.map((item) => (
@@ -514,7 +514,7 @@ export function AdminReports() {
                 <p className="mt-1 text-[28px] font-black text-green-600">{data.monthRevenue.toLocaleString('ru-RU')} ₽</p>
               </div>
               <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-                <p className="text-[13px] font-semibold text-red-400">Долги под контролем</p>
+                <p className="text-[13px] font-semibold text-red-400">Задолженность</p>
                 <p className="mt-1 text-[28px] font-black text-red-500">{data.totalDebt.toLocaleString('ru-RU')} ₽</p>
                 <p className="mt-1 text-[12px] font-semibold text-red-400">{data.debtLedger.length} платежей требуют реакции</p>
               </div>
@@ -527,10 +527,10 @@ export function AdminReports() {
             <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-[16px] font-black text-[#111827]">Возраст долгов</h3>
-                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Директору видно не просто сумму, а насколько давно деньги зависли.</p>
+                  <h3 className="text-[16px] font-black text-[#111827]">Сроки задолженности</h3>
+                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Сумма распределена по срокам оплаты.</p>
                 </div>
-                <button type="button" onClick={exportDebtLedgerCsv} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 py-2 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC]">Выгрузить долги</button>
+                <button type="button" onClick={exportDebtLedgerCsv} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 py-2 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC]">Выгрузить задолженность</button>
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 {[

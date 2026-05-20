@@ -54,7 +54,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
     { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Инструкторы и их карточки.', icon: UserCog, permission: permission('branches.manage'), required: true },
     { id: 'branches', to: `${basePath}/branches`, label: 'Филиалы', description: 'Адреса, телефоны и активность филиалов.', icon: Building2, permission: permission('branches.manage'), required: false },
     { id: 'cars', to: `${basePath}/cars`, label: 'Машины', description: 'Автопарк, статусы, страховки.', icon: Car, permission: permission('vehicles.manage'), required: false },
-    { id: 'payments', to: `${basePath}/payments`, label: 'Оплаты', description: 'Долги, поступления и частичные оплаты.', icon: Wallet, permission: permission('finance.view'), required: false },
+    { id: 'payments', to: `${basePath}/payments`, label: 'Оплаты', description: 'Задолженности, поступления и частичные оплаты.', icon: Wallet, permission: permission('finance.view'), required: false },
     { id: 'documents', to: `${basePath}/documents`, label: 'Документы', description: 'Договоры, справки и проверки.', icon: FileText, permission: permission('documents.manage'), required: false },
     { id: 'exams', to: `${basePath}/exams`, label: 'Экзамены', description: 'Внутренние и ГИБДД экзамены.', icon: Award, permission: permission('exams.manage'), required: false },
     { id: 'reports', to: `${basePath}/reports`, label: 'Отчёты', description: 'Сводки и показатели школы.', icon: BarChart3, permission: permission('reports.view'), required: false },

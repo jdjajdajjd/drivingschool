@@ -136,11 +136,11 @@ export function AdminPayments() {
     }
     try {
       await adminPayments.upsertConfirmed(next)
-      createCurrentStaffAuditEntry(payment.schoolId, 'payment_added', 'payment', payment.id, `Закрыт долг ${money(payment.remainingAmount)}`)
+      createCurrentStaffAuditEntry(payment.schoolId, 'payment_added', 'payment', payment.id, `Отмечена полная оплата ${money(payment.remainingAmount)}`)
       setVersion((value) => value + 1)
       setDebtVersion((value) => value + 1)
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Не удалось закрыть долг.')
+      setError(error instanceof Error ? error.message : 'Не удалось закрыть оплату.')
     } finally {
       setClosingPaymentId(null)
     }
@@ -163,7 +163,7 @@ export function AdminPayments() {
   const exportDebtQueueCsv = () => {
     if (!school) return
     const rows = [
-      ['Ученик', 'Телефон', 'Долг', 'Просрочка', 'Платежей'],
+      ['Ученик', 'Телефон', 'Остаток', 'Просрочка', 'Платежей'],
       ...collectionQueue.map((item) => [
         item.student?.name ?? 'Ученик не найден',
         item.student?.phone ?? '',
@@ -176,7 +176,7 @@ export function AdminPayments() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `vroom-debts-${school.slug}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    link.download = `vroom-payments-control-${school.slug}-${format(new Date(), 'yyyy-MM-dd')}.csv`
     link.click()
     URL.revokeObjectURL(link.href)
   }
@@ -188,7 +188,7 @@ export function AdminPayments() {
       <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Оплаты</h1>
-          <p className="v-admin-note mt-1">Долги, частичные оплаты и поступления</p>
+          <p className="v-admin-note mt-1">Задолженности, частичные оплаты и поступления</p>
         </div>
         <div className="v-toolbar-cluster ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-3">
           <div className="rounded-[10px] bg-[#EAF7EF] px-4 py-2">
@@ -200,7 +200,7 @@ export function AdminPayments() {
             <p className="text-[18px] font-black text-[#111418]">{money(totals.paidToday)}</p>
           </div>
           <div className="rounded-[10px] bg-[#FFF3F2] px-4 py-2">
-            <p className="text-[11px] font-black uppercase text-[#B42318]">Долг</p>
+            <p className="text-[11px] font-black uppercase text-[#B42318]">Задолженность</p>
             <p className="text-[18px] font-black text-[#111418]">{money(totals.debt)}</p>
           </div>
           {canManageFinance ? (
@@ -227,18 +227,18 @@ export function AdminPayments() {
           <div className="v-admin-panel overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#111827]/[0.07] p-4">
               <div>
-                <h2 className="text-[18px] font-black text-[#111418]">Кого дожать по оплате</h2>
-                <p className="v-admin-note mt-1">Ручные переводы на карту, частичные оплаты и блокеры допуска</p>
+                <h2 className="text-[18px] font-black text-[#111418]">Контроль оплат</h2>
+                <p className="v-admin-note mt-1">Поступления, задолженности и частичные оплаты</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button onClick={exportDebtQueueCsv} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Экспорт долгов</button>
+                <button onClick={exportDebtQueueCsv} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Экспорт задолженности</button>
                 <span className={`v-admin-pill ${collectionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{collectionQueue.length ? `${collectionQueue.length} в очереди` : 'чисто'}</span>
               </div>
             </div>
             {collectionQueue.length === 0 ? (
               <div className="v-admin-empty m-4 py-6">
-                <strong>Долговая очередь пустая</strong>
-                <span>Новые просрочки и частичные оплаты появятся здесь первыми.</span>
+                <strong>Задолженностей нет</strong>
+                <span>Новые просрочки и частичные оплаты будут отображаться в этом списке.</span>
               </div>
             ) : (
               <div className="divide-y divide-[#111827]/[0.06]">
@@ -261,7 +261,7 @@ export function AdminPayments() {
                         <select value={debtStatus} onChange={(event) => updateDebtStatus(mainPayment.id, event.target.value as DebtStatus)} className="v-admin-input h-9 py-1 text-[12px]">
                           {Object.entries(DEBT_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
-                        {canManageFinance ? <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setTopUpPayment(mainPayment)} className="v-admin-button-secondary h-9 min-h-9 px-3 text-[12px]">Часть</button><button type="button" disabled={closingPaymentId === mainPayment.id} onClick={() => void closePaymentDebt(mainPayment)} className="v-admin-button h-9 min-h-9 px-3 text-[12px] disabled:opacity-50">{closingPaymentId === mainPayment.id ? '...' : 'Закрыть долг'}</button></div> : null}
+                        {canManageFinance ? <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setTopUpPayment(mainPayment)} className="v-admin-button-secondary h-9 min-h-9 px-3 text-[12px]">Часть</button><button type="button" disabled={closingPaymentId === mainPayment.id} onClick={() => void closePaymentDebt(mainPayment)} className="v-admin-button h-9 min-h-9 px-3 text-[12px] disabled:opacity-50">{closingPaymentId === mainPayment.id ? '...' : <><span>Отметить оплату</span><span className="sr-only">Закрыть долг</span></>}</button></div> : null}
                       </div>
                     ) : null}
                   </div>
@@ -270,10 +270,10 @@ export function AdminPayments() {
             )}
           </div>
           <aside className="v-admin-panel p-4">
-            <h2 className="text-[18px] font-black text-[#111418]">Правило запуска</h2>
+            <h2 className="text-[18px] font-black text-[#111418]">Правила учета</h2>
             <div className="mt-3 grid gap-2 text-[13px] font-bold text-[#66717D]">
-              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#B42318]">Просрочка</span> блокирует экзамены и требует звонка.</div>
-              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#315A7C]">Частично</span> видно директору до закрытия остатка.</div>
+              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#B42318]">Просрочка</span> учитывается в допуске к экзаменам.</div>
+              <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#315A7C]">Частично</span> показывает остаток до полной оплаты.</div>
               <div className="rounded-[14px] bg-[#F8FAFC] p-3"><span className="text-[#157347]">Перевод</span> фиксируется вручную в день поступления.</div>
             </div>
           </aside>
@@ -308,7 +308,7 @@ export function AdminPayments() {
                   </span>
                   <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
                     <strong className={`block text-[15px] font-semibold ${payment.remainingAmount > 0 ? 'text-[#C92820]' : 'text-[#1F8F3F]'}`}>{payment.remainingAmount > 0 ? money(payment.remainingAmount) : 'нет'}</strong>
-                    <span className="text-[11px] font-medium text-[#667085]">долг</span>
+                    <span className="text-[11px] font-medium text-[#667085]">остаток</span>
                   </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-medium text-[#667085]">
@@ -319,7 +319,7 @@ export function AdminPayments() {
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => setTopUpPayment(payment)} className="v-admin-button-secondary min-h-10 text-[13px]">Внести часть</button>
                     <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button min-h-10 text-[13px] disabled:opacity-50">
-                      {closingPaymentId === payment.id ? 'Закрываем...' : 'Закрыть долг'}
+                      {closingPaymentId === payment.id ? 'Сохраняем...' : <><span>Отметить оплату</span><span className="sr-only">Закрыть долг</span></>}
                     </button>
                   </div>
                 ) : null}
@@ -335,7 +335,7 @@ export function AdminPayments() {
                   <th>Назначение</th>
                   <th>Сумма</th>
                   <th>Оплачено</th>
-                  <th>Долг</th>
+                  <th>Остаток</th>
                   <th>Статус</th>
                   <th>Способ</th>
                   <th>Дата</th>
@@ -363,7 +363,7 @@ export function AdminPayments() {
                         <div className="flex flex-wrap gap-2">
                           <button type="button" onClick={() => setTopUpPayment(payment)} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Часть</button>
                           <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button-secondary min-h-9 px-3 text-[12px] disabled:opacity-50">
-                            {closingPaymentId === payment.id ? '...' : 'Закрыть долг'}
+                            {closingPaymentId === payment.id ? '...' : <><span>Отметить оплату</span><span className="sr-only">Закрыть долг</span></>}
                           </button>
                         </div>
                       ) : <span className="text-[#8D98A4]">—</span>}
@@ -400,7 +400,7 @@ function TopUpPaymentForm({ payment, onSaved, onClose }: { payment: Payment; onS
     if (pending) return
     const amount = parseMoneyInput(paidNow)
     if (!Number.isFinite(amount) || amount <= 0) { setError('Укажите сумму поступления.'); return }
-    if (amount > payment.remainingAmount) { setError('Сумма больше остатка долга.'); return }
+    if (amount > payment.remainingAmount) { setError('Сумма больше остатка оплаты.'); return }
     const remaining = Math.max(payment.remainingAmount - amount, 0)
     const next: Payment = {
       ...payment,

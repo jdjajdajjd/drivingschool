@@ -83,18 +83,18 @@ export interface AdminDashboardBlockDefinition {
 }
 
 export const ADMIN_DASHBOARD_BLOCKS: AdminDashboardBlockDefinition[] = [
-  { id: 'finance', label: 'Финансы', description: 'Оплаты за день и долг учеников.' },
-  { id: 'stats', label: 'Сводка', description: 'Долги, проблемы, экзамены, загрузка.' },
-  { id: 'launchChecklist', label: 'Готовность', description: 'Базовые шаги перед запуском школы.' },
-  { id: 'nearest', label: 'Ближайшие занятия', description: 'Кто, куда и во сколько едет дальше.' },
-  { id: 'attention', label: 'Требует внимания', description: 'Просрочки, долги, проблемы.' },
-  { id: 'quickActions', label: 'Быстрые действия', description: 'Частые переходы одним нажатием.' },
+  { id: 'finance', label: 'Финансы', description: 'Оплаты, остатки и поступления.' },
+  { id: 'stats', label: 'Сводка', description: 'Основные показатели работы школы.' },
+  { id: 'launchChecklist', label: 'Настройка школы', description: 'Проверка филиалов, сотрудников и расписания.' },
+  { id: 'nearest', label: 'Ближайшие занятия', description: 'Короткий список занятий по времени.' },
+  { id: 'attention', label: 'Проверки', description: 'Незакрытые занятия, оплаты, документы и машины.' },
+  { id: 'quickActions', label: 'Действия', description: 'Основные рабочие переходы.' },
   { id: 'audit', label: 'Последние действия', description: 'Журнал изменений.' },
   { id: 'requests', label: 'Запросы учеников', description: 'Переносы и отмены.' },
   { id: 'dataCheck', label: 'Проверка данных', description: 'Ошибки связей.' },
 ]
 
-const DEFAULT_DASHBOARD_BLOCK_IDS: AdminDashboardBlockId[] = ['stats', 'finance', 'launchChecklist', 'nearest', 'attention', 'quickActions']
+const DEFAULT_DASHBOARD_BLOCK_IDS: AdminDashboardBlockId[] = ['stats', 'finance', 'attention', 'quickActions']
 
 function getAdminDashboardBlocksKey(schoolId: string): string {
   return `${getAdminPanelPreferencesKey(schoolId)}:dashboard_blocks`

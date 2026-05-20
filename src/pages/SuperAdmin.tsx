@@ -133,7 +133,7 @@ export function SuperAdminOverview() {
       <PageHeader
         eyebrow="vroom"
         title="Панель оператора"
-        description="Контроль продаж и школ: заявки с лендинга, MRR, свободное время, подключённые модули и проблемы, которые мешают директору получить пользу."
+        description="Контроль заявок, школ, подключений, модулей и рабочих вопросов по клиентам."
         actions={
           <Button
             variant="secondary"
@@ -160,7 +160,7 @@ export function SuperAdminOverview() {
       </div>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]">
-        <Section title="Заявки с лендинга" description="Лиды не должны жить только в Telegram. Здесь видно, кого надо быстро дожать до подключения.">
+        <Section title="Заявки с лендинга" description="Здесь собраны заявки с сайта и текущий статус обработки.">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <Badge variant={leadSla.variant}>{leadSla.label}</Badge>
             <Badge variant="success">Потенциал {formatPrice(pipelineValue)}/мес</Badge>
@@ -197,7 +197,7 @@ export function SuperAdminOverview() {
           )}
         </Section>
 
-        <Section title="Что требует внимания" description="Сначала проверьте школы без свободного времени и школы с предупреждениями по настройкам.">
+        <Section title="Что требует внимания" description="В приоритете школы без свободного времени и школы с предупреждениями по настройкам.">
           {metrics.length === 0 ? (
             <StateView title="Автошкол пока нет" description="Создайте первую автошколу в разделе школ." />
           ) : (

@@ -49,7 +49,7 @@ const STAGE_LABELS: Record<string, string> = {
   city: 'Город',
   exam_prep: 'Подготовка к экзамену',
   no_bookings: 'Нет записей',
-  has_debt: 'Есть долг',
+  has_debt: 'Есть задолженность',
   missing_documents: 'Не хватает док-в',
   theory_completed: 'Теория завершена',
   practice_active: 'Практика идёт',
@@ -198,16 +198,16 @@ export function AdminStudentDetail() {
     { label: 'Выпуск', done: isGraduated, blocked: gibddPassed && !isGraduated },
   ]
   const blockers = [
-    debt > 0 ? { title: 'Долг блокирует допуск', text: `${debt.toLocaleString('ru-RU')} ₽ нужно закрыть до экзамена`, action: 'Принять оплату', run: () => setShowAddPayment(true), tone: 'danger' as const } : null,
+    debt > 0 ? { title: 'Есть задолженность', text: `${debt.toLocaleString('ru-RU')} ₽ нужно закрыть до экзамена`, action: 'Принять оплату', run: () => setShowAddPayment(true), tone: 'danger' as const } : null,
     missingDocs > 0 ? { title: 'Документы не готовы', text: `${missingDocs} документа требуют проверки или загрузки`, action: 'Добавить документ', run: () => setShowAddDocument(true), tone: 'warning' as const } : null,
     !instructor ? { title: 'Нет инструктора', text: 'Ученик не попадет в нормальное расписание без назначенного инструктора', action: 'Назначить', run: () => setShowEdit(true), tone: 'warning' as const } : null,
     !branch ? { title: 'Нет филиала', text: 'Администратору сложнее вести ученика и расписание', action: 'Назначить', run: () => setShowEdit(true), tone: 'warning' as const } : null,
     !nextBooking && completedHours < totalHours ? { title: 'Нет следующего занятия', text: `Практика ${completedHours}/${totalHours} ч, нужно записать ученика`, action: 'В расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'info' as const } : null,
     completedHours >= totalHours && !internalExamPassed ? { title: 'Пора на внутренний экзамен', text: 'Практика закрыта, нужен следующий контрольный шаг', action: 'Экзамены', run: () => navigate(`${getAdminBasePathForLocation()}/exams`), tone: 'info' as const } : null,
     canGoToGIBDD ? { title: 'Готов к ГИБДД', text: 'Можно назначать экзамен, критичных блокеров нет', action: 'Записать', run: () => navigate(`${getAdminBasePathForLocation()}/exams`), tone: 'ok' as const } : null,
-    gibddPassed && !isGraduated ? { title: 'Закрыть выпуск', text: 'ГИБДД сдан, можно перевести ученика в выпуск и убрать из рабочих хвостов', action: 'Закрыть выпуск', run: () => void closeGraduation(), tone: 'ok' as const } : null,
+    gibddPassed && !isGraduated ? { title: 'Закрыть выпуск', text: 'ГИБДД сдан, можно перевести ученика в выпуск и убрать из рабочих списков', action: 'Закрыть выпуск', run: () => void closeGraduation(), tone: 'ok' as const } : null,
   ].filter(Boolean) as Array<{ title: string; text: string; action: string; run: () => void; tone: 'danger' | 'warning' | 'info' | 'ok' }>
-  const nextBestAction = blockers[0] ?? { title: 'Маршрут ученика чистый', text: 'Долги, документы и практика не показывают красных флагов', action: 'Открыть расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'ok' as const }
+  const nextBestAction = blockers[0] ?? { title: 'Маршрут ученика чистый', text: 'Оплаты, документы и практика без ограничений', action: 'Открыть расписание', run: () => navigate(`${getAdminBasePathForLocation()}/schedule`), tone: 'ok' as const }
 
   const saveNote = () => {
     const access = assertAdminPermission('students.manage')
@@ -264,7 +264,7 @@ export function AdminStudentDetail() {
         : 'В работе'
   const profileRows = [
     { label: 'Этап', value: STAGE_LABELS[stage] ?? stage },
-    { label: 'Долг', value: debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'нет', tone: debt > 0 ? 'danger' : 'ok' },
+    { label: 'Задолженность', value: debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'нет', tone: debt > 0 ? 'danger' : 'ok' },
     { label: 'Документы', value: missingDocs > 0 ? `${missingDocs} проверить` : 'готово', tone: missingDocs > 0 ? 'warning' : 'ok' },
     { label: 'Практика', value: `${completedHours}/${totalHours} ч` },
     { label: 'Следующее', value: nextBookingLabel },
@@ -372,7 +372,7 @@ export function AdminStudentDetail() {
               </button>
             )) : (
               <div className="rounded-[18px] border border-green-100 bg-green-50 p-4">
-                <p className="text-[14px] font-black text-[#188447]">Критичных блокеров нет</p>
+                <p className="text-[14px] font-black text-[#188447]">Ограничений нет</p>
                 <p className="mt-1 text-[12px] font-semibold leading-5 text-[#667085]">Продолжайте вести расписание и оплаты ученика.</p>
               </div>
             )}
@@ -644,7 +644,7 @@ export function AdminStudentDetail() {
             <div className={`rounded-2xl border p-5 ${isGraduated ? 'border-green-100 bg-green-50' : 'border-blue-100 bg-[#EAF3FF]'}`}>
               <p className="text-[13px] font-semibold text-[#667085]">Финальный шаг</p>
               <p className="mt-1 text-[18px] font-black text-[#111827]">{isGraduated ? 'Выпуск закрыт' : 'ГИБДД сдан, выпуск не закрыт'}</p>
-              <p className="mt-2 text-[12px] font-semibold leading-5 text-[#667085]">После закрытия выпускник уйдет из рабочих хвостов директора, но история останется в карточке.</p>
+              <p className="mt-2 text-[12px] font-semibold leading-5 text-[#667085]">После закрытия выпускник уйдет из рабочих списков директора, но история останется в карточке.</p>
               {!isGraduated && canManageStudents ? (
                 <button onClick={() => void closeGraduation()} disabled={graduationPending} className="v-admin-button mt-3 w-full min-h-10 text-[13px] disabled:opacity-50">
                   {graduationPending ? 'Закрываем...' : 'Закрыть выпуск'}
@@ -658,9 +658,9 @@ export function AdminStudentDetail() {
           <div className={`rounded-2xl border p-5 ${debt > 0 ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-white'}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[13px] font-semibold text-gray-400">Долг</p>
+                <p className="text-[13px] font-semibold text-gray-400">Задолженность</p>
                 <p className={`text-[24px] font-black ${debt > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                  {debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'Нет долга'}
+                  {debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'Нет задолженности'}
                 </p>
               </div>
               {canManageFinance ? (

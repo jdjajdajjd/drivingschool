@@ -78,7 +78,7 @@ export function AdminSettings() {
       {
         id: 'debt',
         title: 'Напоминание об оплате',
-        text: `Здравствуйте! В ${name} остался долг [сумма]. Можно перевести оплату на карту и отправить чек администратору. После подтверждения мы отметим оплату в кабинете.`,
+        text: `Здравствуйте! В ${name} есть задолженность [сумма]. Можно перевести оплату на карту и отправить чек администратору. После подтверждения мы отметим оплату в кабинете.`,
       },
       {
         id: 'docs',
@@ -88,7 +88,7 @@ export function AdminSettings() {
       {
         id: 'exam',
         title: 'Экзамен / допуск',
-        text: `Здравствуйте! По вашему обучению в ${name} следующий шаг: [внутренний экзамен/ГИБДД]. Проверьте долги, документы и связь с инструктором.`,
+        text: `Здравствуйте! По вашему обучению в ${name} следующий шаг: [внутренний экзамен/ГИБДД]. Проверьте оплату, документы и связь с инструктором.`,
       },
     ]
   }, [school?.name])
@@ -251,12 +251,12 @@ export function AdminSettings() {
 
           <div className="mt-4 grid gap-2 md:grid-cols-2">
             {[
-              { key: 'allowBookingWithDebt', label: 'Разрешить запись при долге' },
+              { key: 'allowBookingWithDebt', label: 'Разрешить запись при задолженности' },
               { key: 'allowBookingWithoutMedical', label: 'Разрешить запись без медсправки' },
               { key: 'allowBookingWithoutContract', label: 'Разрешить запись без договора' },
               { key: 'requireManualModeration', label: 'Ручная модерация записей' },
               { key: 'allowStudentChooseInstructor', label: 'Ученик может выбрать инструктора' },
-              { key: 'blockBookingOnDebt', label: 'Блокировать запись при долге' },
+              { key: 'blockBookingOnDebt', label: 'Блокировать запись при задолженности' },
               { key: 'notifyAdminOnNoShow', label: 'Уведомлять о неявке' },
               { key: 'notifyAdminOnCancel', label: 'Уведомлять об отмене' },
               { key: 'notifyAdminOnNewBooking', label: 'Уведомлять о новой записи' },
@@ -361,10 +361,10 @@ export function AdminSettings() {
 
         {/* Debt */}
         <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <h2 className="mb-4 text-[16px] font-bold text-gray-900">Финансы и долги</h2>
+          <h2 className="mb-4 text-[16px] font-bold text-gray-900">Финансы и задолженности</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Дней отсрочки по долгу</label>
+              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Дней отсрочки по оплате</label>
               <input type="number" value={settings.debtGracePeriodDays} onChange={(e) => update('debtGracePeriodDays', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
             </div>
           </div>

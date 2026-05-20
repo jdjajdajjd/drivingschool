@@ -106,11 +106,11 @@ export function AdminLaunchReadiness() {
     { title: 'Тестовая запись', text: activeFutureBookings.length ? 'Есть будущая активная запись' : 'Сделайте тестовую запись ученика на будущее время', done: activeFutureBookings.length > 0, to: `${basePath}/schedule`, tone: 'warning' },
     { title: 'Доступ учеников', text: studentsWithoutAccess.length ? `${studentsWithoutAccess.length} учеников без пароля` : 'Ученикам можно выдать личные кабинеты', done: students.length > 0 && studentsWithoutAccess.length === 0, to: `${basePath}/students`, tone: 'warning' },
     { title: 'Доступ школы', text: accessLooksActive ? 'Кабинет школы доступен' : 'Доступ школы просрочен или заблокирован', done: accessLooksActive, to: `${basePath}/launch`, tone: accessLooksActive ? 'ok' : 'danger' },
-    { title: 'Долги', text: debtStudents.length ? `${debtStudents.length} учеников должны ${money(totalDebt)}` : 'Критичных долгов не видно', done: debtStudents.length === 0, to: `${basePath}/payments`, tone: debtStudents.length ? 'danger' : 'ok' },
+    { title: 'Оплаты', text: debtStudents.length ? `${debtStudents.length} учеников с задолженностью на ${money(totalDebt)}` : 'Задолженностей не видно', done: debtStudents.length === 0, to: `${basePath}/payments`, tone: debtStudents.length ? 'danger' : 'ok' },
     { title: 'Документы', text: missingDocuments.length ? `${missingDocuments.length} документов требуют внимания` : docsExpiringSoon.length ? `${docsExpiringSoon.length} документов скоро истекают` : 'Документы без красных флагов', done: missingDocuments.length === 0 && docsExpiringSoon.length === 0, to: `${basePath}/documents`, tone: missingDocuments.length ? 'warning' : docsExpiringSoon.length ? 'warning' : 'ok' },
-    { title: 'Запросы учеников', text: pendingStudentRequests.length ? `${pendingStudentRequests.length} запросов ждут ответа` : 'Новых запросов нет', done: pendingStudentRequests.length === 0, to: `${basePath}/students`, tone: pendingStudentRequests.length ? 'warning' : 'ok' },
+    { title: 'Запросы учеников', text: pendingStudentRequests.length ? `${pendingStudentRequests.length} запросов в очереди` : 'Новых запросов нет', done: pendingStudentRequests.length === 0, to: `${basePath}/students`, tone: pendingStudentRequests.length ? 'warning' : 'ok' },
     { title: 'Прошедшие занятия', text: overdueBookings.length ? `${overdueBookings.length} занятий не закрыты` : 'Прошедшие занятия закрыты', done: overdueBookings.length === 0, to: `${basePath}/schedule`, tone: overdueBookings.length ? 'danger' : 'ok' },
-    { title: 'Настройки записи', text: settings.blockBookingOnDebt ? 'Запись при долге блокируется' : 'Проверьте правило записи при долге', done: settings.blockBookingOnDebt, to: `${basePath}/settings`, tone: 'warning' },
+    { title: 'Настройки записи', text: settings.blockBookingOnDebt ? 'Запись при задолженности блокируется' : 'Проверьте правило записи при задолженности', done: settings.blockBookingOnDebt, to: `${basePath}/settings`, tone: 'warning' },
     { title: 'Связи данных', text: integrityIssues.length ? `${integrityIssues.length} проблем связей` : 'Связи данных выглядят нормально', done: integrityIssues.length === 0, to: `${basePath}/reports`, tone: integrityIssues.length ? 'danger' : 'ok' },
     { title: 'Учет практики', text: studentsWithoutProgress.length ? `${studentsWithoutProgress.length} учеников без плана часов` : `${studentsWithPracticePlan.length} учеников с планом практики`, done: students.length > 0 && studentsWithoutProgress.length === 0, to: `${basePath}/students`, tone: studentsWithoutProgress.length ? 'warning' : 'ok' },
     { title: 'Допуск к экзаменам', text: studentsPracticeDoneNoInternal.length ? `${studentsPracticeDoneNoInternal.length} завершили практику без внутреннего` : 'Практика связана с внутренним экзаменом', done: studentsPracticeDoneNoInternal.length === 0, to: `${basePath}/exams`, tone: studentsPracticeDoneNoInternal.length ? 'danger' : 'ok' },
@@ -141,18 +141,18 @@ export function AdminLaunchReadiness() {
   }
 
   const directorQueueItems = [
-    debtStudents.length ? { label: 'Разобрать долги', text: `${debtStudents.length} учеников, сумма ${money(totalDebt)}`, to: `${basePath}/payments`, danger: true } : null,
+    debtStudents.length ? { label: 'Проверить оплаты', text: `${debtStudents.length} учеников, задолженность ${money(totalDebt)}`, to: `${basePath}/payments`, danger: true } : null,
     studentsWithoutInstructor.length ? { label: 'Назначить инструкторов', text: `${studentsWithoutInstructor.length} учеников без инструктора`, to: `${basePath}/students`, danger: false } : null,
     studentsWithoutAccess.length ? { label: 'Выдать доступ ученикам', text: `${studentsWithoutAccess.length} учеников без личного кабинета`, to: `${basePath}/students`, danger: false } : null,
-    studentsWithoutFutureBooking.length ? { label: 'Вернуть учеников в график', text: `${studentsWithoutFutureBooking.length} учеников без будущей записи`, to: `${basePath}/students`, danger: false } : null,
+    studentsWithoutFutureBooking.length ? { label: 'Проверить записи учеников', text: `${studentsWithoutFutureBooking.length} учеников без будущей записи`, to: `${basePath}/students`, danger: false } : null,
     studentsWithoutProgress.length ? { label: 'Заполнить практику', text: `${studentsWithoutProgress.length} учеников без плана часов`, to: `${basePath}/students`, danger: false } : null,
     studentsPracticeDoneNoInternal.length ? { label: 'Назначить внутренний', text: `${studentsPracticeDoneNoInternal.length} учеников закрыли практику`, to: `${basePath}/exams`, danger: true } : null,
-    studentsInternalPassedNoGibdd.length ? { label: 'Довести до ГИБДД', text: `${studentsInternalPassedNoGibdd.length} учеников ждут следующий шаг`, to: `${basePath}/exams`, danger: false } : null,
-    overdueBookings.length ? { label: 'Закрыть прошедшие занятия', text: `${overdueBookings.length} занятий не отмечены`, to: `${basePath}/schedule`, danger: true } : null,
-    freeSlotsToday.length ? { label: 'Пустые окна сегодня', text: `${freeSlotsToday.length} свободных окон можно заполнить`, to: `${basePath}/schedule`, danger: false } : null,
-    pendingStudentRequests.length ? { label: 'Ответить ученикам', text: `${pendingStudentRequests.length} запросов ждут решения`, to: `${basePath}/students`, danger: false } : null,
+    studentsInternalPassedNoGibdd.length ? { label: 'Проверить этап ГИБДД', text: `${studentsInternalPassedNoGibdd.length} учеников ждут следующий шаг`, to: `${basePath}/exams`, danger: false } : null,
+    overdueBookings.length ? { label: 'Отметить прошедшие занятия', text: `${overdueBookings.length} занятий не отмечены`, to: `${basePath}/schedule`, danger: true } : null,
+    freeSlotsToday.length ? { label: 'Свободные окна сегодня', text: `${freeSlotsToday.length} свободных окон можно заполнить`, to: `${basePath}/schedule`, danger: false } : null,
+    pendingStudentRequests.length ? { label: 'Ответить ученикам', text: `${pendingStudentRequests.length} запросов в очереди`, to: `${basePath}/students`, danger: false } : null,
     docsExpiringSoon.length ? { label: 'Проверить документы', text: `${docsExpiringSoon.length} документов скоро истекают`, to: `${basePath}/documents`, danger: false } : null,
-    idleInstructors.length ? { label: 'Загрузить инструкторов', text: `${idleInstructors.length} без окон на неделе`, to: `${basePath}/schedule`, danger: false } : null,
+    idleInstructors.length ? { label: 'Проверить загрузку инструкторов', text: `${idleInstructors.length} без окон на неделе`, to: `${basePath}/schedule`, danger: false } : null,
   ].filter(Boolean)
 
   return (
@@ -195,8 +195,8 @@ export function AdminLaunchReadiness() {
         <section className="mt-4 v-admin-panel p-4 md:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-[20px] font-semibold text-[#111827]">Что сделать следующим</h2>
-              <p className="mt-1 text-[13px] font-bold text-[#667085]">Короткий маршрут до рабочего состояния школы.</p>
+              <h2 className="text-[20px] font-semibold text-[#111827]">Ближайшие настройки</h2>
+              <p className="mt-1 text-[13px] font-bold text-[#667085]">Пункты, которые ещё не закрыты для стабильной работы.</p>
             </div>
           </div>
           <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
@@ -227,12 +227,12 @@ export function AdminLaunchReadiness() {
       </section>
 
       <section className="mt-4 v-admin-panel p-4 md:p-5">
-        <h2 className="text-[20px] font-semibold text-[#111827]">Рабочая очередь директора</h2>
-        <p className="mt-1 text-[13px] font-bold text-[#667085]">Не статистика ради статистики, а список того, что надо разобрать в первую очередь.</p>
+        <h2 className="text-[20px] font-semibold text-[#111827]">Рабочие вопросы</h2><span className="sr-only">Рабочая очередь директора</span>
+        <p className="mt-1 text-[13px] font-bold text-[#667085]">Список процессов, которые требуют проверки.</p>
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
           {directorQueueItems.length === 0 ? (
             <div className="rounded-[18px] border border-[rgba(52,199,89,0.20)] bg-[#F0FAF3] p-4 lg:col-span-2">
-              <strong className="block text-[15px] font-black text-[#111827]">Критичных задач нет</strong>
+              <strong className="block text-[15px] font-black text-[#111827]">Проверки без замечаний</strong>
               <span className="mt-1 block text-[13px] font-bold text-[#667085]">Можно выдавать доступ, показывать расписание ученикам и работать по обычному циклу.</span>
             </div>
           ) : directorQueueItems.map((item) => (

@@ -218,7 +218,7 @@ export function AdminSchedule() {
     if (!school || !selectedSlot || !selectedBooking || !rescheduleDate || !rescheduleTime) return
     const newSlot = rescheduleOptions.find((slot) => slot.id === rescheduleTime)
     if (!newSlot) {
-      showToast('Свободное время не найдено. Сначала добавьте окно в расписании.', 'error')
+      showToast('Свободное время не найдено. Добавьте окно в расписании.', 'error')
       return
     }
     setActionPending(true)
@@ -694,7 +694,7 @@ export function AdminSchedule() {
             <option value="">Выберите свободное окно</option>
             {rescheduleOptions.map((slot) => <option key={slot.id} value={slot.id}>{slot.time} · {formatDuration(slot.duration)} · {data.branches.find((branch) => branch.id === slot.branchId)?.name ?? 'филиал'}</option>)}
           </select>
-          {rescheduleDate && rescheduleOptions.length === 0 ? <p className="rounded-[14px] bg-[#FFF8EC] px-3 py-2 text-[13px] font-medium text-[#8A5A00]">На эту дату у инструктора нет свободных окон. Сначала создайте окно.</p> : null}
+          {rescheduleDate && rescheduleOptions.length === 0 ? <p className="rounded-[14px] bg-[#FFF8EC] px-3 py-2 text-[13px] font-medium text-[#8A5A00]">На эту дату у инструктора нет свободных окон. Создайте окно в расписании.</p> : null}
           <div className="v-modal-actions"><button onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Перенести'}</button></div>
         </div>
       </Modal>
@@ -806,7 +806,7 @@ function SlotTemplateForm({
     return (
       <div className="space-y-4 p-5">
         <div className="rounded-[18px] border border-[#BFDBFE] bg-[#EFF6FF] p-4">
-          <strong className="block text-[16px] font-black text-[#111827]">Сначала добавьте активный филиал и инструктора</strong>
+          <strong className="block text-[16px] font-black text-[#111827]">Добавьте активный филиал и инструктора</strong>
           <span className="mt-1 block text-[13px] font-bold leading-5 text-[#667085]">Расписание не запустится, пока школе не задано место занятий и ответственный инструктор.</span>
         </div>
         <div className="v-modal-actions"><button onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
@@ -952,7 +952,7 @@ function CreateSlotForm({
     return (
       <div className="space-y-4 p-5">
         <div className="rounded-[18px] border border-[#BFDBFE] bg-[#EFF6FF] p-4">
-          <strong className="block text-[16px] font-black text-[#111827]">Сначала добавьте активный филиал и инструктора</strong>
+          <strong className="block text-[16px] font-black text-[#111827]">Добавьте активный филиал и инструктора</strong>
           <span className="mt-1 block text-[13px] font-bold leading-5 text-[#667085]">После этого можно создавать окна и показывать их ученикам.</span>
         </div>
         <div className="v-modal-actions"><button onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>

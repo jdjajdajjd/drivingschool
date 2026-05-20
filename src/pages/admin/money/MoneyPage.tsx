@@ -93,7 +93,7 @@ export default function MoneyPage() {
     <div className="min-h-dvh bg-bg pb-20">
       <div className="sticky top-0 z-20 border-b border-border bg-surface px-3 pt-3">
         <h1 className="text-[20px] font-black tracking-[-0.03em] text-ink">Деньги</h1>
-        <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">Выручка, долги, статистика инструкторов</p>
+        <p className="mt-0.5 text-[12px] font-semibold text-[#9EA3A8]">Выручка, задолженности, статистика инструкторов</p>
       </div>
 
       {/* KPI Strip */}

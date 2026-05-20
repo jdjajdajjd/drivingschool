@@ -159,7 +159,7 @@ function CarForm({ schoolId, onSaved, onClose }: { schoolId: string; onSaved: ()
 
     setError('')
     if (!schoolId) { setError('Школа не найдена.'); return }
-    if (!branches[0]?.id) { setError('Сначала добавьте филиал.'); return }
+    if (!branches[0]?.id) { setError('Добавьте филиал, чтобы привязать автомобиль.'); return }
     if (!form.brand.trim()) { setError('Укажите марку.'); return }
     if (!form.licensePlate.trim()) { setError('Укажите госномер.'); return }
     const car: Car = {

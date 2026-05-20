@@ -341,7 +341,7 @@ export function TodayPage() {
 
             {/* Example alert items (would be populated from real data) */}
             {[
-              { icon: <AlertIcon />, title: 'Неоплаченный ученик', desc: 'Иванов И.И. — долг 5000 ₽', level: 'error' as const },
+              { icon: <AlertIcon />, title: 'Оплата не поступила', desc: 'Иванов И.И. — 5000 ₽', level: 'error' as const },
               { icon: <CalendarIcon />, title: 'Нет свободного времени', desc: 'Петров П.П. записан, но нет окон', level: 'warning' as const },
               { icon: <AlertIcon />, title: 'Не подтверждено', desc: '3 записи без подтверждения', level: 'warning' as const },
             ].map((alert, i) => (

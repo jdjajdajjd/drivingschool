@@ -170,7 +170,7 @@ function InstructorForm({
     if (pending) return
     setError('')
     if (!schoolId) { setError('Школа не найдена.'); return }
-    if (!branchId) { setError('Сначала добавьте филиал.'); return }
+    if (!branchId) { setError('Добавьте филиал, чтобы привязать инструктора.'); return }
     if (!name.trim()) { setError('Укажите имя инструктора.'); return }
     if (!phone.trim()) { setError('Укажите телефон инструктора.'); return }
     setPending(true)
@@ -209,7 +209,7 @@ function InstructorForm({
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Филиал</label>
         <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
-          {branches.length === 0 ? <option value="">Сначала добавьте филиал</option> : null}
+          {branches.length === 0 ? <option value="">Добавьте филиал</option> : null}
           {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
         </select>
       </div>

@@ -136,7 +136,7 @@ function DocumentUploadForm({ schoolId, students, onSaved, onClose }: DocumentUp
   return (
     <div className="space-y-4 p-5">
       {students.length === 0 ? (
-        <div className="rounded-[16px] border border-[#F5D0D0] bg-[#FFF6F6] px-4 py-3 text-[13px] font-bold text-[#B42318]">Сначала добавьте ученика, потом загружайте документы.</div>
+        <div className="rounded-[16px] border border-[#F5D0D0] bg-[#FFF6F6] px-4 py-3 text-[13px] font-bold text-[#B42318]">Добавьте ученика, затем загрузите документы.</div>
       ) : null}
       <label className="block">
         <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">Ученик</span>
@@ -227,7 +227,7 @@ export function AdminDocuments() {
   const exportAdmissionQueueCsv = () => {
     if (!school) return
     const rows = [
-      ['Ученик', 'Телефон', 'Проблема документов', 'Долг', 'Практика', 'Близко к экзамену'],
+      ['Ученик', 'Телефон', 'Проблема документов', 'Задолженность', 'Практика', 'Близко к экзамену'],
       ...admissionQueue.map((item) => [
         item.student.name,
         item.student.phone,
@@ -292,7 +292,7 @@ export function AdminDocuments() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 p-4">
               <div>
                 <h2 className="text-[18px] font-black text-[#111418]">Очередь допуска</h2>
-                <p className="v-admin-note mt-1">Кого нельзя выпускать на экзамен без документов или оплаты</p>
+                <p className="v-admin-note mt-1">Ученики с неполным пакетом документов или задолженностью</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button type="button" onClick={exportAdmissionQueueCsv} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Экспорт допуска</button>
@@ -301,8 +301,8 @@ export function AdminDocuments() {
             </div>
             {admissionQueue.length === 0 ? (
               <div className="v-admin-empty m-4 min-h-[132px] py-6">
-                <strong>Допуск выглядит чисто</strong>
-                <span>Ученики с долгом, просрочкой справки или неполным пакетом документов появятся здесь первыми.</span>
+                <strong>Ограничений по допуску не найдено</strong>
+                <span>Здесь отображаются ученики, у которых не хватает документов, есть просрочка или задолженность.</span>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -313,7 +313,7 @@ export function AdminDocuments() {
                       <span className="mt-1 block text-[12px] font-bold text-gray-400">Практика {hours}/{total} ч · {isNearExam ? 'близко к экзамену' : 'в обучении'}</span>
                     </span>
                     <span className="text-[13px] font-black text-gray-700">{blockers.length ? blockers.map((type) => DOC_LABELS[type] ?? type).join(', ') : 'документы ок'}</span>
-                    <span className={`w-max rounded-full px-3 py-1 text-[12px] font-black ${debt > 0 || blockers.length ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>{debt > 0 ? `долг ${debt.toLocaleString('ru-RU')} ₽` : blockers.length ? 'допуск закрыт' : 'готов'}</span>
+                    <span className={`w-max rounded-full px-3 py-1 text-[12px] font-black ${debt > 0 || blockers.length ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>{debt > 0 ? `задолженность ${debt.toLocaleString('ru-RU')} ₽` : blockers.length ? 'допуск закрыт' : 'готов'}</span>
                     <button type="button" onClick={() => printPacket(student)} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Пакет PDF</button>
                   </div>
                 ))}
@@ -324,7 +324,7 @@ export function AdminDocuments() {
             <h2 className="text-[18px] font-black text-gray-900">Минимум к ГИБДД</h2>
             <div className="mt-3 grid gap-2">
               {requiredForExam.map((type) => <div key={type} className="rounded-xl bg-gray-50 p-3 text-[13px] font-bold text-gray-600">{DOC_LABELS[type]}</div>)}
-              <div className="rounded-xl bg-red-50 p-3 text-[13px] font-bold text-red-600">Плюс нулевой долг</div>
+              <div className="rounded-xl bg-red-50 p-3 text-[13px] font-bold text-red-600">Без задолженности по оплате</div>
             </div>
           </aside>
         </section>

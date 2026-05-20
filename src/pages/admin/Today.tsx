@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { addDays, format, isBefore, isSameDay, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { WarningTriangle as AlertTriangle, CalendarPlus, CheckCircle as CheckCircle2, Clock, OpenNewWindow as ExternalLink, Filter, CreditCards } from 'iconoir-react'
+import { WarningTriangle as AlertTriangle, CalendarPlus, Clock, OpenNewWindow as ExternalLink, Filter, CreditCards } from 'iconoir-react'
 const Clock3 = Clock
 const SlidersHorizontal = Filter
 const WalletCards = CreditCards
@@ -20,11 +20,19 @@ import {
   type AdminDashboardBlockId,
 } from '../../services/adminPanelPreferences'
 
-const TODAY_BLOCK_IDS: AdminDashboardBlockId[] = ['finance', 'stats', 'launchChecklist', 'nearest', 'attention', 'quickActions']
+const TODAY_BLOCK_IDS: AdminDashboardBlockId[] = ['finance', 'stats', 'launchChecklist', 'attention', 'quickActions']
 const TODAY_BLOCKS = ADMIN_DASHBOARD_BLOCKS.filter((block) => TODAY_BLOCK_IDS.includes(block.id))
 
 function money(value: number) {
   return `${value.toLocaleString('ru-RU')} ₽`
+}
+
+function plural(value: number, one: string, few: string, many: string) {
+  const mod10 = Math.abs(value) % 10
+  const mod100 = Math.abs(value) % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
 }
 
 function useTodayData(schoolId: string, version = 0) {
@@ -237,11 +245,11 @@ function LaunchChecklist({
     <section className="v-admin-panel v-launch-compact mt-4 p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <span className="v-admin-pill v-tone-warning">Мастер запуска {doneCount}/{items.length}</span>
-          <h2 className="mt-3 text-[20px] font-semibold text-[#111827]">Довести школу до рабочего состояния</h2>
-          <p className="mt-1 max-w-2xl text-[13px] font-medium leading-5 text-[#667085]">Это путь первого директора: заполнить базу, открыть окна, проверить запись и уже после этого продавать доступ ученикам.</p>
+          <span className="v-admin-pill v-tone-warning">Настройка школы {doneCount}/{items.length}</span>
+          <h2 className="mt-3 text-[20px] font-semibold text-[#111827]">Проверка перед работой</h2>
+          <p className="mt-1 max-w-2xl text-[13px] font-medium leading-5 text-[#667085]">Проверяются базовые данные, сотрудники, расписание и ученики для корректной работы кабинета.</p>
         </div>
-        {nextItem ? <Link to={nextItem.to} className="v-admin-button is-blue justify-center">Следующий шаг: {nextItem.title}</Link> : null}
+        {nextItem ? <Link to={nextItem.to} className="v-admin-button is-blue justify-center">Открыть: {nextItem.title}</Link> : null}
       </div>
       <div className="mt-4 grid gap-2 md:grid-cols-5">
         {items.map((item, index) => (
@@ -284,34 +292,21 @@ export function AdminToday() {
   const hasBlock = (id: AdminDashboardBlockId) => enabledBlocks.includes(id)
   void blocksVersion
   const priorities = [
-    data.overdueBookings > 0 ? { title: 'Закрыть прошедшие занятия', text: `${data.overdueBookings} занятий уже прошли, но не отмечены`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/schedule` } : null,
-    data.debtStudentsCount > 0 ? { title: 'Разобрать долги учеников', text: `${data.debtStudentsCount} учеников должны ${money(data.overdueAmount)}`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/payments` } : null,
-    data.openProblems > 0 ? { title: 'Открытые проблемы', text: `${data.openProblems} ситуаций ждут решения`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/reports` } : null,
-    data.carsInRepair > 0 ? { title: 'Машины недоступны', text: `${data.carsInRepair} машин в ремонте или обслуживании`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/cars` } : null,
+    data.overdueBookings > 0 ? { title: 'Отметить прошедшие занятия', text: `${data.overdueBookings} занятий уже прошли, но не отмечены`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/schedule` } : null,
+    data.debtStudentsCount > 0 ? { title: 'Ученики с задолженностью', text: `${data.debtStudentsCount} ${plural(data.debtStudentsCount, 'ученик', 'ученика', 'учеников')}, сумма ${money(data.overdueAmount)}`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/payments` } : null,
+    data.openProblems > 0 ? { title: 'Открытые проблемы', text: `${data.openProblems} ${plural(data.openProblems, 'ситуация', 'ситуации', 'ситуаций')} в работе`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/reports` } : null,
+    data.carsInRepair > 0 ? { title: 'Машины недоступны', text: `${data.carsInRepair} ${plural(data.carsInRepair, 'машина', 'машины', 'машин')} в ремонте или обслуживании`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/cars` } : null,
     data.docsExpiring > 0 ? { title: 'Документы скоро истекут', text: `${data.docsExpiring} документов проверить за 14 дней`, tone: 'info' as const, to: `${getAdminBasePathForLocation()}/documents` } : null,
-    data.openStudentRequests > 0 ? { title: 'Запросы учеников', text: `${data.openStudentRequests} переносов или отмен ждут ответа`, tone: 'info' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
-    data.studentsWithoutInstructor > 0 ? { title: 'Ученики без инструктора', text: `${data.studentsWithoutInstructor} учеников не закреплены за инструктором`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
-    data.studentsWithoutNextBooking > 0 ? { title: 'Ученики без ближайшей записи', text: `${data.studentsWithoutNextBooking} учеников могут выпасть из обучения`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
-    data.studentsWithMissingDocs > 0 ? { title: 'Документы мешают допуску', text: `${data.studentsWithMissingDocs} учеников без договора или медсправки`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/documents` } : null,
+    data.openStudentRequests > 0 ? { title: 'Запросы учеников', text: `${data.openStudentRequests} переносов или отмен в очереди`, tone: 'info' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
+    data.studentsWithoutInstructor > 0 ? { title: 'Ученики без инструктора', text: `${data.studentsWithoutInstructor} ${plural(data.studentsWithoutInstructor, 'ученик', 'ученика', 'учеников')} без закрепленного инструктора`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
+    data.studentsWithoutNextBooking > 0 ? { title: 'Ученики без ближайшей записи', text: `${data.studentsWithoutNextBooking} ${plural(data.studentsWithoutNextBooking, 'ученик', 'ученика', 'учеников')} без будущей записи`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/students` } : null,
+    data.studentsWithMissingDocs > 0 ? { title: 'Документы к проверке', text: `${data.studentsWithMissingDocs} ${plural(data.studentsWithMissingDocs, 'ученик', 'ученика', 'учеников')} без договора или медсправки`, tone: 'danger' as const, to: `${getAdminBasePathForLocation()}/documents` } : null,
     data.availableFutureSlots < Math.max(6, data.activeInstructors * 2) ? { title: 'Мало свободных окон', text: `Открыто ${data.availableFutureSlots} будущих окон: ученикам сложнее записаться`, tone: 'warning' as const, to: `${getAdminBasePathForLocation()}/schedule` } : null,
   ].filter(Boolean)
   const freeSlots = data.todaySlots
     .filter((slot) => slot.status === 'available')
     .sort((left, right) => left.time.localeCompare(right.time))
     .slice(0, 8)
-  const nextEntry = data.upcoming[0] ?? null
-  const nextInstructor = nextEntry ? data.instructors.find((item) => item.id === nextEntry.booking.instructorId) : null
-  const nextBranch = nextEntry ? data.branches.find((item) => item.id === nextEntry.booking.branchId) : null
-  const firstPriority = priorities[0] ?? null
-  const firstFreeSlot = freeSlots[0] ?? null
-  const firstFreeInstructor = firstFreeSlot ? data.instructors.find((item) => item.id === firstFreeSlot.instructorId) : null
-  const firstFreeBranch = firstFreeSlot ? data.branches.find((item) => item.id === firstFreeSlot.branchId) : null
-  const dayPlan = [
-    firstPriority ? { label: 'Сначала', title: firstPriority.title, text: firstPriority.text, to: firstPriority.to, tone: firstPriority.tone } : { label: 'Сначала', title: 'Открыть день', text: nextEntry ? `Ближайшее занятие в ${format(getSlotDateTime(nextEntry.slot), 'HH:mm')}` : 'Проверить свободные окна и записи', to: `${getAdminBasePathForLocation()}/schedule`, tone: 'info' as const },
-    data.debtQueue[0] ? { label: 'Деньги', title: data.debtQueue[0].student.name, text: `Долг ${money(data.debtQueue[0].debt)}${data.debtQueue[0].nextBooking?.slot ? ` · занятие ${format(getSlotDateTime(data.debtQueue[0].nextBooking.slot), 'dd.MM HH:mm')}` : ''}`, to: `${getAdminBasePathForLocation()}/students/${data.debtQueue[0].student.id}`, tone: 'danger' as const } : { label: 'Деньги', title: 'Нет срочной долговой очереди', text: `Поступило сегодня ${money(data.paidToday)}`, to: `${getAdminBasePathForLocation()}/payments`, tone: 'info' as const },
-    data.studentRequests[0] ? { label: 'Запрос', title: 'Ответить ученику', text: data.studentRequests[0].reason, to: `${getAdminBasePathForLocation()}/students`, tone: 'warning' as const } : { label: 'Запросы', title: 'Новых запросов нет', text: 'Переносы и отмены не ждут ответа', to: `${getAdminBasePathForLocation()}/students`, tone: 'info' as const },
-  ]
-
   return (
     <div className="v-admin-workspace vroom-admin-today">
       <section className="v-admin-panel vroom-command-hero overflow-hidden p-5 md:p-6">
@@ -341,18 +336,8 @@ export function AdminToday() {
       <section className="v-today-metrics mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <TodayMetric label="занятий сегодня" value={data.activeToday.length} tone="blue" to={`${getAdminBasePathForLocation()}/schedule`} />
         <TodayMetric label="свободных окон" value={data.freeSlotsToday} tone="green" to={`${getAdminBasePathForLocation()}/schedule`} />
-        <TodayMetric label="ближайших записей" value={data.upcoming.length} tone="muted" to={`${getAdminBasePathForLocation()}/schedule`} />
-        <TodayMetric label="запросов / долгов" value={data.openStudentRequests + data.debtStudentsCount} tone={data.openStudentRequests + data.debtStudentsCount ? 'red' : 'green'} to={`${getAdminBasePathForLocation()}/reports`} />
-      </section>
-
-      <section className="mt-4 grid gap-3 lg:grid-cols-3">
-        {dayPlan.map((item) => (
-          <Link key={item.label} to={item.to} className={`v-admin-panel p-4 transition hover:-translate-y-0.5 ${item.tone === 'danger' ? 'border-[rgba(255,59,48,0.18)]' : item.tone === 'warning' ? 'border-[rgba(10,132,255,0.18)]' : 'border-[rgba(15,23,42,0.07)]'}`}>
-            <span className={`v-route-pill ${item.tone === 'danger' ? 'bg-[rgba(255,59,48,0.10)] text-[#C92820]' : item.tone === 'warning' ? 'bg-[#EAF4FF] text-[#075EBC]' : 'bg-[#F2F4F7] text-[#667085]'}`}>{item.label}</span>
-            <strong className="mt-3 block text-[17px] font-semibold text-[#111827]">{item.title}</strong>
-            <span className="mt-1 line-clamp-2 block text-[13px] font-medium leading-5 text-[#667085]">{item.text}</span>
-          </Link>
-        ))}
+        <TodayMetric label="записей впереди" value={data.upcoming.length} tone="muted" to={`${getAdminBasePathForLocation()}/schedule`} />
+        <TodayMetric label="в работе" value={data.openStudentRequests + data.debtStudentsCount} tone={data.openStudentRequests + data.debtStudentsCount ? 'red' : 'green'} to={`${getAdminBasePathForLocation()}/reports`} />
       </section>
 
       {hasBlock('launchChecklist') ? <LaunchChecklist
@@ -364,128 +349,25 @@ export function AdminToday() {
         studentCount={data.students.length}
       /> : null}
 
-      <section className="v-admin-focus-board mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.28fr)_minmax(300px,.86fr)_minmax(260px,.72fr)]">
-        <button type="button" onClick={() => navigate(`${getAdminBasePathForLocation()}/schedule`)} className="v-focus-card is-primary min-w-0 p-5 text-left">
-          <span className="v-route-pill bg-white/80 text-[#075EBC]">Главный фокус</span>
-          {nextEntry ? (
-            <>
-              <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-[#4F6275]">Ближайшее занятие</p>
-                  <strong className="mt-1 block text-[38px] font-semibold leading-none text-[#0F172A] tabular-nums md:text-[48px]">
-                    {format(getSlotDateTime(nextEntry.slot), 'HH:mm')}
-                  </strong>
-                </div>
-                <span className="rounded-full bg-[#0F172A] px-3 py-2 text-[12px] font-semibold text-white">{format(getSlotDateTime(nextEntry.slot), 'dd.MM')}</span>
-              </div>
-              <div className="mt-5 min-w-0">
-                <strong className="block truncate text-[19px] font-semibold text-[#111827]">{nextEntry.booking.studentName}</strong>
-                <span className="mt-1 block truncate text-[14px] font-medium text-[#667085]">
-                  {nextInstructor?.name ?? 'Инструктор не назначен'} · {nextBranch?.name ?? 'Филиал не указан'} · {formatDuration(nextEntry.slot.duration)}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <strong className="mt-5 block text-[24px] font-semibold leading-7 text-[#111827]">На ближайшее время записей нет</strong>
-              <span className="mt-2 block max-w-xl text-[14px] font-medium leading-6 text-[#667085]">Откройте окна на неделю вперед, чтобы ученики могли записаться без ручной переписки.</span>
-            </>
-          )}
-        </button>
 
-        <Link to={firstPriority?.to ?? `${getAdminBasePathForLocation()}/reports`} className={`v-focus-card min-w-0 p-5 ${firstPriority ? `is-${firstPriority.tone}` : 'is-ok'}`}>
-          <span className="v-route-pill bg-[#F8FAFC] text-[#667085]">Контроль</span>
-          {firstPriority ? (
-            <>
-              <strong className="mt-4 block text-[18px] font-semibold leading-6 text-[#111827]">{firstPriority.title}</strong>
-              <span className="mt-2 block text-[14px] font-medium leading-6 text-[#667085]">{firstPriority.text}</span>
-            </>
-          ) : (
-            <>
-              <strong className="mt-4 block text-[18px] font-semibold leading-6 text-[#111827]">Критичных задач нет</strong>
-              <span className="mt-2 block text-[14px] font-medium leading-6 text-[#667085]">Долги, документы, заявки и прошедшие занятия сейчас без красных флагов.</span>
-            </>
-          )}
-        </Link>
 
-        <button type="button" onClick={() => navigate(`${getAdminBasePathForLocation()}/schedule`)} className="v-focus-card min-w-0 p-5 text-left is-free">
-          <span className="v-route-pill bg-[rgba(52,199,89,0.12)] text-[#1F8F3F]">Свободное окно</span>
-          {firstFreeSlot ? (
-            <>
-              <strong className="mt-4 block text-[34px] font-semibold leading-none text-[#111827] tabular-nums">{firstFreeSlot.time}</strong>
-              <span className="mt-3 block truncate text-[14px] font-medium text-[#667085]">{firstFreeInstructor?.name ?? 'Инструктор'} · {firstFreeBranch?.name ?? 'Филиал'} · {formatDuration(firstFreeSlot.duration)}</span>
-            </>
-          ) : (
-            <>
-              <strong className="mt-4 block text-[19px] font-semibold leading-6 text-[#111827]">Сегодня все окна разобраны</strong>
-              <span className="mt-2 block text-[14px] font-medium leading-6 text-[#667085]">Проверьте неделю и добавьте резервные слоты.</span>
-            </>
-          )}
-        </button>
-      </section>
-
-      {(hasBlock('nearest') || hasBlock('attention') || hasBlock('quickActions')) ? <section className={`mt-4 grid gap-4 ${hasBlock('nearest') && (hasBlock('attention') || hasBlock('quickActions')) ? 'lg:grid-cols-[minmax(0,1fr)_380px]' : ''}`}>
-        {hasBlock('nearest') ? <div className="v-admin-panel overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] p-4">
-            <div>
-              <h2 className="text-[18px] font-semibold text-[#111315]">Ближайшие занятия</h2>
-              <p className="v-admin-note mt-1">Маршрут дня по времени</p>
-            </div>
-            <Link to={`${getAdminBasePathForLocation()}/schedule`} className="v-admin-button-secondary">
-              Все
-              <ExternalLink width={15} height={15} />
-            </Link>
-          </div>
-          {data.upcoming.length === 0 ? (
-            <div className="v-admin-empty m-4">
-              <CheckCircle2 className="mb-2 h-8 w-8 text-[#247A4B]" />
-              <strong>Ближайших занятий нет</strong>
-              <span>Создайте окна или запишите ученика из расписания.</span>
-            </div>
-          ) : (
-            <div className="v-route-list">
-              {data.upcoming.map(({ booking, slot }) => {
-                const instructor = data.instructors.find((item) => item.id === booking.instructorId)
-                const branch = data.branches.find((item) => item.id === booking.branchId)
-                return (
-                  <button
-                    key={booking.id}
-                    onClick={() => navigate(`${getAdminBasePathForLocation()}/schedule`)}
-                    className="v-route-item w-full transition hover:bg-[#F8FAFC]"
-                  >
-                    <span className="v-route-dot" />
-                    <span className="v-route-time">
-                      {format(getSlotDateTime(slot), 'HH:mm')}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="v-route-title">{booking.studentName}</span>
-                      <span className="v-route-meta">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'} · {format(getSlotDateTime(slot), 'dd.MM')}</span>
-                    </span>
-                    <span className="v-route-pill hidden sm:inline-flex">{formatDuration(slot.duration)}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div> : null}
-
-        {(hasBlock('attention') || hasBlock('quickActions')) ? <aside className="grid gap-4">
-          {hasBlock('attention') ? <div className="v-admin-panel p-4">
-            <h2 className="text-[18px] font-semibold text-[#111315]">Требует внимания</h2>
+      {(hasBlock('attention') || hasBlock('quickActions')) ? <section className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  {hasBlock('attention') ? <div className="v-admin-panel p-4">
+            <h2 className="text-[18px] font-semibold text-[#111315]">Операционные проверки</h2>
             <div className="mt-3 grid gap-2">
               {priorities.length ? priorities.map((item) => (
                 <PriorityCard key={item!.title} {...item!} />
               )) : (
                 <div className="rounded-[20px] bg-[#EAF6EE] p-4">
-                  <strong className="block text-[15px] font-semibold text-[#111315]">Критичных задач нет</strong>
-                  <span className="mt-1 block text-[13px] font-medium text-[#247A4B]">День выглядит спокойно.</span>
+                  <strong className="block text-[15px] font-semibold text-[#111315]">Проверки без замечаний</strong>
+                  <span className="mt-1 block text-[13px] font-medium text-[#247A4B]">По ключевым разделам замечаний нет.</span>
                 </div>
               )}
             </div>
           </div> : null}
 
           {hasBlock('quickActions') ? <div className="v-admin-panel p-4">
-            <h2 className="text-[18px] font-semibold text-[#111315]">Быстрые действия</h2>
+            <h2 className="text-[18px] font-semibold text-[#111315]">Действия</h2>
             <div className="mt-3 grid gap-2">
               {[
                 ['Записать ученика', `${getAdminBasePathForLocation()}/students`],
@@ -500,63 +382,62 @@ export function AdminToday() {
               ))}
             </div>
           </div> : null}
-        </aside> : null}
       </section> : null}
-
-      <section className="mt-4 grid gap-3 lg:grid-cols-4">
-        {[
-          { label: 'Деньги под контролем', value: money(data.overdueAmount), text: data.debtStudentsCount ? `${data.debtStudentsCount} учеников с долгом` : 'Долгов не видно', tone: data.debtStudentsCount ? 'danger' : 'ok' },
-          { label: 'Потери времени', value: data.freeSlotsToday, text: 'свободных окон сегодня', tone: data.freeSlotsToday ? 'warning' : 'ok' },
-          { label: 'Запросы учеников', value: data.openStudentRequests, text: 'нужно разобрать администратору', tone: data.openStudentRequests ? 'warning' : 'ok' },
-          { label: 'Операционный риск', value: data.overdueBookings + data.carsInRepair + data.docsExpiring, text: 'занятия, машины и документы', tone: data.overdueBookings + data.carsInRepair + data.docsExpiring ? 'danger' : 'ok' },
-        ].map((item) => (
-          <div key={item.label} className={`v-admin-panel min-h-[132px] p-4 ${item.tone === 'danger' ? 'border-[rgba(255,59,48,0.18)]' : item.tone === 'warning' ? 'border-[rgba(10,132,255,0.18)]' : 'border-[rgba(52,199,89,0.18)]'}`}>
-            <span className={`v-route-pill ${item.tone === 'danger' ? 'bg-[rgba(255,59,48,0.10)] text-[#C92820]' : item.tone === 'warning' ? 'bg-[#EAF4FF] text-[#075EBC]' : 'bg-[#EAF7EF] text-[#1F8F3F]'}`}>{item.label}</span>
-            <strong className="mt-4 block text-[28px] font-semibold leading-none text-[#111827] tabular-nums">{item.value}</strong>
-            <span className="mt-2 block text-[13px] font-medium leading-5 text-[#667085]">{item.text}</span>
-          </div>
-        ))}
-      </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="v-admin-panel overflow-hidden">
           <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] p-4">
             <div>
-              <h2 className="text-[18px] font-semibold text-[#111827]">Свободные окна</h2>
-              <p className="v-admin-note mt-1">Ближайшие остановки, куда можно записать ученика</p>
+              <h2 className="text-[18px] font-semibold text-[#111827]">Расписание сегодня</h2>
+              <p className="v-admin-note mt-1">Список занятий по времени</p>
             </div>
-            <Link to={`${getAdminBasePathForLocation()}/schedule`} className="v-admin-button-tertiary">
-              Расписание
+            <Link to={getAdminBasePathForLocation() + '/schedule'} className="v-admin-button-tertiary">
+              Открыть
               <ExternalLink width={15} height={15} />
             </Link>
           </div>
-          {freeSlots.length === 0 ? (
+          {data.activeToday.length === 0 ? (
             <div className="v-admin-empty m-4">
-              <strong>Свободных окон сегодня нет</strong>
-              <span>Откройте расписание и добавьте время.</span>
+              <strong>Активных занятий сегодня нет</strong>
+              <span>{data.freeSlotsToday ? 'Свободных окон сегодня: ' + data.freeSlotsToday + '.' : 'Свободных окон сегодня нет.'}</span>
             </div>
           ) : (
-            <div className="grid gap-2 p-4 sm:grid-cols-2 xl:grid-cols-4">
-              {freeSlots.map((slot) => {
-                const instructor = data.instructors.find((item) => item.id === slot.instructorId)
-                const branch = data.branches.find((item) => item.id === slot.branchId)
-                return (
-                  <button key={slot.id} onClick={() => navigate(`${getAdminBasePathForLocation()}/schedule`)} className="rounded-[22px] border border-[rgba(52,199,89,0.18)] bg-[rgba(52,199,89,0.08)] p-3 text-left transition hover:-translate-y-0.5 hover:bg-[rgba(52,199,89,0.12)]">
-                    <span className="flex items-center gap-2 text-[13px] font-semibold text-[#1F8F3F]"><span className="h-2 w-2 rounded-full bg-[#34C759]" />{slot.time}</span>
-                    <strong className="mt-2 block text-[15px] font-semibold text-[#111827]">{formatDuration(slot.duration)}</strong>
-                    <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
-                  </button>
-                )
-              })}
+            <div className="divide-y divide-[#111827]/[0.06]">
+              {data.activeToday
+                .slice()
+                .sort((left, right) => (left.slot?.time ?? '').localeCompare(right.slot?.time ?? ''))
+                .slice(0, 8)
+                .map(({ booking, slot }) => {
+                  if (!slot) return null
+                  const instructor = data.instructors.find((item) => item.id === booking.instructorId)
+                  const branch = data.branches.find((item) => item.id === booking.branchId)
+                  return (
+                    <button key={booking.id} onClick={() => navigate(getAdminBasePathForLocation() + '/schedule')} className="grid w-full gap-2 p-4 text-left transition hover:bg-[#F8FAFC] sm:grid-cols-[80px_minmax(0,1fr)_150px] sm:items-center">
+                      <span className="text-[18px] font-semibold tabular-nums text-[#111827]">{slot.time}</span>
+                      <span className="min-w-0">
+                        <strong className="block truncate text-[15px] font-semibold text-[#111827]">{booking.studentName}</strong>
+                        <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
+                      </span>
+                      <span className="flex flex-wrap gap-2 sm:justify-end">
+                        <span className="v-route-pill">{formatDuration(slot.duration)}</span>
+                        <span className="v-route-pill bg-[#EAF4FF] text-[#075EBC]">Открыть</span>
+                      </span>
+                    </button>
+                  )
+                })}
             </div>
           )}
+          {freeSlots.length > 0 ? (
+            <div className="border-t border-[#111827]/[0.07] bg-[#F8FAFC] px-4 py-3 text-[13px] font-medium text-[#667085]">
+              Свободные окна сегодня: <span className="font-semibold text-[#111827]">{data.freeSlotsToday}</span>. Полный список открыт в расписании.
+            </div>
+          ) : null}
         </div>
-
         {hasBlock('finance') ? <aside className="v-admin-panel p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-[18px] font-semibold text-[#111827]">Оплаты</h2>
-              <p className="v-admin-note mt-1">Сегодня и общий долг</p>
+              <p className="v-admin-note mt-1">Поступления и задолженность</p>
             </div>
             <WalletCards className="h-6 w-6 text-[#34C759]" />
           </div>
@@ -566,7 +447,7 @@ export function AdminToday() {
               <strong className="mt-1 block text-[28px] font-semibold leading-none text-[#111827]">{money(data.paidToday)}</strong>
             </div>
             <div className="rounded-[22px] bg-[rgba(255,59,48,0.08)] p-4">
-              <span className="text-[12px] font-medium text-[#C92820]">Долг учеников</span>
+              <span className="text-[12px] font-medium text-[#C92820]">Задолженность</span>
               <strong className="mt-1 block text-[28px] font-semibold leading-none text-[#111827]">{money(data.overdueAmount)}</strong>
             </div>
           </div>
