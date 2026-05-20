@@ -30,7 +30,7 @@ export interface AdminNavDefinition {
 
 export const REQUIRED_ADMIN_NAV_IDS: AdminNavItemId[] = ['today', 'schedule', 'students', 'instructors']
 
-export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['bookings', 'slots', 'branches', 'payments', 'reports', 'launch', 'cars', 'documents', 'exams', 'settings', 'users']
+export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = ['payments', 'documents', 'exams', 'reports', 'cars', 'settings', 'users']
 
 export function getAdminPanelPreferencesKey(schoolId: string): string {
   const context = getWorkspaceStaffContext()

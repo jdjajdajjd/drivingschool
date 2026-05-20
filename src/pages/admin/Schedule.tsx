@@ -19,7 +19,7 @@ import { getPreference, setPreference } from '../../services/preferenceStorage'
 type ViewMode = 'day' | 'week'
 type ScheduleFilter = 'all' | 'booked' | 'available' | 'cancelled'
 
-const HOURS = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, '0')}:00`)
+const HOURS = Array.from({ length: 17 }, (_, index) => `${String(index + 7).padStart(2, '0')}:00`)
 const DURATION_OPTIONS = [45, 60, 90, 120]
 
 const FILTER_LABELS: Record<ScheduleFilter, string> = {
@@ -57,6 +57,14 @@ function getSlotStatusLabel(status: Slot['status']): string {
   if (status === 'available') return 'Свободно'
   if (status === 'cancelled') return 'Отменено'
   return 'Занято'
+}
+
+function plural(value: number, one: string, few: string, many: string): string {
+  const mod10 = Math.abs(value) % 10
+  const mod100 = Math.abs(value) % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
 }
 
 export function AdminSchedule() {
@@ -122,13 +130,6 @@ export function AdminSchedule() {
     booked: filteredSlots.filter((slot) => slot.status === 'booked').length,
     free: filteredSlots.filter((slot) => slot.status === 'available').length,
   }
-  const todayKey = format(new Date(), 'yyyy-MM-dd')
-  const todayVisibleSlots = filteredSlots.filter((slot) => slot.date === todayKey)
-  const schedulePressure = {
-    todayBooked: todayVisibleSlots.filter((slot) => slot.status === 'booked').length,
-    todayFree: todayVisibleSlots.filter((slot) => slot.status === 'available').length,
-    instructors: new Set(todayVisibleSlots.map((slot) => slot.instructorId)).size,
-  }
   const staleFreeSlots = data.slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) < new Date())
   const staleActiveBookings = data.bookings
     .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
@@ -145,16 +146,6 @@ export function AdminSchedule() {
       cancelled: slots.filter((slot) => slot.status === 'cancelled').length,
     }
   })
-  const upcomingBookings = filteredSlots
-    .filter((slot) => slot.status === 'booked' && slot.bookingId)
-    .map((slot) => ({
-      slot,
-      booking: data.bookings.find((booking) => booking.id === slot.bookingId) ?? null,
-      instructor: data.instructors.find((instructor) => instructor.id === slot.instructorId) ?? null,
-    }))
-    .filter((entry) => entry.booking)
-    .sort((left, right) => getSlotDateTime(left.slot).getTime() - getSlotDateTime(right.slot).getTime())
-    .slice(0, 8)
   const mobileDays = (viewMode === 'day' ? [selectedDate] : viewRange).map((date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
     const slots = filteredSlots
@@ -393,7 +384,7 @@ export function AdminSchedule() {
       <div className="v-admin-toolbar vroom-schedule-toolbar">
         <div>
           <h1 className="v-admin-heading">Расписание</h1>
-          <p className="v-admin-note mt-1">{format(selectedDate, 'LLLL yyyy', { locale: ru })} · слоты школы</p>
+          <p className="v-admin-note mt-1">Календарь занятий, свободных окон и переносов</p>
         </div>
         <div className="v-schedule-toolbar-actions ml-auto flex flex-wrap items-center gap-2">
           <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
@@ -420,16 +411,6 @@ export function AdminSchedule() {
           <button onClick={exportScheduleCsv} className="v-admin-button-secondary">
             Экспорт
           </button>
-          {staleFreeSlots.length ? (
-            <button onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">
-              Скрыть прошедшие: {staleFreeSlots.length}
-            </button>
-          ) : null}
-          {staleActiveBookings.length ? (
-            <button onClick={() => void completeStaleActiveBookings()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">
-              Зачесть прошедшие: {staleActiveBookings.length}
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -452,30 +433,21 @@ export function AdminSchedule() {
         </div>
       </div>
 
-      <section className="v-schedule-command mx-3 mt-2 hidden gap-2 md:mx-5 2xl:grid 2xl:grid-cols-[minmax(0,1.05fr)_150px_150px]">
-        <button type="button" onClick={() => setShowCreateModal(true)} className="v-schedule-command-card is-action text-left">
-          <span className="text-[12px] font-semibold text-[#075EBC]">Быстрое действие</span>
-          <strong className="mt-1 block text-[16px] font-semibold text-[#111827]">Открыть новые окна</strong>
-          <span className="mt-1 block text-[12px] font-medium text-[#667085]">Добавить время на неделю.</span>
-        </button>
-        <div className="v-schedule-command-card">
-          <span className="text-[12px] font-semibold text-[#667085]">Сегодня</span>
-          <strong className="mt-1 block text-[24px] font-semibold leading-none text-[#111827] tabular-nums">{schedulePressure.todayBooked} / {schedulePressure.todayFree}</strong>
-          <span className="mt-1 block text-[12px] font-medium text-[#667085]">занято / свободно</span>
+      {(staleFreeSlots.length || staleActiveBookings.length) ? (
+        <div className="mx-3 mt-2 flex flex-wrap items-center gap-2 rounded-[18px] border border-[#E5EAF1] bg-white px-3 py-2 text-[12px] font-medium text-[#667085] md:mx-5">
+          <span className="font-semibold text-[#111827]">Проверка прошедшего времени</span>
+          {staleActiveBookings.length ? <button onClick={() => void completeStaleActiveBookings()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Отметить занятия: {staleActiveBookings.length}</button> : null}
+          {staleFreeSlots.length ? <button onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Скрыть окна: {staleFreeSlots.length}</button> : null}
         </div>
-        <div className="v-schedule-command-card">
-          <span className="text-[12px] font-semibold text-[#667085]">Инструкторы в сетке</span>
-          <strong className="mt-1 block text-[24px] font-semibold leading-none text-[#111827] tabular-nums">{schedulePressure.instructors}</strong>
-          <span className="mt-1 block text-[12px] font-medium text-[#667085]">сегодня</span>
-        </div>
-      </section>
+      ) : null}
+
 
       <div className="mx-3 mt-2 hidden gap-2 lg:mx-5 lg:grid lg:grid-cols-7">
         {dailySummary.map((day) => (
           <button
             key={day.date.toISOString()}
             onClick={() => { setSelectedDate(day.date); setViewMode('day') }}
-            className={`vroom-day-card rounded-[16px] border p-2.5 text-left transition hover:-translate-y-0.5 ${isSameDay(day.date, new Date()) ? 'is-today border-[rgba(10,132,255,0.28)] bg-[#EAF4FF]' : 'border-[rgba(15,23,42,0.07)] bg-white'}`}
+            className={`vroom-day-card rounded-[14px] border p-2 text-left transition hover:-translate-y-0.5 ${isSameDay(day.date, new Date()) ? 'is-today border-[rgba(10,132,255,0.28)] bg-[#EAF4FF]' : 'border-[rgba(15,23,42,0.07)] bg-white'}`}
           >
             <span className="block text-[11px] font-medium text-[#667085]">{format(day.date, 'EEEEEE', { locale: ru })}</span>
             <strong className="mt-0.5 block text-[18px] font-semibold text-[#111827]">{format(day.date, 'd MMM', { locale: ru })}</strong>
@@ -490,23 +462,6 @@ export function AdminSchedule() {
         ))}
       </div>
 
-      {upcomingBookings.length ? (
-        <div className="hidden px-3 pb-1 pt-1 md:px-5 2xl:block">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {upcomingBookings.map(({ slot, booking, instructor }) => (
-              <button
-                key={slot.id}
-                onClick={() => { setSelectedDate(getSlotDateTime(slot)); setViewMode('day'); setSelectedSlotId(slot.id) }}
-                className="vroom-upcoming-chip min-w-[168px] rounded-[14px] border border-white/70 bg-white/70 px-2.5 py-1.5 text-left shadow-[0_8px_18px_rgba(15,23,42,0.035)] transition hover:-translate-y-0.5"
-              >
-                <span className="block text-[12px] font-medium text-[#315A7C]">{format(getSlotDateTime(slot), 'd MMM, HH:mm', { locale: ru })}</span>
-                <span className="mt-1 line-clamp-1 text-[13px] font-semibold text-[#111315]">{booking?.studentName}</span>
-                <span className="mt-0.5 line-clamp-1 text-[12px] font-medium text-[#687381]">{instructor?.name ?? 'Инструктор'}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       <div className="flex-1 overflow-auto p-3 pb-24 md:p-5 lg:pt-3">
         {filteredSlots.length === 0 ? (
@@ -517,87 +472,129 @@ export function AdminSchedule() {
             </div>
           </div>
         ) : null}
-        <div className="v-mobile-schedule-list grid gap-2 lg:hidden">
+        <div className="v-mobile-schedule-calendar grid gap-3 lg:hidden">
           {mobileDays.map(({ date, slots }) => {
             const booked = slots.filter((entry) => entry.slot.status === 'booked').length
             const free = slots.filter((entry) => entry.slot.status === 'available').length
             return (
-            <section key={date.toISOString()} className="v-mobile-day-group overflow-hidden">
-              <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] px-4 py-3">
-                <div>
-                  <p className="text-[12px] font-medium text-[#667085]">{format(date, 'EEEE', { locale: ru })}</p>
-                  <h2 className="text-[20px] font-semibold text-[#111827]">{format(date, 'd MMMM', { locale: ru })}</h2>
-                  <p className="mt-1 text-[12px] font-medium text-[#98A2B3]">{booked} занято · {free} свободно</p>
+              <section key={date.toISOString()} className="v-mobile-day-group overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] px-4 py-3">
+                  <div>
+                    <p className="text-[12px] font-medium text-[#667085]">{format(date, 'EEEE', { locale: ru })}</p>
+                    <h2 className="text-[20px] font-semibold text-[#111827]">{format(date, 'd MMMM', { locale: ru })}</h2>
+                  </div>
+                  <span className="v-admin-pill v-tone-muted">{booked} занято · {free} свободно</span>
                 </div>
-                <span className="v-admin-pill v-tone-muted">{slots.length}</span>
-              </div>
-              {slots.length === 0 ? (
-                <div className="p-4 text-[13px] font-medium text-[#687381]">Окон на этот день нет.</div>
-              ) : (
-                <div className="v-route-list">
-                  {slots.map(({ slot, booking, instructor, branch }) => {
-                    const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
+                <div className="v-mobile-calendar-grid">
+                  {HOURS.map((hour) => {
+                    const hourSlots = slots.filter(({ slot }) => slot.time.startsWith(hour.slice(0, 2)))
                     return (
-                      <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className="v-mobile-slot-row w-full hover:bg-[#F8FAFC]">
-                        <span className={`v-route-dot ${slot.status === 'available' ? 'is-free' : slot.status === 'cancelled' ? 'is-warning' : ''}`} />
-                        <span className="v-route-time">{format(getSlotDateTime(slot), 'HH:mm')}</span>
-                        <span className="min-w-0">
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className="v-route-title">{booking?.studentName ?? `Свободно · ${formatDuration(slot.duration)}`}</span>
-                            <span className={`v-admin-pill shrink-0 ${slot.status === 'available' ? 'v-tone-ok' : slot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{getSlotStatusLabel(slot.status)}</span>
-                          </span>
-                          <span className="v-route-meta">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
-                        </span>
-                        <span className="v-mobile-slot-action">Открыть</span>
-                      </button>
+                      <div key={hour} className="v-mobile-calendar-row">
+                        <span className="v-mobile-calendar-time">{hour}</span>
+                        <div className="v-mobile-calendar-cell">
+                          {hourSlots.length === 0 ? <span className="v-mobile-calendar-empty">-</span> : (() => {
+                            const busySlots = hourSlots.filter(({ slot }) => slot.status !== 'available')
+                            const freeSlots = hourSlots.filter(({ slot }) => slot.status === 'available')
+                            const freeInstructors = new Set(freeSlots.map(({ slot }) => slot.instructorId)).size
+                            return (
+                              <>
+                                {busySlots.map(({ slot, booking, instructor, branch }) => {
+                                  const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
+                                  return (
+                                    <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className={'v-mobile-slot-row v-mobile-calendar-event ' + (slot.status === 'cancelled' ? 'is-cancelled' : 'is-booked')}>
+                                      <span className="flex items-center justify-between gap-2">
+                                        <strong>{slot.time}</strong>
+                                        <em>{getSlotStatusLabel(slot.status)}</em>
+                                      </span>
+                                      <span className="mt-1 block truncate">{booking?.studentName ?? 'Занятие'}</span>
+                                      <small>{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</small>
+                                    </button>
+                                  )
+                                })}
+                                {freeSlots.length ? (
+                                  <button key={hour + '-free'} onClick={() => setSelectedSlotId(freeSlots[0].slot.id)} className="v-mobile-slot-row v-mobile-calendar-event is-free">
+                                    <span className="flex items-center justify-between gap-2">
+                                      <strong>{freeSlots[0].slot.time}</strong>
+                                      <em>Свободно</em>
+                                    </span>
+                                    <span className="mt-1 block truncate">{freeSlots.length} {plural(freeSlots.length, 'свободное окно', 'свободных окна', 'свободных окон')}</span>
+                                    <small>{freeInstructors} {plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · {formatDuration(freeSlots[0].slot.duration)}</small>
+                                  </button>
+                                ) : null}
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
-              )}
-            </section>
-          )})}
+              </section>
+            )
+          })}
         </div>
         <div className="v-admin-panel vroom-calendar-grid hidden overflow-hidden lg:block">
           <div className="grid bg-[#F2F6FA]" style={{ gridTemplateColumns: viewMode === 'day' ? '66px minmax(0,1fr)' : '66px repeat(7,minmax(0,1fr))' }}>
             <div className="border-b border-r border-[#111827]/[0.07]" />
             {viewRange.map((date) => (
               <div key={date.toISOString()} className={`border-b border-r border-[#111827]/[0.07] p-3 text-center ${isSameDay(date, new Date()) ? 'bg-[#EAF3FF]' : ''}`}>
-                <p className="text-[11px] font-medium text-[#687381]">{format(date, 'EEE', { locale: ru })}</p>
+                <p className="text-[11px] font-medium text-[#687381]">{format(date, 'EEEEEE', { locale: ru })}</p>
                 <p className="text-[22px] font-semibold leading-none text-[#111315]">{format(date, 'd')}</p>
               </div>
             ))}
 
             {HOURS.map((hour) => (
               <Fragment key={hour}>
-                <div className="flex min-h-[136px] items-start justify-end border-r border-[#111827]/[0.07] px-3 py-3 text-[12px] font-medium text-[#8A96A3]">
+                <div className="flex min-h-[104px] items-start justify-end border-r border-[#111827]/[0.07] px-3 py-3 text-[12px] font-medium text-[#8A96A3]">
                   {hour}
                 </div>
                 {viewRange.map((date) => {
                   const cellSlots = getSlotsForCell(date, hour)
                   return (
-                    <div key={`${date.toISOString()}-${hour}`} className="vroom-calendar-cell min-h-[136px] border-r border-t border-[#111827]/[0.055] bg-white/72 p-2">
+                    <div key={`${date.toISOString()}-${hour}`} className="vroom-calendar-cell min-h-[104px] border-r border-t border-[#111827]/[0.055] bg-white/72 p-2">
                       <div className="grid gap-2">
-                        {cellSlots.map((slot) => {
-                          const booking = slot.bookingId ? data.bookings.find((item) => item.id === slot.bookingId) ?? null : null
-                          const instructor = data.instructors.find((item) => item.id === slot.instructorId)
-                          const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
+                        {(() => {
+                          const busySlots = cellSlots.filter((slot) => slot.status !== 'available')
+                          const freeSlots = cellSlots.filter((slot) => slot.status === 'available')
+                          const freeInstructors = new Set(freeSlots.map((slot) => slot.instructorId)).size
                           return (
-                            <button
-                              key={slot.id}
-                              onClick={() => setSelectedSlotId(slot.id)}
-                              title={`${format(getSlotDateTime(slot), 'HH:mm')} · ${booking?.studentName ?? 'Свободно'} · ${instructor?.name ?? 'Инструктор'}`}
-                              className={`vroom-slot-card relative min-h-[112px] rounded-[18px] border px-3 py-2.5 text-left text-[12px] font-medium leading-4 transition hover:-translate-y-0.5 hover:brightness-[0.99] ${statusClass(slot.status)}`}
-                            >
-                              <span className={`absolute right-2.5 top-2.5 h-2 w-2 rounded-full ${statusDotClass(slot.status)}`} />
-                              <span className="line-clamp-4 break-words pr-4 leading-4">{booking?.studentName ?? `Свободно · ${formatDuration(slot.duration)}`}</span>
-                              <span className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-medium opacity-75">
-                                <span>{format(getSlotDateTime(slot), 'HH:mm')}</span>
-                                <span>{lessonLabel}</span>
-                              </span>
-                              <span className="mt-0.5 line-clamp-2 break-words text-[11px] font-medium opacity-75">{instructor?.name ?? 'Инструктор'}</span>
-                            </button>
+                            <>
+                              {busySlots.map((slot) => {
+                                const booking = slot.bookingId ? data.bookings.find((item) => item.id === slot.bookingId) ?? null : null
+                                const instructor = data.instructors.find((item) => item.id === slot.instructorId)
+                                const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
+                                return (
+                                  <button
+                                    key={slot.id}
+                                    onClick={() => setSelectedSlotId(slot.id)}
+                                    title={format(getSlotDateTime(slot), 'HH:mm') + ' · ' + (booking?.studentName ?? 'Занятие') + ' · ' + (instructor?.name ?? 'Инструктор')}
+                                    className={'vroom-slot-card relative min-h-[78px] rounded-[14px] border px-2.5 py-2 text-left text-[12px] font-medium leading-4 transition hover:-translate-y-0.5 hover:brightness-[0.99] ' + statusClass(slot.status)}
+                                  >
+                                    <span className={'absolute right-2.5 top-2.5 h-2 w-2 rounded-full ' + statusDotClass(slot.status)} />
+                                    <span className="line-clamp-3 break-words pr-4 leading-4">{booking?.studentName ?? 'Занятие'}</span>
+                                    <span className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-medium opacity-75">
+                                      <span>{format(getSlotDateTime(slot), 'HH:mm')}</span>
+                                      <span>{lessonLabel}</span>
+                                    </span>
+                                    <span className="mt-0.5 line-clamp-1 break-words text-[11px] font-medium opacity-75">{instructor?.name ?? 'Инструктор'}</span>
+                                  </button>
+                                )
+                              })}
+                              {freeSlots.length ? (
+                                <button
+                                  key={date.toISOString() + '-' + hour + '-free'}
+                                  onClick={() => setSelectedSlotId(freeSlots[0].id)}
+                                  title={freeSlots.length + ' свободных окон'}
+                                  className="vroom-slot-card vroom-slot-free-summary relative min-h-[62px] rounded-[14px] border border-[rgba(52,199,89,0.20)] bg-[rgba(52,199,89,0.10)] px-2.5 py-2 text-left text-[12px] font-medium leading-4 text-[#1F8F3F] transition hover:-translate-y-0.5"
+                                >
+                                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#34C759]" />
+                                  <span className="block pr-4 font-semibold">{freeSlots.length} {plural(freeSlots.length, 'свободное окно', 'свободных окна', 'свободных окон')}</span>
+                                  <span className="mt-1 block text-[11px] opacity-75">{freeInstructors} {plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · {formatDuration(freeSlots[0].duration)}</span>
+                                </button>
+                              ) : null}
+                            </>
                           )
-                        })}
+                        })()}
                       </div>
                     </div>
                   )
