@@ -638,12 +638,12 @@ export function AdminStudents() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Ученики</h1>
           <p className="v-admin-note mt-1">{filtered.length} в списке</p>
         </div>
-        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3">
+        <div className="v-toolbar-actions v-students-actions ml-auto flex min-w-0 flex-wrap items-center gap-3">
           <label className="relative min-w-[220px] flex-1 sm:w-[320px] sm:flex-none">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
             <input
@@ -656,7 +656,7 @@ export function AdminStudents() {
               <button type="button" onClick={() => setSearch('')} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-[#8D98A4] hover:bg-[#EEF2F5] hover:text-[#111418]">×</button>
             ) : null}
           </label>
-          <button onClick={() => setShowAdd(true)} className="v-admin-button">
+          <button onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
             <UserPlus width={16} height={16} />
             Добавить ученика
           </button>

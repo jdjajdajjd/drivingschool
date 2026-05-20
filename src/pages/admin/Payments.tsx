@@ -161,12 +161,12 @@ export function AdminPayments() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Оплаты</h1>
           <p className="v-admin-note mt-1">Долги, частичные оплаты и поступления</p>
         </div>
-        <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-3">
+        <div className="v-toolbar-cluster ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-3">
           <div className="rounded-[10px] bg-[#EAF7EF] px-4 py-2">
             <p className="text-[11px] font-black uppercase text-[#157347]">Оплачено</p>
             <p className="text-[18px] font-black text-[#111418]">{money(totals.paid)}</p>
@@ -180,7 +180,7 @@ export function AdminPayments() {
             <p className="text-[18px] font-black text-[#111418]">{money(totals.debt)}</p>
           </div>
           {canManageFinance ? (
-            <button onClick={() => setShowAdd(true)} className="v-admin-button col-span-2 sm:col-span-3">
+            <button onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action col-span-2 sm:col-span-3">
               <Plus width={16} height={16} />
               Принять оплату
             </button>

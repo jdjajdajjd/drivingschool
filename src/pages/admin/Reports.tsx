@@ -247,13 +247,13 @@ export function AdminReports() {
 
   return (
     <div className="flex h-full flex-col bg-[#F5F7FA]">
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-[#E5EAF1] bg-white/92 px-4 py-3 md:px-6">
+      <div className="v-reports-header flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-[#E5EAF1] bg-white/92 px-4 py-3 md:px-6">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">контроль бизнеса</p>
           <h1 className="text-[24px] font-black tracking-[-0.03em] text-[#111827]">Отчёты</h1>
         </div>
         <p className="rounded-full border border-[#D7DEE8] bg-[#F8FAFC] px-3 py-1 text-[12px] font-bold text-[#667085]">{format(new Date(), 'MMMM yyyy', { locale: ru })}</p>
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className="v-toolbar-actions ml-auto flex flex-wrap gap-2">
           <button onClick={exportBackupJson} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-[#111827] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#1F2937]">
             Скачать бэкап
           </button>

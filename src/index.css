@@ -3235,3 +3235,277 @@
     }
   }
 }
+
+@layer components {
+  /* Action layout pass: predictable primary actions, thumb-friendly controls, less hunting. */
+  .vroom-admin-shell .v-action-toolbar {
+    align-items: stretch;
+  }
+
+  .vroom-admin-shell .v-toolbar-cluster,
+  .vroom-admin-shell .v-toolbar-actions {
+    min-width: 0;
+  }
+
+  .vroom-admin-shell .v-toolbar-cluster > div,
+  .vroom-admin-shell .v-toolbar-cluster > button,
+  .vroom-admin-shell .v-toolbar-cluster > input,
+  .vroom-admin-shell .v-toolbar-cluster > label,
+  .vroom-admin-shell .v-toolbar-actions > button,
+  .vroom-admin-shell .v-toolbar-actions > a,
+  .vroom-admin-shell .v-toolbar-actions > label {
+    min-width: 0;
+  }
+
+  .vroom-admin-shell .v-toolbar-primary-action {
+    min-height: 42px;
+    justify-content: center;
+    padding-inline: 16px;
+  }
+
+  .vroom-admin-shell .v-action-toolbar .v-admin-button:not(.v-toolbar-primary-action),
+  .vroom-admin-shell .v-action-toolbar .v-admin-button-secondary {
+    justify-content: center;
+  }
+
+  .vroom-admin-shell .v-action-toolbar .rounded-\[10px\],
+  .vroom-admin-shell .v-action-toolbar .rounded-\[14px\] {
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .vroom-admin-shell .v-action-toolbar .rounded-\[10px\] p:first-child,
+  .vroom-admin-shell .v-action-toolbar .rounded-\[14px\] p:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0;
+  }
+
+  .vroom-admin-shell .v-students-actions {
+    justify-content: flex-end;
+  }
+
+  .vroom-admin-shell .v-students-actions label {
+    flex: 1 1 260px;
+  }
+
+  .vroom-admin-shell .v-students-actions .v-admin-button,
+  .vroom-admin-shell .v-students-actions .v-admin-button-secondary {
+    flex: 0 0 auto;
+  }
+
+  .vroom-admin-shell .v-cars-toolbar .v-toolbar-actions {
+    align-items: center;
+  }
+
+  .vroom-admin-shell .v-cars-toolbar .v-tab-row-wrap {
+    min-width: 220px;
+  }
+
+  .vroom-admin-shell .v-bookings-filter-row {
+    scrollbar-width: none;
+    scroll-padding-inline: 8px;
+  }
+
+  .vroom-admin-shell .v-bookings-filter-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vroom-admin-shell .v-bookings-filter-row button {
+    border-radius: 999px;
+    min-height: 38px;
+  }
+
+  .vroom-admin-shell .v-booking-row-actions button {
+    border-radius: 10px;
+    min-height: 38px;
+  }
+
+  .vroom-admin-shell .v-reports-header {
+    gap: 10px;
+  }
+
+  .vroom-admin-shell .v-reports-header .v-toolbar-actions button {
+    min-height: 40px;
+    border-radius: 12px;
+  }
+
+  .vroom-admin-shell .v-tab-tools {
+    min-width: max-content;
+  }
+
+  .vroom-admin-shell .v-tab-tools button {
+    min-height: 32px;
+  }
+
+  .vroom-admin-shell .v-human-card .v-admin-button-secondary,
+  .vroom-admin-shell .v-human-card .v-admin-button {
+    min-height: 38px;
+  }
+
+  .vroom-admin-shell .v-admin-empty .v-admin-button,
+  .vroom-admin-shell .v-admin-empty .v-admin-button-secondary {
+    width: fit-content;
+    min-width: 180px;
+  }
+
+  .vroom-admin-shell main a.text-\[16px\].font-black {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  @media (max-width: 900px) {
+    .vroom-admin-shell .v-action-toolbar .v-toolbar-cluster {
+      margin-left: 0 !important;
+      width: 100% !important;
+    }
+
+    .vroom-admin-shell .v-toolbar-actions {
+      width: 100%;
+    }
+
+    .vroom-admin-shell .v-toolbar-actions .v-admin-button,
+    .vroom-admin-shell .v-toolbar-actions .v-admin-button-secondary,
+    .vroom-admin-shell .v-toolbar-actions .v-admin-button-tertiary {
+      flex: 1 1 140px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .vroom-admin-shell .v-action-toolbar {
+      gap: 10px !important;
+    }
+
+    .vroom-admin-shell .v-toolbar-cluster {
+      gap: 7px !important;
+    }
+
+    .vroom-admin-shell .v-action-toolbar .rounded-\[10px\],
+    .vroom-admin-shell .v-action-toolbar .rounded-\[14px\] {
+      min-height: 50px;
+      padding: 8px 10px !important;
+    }
+
+    .vroom-admin-shell .v-action-toolbar .rounded-\[10px\] p:last-child,
+    .vroom-admin-shell .v-action-toolbar .rounded-\[14px\] p:last-child {
+      font-size: 17px !important;
+      line-height: 1.05;
+    }
+
+    .vroom-admin-shell .v-toolbar-primary-action {
+      width: 100%;
+      min-height: 42px;
+    }
+
+    .vroom-admin-shell .v-students-actions {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px !important;
+    }
+
+    .vroom-admin-shell .v-students-actions label {
+      grid-column: 1 / -1;
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+
+    .vroom-admin-shell .v-students-actions .v-toolbar-primary-action {
+      grid-column: 1 / -1;
+    }
+
+    .vroom-admin-shell .v-cars-toolbar {
+      grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    }
+
+    .vroom-admin-shell .v-cars-toolbar .v-toolbar-actions {
+      display: grid !important;
+      grid-template-columns: 1fr;
+    }
+
+    .vroom-admin-shell .v-cars-toolbar .v-tab-row-wrap {
+      width: 100%;
+      min-width: 0;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+    }
+
+    .vroom-admin-shell .v-reports-header {
+      align-items: stretch;
+      padding: 10px !important;
+    }
+
+    .vroom-admin-shell .v-reports-header > div:first-child {
+      flex: 1 1 100%;
+    }
+
+    .vroom-admin-shell .v-reports-header > p {
+      width: fit-content;
+    }
+
+    .vroom-admin-shell .v-reports-header .v-toolbar-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      margin-left: 0 !important;
+    }
+
+    .vroom-admin-shell .v-reports-header .v-toolbar-actions button {
+      width: 100%;
+      padding-inline: 10px;
+      font-size: 12px;
+    }
+
+    .vroom-admin-shell .v-bookings-filter-row {
+      padding-inline: 8px !important;
+    }
+
+    .vroom-admin-shell .v-booking-row-actions {
+      grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    }
+
+    .vroom-admin-shell .v-booking-row-actions button {
+      min-width: 0;
+      padding-inline: 4px;
+      font-size: 10.5px;
+    }
+
+    .vroom-admin-shell .v-tab-tools {
+      width: 100%;
+      margin-left: 0 !important;
+      padding: 0 10px 8px;
+    }
+
+    .vroom-admin-shell .v-tab-tools button,
+    .vroom-admin-shell .v-tab-tools span {
+      flex: 1 1 auto;
+      text-align: center;
+    }
+
+    .vroom-admin-shell .v-admin-empty .v-admin-button,
+    .vroom-admin-shell .v-admin-empty .v-admin-button-secondary {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .vroom-admin-shell .v-human-card .v-admin-button-secondary,
+    .vroom-admin-shell .v-human-card .v-admin-button {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .vroom-admin-shell .v-students-actions .v-admin-button-secondary {
+      font-size: 11px;
+      padding-inline: 8px;
+    }
+
+    .vroom-admin-shell .v-action-toolbar .rounded-\[10px\] p:first-child,
+    .vroom-admin-shell .v-action-toolbar .rounded-\[14px\] p:first-child {
+      font-size: 10px !important;
+    }
+  }
+}

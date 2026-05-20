@@ -41,22 +41,22 @@ export function AdminCars() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Машины</h1>
           <p className="v-admin-note mt-1">Автопарк, статусы, страховки и привязка к филиалам</p>
         </div>
-        <div className="ml-auto grid w-full grid-cols-3 gap-2 sm:w-auto">
+        <div className="v-toolbar-cluster v-cars-toolbar ml-auto grid w-full grid-cols-3 gap-2 sm:w-auto">
           <div className="rounded-[14px] bg-[#ECF8F1] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#1F8F3F]">Работают</p><p className="text-[20px] font-semibold text-[#111827]">{data.filter((d) => d.car.status === 'working').length}</p></div>
           <div className="rounded-[14px] bg-[#FEF2F2] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#C92820]">Недоступны</p><p className="text-[20px] font-semibold text-[#111827]">{unavailableCount}</p></div>
           <div className="rounded-[14px] bg-[#F2F6FA] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#667085]">Всего</p><p className="text-[20px] font-semibold text-[#111827]">{data.length}</p></div>
-          <div className="col-span-3 flex flex-wrap justify-end gap-2">
+          <div className="v-toolbar-actions col-span-3 flex flex-wrap justify-end gap-2">
             <div className="v-tab-row v-tab-row-wrap flex-1 border-0 bg-transparent p-0">
               {(['all', 'working', 'maintenance', 'repair', 'reserved'] as const).map((f) => (
                 <button key={f} onClick={() => setFilter(f)} className={`v-tab ${filter === f ? 'v-tab-active' : ''}`}>{f === 'all' ? 'Все' : STATUS_COLORS[f].label}</button>
               ))}
             </div>
-          <button onClick={() => setShowAdd(true)} className="v-admin-button">
+          <button onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
             + Добавить
           </button>
           </div>

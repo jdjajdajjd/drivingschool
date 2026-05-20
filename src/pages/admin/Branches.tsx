@@ -22,15 +22,17 @@ export function AdminBranches() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Филиалы</h1>
           <p className="v-admin-note mt-1">Адреса, телефоны, инструкторы и окна по отделениям</p>
         </div>
+        <div className="v-toolbar-actions ml-auto flex items-center gap-2">
         <span className="v-admin-pill v-tone-muted">{branches.length}</span>
-        <button onClick={() => setShowAdd(true)} className="v-admin-button">
+        <button onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
           + Добавить филиал
         </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-3 md:p-5">

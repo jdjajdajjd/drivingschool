@@ -45,12 +45,12 @@ export function AdminUsers() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <p className="v-admin-note">{school.name}</p>
           <h1 className="v-admin-heading">Команда школы</h1>
         </div>
-        <div className="ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-[110px_110px_130px_auto]">
+        <div className="v-toolbar-cluster ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-[110px_110px_130px_auto]">
           {[
             ['Всего', users.length],
             ['Активны', activeCount],
@@ -61,7 +61,7 @@ export function AdminUsers() {
               <p className="text-[20px] font-semibold text-[#111827]">{value}</p>
             </div>
           ))}
-          <button onClick={() => setShowAdd(true)} className="v-admin-button">
+          <button onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
             + Сотрудник
           </button>
         </div>

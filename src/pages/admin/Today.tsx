@@ -325,7 +325,7 @@ export function AdminToday() {
               {data.activeToday.length ? `В расписании ${data.activeToday.length} активных занятий. Свободных окон сегодня: ${data.freeSlotsToday}.` : `Активных занятий сегодня нет. Свободных окон: ${data.freeSlotsToday}.`}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="v-toolbar-actions flex flex-wrap gap-2">
             <button className="v-admin-button is-blue" onClick={() => navigate(`${getAdminBasePathForLocation()}/schedule?create=slot`)}>
               <CalendarPlus width={16} height={16} />
               Создать окна

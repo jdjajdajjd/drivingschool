@@ -224,18 +224,17 @@ export function AdminDocuments() {
           onClose={() => setShowAddDocument(false)}
         />
       </Modal>
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Документы</h1>
           <p className="v-admin-note mt-1">Допуски к экзаменам, медсправки и договоры</p>
         </div>
-        <span className="v-admin-pill v-tone-muted">{filtered.length}</span>
-        <button type="button" onClick={() => setShowAddDocument(true)} className="v-admin-button ml-auto min-h-10 px-4 text-[13px]">Загрузить документ</button>
-        <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-4">
+        <div className="v-toolbar-cluster ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-4">
           <div className="rounded-[10px] bg-red-50 px-3 py-2"><p className="text-[11px] font-black uppercase text-red-500">Нет</p><p className="text-[18px] font-black text-gray-900">{summary.missing + summary.rejected + summary.expired}</p></div>
           <div className="rounded-[10px] bg-[#EAF3FF] px-3 py-2"><p className="text-[11px] font-black uppercase text-[#315A7C]">Проверка</p><p className="text-[18px] font-black text-gray-900">{summary.pending}</p></div>
           <div className="rounded-[10px] bg-green-50 px-3 py-2"><p className="text-[11px] font-black uppercase text-green-600">Готово</p><p className="text-[18px] font-black text-gray-900">{summary.verified}</p></div>
           <div className="rounded-[10px] bg-[#F8FAFC] px-3 py-2"><p className="text-[11px] font-black uppercase text-gray-400">Допуск</p><p className="text-[18px] font-black text-gray-900">{admissionQueue.length}</p></div>
+          <button type="button" onClick={() => setShowAddDocument(true)} className="v-admin-button v-toolbar-primary-action col-span-2 min-h-10 px-4 text-[13px] sm:col-span-4">Загрузить документ</button>
         </div>
       </div>
 

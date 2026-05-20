@@ -252,7 +252,7 @@ export function AdminBookings() {
                 <option value="all">Все инструкторы</option>{instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
             </div>
-            <div className="flex gap-1 overflow-x-auto border-b border-[#CBD5E1] p-2">
+            <div className="v-bookings-filter-row flex gap-1 overflow-x-auto border-b border-[#CBD5E1] p-2">
               {[
                 ['all', 'Все'], ['active', 'Активные'], ['completed', 'Проведены'], ['cancelled', 'Отменены'],
               ].map(([value, label]) => <button key={value} onClick={() => setStatus(value as StatusFilter)} className={`min-h-10 shrink-0 border px-3 text-[12px] font-black ${status === value ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#CBD5E1] bg-white text-[#334155]'}`}>{label}</button>)}
@@ -288,7 +288,7 @@ export function AdminBookings() {
                       <div className="space-y-2 md:text-right">
                         <StatusBadge status={entry.booking.status} />
                         {entry.booking.status === 'active' && (
-                          <div className="grid grid-cols-3 gap-1 md:grid-cols-1">
+                          <div className="v-booking-row-actions grid grid-cols-3 gap-1 md:grid-cols-1">
                             <button onClick={() => openReschedule(entry.booking.id)} className="min-h-9 border border-[#CBD5E1] bg-white px-2 text-[11px] font-black text-[#1D4ED8]">Перенос</button>
                             <button onClick={() => setCompleteId(entry.booking.id)} className="min-h-9 border border-[#CBD5E1] bg-white px-2 text-[11px] font-black text-[#0F172A]">Провести</button>
                             <button onClick={() => setCancelId(entry.booking.id)} className="min-h-9 border border-[#FCA5A5] bg-white px-2 text-[11px] font-black text-[#DC2626]">Отмена</button>

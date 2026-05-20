@@ -39,12 +39,12 @@ export function AdminInstructors() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="v-admin-toolbar">
+      <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Инструкторы</h1>
           <p className="v-admin-note mt-1">Загрузка, категории, машины и доступность</p>
         </div>
-        <div className="ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-[120px_120px_220px_auto]">
+        <div className="v-toolbar-cluster ml-auto grid w-full gap-2 sm:w-auto sm:grid-cols-[120px_120px_220px_auto]">
           <div className="rounded-[14px] bg-[#ECF8F1] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#1F8F3F]">Активны</p><p className="text-[20px] font-semibold text-[#111827]">{activeCount}</p></div>
           <div className="rounded-[14px] bg-[#EAF4FF] px-3 py-2"><p className="text-[11px] font-semibold uppercase text-[#075EBC]">Сегодня</p><p className="text-[20px] font-semibold text-[#111827]">{busyToday}</p></div>
           <input
@@ -54,7 +54,7 @@ export function AdminInstructors() {
             placeholder="Поиск"
             className="v-admin-input w-full"
           />
-          <button type="button" onClick={() => setShowAdd(true)} className="v-admin-button">
+          <button type="button" onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
             + Добавить
           </button>
         </div>
