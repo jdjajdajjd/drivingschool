@@ -9,10 +9,11 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { db, findSchoolByIdAcrossNamespaces, findSchoolNamespaceById, setDataNamespace } from '../services/storage'
-import { cancelBooking, createBooking, isValidRussianPhone, normalizePhone } from '../services/bookingService'
+import { cancelBooking, createBooking, isValidRussianPhone, normalizePhone, validateBookingForSlot } from '../services/bookingService'
 import { useToast } from '../components/ui/Toast'
 import { createSupabaseBooking, updateStudentProfileInSupabase } from '../services/supabasePublicService'
 import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
+import { isSupabaseConfigured } from '../lib/supabase'
 import {
   findAnyStudentProfile,
   loadStudentDocuments,
@@ -481,6 +482,22 @@ export function StudentPage() {
     if (!school || !profile || bookingSlotId) return
     setBookingSlotId(slot.id)
 
+    const payload = {
+      schoolId: school.id,
+      branchId: slot.branchId,
+      instructorId: slot.instructorId,
+      slotId: slot.id,
+      studentName: profile.name,
+      studentPhone: profile.phone,
+      sessionId: `student-${profile.phone}`,
+    }
+    const policy = validateBookingForSlot(payload)
+    if (!policy.ok) {
+      showToast(policy.error ?? 'Это время сейчас недоступно для записи.', 'error')
+      setBookingSlotId('')
+      return
+    }
+
     let bookingId = ''
     try {
       if (findSchoolNamespaceById(school.id) === 'demo') throw new Error('Demo uses local booking')
@@ -491,16 +508,13 @@ export function StudentPage() {
         slotIds: [slot.id],
       })
       bookingId = remote.bookingIds[0] ?? ''
-    } catch {
-      const result = createBooking({
-        schoolId: school.id,
-        branchId: slot.branchId,
-        instructorId: slot.instructorId,
-        slotId: slot.id,
-        studentName: profile.name,
-        studentPhone: profile.phone,
-        sessionId: `student-${profile.phone}`,
-      })
+    } catch (error) {
+      if (findSchoolNamespaceById(school.id) !== 'demo' && isSupabaseConfigured()) {
+        showToast(error instanceof Error && error.message ? error.message : 'Не удалось записаться. Обновите расписание и попробуйте ещё раз.', 'error')
+        setBookingSlotId('')
+        return
+      }
+      const result = createBooking(payload)
       if (!result.ok) {
         showToast(result.error ?? 'Не удалось записаться на это время.', 'error')
         setBookingSlotId('')
