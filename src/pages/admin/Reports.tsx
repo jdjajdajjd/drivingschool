@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
@@ -6,6 +6,7 @@ import { adminPayments, adminCars, adminDocuments, adminGIBDDExams, adminInterna
 import { getSlotDateTime } from '../../services/bookingService'
 import { getSchoolLifecycleStates } from '../../services/studentLifecycle'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
+import { getPreference, setPreference } from '../../services/preferenceStorage'
 import type { AuditAction } from '../../types'
 
 type AuditFilter = 'all' | AuditAction
@@ -22,11 +23,18 @@ function formatHours(minutes: number): string {
 
 export function AdminReports() {
   const school = db.schools.currentAdmin()
+  const salaryPreferenceKey = school ? `vroom:reports:instructor-hour-rate:${school.id}` : 'vroom:reports:instructor-hour-rate'
   const [activeTab, setActiveTab] = useState<ReportTab>('overview')
+  const [instructorHourRate, setInstructorHourRate] = useState(() => Number(getPreference(salaryPreferenceKey) ?? '800') || 800)
   
   // Фильтры для журнала
   const [auditFilter, setAuditFilter] = useState<AuditFilter>('all')
   const [auditSearch, setAuditSearch] = useState('')
+
+  useEffect(() => {
+    if (!school) return
+    setInstructorHourRate(Number(getPreference(`vroom:reports:instructor-hour-rate:${school.id}`) ?? '800') || 800)
+  }, [school?.id])
 
   const data = useMemo(() => {
     if (!school) return null
@@ -208,6 +216,14 @@ export function AdminReports() {
 
   const maxRevenue = Math.max(...data.revenueByDay.map((d) => d.revenue), 1)
   const adminBasePath = getAdminBasePathForLocation()
+  const instructorPayroll = data.instructorStats.map((stat) => {
+    const completedHours = stat.totalHours / 60
+    const payout = Math.round(completedHours * instructorHourRate)
+    const risk = !stat.instructor.isActive ? 'Неактивен' : stat.completed === 0 ? 'Нет проведённых занятий' : stat.noShow + stat.cancelled >= 3 ? 'Много срывов' : 'Норма'
+    return { ...stat, completedHours, payout, risk }
+  })
+  const payrollTotal = instructorPayroll.reduce((sum, stat) => sum + stat.payout, 0)
+  const completedInstructorMinutes = instructorPayroll.reduce((sum, stat) => sum + stat.totalHours, 0)
   const directorRisks = [
     data.totalDebt > 0 ? `${data.totalDebt.toLocaleString('ru-RU')} ₽ зависло в долгах` : 'Долги не обнаружены',
     data.noShowBookings > 0 ? `${data.noShowBookings} неявок требуют реакции` : 'Неявок не видно',
@@ -293,6 +309,16 @@ export function AdminReports() {
     URL.revokeObjectURL(link.href)
   }
 
+  function downloadCsv(rows: Array<Array<string | number>>, fileName: string) {
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = fileName
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   function exportCsv() {
     const rows = [
       ['Показатель', 'Значение'],
@@ -304,13 +330,31 @@ export function AdminReports() {
       ['Неявки', String(reportData.noShowBookings)],
       ['Загрузка окон', `${reportData.slotUtilization}%`],
     ]
-    const csv = rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(';')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `vroom-report-${format(new Date(), 'yyyy-MM-dd')}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
+    downloadCsv(rows, `vroom-report-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+  }
+
+  function exportInstructorPayrollCsv() {
+    const rows = [
+      ['Инструктор', 'Проведено занятий', 'Проведено часов', 'Неявки', 'Отмены', 'Ставка за час', 'К выплате', 'Статус'],
+      ...instructorPayroll.map((stat) => [
+        stat.instructor.name,
+        stat.completed,
+        formatHours(stat.totalHours),
+        stat.noShow,
+        stat.cancelled,
+        instructorHourRate,
+        stat.payout,
+        stat.risk,
+      ]),
+      ['Итого', '', formatHours(completedInstructorMinutes), '', '', instructorHourRate, payrollTotal, ''],
+    ]
+    downloadCsv(rows, `vroom-instructor-payroll-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+  }
+
+  function updateInstructorHourRate(value: string) {
+    const next = Math.max(0, Number(value) || 0)
+    setInstructorHourRate(next)
+    setPreference(salaryPreferenceKey, String(next))
   }
 
   return (
@@ -454,26 +498,60 @@ export function AdminReports() {
         )}
 
         {activeTab === 'instructors' && (
-          <div className="space-y-3">
-            {data.instructorStats.map(({ instructor, completed, noShow, cancelled, totalHours }) => (
-              <div key={instructor.id} className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl text-[14px] font-black text-white" style={{ background: instructor.avatarColor }}>
-                  {instructor.avatarInitials}
+          <div className="space-y-4">
+            <div className="grid gap-3 rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:grid-cols-[1fr_auto_auto] md:items-end md:p-5">
+              <div>
+                <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">зарплата инструкторов</p>
+                <h3 className="mt-1 text-[18px] font-black text-[#111827]">{payrollTotal.toLocaleString('ru-RU')} ₽ к ручной выплате</h3>
+                <p className="mt-1 text-[13px] font-semibold leading-5 text-[#667085]">Расчёт по проведённым занятиям. Ставку можно поменять перед выгрузкой в бухгалтерию.</p>
+              </div>
+              <label className="block min-w-[180px]">
+                <span className="text-[12px] font-bold text-[#667085]">Ставка за час</span>
+                <div className="mt-1 flex min-h-11 items-center rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3">
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={instructorHourRate}
+                    onChange={(event) => updateInstructorHourRate(event.target.value)}
+                    className="w-full bg-transparent text-[15px] font-black text-[#111827] outline-none"
+                  />
+                  <span className="text-[13px] font-bold text-[#667085]">₽</span>
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-900">{instructor.name}</p>
-                  <p className="text-[12px] font-semibold text-gray-400">{instructor.categories.join(', ')}</p>
+              </label>
+              <button onClick={exportInstructorPayrollCsv} className="min-h-11 rounded-xl border border-[#D7DEE8] bg-[#111827] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#1F2937]">
+                Выгрузить зарплату
+              </button>
+            </div>
+
+            {instructorPayroll.length === 0 ? (
+              <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-6 text-center shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+                <p className="text-[15px] font-black text-[#111827]">Инструкторы пока не добавлены</p>
+                <p className="mt-2 text-[13px] font-semibold text-[#667085]">После добавления сотрудников здесь появятся часы, неявки и сумма к выплате.</p>
+              </div>
+            ) : instructorPayroll.map(({ instructor, completed, noShow, cancelled, totalHours, payout, risk }) => (
+              <div key={instructor.id} className="grid gap-3 rounded-2xl border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[14px] font-black text-white" style={{ background: instructor.avatarColor }}>
+                    {instructor.avatarInitials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-gray-900">{instructor.name}</p>
+                    <p className="mt-0.5 truncate text-[12px] font-semibold text-gray-400">{instructor.categories.join(', ') || 'категории не указаны'}</p>
+                    <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${risk === 'Норма' ? 'bg-[#EAF7EF] text-[#157347]' : risk === 'Много срывов' ? 'bg-[#FFF7D6] text-[#8A6100]' : 'bg-[#FFF3F2] text-[#B42318]'}`}>{risk}</span>
+                  </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 md:min-w-[560px]">
                   {[
                     { label: 'Проведено', value: completed },
                     { label: 'Время', value: formatHours(totalHours) },
                     { label: 'Неявки', value: noShow },
                     { label: 'Отмены', value: cancelled },
-                  ].map((s) => (
-                    <div key={s.label} className="text-center">
-                      <p className="text-[18px] font-black text-gray-900">{s.value}</p>
-                      <p className="text-[10px] font-semibold text-gray-400">{s.label}</p>
+                    { label: 'К выплате', value: `${payout.toLocaleString('ru-RU')} ₽`, strong: true },
+                  ].map((item) => (
+                    <div key={item.label} className={`rounded-xl border p-3 ${item.strong ? 'border-[#CFE8D8] bg-[#F1FAF4]' : 'border-[#E5EAF1] bg-[#F8FAFC]'}`}>
+                      <p className={`text-[16px] font-black ${item.strong ? 'text-[#157347]' : 'text-gray-900'}`}>{item.value}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-gray-400">{item.label}</p>
                     </div>
                   ))}
                 </div>

@@ -30,6 +30,7 @@ export function AdminSettings() {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [copiedTemplate, setCopiedTemplate] = useState('')
   const [schoolPhone, setSchoolPhone] = useState(school?.phone ?? '')
   const canManageSettings = canUseAdminPermission('settings.manage')
 
@@ -42,6 +43,38 @@ export function AdminSettings() {
 
   const update = (key: keyof SchoolSettingsType, value: unknown) => {
     setSettings((s) => ({ ...s, [key]: value }))
+  }
+
+  const messageTemplates = useMemo(() => {
+    const name = school?.name ?? 'автошкола'
+    return [
+      {
+        id: 'booking',
+        title: 'Подтверждение занятия',
+        text: `Здравствуйте! Вы записаны на практическое занятие в ${name}. Дата: [дата], время: [время], инструктор: [инструктор]. Если не сможете прийти, предупредите заранее.`,
+      },
+      {
+        id: 'debt',
+        title: 'Напоминание об оплате',
+        text: `Здравствуйте! В ${name} остался долг [сумма]. Можно перевести оплату на карту и отправить чек администратору. После подтверждения мы отметим оплату в кабинете.`,
+      },
+      {
+        id: 'docs',
+        title: 'Недостающие документы',
+        text: `Здравствуйте! Для продолжения обучения в ${name} нужно донести документы: [список]. Пришлите фото или принесите оригиналы администратору.`,
+      },
+      {
+        id: 'exam',
+        title: 'Экзамен / допуск',
+        text: `Здравствуйте! По вашему обучению в ${name} следующий шаг: [внутренний экзамен/ГИБДД]. Проверьте долги, документы и связь с инструктором.`,
+      },
+    ]
+  }, [school?.name])
+
+  const copyTemplate = async (id: string, text: string) => {
+    try { await navigator.clipboard?.writeText(text) } catch { return }
+    setCopiedTemplate(id)
+    setTimeout(() => setCopiedTemplate(''), 1600)
   }
 
   const handleSave = async () => {
@@ -245,6 +278,29 @@ export function AdminSettings() {
                 </button>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[16px] font-bold text-gray-900">Шаблоны сообщений</h2>
+              <p className="mt-1 text-[13px] font-semibold text-gray-500">Для WhatsApp, SMS или Telegram. Ничего не отправляется автоматически: администратор копирует готовый текст и подставляет дату, сумму или список документов.</p>
+            </div>
+            <span className="rounded-full bg-[#EAF3FF] px-3 py-1 text-[12px] font-black text-[#315A7C]">ручной режим</span>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {messageTemplates.map((template) => (
+              <article key={template.id} className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FAFC] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-[14px] font-black text-[#111827]">{template.title}</h3>
+                  <button type="button" onClick={() => void copyTemplate(template.id, template.text)} className="min-h-9 rounded-xl border border-[#D7DEE8] bg-white px-3 text-[12px] font-black text-[#334155] transition hover:bg-[#F1F5F9]">
+                    {copiedTemplate === template.id ? 'Скопировано' : 'Копировать'}
+                  </button>
+                </div>
+                <p className="mt-3 text-[13px] font-semibold leading-5 text-[#667085]">{template.text}</p>
+              </article>
+            ))}
           </div>
         </section>
 
