@@ -74,12 +74,15 @@ export function AdminPayments() {
   const [filter, setFilter] = useState<FilterTab>('all')
   const [showAdd, setShowAdd] = useState(false)
   const [debtVersion, setDebtVersion] = useState(0)
+  const [version, setVersion] = useState(0)
+  const [closingPaymentId, setClosingPaymentId] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const canManageFinance = canUseAdminPermission('finance.manage')
 
   const rows = useMemo(() => {
     if (!school) return []
     return adminPayments.all(school.id).map((payment) => ({ payment, student: db.students.byId(payment.studentId) }))
-  }, [school?.id])
+  }, [school?.id, version])
 
   const totals = useMemo(() => {
     const paid = rows.reduce((sum, row) => sum + row.payment.paidAmount, 0)
@@ -112,6 +115,33 @@ export function AdminPayments() {
   const updateDebtStatus = (paymentId: string, status: DebtStatus) => {
     setDebtStatusValue(paymentId, status)
     setDebtVersion((value) => value + 1)
+  }
+
+  const closePaymentDebt = async (payment: Payment) => {
+    const access = assertAdminPermission('finance.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (payment.remainingAmount <= 0 || closingPaymentId) return
+    setError('')
+    setClosingPaymentId(payment.id)
+    const next: Payment = {
+      ...payment,
+      paidAmount: payment.amount,
+      remainingAmount: 0,
+      status: 'paid',
+      method: payment.method ?? 'transfer',
+      paidAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    try {
+      await adminPayments.upsertConfirmed(next)
+      createCurrentStaffAuditEntry(payment.schoolId, 'payment_added', 'payment', payment.id, `Закрыт долг ${money(payment.remainingAmount)}`)
+      setVersion((value) => value + 1)
+      setDebtVersion((value) => value + 1)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось закрыть долг.')
+    } finally {
+      setClosingPaymentId(null)
+    }
   }
 
   const filtered = useMemo(() => {
@@ -168,6 +198,7 @@ export function AdminPayments() {
       </div>
 
       <div className="flex-1 overflow-auto p-3 md:p-5">
+        {error ? <div className="mb-3 rounded-[14px] border border-[#F5D0D0] bg-[#FFF6F6] px-4 py-3 text-[13px] font-bold text-[#B42318]">{error}</div> : null}
         <section className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="v-admin-panel overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#111827]/[0.07] p-4">
@@ -199,9 +230,12 @@ export function AdminPayments() {
                       {item.student?.phone ? <button onClick={() => void navigator.clipboard?.writeText(`Здравствуйте! Напоминаем об оплате в автошколе. Остаток: ${money(item.debt)}.`)} className="v-admin-button-secondary h-9 min-h-9 px-3">Текст</button> : null}
                     </span>
                     {mainPayment ? (
-                      <select value={debtStatus} onChange={(event) => updateDebtStatus(mainPayment.id, event.target.value as DebtStatus)} className="v-admin-input h-9 py-1 text-[12px]">
-                        {Object.entries(DEBT_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                      </select>
+                      <div className="grid gap-2">
+                        <select value={debtStatus} onChange={(event) => updateDebtStatus(mainPayment.id, event.target.value as DebtStatus)} className="v-admin-input h-9 py-1 text-[12px]">
+                          {Object.entries(DEBT_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                        </select>
+                        {canManageFinance ? <button type="button" disabled={closingPaymentId === mainPayment.id} onClick={() => void closePaymentDebt(mainPayment)} className="v-admin-button h-9 min-h-9 px-3 text-[12px] disabled:opacity-50">{closingPaymentId === mainPayment.id ? 'Закрываем...' : 'Закрыть долг'}</button> : null}
+                      </div>
                     ) : null}
                   </div>
                 )})}
@@ -254,6 +288,11 @@ export function AdminPayments() {
                   <span className="truncate">{payment.method ? METHOD_LABELS[payment.method] : 'способ не указан'}</span>
                   <span className="shrink-0">{payment.paidAt ? format(new Date(payment.paidAt), 'd MMM', { locale: ru }) : payment.dueDate ? `до ${format(new Date(payment.dueDate), 'd MMM', { locale: ru })}` : 'ожидается'}</span>
                 </div>
+                {canManageFinance && payment.remainingAmount > 0 ? (
+                  <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button mt-3 w-full min-h-10 text-[13px] disabled:opacity-50">
+                    {closingPaymentId === payment.id ? 'Закрываем...' : 'Закрыть долг'}
+                  </button>
+                ) : null}
               </article>
             ))}
           </div>
@@ -270,6 +309,7 @@ export function AdminPayments() {
                   <th>Статус</th>
                   <th>Способ</th>
                   <th>Дата</th>
+                  <th>Действие</th>
                 </tr>
               </thead>
               <tbody>
@@ -288,6 +328,13 @@ export function AdminPayments() {
                     <td>
                       {payment.paidAt ? format(new Date(payment.paidAt), 'd MMM yyyy', { locale: ru }) : payment.dueDate ? <span className={new Date(payment.dueDate) < new Date() ? 'font-black text-[#B42318]' : 'text-[#8D98A4]'}>до {format(new Date(payment.dueDate), 'd MMM', { locale: ru })}</span> : <span className="text-[#8D98A4]">ожидается</span>}
                     </td>
+                    <td>
+                      {canManageFinance && payment.remainingAmount > 0 ? (
+                        <button type="button" disabled={closingPaymentId === payment.id} onClick={() => void closePaymentDebt(payment)} className="v-admin-button-secondary min-h-9 px-3 text-[12px] disabled:opacity-50">
+                          {closingPaymentId === payment.id ? '...' : 'Закрыть'}
+                        </button>
+                      ) : <span className="text-[#8D98A4]">—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -298,19 +345,20 @@ export function AdminPayments() {
       </div>
 
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Принять оплату" size="md">
-        <AddPaymentForm schoolId={school.id} onClose={() => setShowAdd(false)} />
+        <AddPaymentForm schoolId={school.id} onSaved={() => setVersion((value) => value + 1)} onClose={() => setShowAdd(false)} />
       </Modal>
     </div>
   )
 }
 
-function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () => void }) {
+function AddPaymentForm({ schoolId, onSaved, onClose }: { schoolId: string; onSaved: () => void; onClose: () => void }) {
   const students = db.students.bySchool(schoolId)
   const [studentId, setStudentId] = useState('')
   const [amount, setAmount] = useState('')
   const [paidAmount, setPaidAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('transfer')
   const [description, setDescription] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [status, setStatus] = useState<PaymentStatus>('paid')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
@@ -337,12 +385,14 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
       method,
       description: description.trim() || 'Оплата обучения',
       paidAt: parsedPaid > 0 ? new Date().toISOString() : undefined,
+      dueDate: parsedPaid < parsed && dueDate ? dueDate : undefined,
       createdAt: new Date().toISOString(),
     }
     try {
       setPending(true)
       await adminPayments.upsertConfirmed(payment)
       createCurrentStaffAuditEntry(schoolId, 'payment_added', 'payment', payment.id, `Принята оплата ${money(payment.amount)}`)
+      onSaved()
       onClose()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не удалось сохранить оплату.')
@@ -380,6 +430,7 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
             <option value="paid">Оплачен</option>
             <option value="partial">Частично</option>
             <option value="unpaid">Не оплачен</option>
+            <option value="overdue">Просрочка</option>
           </select>
         </label>
       </div>
@@ -387,6 +438,12 @@ function AddPaymentForm({ schoolId, onClose }: { schoolId: string; onClose: () =
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Сколько поступило</span>
           <input type="number" value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} placeholder="5000" className="v-admin-input w-full" />
+        </label>
+      ) : null}
+      {status !== 'paid' ? (
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Когда ждём остаток</span>
+          <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} className="v-admin-input w-full" />
         </label>
       ) : null}
       <label className="block">
