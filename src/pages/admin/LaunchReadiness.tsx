@@ -93,6 +93,7 @@ export function AdminLaunchReadiness() {
   const partialPayments = payments.filter((payment) => payment.status === 'partial' || payment.status === 'overdue' || payment.status === 'unpaid')
   const hasDocumentTemplates = documents.some((document) => document.type === 'contract') || students.length === 0
   const hasRoleCoverage = ['director', 'admin'].every((role) => users.some((user) => user.role === role && user.isActive))
+  const requiredDocumentsConfigured = settings.requiredDocuments.length >= 3
   const integrityIssues = validateDataIntegrity(school.id)
 
   const items: ReadinessItem[] = [
@@ -116,6 +117,7 @@ export function AdminLaunchReadiness() {
     { title: 'Экзамены ГИБДД', text: studentsInternalPassedNoGibdd.length ? `${studentsInternalPassedNoGibdd.length} после внутреннего без ГИБДД` : 'После внутреннего не теряем следующий шаг', done: studentsInternalPassedNoGibdd.length === 0, to: `${basePath}/exams`, tone: studentsInternalPassedNoGibdd.length ? 'warning' : 'ok' },
     { title: 'Частичные оплаты', text: partialPayments.length ? `${partialPayments.length} оплат требуют контроля` : 'Частичные оплаты и просрочки закрыты', done: partialPayments.length === 0, to: `${basePath}/payments`, tone: partialPayments.length ? 'warning' : 'ok' },
     { title: 'Пакет документов', text: hasDocumentTemplates ? 'Договор и печатные формы доступны' : 'Добавьте договор или сформируйте пакет документов', done: hasDocumentTemplates, to: `${basePath}/documents`, tone: hasDocumentTemplates ? 'ok' : 'warning' },
+    { title: 'Правила документов', text: requiredDocumentsConfigured ? `${settings.requiredDocuments.length} обязательных документов настроено` : 'Настройте обязательный пакет документов', done: requiredDocumentsConfigured, to: `${basePath}/settings`, tone: requiredDocumentsConfigured ? 'ok' : 'warning' },
     { title: 'Роли сотрудников', text: hasRoleCoverage ? 'Есть директор и администратор' : 'Нужны минимум директор и администратор', done: hasRoleCoverage, to: `${basePath}/users`, tone: hasRoleCoverage ? 'ok' : 'danger' },
   ]
 
@@ -123,6 +125,21 @@ export function AdminLaunchReadiness() {
   const readiness = Math.round((doneCount / items.length) * 100)
   const blockers = items.filter((item) => !item.done && item.tone === 'danger')
   const nextItems = items.filter((item) => !item.done).slice(0, 4)
+  function exportLaunchChecklistCsv() {
+    const rows = [
+      ['Пункт', 'Статус', 'Что видно', 'Раздел'],
+      ...items.map((item) => [item.title, item.done ? 'готово' : 'нужно сделать', item.text, item.to]),
+      ['Готовность', `${readiness}%`, `${doneCount} из ${items.length}`, ''],
+    ]
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `vroom-launch-checklist-${school.slug}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   const directorQueueItems = [
     debtStudents.length ? { label: 'Разобрать долги', text: `${debtStudents.length} учеников, сумма ${money(totalDebt)}`, to: `${basePath}/payments`, danger: true } : null,
     studentsWithoutInstructor.length ? { label: 'Назначить инструкторов', text: `${studentsWithoutInstructor.length} учеников без инструктора`, to: `${basePath}/students`, danger: false } : null,
@@ -151,6 +168,7 @@ export function AdminLaunchReadiness() {
             <p className="text-[13px] font-black uppercase tracking-[0.08em] text-[#667085]">Готовность</p>
             <strong className={`mt-2 block text-[52px] font-black leading-none ${readiness >= 85 ? 'text-[#188447]' : readiness >= 60 ? 'text-[#075EBC]' : 'text-[#C92820]'}`}>{readiness}%</strong>
             <p className="mt-2 text-[13px] font-bold text-[#667085]">{doneCount} из {items.length} пунктов</p>
+            <button type="button" onClick={exportLaunchChecklistCsv} className="mt-4 min-h-10 w-full rounded-xl border border-[#D7DEE8] bg-white px-4 py-2 text-[13px] font-black text-[#334155] transition hover:bg-[#F1F5F9]">Выгрузить чеклист</button>
           </div>
         </div>
       </section>

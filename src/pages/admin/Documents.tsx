@@ -4,7 +4,7 @@ import { useToast } from '../../components/ui/Toast'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminDocuments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
+import { adminDocuments, adminSettings, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { assertAdminPermission } from '../../services/adminAccess'
 import { getAccessSecret, getAdminBasePathForLocation, getWorkspaceStaffContext } from '../../services/accessControl'
 import type { Document, DocumentStatus, DocumentType, Student } from '../../types'
@@ -39,7 +39,7 @@ function statusTone(status: DocumentStatus) {
 
 type FilterTab = 'all' | 'missing' | 'pending' | 'verified' | 'expired'
 
-const REQUIRED_FOR_EXAM = ['contract', 'medical_certificate', 'gibdd_exam_doc'] as const
+const REQUIRED_FOR_EXAM: DocumentType[] = ['contract', 'medical_certificate', 'gibdd_exam_doc']
 
 function isBlockingStatus(status: DocumentStatus) {
   return status === 'missing' || status === 'rejected' || status === 'expired' || status === 'required'
@@ -181,6 +181,11 @@ export function AdminDocuments() {
   }, [school?.id, version])
 
   const filtered = filter === 'all' ? data : data.filter((d) => d.doc.status === filter)
+  const requiredForExam = useMemo(() => {
+    if (!school) return REQUIRED_FOR_EXAM
+    const configured = adminSettings.get(school.id).requiredDocuments
+    return configured.length ? configured : REQUIRED_FOR_EXAM
+  }, [school?.id])
 
   const summary = useMemo(() => {
     const counts = { missing: 0, pending: 0, rejected: 0, expired: 0, verified: 0 }
@@ -194,15 +199,15 @@ export function AdminDocuments() {
     if (!school) return []
     return filterStudents(db.students.bySchool(school.id)).map((student) => {
       const docs = data.filter((entry) => entry.student?.id === student.id).map((entry) => entry.doc)
-      const missing = REQUIRED_FOR_EXAM.filter((type) => !docs.some((doc) => doc.type === type && doc.status === 'verified'))
-      const broken = docs.filter((doc) => REQUIRED_FOR_EXAM.includes(doc.type as typeof REQUIRED_FOR_EXAM[number]) && isBlockingStatus(doc.status)).map((doc) => doc.type)
+      const missing = requiredForExam.filter((type) => !docs.some((doc) => doc.type === type && doc.status === 'verified'))
+      const broken = docs.filter((doc) => requiredForExam.includes(doc.type) && isBlockingStatus(doc.status)).map((doc) => doc.type)
       const blockers = Array.from(new Set([...missing, ...broken]))
       const progress = studentProgress.get(student.id)
       const debt = getDebtForStudent(student.id)
       const isNearExam = (progress?.confirmedHours ?? 0) >= Math.max((progress?.drivingHoursTotal ?? 56) - 10, 0) || student.trainingStage === 'ready_for_internal_exam' || student.trainingStage === 'ready_for_gibdd'
       return { student, blockers, debt, isNearExam, hours: progress?.confirmedHours ?? 0, total: progress?.drivingHoursTotal ?? 56 }
     }).filter((item) => item.blockers.length > 0 || item.debt > 0 || item.isNearExam).sort((left, right) => Number(right.isNearExam) - Number(left.isNearExam) || right.blockers.length - left.blockers.length).slice(0, 10)
-  }, [school?.id, data])
+  }, [school?.id, data, requiredForExam])
 
   const tabs: { id: FilterTab; label: string }[] = [
     { id: 'all', label: 'Все' },
@@ -217,6 +222,28 @@ export function AdminDocuments() {
     const branch = db.branches.byId(student.assignedBranchId ?? '')
     const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
     openStudentPrintPacket({ school, student, branch, instructor })
+  }
+
+  const exportAdmissionQueueCsv = () => {
+    if (!school) return
+    const rows = [
+      ['Ученик', 'Телефон', 'Проблема документов', 'Долг', 'Практика', 'Близко к экзамену'],
+      ...admissionQueue.map((item) => [
+        item.student.name,
+        item.student.phone,
+        item.blockers.length ? item.blockers.map((type) => DOC_LABELS[type] ?? type).join(', ') : 'документы ок',
+        String(item.debt),
+        `${item.hours}/${item.total}`,
+        item.isNearExam ? 'да' : 'нет',
+      ]),
+    ]
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `vroom-documents-admission-${school.slug}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
   }
 
   return (
@@ -267,7 +294,10 @@ export function AdminDocuments() {
                 <h2 className="text-[18px] font-black text-[#111418]">Очередь допуска</h2>
                 <p className="v-admin-note mt-1">Кого нельзя выпускать на экзамен без документов или оплаты</p>
               </div>
-              <span className={`v-admin-pill ${admissionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{admissionQueue.length ? `${admissionQueue.length} проверить` : 'чисто'}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={exportAdmissionQueueCsv} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Экспорт допуска</button>
+                <span className={`v-admin-pill ${admissionQueue.length ? 'v-tone-danger' : 'v-tone-ok'}`}>{admissionQueue.length ? `${admissionQueue.length} проверить` : 'чисто'}</span>
+              </div>
             </div>
             {admissionQueue.length === 0 ? (
               <div className="v-admin-empty m-4 min-h-[132px] py-6">
@@ -293,7 +323,7 @@ export function AdminDocuments() {
           <aside className="v-admin-panel p-4">
             <h2 className="text-[18px] font-black text-gray-900">Минимум к ГИБДД</h2>
             <div className="mt-3 grid gap-2">
-              {REQUIRED_FOR_EXAM.map((type) => <div key={type} className="rounded-xl bg-gray-50 p-3 text-[13px] font-bold text-gray-600">{DOC_LABELS[type]}</div>)}
+              {requiredForExam.map((type) => <div key={type} className="rounded-xl bg-gray-50 p-3 text-[13px] font-bold text-gray-600">{DOC_LABELS[type]}</div>)}
               <div className="rounded-xl bg-red-50 p-3 text-[13px] font-bold text-red-600">Плюс нулевой долг</div>
             </div>
           </aside>

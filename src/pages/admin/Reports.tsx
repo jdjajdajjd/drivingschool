@@ -77,7 +77,18 @@ export function AdminReports() {
 
     // Overdue
     const overduePayments = payments.filter((p) => p.status === 'overdue')
-    const totalDebt = overduePayments.reduce((s, p) => s + p.remainingAmount, 0)
+    const debtPayments = payments.filter((p) => ['overdue', 'partial', 'unpaid', 'disputed'].includes(p.status) && p.remainingAmount > 0)
+    const totalDebt = debtPayments.reduce((s, p) => s + p.remainingAmount, 0)
+    const debtLedger = debtPayments.map((payment) => ({ payment, student: students.find((student) => student.id === payment.studentId) ?? null })).sort((left, right) => right.payment.remainingAmount - left.payment.remainingAmount)
+    const debtBuckets = debtPayments.reduce((bucket, payment) => {
+      if (!payment.dueDate) { bucket.noDate += payment.remainingAmount; return bucket }
+      const days = Math.floor((now.getTime() - new Date(payment.dueDate).getTime()) / (24 * 60 * 60 * 1000))
+      if (days <= 0) bucket.current += payment.remainingAmount
+      else if (days <= 7) bucket.week += payment.remainingAmount
+      else if (days <= 30) bucket.month += payment.remainingAmount
+      else bucket.old += payment.remainingAmount
+      return bucket
+    }, { current: 0, week: 0, month: 0, old: 0, noDate: 0 })
     const studentsWithDebt = students.filter((student) => getDebtForStudent(student.id) > 0)
     const studentsWithoutFutureBooking = students.filter((student) => !bookings.some((booking) => {
       const slot = db.slots.byId(booking.slotId)
@@ -147,6 +158,8 @@ export function AdminReports() {
       documentsNeedAttention: documentsNeedAttention.length,
       activeProblems: activeProblems.length,
       overdueCount: overduePayments.length,
+      debtLedger,
+      debtBuckets,
       monthPayments: monthPayments.length,
       studentCount: students.length,
       instructorCount: instructors.filter((i) => i.isActive).length,
@@ -333,6 +346,22 @@ export function AdminReports() {
     downloadCsv(rows, `vroom-report-${format(new Date(), 'yyyy-MM-dd')}.csv`)
   }
 
+  function exportDebtLedgerCsv() {
+    const rows = [
+      ['Ученик', 'Телефон', 'Назначение', 'Статус', 'Остаток', 'Срок оплаты'],
+      ...reportData.debtLedger.map(({ payment, student }) => [
+        student?.name ?? 'Ученик не найден',
+        student?.phone ?? '',
+        payment.description,
+        payment.status,
+        payment.remainingAmount,
+        payment.dueDate ?? '',
+      ]),
+      ['Итого', '', '', '', reportData.totalDebt, ''],
+    ]
+    downloadCsv(rows, `vroom-debt-ledger-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+  }
+
   function exportInstructorPayrollCsv() {
     const rows = [
       ['Инструктор', 'Проведено занятий', 'Проведено часов', 'Неявки', 'Отмены', 'Ставка за час', 'К выплате', 'Статус'],
@@ -485,13 +514,37 @@ export function AdminReports() {
                 <p className="mt-1 text-[28px] font-black text-green-600">{data.monthRevenue.toLocaleString('ru-RU')} ₽</p>
               </div>
               <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-                <p className="text-[13px] font-semibold text-red-400">Просроченные долги</p>
+                <p className="text-[13px] font-semibold text-red-400">Долги под контролем</p>
                 <p className="mt-1 text-[28px] font-black text-red-500">{data.totalDebt.toLocaleString('ru-RU')} ₽</p>
-                <p className="mt-1 text-[12px] font-semibold text-red-400">{data.overdueCount} учеников</p>
+                <p className="mt-1 text-[12px] font-semibold text-red-400">{data.debtLedger.length} платежей требуют реакции</p>
               </div>
               <div className="rounded-2xl border border-gray-100 bg-white p-5">
                 <p className="text-[13px] font-semibold text-gray-400">Платёжек за месяц</p>
                 <p className="mt-1 text-[28px] font-black text-gray-900">{data.monthPayments}</p>
+              </div>
+            </div>
+
+            <div className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-[16px] font-black text-[#111827]">Возраст долгов</h3>
+                  <p className="mt-1 text-[13px] font-semibold text-[#667085]">Директору видно не просто сумму, а насколько давно деньги зависли.</p>
+                </div>
+                <button type="button" onClick={exportDebtLedgerCsv} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 py-2 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC]">Выгрузить долги</button>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                {[
+                  ['Срок ещё не вышел', data.debtBuckets.current, 'text-[#315A7C]'],
+                  ['1-7 дней', data.debtBuckets.week, 'text-[#8A6100]'],
+                  ['8-30 дней', data.debtBuckets.month, 'text-[#C92820]'],
+                  ['30+ дней', data.debtBuckets.old, 'text-[#C92820]'],
+                  ['Без срока', data.debtBuckets.noDate, 'text-[#667085]'],
+                ].map(([label, value, tone]) => (
+                  <div key={label} className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FAFC] p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.07em] text-[#667085]">{label}</p>
+                    <p className={`mt-2 text-[20px] font-black ${tone}`}>{Number(value).toLocaleString('ru-RU')} ₽</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

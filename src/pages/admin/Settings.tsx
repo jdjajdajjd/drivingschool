@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { db } from '../../services/storage'
 import { adminSettings, createCurrentStaffAuditEntry } from '../../services/adminStorage'
-import type { SchoolSettings as SchoolSettingsType } from '../../types'
+import type { DocumentType, SchoolSettings as SchoolSettingsType } from '../../types'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { formatDuration } from '../../lib/utils'
 import { updateSchoolConfirmed } from '../../services/schoolService'
@@ -25,6 +25,20 @@ const BREAK_DURATION_OPTIONS = [0, 10, 15, 30, 45, 60]
 const BOOKING_DAYS_OPTIONS = [7, 14, 21, 30, 45, 60]
 const CANCEL_HOURS_OPTIONS = [2, 4, 6, 12, 24]
 
+const DOCUMENT_OPTIONS: Array<{ type: DocumentType; label: string; hint: string }> = [
+  { type: 'contract', label: 'Договор', hint: 'Основа допуска и печатного пакета.' },
+  { type: 'passport', label: 'Паспорт', hint: 'Нужен для договора и экзамена.' },
+  { type: 'medical_certificate', label: 'Медсправка', hint: 'Критична перед экзаменом.' },
+  { type: 'consent_data_processing', label: 'Согласие на данные', hint: 'Для хранения данных ученика.' },
+  { type: 'application', label: 'Заявление', hint: 'Часто требуется в учебном деле.' },
+  { type: 'snils', label: 'СНИЛС', hint: 'Если школа собирает его в пакете.' },
+  { type: 'state_fee_receipt', label: 'Госпошлина', hint: 'Для контроля перед ГИБДД.' },
+  { type: 'photo', label: 'Фото', hint: 'Для личного дела.' },
+  { type: 'gibdd_exam_doc', label: 'Документы ГИБДД', hint: 'Финальный допуск к экзамену.' },
+]
+
+const DEFAULT_REQUIRED_DOCUMENTS: DocumentType[] = ['contract', 'passport', 'medical_certificate', 'consent_data_processing', 'gibdd_exam_doc']
+
 export function AdminSettings() {
   const school = db.schools.currentAdmin()
   const [saved, setSaved] = useState(false)
@@ -43,6 +57,14 @@ export function AdminSettings() {
 
   const update = (key: keyof SchoolSettingsType, value: unknown) => {
     setSettings((s) => ({ ...s, [key]: value }))
+  }
+
+  const selectedRequiredDocuments = settings.requiredDocuments?.length ? settings.requiredDocuments : DEFAULT_REQUIRED_DOCUMENTS
+
+  const toggleRequiredDocument = (type: DocumentType) => {
+    const current = selectedRequiredDocuments
+    const next = current.includes(type) ? current.filter((item) => item !== type) : [...current, type]
+    update('requiredDocuments', next)
   }
 
   const messageTemplates = useMemo(() => {
@@ -108,7 +130,12 @@ export function AdminSettings() {
     }
 
     try {
-      await adminSettings.saveConfirmed(settings)
+      const settingsToSave = {
+        ...settings,
+        requiredDocuments: settings.requiredDocuments?.length ? settings.requiredDocuments : DEFAULT_REQUIRED_DOCUMENTS,
+      }
+      await adminSettings.saveConfirmed(settingsToSave)
+      setSettings(settingsToSave)
     } catch (error) {
       setSaving(false)
       setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить правила записи.')
@@ -301,6 +328,34 @@ export function AdminSettings() {
                 <p className="mt-3 text-[13px] font-semibold leading-5 text-[#667085]">{template.text}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[16px] font-bold text-gray-900">Пакет документов</h2>
+              <p className="mt-1 text-[13px] font-semibold text-gray-500">От этих галочек зависит очередь допуска в разделе документов. Школа может оставить только то, что реально ведёт в своей работе.</p>
+            </div>
+            <span className="rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-black text-[#667085]">{selectedRequiredDocuments.length} в пакете</span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {DOCUMENT_OPTIONS.map((doc) => {
+              const active = selectedRequiredDocuments.includes(doc.type)
+              return (
+                <button key={doc.type} type="button" onClick={() => toggleRequiredDocument(doc.type)} disabled={!canManageSettings} className={`min-h-[104px] rounded-[16px] border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${active ? 'border-[#B7DCC3] bg-[#F1FAF4]' : 'border-[#E5EAF1] bg-[#F8FAFC]'}`}>
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${active ? 'bg-white text-[#157347]' : 'bg-white text-[#667085]'}`}>{active ? 'нужен' : 'не обязателен'}</span>
+                  <strong className="mt-3 block text-[14px] font-black text-[#111827]">{doc.label}</strong>
+                  <span className="mt-1 block text-[12px] font-semibold leading-4 text-[#667085]">{doc.hint}</span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-4 max-w-xs">
+            <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Предупреждать об истечении за</label>
+            <select value={settings.documentExpiryWarningDays} onChange={(e) => update('documentExpiryWarningDays', parseInt(e.target.value, 10))} disabled={!canManageSettings} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 disabled:opacity-60">
+              {[7, 14, 21, 30, 45].map((value) => <option key={value} value={value}>{value} дней</option>)}
+            </select>
           </div>
         </section>
 

@@ -254,7 +254,7 @@ export function AdminPayments() {
                     <span className="text-[16px] font-black text-[#B42318]">{money(item.debt)}</span>
                     <span className="flex flex-wrap gap-2">
                       <a href={`tel:${item.student?.phone ?? ''}`} className="v-admin-button-secondary h-9 min-h-9 px-3">Звонок</a>
-                      {item.student?.phone ? <button onClick={() => void navigator.clipboard?.writeText(`Здравствуйте! Напоминаем об оплате в автошколе. Остаток: ${money(item.debt)}.`)} className="v-admin-button-secondary h-9 min-h-9 px-3">Текст</button> : null}
+                      {item.student?.phone ? <button onClick={() => { void navigator.clipboard?.writeText([`Здравствуйте, ${item.student?.name ?? ''}!`, `Напоминаем об оплате в автошколе. Остаток: ${money(item.debt)}.`, 'После перевода пришлите чек администратору, мы сразу отметим оплату в кабинете.'].join(' ')); if (mainPayment) updateDebtStatus(mainPayment.id, 'reminded') }} className="v-admin-button-secondary h-9 min-h-9 px-3">Напомнить</button> : null}
                     </span>
                     {mainPayment ? (
                       <div className="grid gap-2">
