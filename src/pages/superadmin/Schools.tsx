@@ -28,10 +28,25 @@ const SALES_STATUS_LABELS: Record<NonNullable<School['salesStatus']>, string> = 
   risk: 'Риск',
 }
 
+const ACCESS_STATUS_LABELS: Record<NonNullable<School['accessStatus']>, string> = {
+  trial: 'Пробный',
+  active: 'Оплачена',
+  expires_soon: 'Скоро продлевать',
+  overdue: 'Просрочена',
+  blocked: 'Заблокирована',
+}
+
 function getSalesVariant(status: School['salesStatus']): 'success' | 'warning' | 'error' | 'default' {
   if (status === 'active' || status === 'paid') return 'success'
   if (status === 'risk') return 'error'
   if (status === 'thinking' || status === 'onboarding') return 'warning'
+  return 'default'
+}
+
+function getAccessVariant(status: School['accessStatus']): 'success' | 'warning' | 'error' | 'default' {
+  if (status === 'active') return 'success'
+  if (status === 'blocked' || status === 'overdue') return 'error'
+  if (status === 'expires_soon') return 'warning'
   return 'default'
 }
 
@@ -125,7 +140,7 @@ export function SuperAdminSchools() {
               {rows.map((item) => (
                 <DataRow key={item.school.id} className="p-4">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-7">
+                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-8">
                       <div>
                         <p className="caption">Школа</p>
                         <p className="mt-1 text-base font-bold #111418">{item.school.name}</p>
@@ -143,6 +158,13 @@ export function SuperAdminSchools() {
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                           <Badge variant={getSalesVariant(item.school.salesStatus)}>{SALES_STATUS_LABELS[item.school.salesStatus ?? 'lead']}</Badge>
                           {item.school.salesNextContact ? <span className="text-[12px] font-black text-[#66717D]">{item.school.salesNextContact}</span> : null}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="caption">Доступ</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <Badge variant={getAccessVariant(item.school.accessStatus)}>{ACCESS_STATUS_LABELS[item.school.accessStatus ?? (item.school.isActive === false ? 'blocked' : 'trial')]}</Badge>
+                          {item.school.accessPaidUntil ? <span className="text-[12px] font-black text-[#66717D]">до {item.school.accessPaidUntil}</span> : null}
                         </div>
                       </div>
                       <div>

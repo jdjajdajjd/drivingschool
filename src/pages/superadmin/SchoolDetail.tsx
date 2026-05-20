@@ -22,7 +22,7 @@ import { getSchoolOverview } from '../../services/schoolService'
 import { db } from '../../services/storage'
 import { SUPERADMIN_BASE_PATH } from '../../services/accessControl'
 import { closeSupabaseStaffSession, openSupabaseStaffSession, upsertSupabaseSchoolStaffCredential } from '../../services/staffSessionService'
-import { createSupabaseSchool } from '../../services/supabaseAdminService'
+import { createSupabaseSchool, updateSupabaseSchoolAccess } from '../../services/supabaseAdminService'
 
 type LaunchStep = {
   label: string
@@ -89,6 +89,14 @@ type SalesState = {
   note: string
 }
 
+type AccessState = {
+  status: 'trial' | 'active' | 'expires_soon' | 'overdue' | 'blocked'
+  paidUntil: string
+  lastPaidAt: string
+  amount: string
+  note: string
+}
+
 const SALES_STATUS_LABELS: Record<SalesState['status'], string> = {
   lead: 'Лид',
   thinking: 'Думает',
@@ -96,6 +104,20 @@ const SALES_STATUS_LABELS: Record<SalesState['status'], string> = {
   onboarding: 'Подключаем',
   active: 'Активен',
   risk: 'Риск',
+}
+
+const ACCESS_STATUS_LABELS: Record<AccessState['status'], string> = {
+  trial: 'Пробный доступ',
+  active: 'Активна',
+  expires_soon: 'Скоро продлевать',
+  overdue: 'Просрочена',
+  blocked: 'Заблокирована',
+}
+
+function addMonthsToDate(date: Date, months: number): string {
+  const next = new Date(date)
+  next.setMonth(next.getMonth() + months)
+  return next.toISOString().slice(0, 10)
 }
 
 function readSalesState(schoolId: string | undefined): SalesState {
@@ -121,6 +143,24 @@ function saveSalesState(schoolId: string, state: SalesState): void {
     db.schools.upsert({ ...school, salesStatus: state.status, salesNextContact: state.nextContact, salesNote: state.note })
   }
   localStorage.setItem(`vroom:sales-state:${schoolId}`, JSON.stringify(state))
+}
+
+function readAccessState(schoolId: string | undefined): AccessState {
+  const school = schoolId ? db.schools.byId(schoolId) : null
+  return {
+    status: school?.accessStatus ?? (school?.isActive === false ? 'blocked' : 'trial'),
+    paidUntil: school?.accessPaidUntil ?? '',
+    lastPaidAt: school?.accessLastPaidAt ?? '',
+    amount: school?.accessLastAmount ? String(school.accessLastAmount) : '4990',
+    note: school?.accessPaymentNote ?? '',
+  }
+}
+
+function getAccessVariant(status: AccessState['status']): 'success' | 'warning' | 'error' | 'default' {
+  if (status === 'active') return 'success'
+  if (status === 'blocked' || status === 'overdue') return 'error'
+  if (status === 'expires_soon') return 'warning'
+  return 'default'
 }
 
 function readCreatedAccess(schoolId: string | undefined): { login: string; password: string } | null {
@@ -159,6 +199,7 @@ export function SuperAdminSchoolDetail() {
   const [accessEditing, setAccessEditing] = useState(false)
   const [verifiedAccessLogin, setVerifiedAccessLogin] = useState(initialCreatedAccess?.login ?? '')
   const [salesState, setSalesState] = useState<SalesState>(() => readSalesState(schoolId))
+  const [paymentState, setPaymentState] = useState<AccessState>(() => readAccessState(schoolId))
 
   const collections = useMemo(() => {
     if (!schoolId) return null
@@ -320,6 +361,39 @@ export function SuperAdminSchoolDetail() {
     showToast('Статус продажи сохранён.', 'success')
   }
 
+  async function persistPaymentState(nextState = paymentState): Promise<void> {
+    const amount = Number(nextState.amount.replace(/\s/g, '').replace(',', '.'))
+    const nextSchool = db.schools.upsert({
+      ...school,
+      isActive: nextState.status !== 'blocked',
+      accessStatus: nextState.status,
+      accessPaidUntil: nextState.paidUntil || undefined,
+      accessLastPaidAt: nextState.lastPaidAt || undefined,
+      accessLastAmount: Number.isFinite(amount) ? Math.round(amount) : undefined,
+      accessPaymentNote: nextState.note.trim() || undefined,
+    })
+    try {
+      const savedSchool = await updateSupabaseSchoolAccess(nextSchool)
+      db.schools.upsert(savedSchool)
+      showToast('Оплата и доступ школы сохранены в базе.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Локально сохранено, но Supabase не принял доступ.', 'error')
+    }
+  }
+
+  function extendAccessOneMonth(): void {
+    const base = paymentState.paidUntil && new Date(paymentState.paidUntil) > new Date() ? new Date(paymentState.paidUntil) : new Date()
+    const nextState: AccessState = {
+      ...paymentState,
+      status: 'active',
+      lastPaidAt: new Date().toISOString().slice(0, 10),
+      paidUntil: addMonthsToDate(base, 1),
+      amount: paymentState.amount || '4990',
+    }
+    setPaymentState(nextState)
+    void persistPaymentState(nextState)
+  }
+
   return (
     <div className="max-w-7xl p-4 md:p-6">
       <PageHeader
@@ -379,9 +453,12 @@ export function SuperAdminSchoolDetail() {
               <p className="mt-2 text-[13px] font-bold leading-5 text-[#66717D]">Подключение держится в операторке, без онлайн-оплаты на сайте.</p>
             </div>
             <div className="rounded-[14px] border border-[#DCE2E8] bg-[#F8FAFC] p-4">
-              <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">После перевода</p>
-              <p className="mt-2 text-[15px] font-black text-[#111418]">Сохранить доступ и отправить директору</p>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-[#66717D]">Кнопка ниже собирает готовое сообщение с входом, паролем и ссылками.</p>
+              <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Статус доступа</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Badge variant={getAccessVariant(paymentState.status)} size="md">{ACCESS_STATUS_LABELS[paymentState.status]}</Badge>
+                {paymentState.paidUntil ? <span className="text-[13px] font-black text-[#66717D]">до {paymentState.paidUntil}</span> : null}
+              </div>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-[#66717D]">После оплаты продлите доступ и отправьте директору данные для входа.</p>
             </div>
             <div className="rounded-[14px] border border-[#DCE2E8] bg-white p-4">
               <p className="text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Контроль запуска</p>
@@ -390,6 +467,30 @@ export function SuperAdminSchoolDetail() {
                 <MessageSquareText width={15} height={15} />
                 Текст директору
               </button>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-[180px_150px_150px_minmax(0,1fr)_auto] lg:items-end">
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Доступ</span>
+              <select value={paymentState.status} onChange={(event) => setPaymentState((current) => ({ ...current, status: event.target.value as AccessState['status'] }))} className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]">
+                {Object.entries(ACCESS_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Оплачено до</span>
+              <input type="date" value={paymentState.paidUntil} onChange={(event) => setPaymentState((current) => ({ ...current, paidUntil: event.target.value }))} className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]" />
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Сумма</span>
+              <input inputMode="numeric" value={paymentState.amount} onChange={(event) => setPaymentState((current) => ({ ...current, amount: event.target.value }))} className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]" />
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#66717D]">Комментарий</span>
+              <input value={paymentState.note} onChange={(event) => setPaymentState((current) => ({ ...current, note: event.target.value }))} placeholder="Например: оплатил переводом, чек в Telegram" className="min-h-11 w-full rounded-[12px] border border-[#DCE2E8] bg-white px-3 text-[14px] font-bold text-[#111418] outline-none focus:border-[#9AA7B5]" />
+            </label>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <Button size="sm" onClick={extendAccessOneMonth}>+ месяц</Button>
+              <Button variant="secondary" size="sm" onClick={() => void persistPaymentState()}>Сохранить</Button>
             </div>
           </div>
         </Section>

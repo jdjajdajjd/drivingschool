@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Filter, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset } from 'iconoir-react'
+import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Filter, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
 const Award = Medal
 const BarChart3 = GraphUp
 const Building2 = Building
@@ -58,6 +58,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
     { id: 'documents', to: `${basePath}/documents`, label: 'Документы', description: 'Договоры, справки и проверки.', icon: FileText, permission: permission('documents.manage'), required: false },
     { id: 'exams', to: `${basePath}/exams`, label: 'Экзамены', description: 'Внутренние и ГИБДД экзамены.', icon: Award, permission: permission('exams.manage'), required: false },
     { id: 'reports', to: `${basePath}/reports`, label: 'Отчёты', description: 'Сводки и показатели школы.', icon: BarChart3, permission: permission('reports.view'), required: false },
+    { id: 'launch', to: `${basePath}/launch`, label: 'Запуск', description: 'Готовность школы к работе.', icon: CheckCircle, permission: permission('reports.view'), required: false },
     { id: 'settings', to: `${basePath}/settings`, label: 'Настройки', description: 'Параметры школы и записи.', icon: Settings, permission: permission('settings.manage'), required: false },
     { id: 'users', to: `${basePath}/users`, label: 'Команда', description: 'Сотрудники, роли и филиалы.', icon: ShieldCheck, permission: permission('staff.manage'), required: false },
   ]
@@ -125,6 +126,23 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
   )
 }
 
+function AccessBlockedState({ schoolName, onSignOut }: { schoolName: string; onSignOut: () => void }) {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-[var(--admin-bg)] p-4 text-[#111315]">
+      <section className="w-full max-w-[520px] rounded-[28px] border border-[rgba(255,59,48,0.16)] bg-white p-5 shadow-[var(--shadow-card)] md:p-7">
+        <span className="v-admin-pill v-tone-danger">Доступ остановлен</span>
+        <h1 className="mt-4 text-[28px] font-semibold leading-none text-[#111827]">Кабинет {schoolName} сейчас недоступен</h1>
+        <p className="mt-3 text-[14px] font-medium leading-6 text-[#667085]">
+          Доступ продлевает оператор vroom после ручной оплаты. Данные школы сохранены, но рабочие действия временно закрыты.
+        </p>
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          <button type="button" onClick={onSignOut} className="v-admin-button flex-1 justify-center">Выйти</button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: { mode?: 'demo' | 'workspace'; basePath?: string }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -144,7 +162,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   })
   const navItems = permittedNavItems.filter((item) => item.required || enabledIds.includes(item.id as AdminNavItemId))
   const mobileNavItems = navItems.filter((item) =>
-    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/payments`, `${basePath}/reports`].includes(item.to),
+    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/payments`, `${basePath}/launch`].includes(item.to),
   )
 
   useEffect(() => {
@@ -222,6 +240,10 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
 
   if (mode === 'workspace' && (!staffContext.schoolId || !school)) {
     return <SchoolRequiredState onSignOut={signOut} />
+  }
+
+  if (mode === 'workspace' && school && (school.isActive === false || school.accessStatus === 'blocked')) {
+    return <AccessBlockedState schoolName={school.name} onSignOut={signOut} />
   }
 
   const accessDenied = mode === 'workspace' && Boolean(currentRouteItem && !currentNavItem)

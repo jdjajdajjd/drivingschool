@@ -14,6 +14,25 @@ create table if not exists public.staff_branch_credentials (
 
 create index if not exists staff_branch_credentials_school_idx on public.staff_branch_credentials(school_id);
 
+alter table public.schools
+  add column if not exists access_status text not null default 'trial',
+  add column if not exists access_paid_until date,
+  add column if not exists access_last_paid_at date,
+  add column if not exists access_last_amount integer,
+  add column if not exists access_payment_note text not null default '';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'schools_access_status_check'
+  ) then
+    alter table public.schools
+      add constraint schools_access_status_check
+      check (access_status in ('trial', 'active', 'expires_soon', 'overdue', 'blocked'));
+  end if;
+end;
+$$;
+
 create or replace function public.private_assert_staff_school_scope(
   p_staff_secret text,
   p_school_id text
@@ -444,3 +463,44 @@ end;
 $$;
 
 grant execute on function public.public_create_school(text, text, text, text, text, text, text, text, text, boolean, integer, text, integer, integer, text[], boolean, text) to anon, authenticated;
+
+create or replace function public.public_superadmin_update_school_access(
+  p_school_id text,
+  p_access_status text,
+  p_access_paid_until date,
+  p_access_last_paid_at date,
+  p_access_last_amount integer,
+  p_access_payment_note text,
+  p_superadmin_password text
+)
+returns setof public.schools
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_staff_secret('superadmin', p_superadmin_password);
+
+  if p_access_status not in ('trial', 'active', 'expires_soon', 'overdue', 'blocked') then
+    raise exception 'Access status is invalid.';
+  end if;
+
+  update public.schools
+    set access_status = p_access_status,
+        access_paid_until = p_access_paid_until,
+        access_last_paid_at = p_access_last_paid_at,
+        access_last_amount = p_access_last_amount,
+        access_payment_note = coalesce(p_access_payment_note, ''),
+        is_active = p_access_status <> 'blocked',
+        updated_at = now()
+    where id = p_school_id;
+
+  if not found then
+    raise exception 'School not found.';
+  end if;
+
+  return query select * from public.schools where id = p_school_id;
+end;
+$$;
+
+grant execute on function public.public_superadmin_update_school_access(text, text, date, date, integer, text, text) to anon, authenticated;

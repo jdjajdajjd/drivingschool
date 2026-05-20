@@ -27,6 +27,11 @@ export interface Database {
           default_lesson_duration: number
           enabled_category_codes: string[]
           is_active: boolean
+          access_status: 'trial' | 'active' | 'expires_soon' | 'overdue' | 'blocked'
+          access_paid_until: string | null
+          access_last_paid_at: string | null
+          access_last_amount: number | null
+          access_payment_note: string | null
           created_at: string
           updated_at: string
         }
@@ -306,6 +311,18 @@ export interface Database {
       }
       public_superadmin_list_schools: {
         Args: {
+          p_superadmin_password: string
+        }
+        Returns: Array<Database['public']['Tables']['schools']['Row']>
+      }
+      public_superadmin_update_school_access: {
+        Args: {
+          p_school_id: string
+          p_access_status: 'trial' | 'active' | 'expires_soon' | 'overdue' | 'blocked'
+          p_access_paid_until: string | null
+          p_access_last_paid_at: string | null
+          p_access_last_amount: number | null
+          p_access_payment_note: string
           p_superadmin_password: string
         }
         Returns: Array<Database['public']['Tables']['schools']['Row']>

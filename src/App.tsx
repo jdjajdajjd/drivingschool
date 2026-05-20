@@ -42,6 +42,7 @@ const AdminPayments = lazy(() => import('./pages/admin/Payments').then((module) 
 const AdminDocuments = lazy(() => import('./pages/admin/Documents').then((module) => ({ default: module.AdminDocuments })))
 const AdminExams = lazy(() => import('./pages/admin/Exams').then((module) => ({ default: module.AdminExams })))
 const AdminReports = lazy(() => import('./pages/admin/Reports').then((module) => ({ default: module.AdminReports })))
+const AdminLaunchReadiness = lazy(() => import('./pages/admin/LaunchReadiness').then((module) => ({ default: module.AdminLaunchReadiness })))
 const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.AdminSettings })))
 const AdminUsers = lazy(() => import('./pages/admin/Users').then((module) => ({ default: module.AdminUsers })))
 const AdminBookings = lazy(() => import('./pages/admin/Bookings').then((module) => ({ default: module.AdminBookings })))
@@ -89,6 +90,7 @@ function adminRoutes(basePath: string) {
       <Route path="documents" element={<AdminDocuments />} />
       <Route path="exams" element={<AdminExams />} />
       <Route path="reports" element={<AdminReports />} />
+      <Route path="launch" element={<AdminLaunchReadiness />} />
       <Route path="settings" element={<AdminSettings />} />
       <Route path="users" element={<AdminUsers />} />
       <Route path="bookings" element={<AdminBookings />} />

@@ -19,6 +19,11 @@ export interface School {
   salesStatus?: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk'
   salesNextContact?: string
   salesNote?: string
+  accessStatus?: 'trial' | 'active' | 'expires_soon' | 'overdue' | 'blocked'
+  accessPaidUntil?: string
+  accessLastPaidAt?: string
+  accessLastAmount?: number
+  accessPaymentNote?: string
 }
 
 export interface Branch {

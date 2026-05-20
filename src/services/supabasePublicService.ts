@@ -61,6 +61,11 @@ function mapSchool(row: SchoolRow): School {
     defaultLessonDuration: row.default_lesson_duration,
     enabledCategoryCodes: row.enabled_category_codes?.length ? row.enabled_category_codes : undefined,
     isActive: row.is_active,
+    accessStatus: row.access_status ?? (row.is_active ? 'trial' : 'blocked'),
+    accessPaidUntil: row.access_paid_until ?? undefined,
+    accessLastPaidAt: row.access_last_paid_at ?? undefined,
+    accessLastAmount: row.access_last_amount ?? undefined,
+    accessPaymentNote: row.access_payment_note ?? undefined,
   }
 }
 
@@ -417,7 +422,7 @@ export async function getBookingByIdFromSupabase(bookingId: string): Promise<Sup
 function mapBookingBundleRow(row: any): SupabaseBookingBundle {
   return {
     booking: mapBookingLike(row),
-    school: row.school_id ? mapSchool({ id: row.school_id, name: row.school_name, slug: row.school_slug, description: row.school_description, phone: row.school_phone, email: row.school_email, address: row.school_address, logo_url: row.school_logo_url, primary_color: row.school_primary_color, booking_limit_enabled: row.school_booking_limit_enabled, max_active_bookings_per_student: row.school_max_active_bookings_per_student, branch_selection_mode: row.school_branch_selection_mode, max_slots_per_booking: row.school_max_slots_per_booking, default_lesson_duration: row.school_default_lesson_duration, enabled_category_codes: row.school_enabled_category_codes, is_active: row.school_is_active, created_at: row.school_created_at, updated_at: row.school_updated_at }) : null,
+    school: row.school_id ? mapSchool({ id: row.school_id, name: row.school_name, slug: row.school_slug, description: row.school_description, phone: row.school_phone, email: row.school_email, address: row.school_address, logo_url: row.school_logo_url, primary_color: row.school_primary_color, booking_limit_enabled: row.school_booking_limit_enabled, max_active_bookings_per_student: row.school_max_active_bookings_per_student, branch_selection_mode: row.school_branch_selection_mode, max_slots_per_booking: row.school_max_slots_per_booking, default_lesson_duration: row.school_default_lesson_duration, enabled_category_codes: row.school_enabled_category_codes, is_active: row.school_is_active, access_status: row.school_access_status ?? 'trial', access_paid_until: row.school_access_paid_until ?? null, access_last_paid_at: row.school_access_last_paid_at ?? null, access_last_amount: row.school_access_last_amount ?? null, access_payment_note: row.school_access_payment_note ?? null, created_at: row.school_created_at, updated_at: row.school_updated_at }) : null,
     branch: row.branch_id ? mapBranch({ id: row.branch_id, school_id: row.branch_school_id, name: row.branch_name, address: row.branch_address, phone: row.branch_phone, is_active: row.branch_is_active, created_at: '', updated_at: '' }) : null,
     instructor: row.instructor_id ? mapInstructor({ id: row.instructor_id, school_id: row.instructor_school_id, branch_id: row.instructor_branch_id, name: row.instructor_name, phone: row.instructor_phone, email: row.instructor_email, token: '', bio: row.instructor_bio, experience: row.instructor_experience, is_active: row.instructor_is_active, categories: row.instructor_categories, avatar_initials: row.instructor_avatar_initials, avatar_color: row.instructor_avatar_color, car: row.instructor_car, transmission: row.instructor_transmission, created_at: '', updated_at: '' }) : null,
     slot: row.slot_id ? mapSlot({ id: row.slot_id, school_id: row.slot_school_id, instructor_id: row.slot_instructor_id, branch_id: row.slot_branch_id, date: row.slot_date, time: row.slot_time, duration: row.slot_duration, lesson_type: row.slot_lesson_type, status: row.slot_status, booking_id: row.slot_booking_id, created_at: row.slot_created_at, updated_at: '' }) : null,

@@ -18,6 +18,25 @@ create table if not exists public.staff_access_credentials (
 alter table public.schools
   add column if not exists enabled_category_codes text[] not null default array['B'];
 
+alter table public.schools
+  add column if not exists access_status text not null default 'trial',
+  add column if not exists access_paid_until date,
+  add column if not exists access_last_paid_at date,
+  add column if not exists access_last_amount integer,
+  add column if not exists access_payment_note text not null default '';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'schools_access_status_check'
+  ) then
+    alter table public.schools
+      add constraint schools_access_status_check
+      check (access_status in ('trial', 'active', 'expires_soon', 'overdue', 'blocked'));
+  end if;
+end;
+$$;
+
 
 create table if not exists public.student_progress (
   id text primary key,

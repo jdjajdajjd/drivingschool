@@ -220,6 +220,11 @@ function mapSupabaseSchool(row: SchoolRow): School {
     defaultLessonDuration: row.default_lesson_duration,
     enabledCategoryCodes: row.enabled_category_codes?.length ? row.enabled_category_codes : undefined,
     isActive: row.is_active,
+    accessStatus: row.access_status ?? (row.is_active ? 'trial' : 'blocked'),
+    accessPaidUntil: row.access_paid_until ?? undefined,
+    accessLastPaidAt: row.access_last_paid_at ?? undefined,
+    accessLastAmount: row.access_last_amount ?? undefined,
+    accessPaymentNote: row.access_payment_note ?? undefined,
   }
 }
 
@@ -269,6 +274,28 @@ export async function listSupabaseSchools(): Promise<School[]> {
   )
 
   return (data ?? []).map(mapSupabaseSchool)
+}
+
+export async function updateSupabaseSchoolAccess(school: School): Promise<School> {
+  if (!isSupabaseRemoteConfigured()) {
+    throw new Error('Supabase не подключен.')
+  }
+
+  const data = await runAdminMutation<SchoolRow[]>(
+    supabase.rpc('public_superadmin_update_school_access' as never, {
+      p_school_id: school.id,
+      p_access_status: school.accessStatus ?? (school.isActive === false ? 'blocked' : 'trial'),
+      p_access_paid_until: school.accessPaidUntil ?? null,
+      p_access_last_paid_at: school.accessLastPaidAt ?? null,
+      p_access_last_amount: school.accessLastAmount ?? null,
+      p_access_payment_note: school.accessPaymentNote ?? '',
+      p_superadmin_password: getSuperadminSecret(),
+    } as never),
+  )
+
+  const row = Array.isArray(data) ? data[0] : null
+  if (!row) throw new Error('База не вернула обновлённую автошколу.')
+  return mapSupabaseSchool(row)
 }
 
 export async function listSupabaseLeadRequests(): Promise<LeadRequest[]> {

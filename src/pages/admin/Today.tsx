@@ -231,6 +231,11 @@ function LaunchChecklist({
           </Link>
         ))}
       </div>
+      <div className="mt-3 flex justify-end">
+        <Link to={`${getAdminBasePathForLocation()}/launch`} className="v-admin-button-tertiary justify-center">
+          Полная проверка запуска
+        </Link>
+      </div>
     </section>
   )
 }
