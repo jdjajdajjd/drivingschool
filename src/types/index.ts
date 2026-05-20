@@ -494,6 +494,7 @@ export interface User {
   name: string
   phone: string
   email?: string
+  login?: string
   passwordHash?: string
   isActive: boolean
   branchIds: string[]

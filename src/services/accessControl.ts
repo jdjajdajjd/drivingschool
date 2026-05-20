@@ -152,12 +152,13 @@ export function getWorkspaceStaffContext(): WorkspaceStaffContext {
 }
 
 export function isBranchAdminContext(): boolean {
-  return getWorkspaceStaffContext().role === 'branch_admin'
+  const role = getWorkspaceStaffContext().role
+  return role === 'branch_admin' || role === 'instructor'
 }
 
 export function canAccessBranch(branchId?: string | null): boolean {
   const context = getWorkspaceStaffContext()
-  if (context.role !== 'branch_admin') return true
+  if (context.role !== 'branch_admin' && context.role !== 'instructor') return true
   return Boolean(branchId && context.branchIds.includes(branchId))
 }
 

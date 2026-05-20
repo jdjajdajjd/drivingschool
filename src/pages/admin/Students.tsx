@@ -1,4 +1,4 @@
-import { ChangeEvent, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Archive, Download, NavArrowRight as ChevronRight, Search, Upload, UserPlus } from 'iconoir-react'
 import { format } from 'date-fns'
@@ -7,7 +7,7 @@ import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import type { Payment, Student, TrainingStage } from '../../types'
+import type { Payment, Student, StudentRequestStatus, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { getSlotDateTime, normalizePhone, validateRussianPhone } from '../../services/bookingService'
@@ -15,6 +15,7 @@ import { createStudentAdminConfirmed, updateStudentAdminConfirmed } from '../../
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { getPreference, setPreference } from '../../services/preferenceStorage'
+import { loadStudentRequests, refreshStudentRequestsFromSupabase, studentRequestStatusLabels, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 
 type FilterTab = 'all' | 'active' | 'problem' | 'debt' | 'no_docs' | 'no_instructor' | 'no_group' | 'ready_exam' | 'inactive'
 type ImportSource = 'ai' | 'manual'
@@ -286,12 +287,19 @@ export function AdminStudents() {
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
   const [bulkPending, setBulkPending] = useState(false)
   const [compactTable, setCompactTable] = useState(() => getPreference('dd:admin_students_compact') === 'true')
+  const [requestVersion, setRequestVersion] = useState(0)
+  const [requestPendingId, setRequestPendingId] = useState('')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
   const canManageStudents = canUseAdminPermission('students.manage')
 
+  useEffect(() => {
+    if (!school) return
+    void refreshStudentRequestsFromSupabase(school.id).then(() => setRequestVersion((value) => value + 1)).catch(() => undefined)
+  }, [school?.id])
+
   const data = useMemo(() => {
-    if (!school) return { rows: [], debtStudents: new Set<string>(), docs: {} as Record<string, number>, hours: {} as Record<string, number>, next: {} as Record<string, string>, last: {} as Record<string, string> }
+    if (!school) return { rows: [], debtStudents: new Set<string>(), docs: {} as Record<string, number>, hours: {} as Record<string, number>, next: {} as Record<string, string>, last: {} as Record<string, string>, requests: [] }
 
     const debtStudents = new Set<string>()
     adminPayments.all(school.id).forEach((payment) => {
@@ -320,8 +328,23 @@ export function AdminStudents() {
       return student
     })
 
-    return { rows, debtStudents, docs, hours, next, last }
-  }, [school?.id])
+    return { rows, debtStudents, docs, hours, next, last, requests: loadStudentRequests(school.id) }
+  }, [school?.id, requestVersion])
+
+  const openRequests = data.requests.filter((request) => request.status === 'new' || request.status === 'reviewing')
+
+  const patchStudentRequest = async (requestId: string, status: StudentRequestStatus) => {
+    if (!school || requestPendingId) return
+    setRequestPendingId(requestId)
+    const result = await updateStudentRequestStatusAdminConfirmed(school.id, requestId, status)
+    setRequestPendingId('')
+    if (!result.ok) {
+      setImportSummary(result.error ?? 'Не удалось сохранить статус запроса.')
+      return
+    }
+    setRequestVersion((value) => value + 1)
+    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', requestId, `Запрос ученика: ${studentRequestStatusLabels[status]}`)
+  }
 
   const filtered = useMemo(() => {
     let result = data.rows
@@ -675,6 +698,38 @@ export function AdminStudents() {
           <div className="mb-3 rounded-[14px] border border-[#D7E2EC] bg-[#F8FBFE] px-4 py-3 text-[13px] font-semibold text-[#38424D] shadow-[0_10px_24px_rgba(16,20,24,0.04)]">
             {importSummary}
           </div>
+        ) : null}
+        {openRequests.length > 0 ? (
+          <section className="mb-3 rounded-[18px] border border-[#D7E2EC] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.04)]">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[14px] font-black text-[#111827]">Запросы учеников</p>
+                <p className="mt-0.5 text-[12px] font-semibold text-[#667085]">Переносы и отмены, которые нельзя потерять администратору.</p>
+              </div>
+              <span className="v-admin-pill v-tone-warning">{openRequests.length} ждут ответа</span>
+            </div>
+            <div className="grid gap-2 xl:grid-cols-2">
+              {openRequests.slice(0, 4).map((request) => {
+                const student = db.students.byId(request.studentId)
+                return (
+                  <div key={request.id} className="rounded-[14px] border border-[#E4E7EC] bg-[#FBFCFE] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-black text-[#111827]">{request.type === 'reschedule' ? 'Перенос занятия' : 'Отмена занятия'} · {student?.name ?? 'ученик'}</p>
+                        <p className="mt-1 text-[12px] font-semibold leading-5 text-[#667085]">{request.reason || request.comment || 'Без причины'}{request.preferredTime ? ` · хочет: ${request.preferredTime}` : ''}</p>
+                      </div>
+                      <span className={`v-admin-pill ${request.status === 'reviewing' ? 'v-tone-info' : 'v-tone-warning'}`}>{studentRequestStatusLabels[request.status]}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <button type="button" disabled={requestPendingId === request.id} onClick={() => void patchStudentRequest(request.id, 'reviewing')} className="min-h-10 rounded-[10px] border border-[#D7E2EC] bg-white text-[12px] font-black text-[#344054] disabled:opacity-50">В работу</button>
+                      <button type="button" disabled={requestPendingId === request.id} onClick={() => void patchStudentRequest(request.id, 'resolved')} className="min-h-10 rounded-[10px] bg-[#111827] text-[12px] font-black text-white disabled:opacity-50">Решено</button>
+                      <button type="button" disabled={requestPendingId === request.id} onClick={() => void patchStudentRequest(request.id, 'rejected')} className="min-h-10 rounded-[10px] border border-[#FAD1D1] bg-[#FFF7F7] text-[12px] font-black text-[#B42318] disabled:opacity-50">Отклонить</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         ) : null}
         <section className="v-students-summary mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {studentStats.map((item) => (

@@ -42,7 +42,7 @@ export async function openSupabaseStaffSession(role: AccessRole, login: string, 
     expiresAt: session.expires_at,
     staffContext: role === 'admin'
       ? {
-          role: session.role === 'branch_admin' ? 'branch_admin' : 'admin',
+          role: ['director', 'admin', 'branch_admin', 'accountant', 'instructor'].includes(session.role) ? session.role as WorkspaceStaffRole : 'admin',
           schoolId: session.school_id ?? undefined,
           branchIds: session.branch_ids ?? [],
           name: session.staff_name ?? undefined,
@@ -89,15 +89,18 @@ export async function upsertSupabaseSchoolStaffCredential(params: {
   login: string
   password: string
   staffName?: string
+  staffRole?: WorkspaceStaffRole
+  branchIds?: string[]
   isActive?: boolean
+  staffSecret?: string
 }): Promise<string> {
   if (!isSupabaseRemoteConfigured()) {
     throw new Error('Supabase не подключен.')
   }
 
-  const superadminSecret = getAccessSecret('superadmin')
-  if (!superadminSecret) {
-    throw new Error('Войдите в операторскую админку заново.')
+  const staffSecret = params.staffSecret || getAccessSecret('superadmin') || getAccessSecret('admin')
+  if (!staffSecret) {
+    throw new Error('Войдите в админку заново.')
   }
 
   const rows = await runStaffAuthRpc<Array<{ login: string }>>('public_upsert_school_staff_credential', {
@@ -106,12 +109,14 @@ export async function upsertSupabaseSchoolStaffCredential(params: {
     p_password: params.password.trim(),
     p_staff_name: params.staffName ?? '',
     p_is_active: params.isActive ?? true,
-    p_superadmin_password: superadminSecret,
+    p_staff_secret: staffSecret,
+    p_staff_role: params.staffRole ?? 'admin',
+    p_branch_ids: params.branchIds ?? [],
   })
 
   const row = Array.isArray(rows) ? rows[0] : null
   if (!row?.login) {
-    throw new Error('Не удалось сохранить доступ администратора школы.')
+    throw new Error('Не удалось сохранить доступ сотрудника школы.')
   }
 
   return row.login
