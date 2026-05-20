@@ -229,6 +229,59 @@ async function grantBranchAdminWithWorkspaceData(page) {
   })
 }
 
+async function grantWorkspaceBookingPolicyData(page) {
+  await page.addInitScript(() => {
+    const now = new Date()
+    const today = new Date().toISOString().slice(0, 10)
+    const school = {
+      id: 'school-workspace',
+      name: 'Рабочая автошкола',
+      slug: 'workspace',
+      description: 'Рабочий тестовый контур',
+      phone: '+7 999 000-10-10',
+      email: 'office@example.test',
+      address: 'Москва',
+      createdAt: now.toISOString(),
+      primaryColor: '#1f5b43',
+      bookingLimitEnabled: true,
+      maxActiveBookingsPerStudent: 2,
+      branchSelectionMode: 'student_choice',
+      maxSlotsPerBooking: 1,
+      defaultLessonDuration: 90,
+      enabledCategoryCodes: ['B'],
+      isActive: true,
+      accessStatus: 'active',
+    }
+    const branch = { id: 'branch-main', schoolId: school.id, name: 'Главный филиал', address: 'Москва, Тестовая 1', phone: '+7 999 000-11-11', isActive: true }
+    const instructor = { id: 'inst-main', schoolId: school.id, branchId: branch.id, name: 'Мария Инструкторова', phone: '79990001111', email: '', token: 'tok-main', bio: '', experience: 7, isActive: true, categories: ['B'], avatarInitials: 'МИ', avatarColor: '#1f5b43', car: 'Solaris', transmission: 'manual' }
+    const students = [
+      { id: 'stu-policy', schoolId: school.id, name: 'Ирина Политика', phone: '79995550000', normalizedPhone: '79995550000', email: '', assignedBranchId: branch.id, assignedInstructorId: instructor.id, categoryCodes: ['B'], trainingStage: 'city', hasPassword: true, createdAt: now.toISOString() },
+      { id: 'stu-overlap', schoolId: school.id, name: 'Олег Пересечение', phone: '79996660000', normalizedPhone: '79996660000', email: '', assignedBranchId: branch.id, assignedInstructorId: instructor.id, categoryCodes: ['B'], trainingStage: 'city', hasPassword: true, createdAt: now.toISOString() },
+    ]
+    const slots = [
+      { id: 'slot-policy-free', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: today, time: '23:00', duration: 90, lessonType: 'city', status: 'available', createdAt: now.toISOString() },
+      { id: 'slot-policy-overlap', schoolId: school.id, instructorId: instructor.id, branchId: branch.id, date: today, time: '23:30', duration: 90, lessonType: 'city', status: 'booked', bookingId: 'booking-overlap', createdAt: now.toISOString() },
+    ]
+    const bookings = [
+      { id: 'booking-overlap', schoolId: school.id, slotId: 'slot-policy-overlap', instructorId: instructor.id, branchId: branch.id, studentId: 'stu-overlap', studentName: 'Олег Пересечение', studentPhone: '79996660000', studentEmail: '', status: 'active', createdAt: now.toISOString() },
+    ]
+    const settings = [{ id: 'settings-policy', schoolId: school.id, maxActiveBookingsPerStudent: 2, allowBookingWithoutMedical: false, allowBookingWithoutContract: false, maxLessonsPerDay: 2, maxLessonsPerWeek: 6, blockBookingOnDebt: true }]
+
+    sessionStorage.setItem('dd:data_namespace', 'workspace')
+    sessionStorage.setItem('dd:access:admin:workspace', 'granted')
+    sessionStorage.setItem('dd:access_secret:admin:workspace', 'qa-password')
+    sessionStorage.setItem('dd:staff_context:workspace', JSON.stringify({ role: 'admin', schoolId: school.id, branchIds: [], name: 'QA политика' }))
+    localStorage.setItem('dd:workspace:schools', JSON.stringify([school]))
+    localStorage.setItem('dd:workspace:branches', JSON.stringify([branch]))
+    localStorage.setItem('dd:workspace:instructors', JSON.stringify([instructor]))
+    localStorage.setItem('dd:workspace:students', JSON.stringify(students))
+    localStorage.setItem('dd:workspace:slots', JSON.stringify(slots))
+    localStorage.setItem('dd:workspace:bookings', JSON.stringify(bookings))
+    localStorage.setItem('workspace:admin:settings', JSON.stringify(settings))
+    localStorage.setItem('workspace:admin:documents', JSON.stringify([]))
+  })
+}
+
 async function grantDemoAdmin(page) {
   await page.addInitScript(() => {
     sessionStorage.setItem('dd:data_namespace', 'demo')
@@ -346,6 +399,35 @@ async function checkRolePermissions(browser) {
   })
 }
 
+async function checkBookingPolicy(browser) {
+  await withPage(browser, 'booking policy guardrails', { width: 390, height: 844 }, async (page) => {
+    await grantWorkspaceBookingPolicyData(page)
+    await openRoute(page, '/admin-panel/schedule', ['Расписание', 'Свободно'])
+    await page.getByRole('button', { name: /Свободно/ }).first().click()
+    await page.getByRole('button', { name: /Записать ученика/ }).click()
+    await page.locator('select').last().selectOption('stu-policy')
+    await page.getByRole('button', { name: /^Записать$/ }).click()
+    await page.locator('body', { hasText: 'нет загруженного договора' }).waitFor({ timeout })
+
+    await page.evaluate(() => {
+      const now = new Date().toISOString()
+      localStorage.setItem('workspace:admin:documents', JSON.stringify([
+        { id: 'doc-contract', schoolId: 'school-workspace', studentId: 'stu-policy', type: 'contract', status: 'verified', fileName: 'dogovor.pdf', uploadedAt: now, verifiedAt: now, createdAt: now, updatedAt: now },
+        { id: 'doc-med', schoolId: 'school-workspace', studentId: 'stu-policy', type: 'medical_certificate', status: 'verified', fileName: 'med.pdf', uploadedAt: now, verifiedAt: now, expiresAt: '2099-12-31', createdAt: now, updatedAt: now },
+      ]))
+    })
+    await page.getByRole('button', { name: /^Записать$/ }).click()
+    await page.waitForTimeout(400)
+    const stored = await page.evaluate(() => ({
+      slots: JSON.parse(localStorage.getItem('dd:workspace:slots') || '[]'),
+      bookings: JSON.parse(localStorage.getItem('dd:workspace:bookings') || '[]'),
+    }))
+    const bookedSlot = stored.slots.find((slot) => slot.id === 'slot-policy-free')
+    assert(bookedSlot?.status === 'booked' && Boolean(bookedSlot.bookingId), 'booking policy: verified student did not book free slot')
+    assert(stored.bookings.filter((booking) => booking.slotId === 'slot-policy-free' && booking.status === 'active').length === 1, 'booking policy: expected exactly one active booking for slot')
+  })
+}
+
 async function checkDemoAdmin(browser, viewport, label) {
   await withPage(browser, `demo admin ${label}`, viewport, async (page) => {
     await grantDemoAdmin(page)
@@ -373,6 +455,7 @@ try {
   await checkWorkspaceAdmin(browser, { width: 1440, height: 900 }, 'desktop')
   await checkBranchAdminScope(browser)
   await checkRolePermissions(browser)
+  await checkBookingPolicy(browser)
   await checkDemoAdmin(browser, { width: 390, height: 844 }, 'mobile')
 } finally {
   await browser.close()
