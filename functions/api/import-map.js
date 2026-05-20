@@ -94,7 +94,7 @@ function sanitizeMapping(value, headers) {
 async function askDeepSeek(env, payload) {
   const apiKey = env.DEEPSEEK_API_KEY
   if (!apiKey) return null
-  const model = env.DEEPSEEK_MODEL || 'deepseek-chat'
+  const model = env.DEEPSEEK_MODEL || 'deepseek-v4-pro'
   const baseUrl = env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com'
   const response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',

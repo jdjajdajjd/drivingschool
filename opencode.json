@@ -1,9 +1,36 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "teneta/deepseek-v4-pro",
+  "small_model": "teneta/deepseek-v4-pro",
+  "provider": {
+    "teneta": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Teneta DeepSeek",
+      "options": {
+        "baseURL": "https://api.tenetauniversity.com/v1",
+        "apiKey": "{env:DEEPSEEK_API_KEY}"
+      },
+      "models": {
+        "deepseek-v4-pro": {
+          "name": "DeepSeek v4 Pro",
+          "limit": {
+            "context": 200000,
+            "output": 65536
+          }
+        }
+      }
+    }
+  },
   "mcp": {
     "playwright": {
       "type": "local",
-      "command": ["cmd", "/c", "npx", "-y", "@playwright/mcp@latest"],
+      "command": [
+        "cmd",
+        "/c",
+        "npx",
+        "-y",
+        "@playwright/mcp@latest"
+      ],
       "enabled": true,
       "timeout": 10000
     }
