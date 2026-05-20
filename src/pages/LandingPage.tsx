@@ -3,7 +3,7 @@ const Clock3 = Clock
 const LayoutDashboard = ChartLineUp
 const Sparkles = Sparkle
 import { FormEvent, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/layout/BrandMark'
 import { setDataNamespace } from '../services/storage'
 import studentCabinetMockupUrl from '../../hochuvodit/1/iPhone 15.svg?url'
@@ -79,6 +79,8 @@ function LandingPhoneMockup() {
       >
         <img
           src={studentCabinetMockupUrl}
+          width={700}
+          height={805}
           alt="Кабинет ученика vroom на iPhone"
           className="absolute left-1/2 top-[-30px] w-[690px] max-w-none -translate-x-[42%] select-none sm:top-[-42px] sm:w-[780px] sm:-translate-x-[42%] lg:left-[50%] lg:top-[-18px] lg:w-[700px] lg:-translate-x-[36%] [image-rendering:auto]"
           decoding="sync"
@@ -108,7 +110,7 @@ export function LandingPage() {
   }
 
   function scrollToLeadForm() {
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    formRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
   }
 
   function updateLead(field: keyof typeof lead, value: string) {
@@ -159,13 +161,13 @@ export function LandingPage() {
   return (
     <div className="landing-shell min-h-dvh bg-[#EEF3F8] bg-[radial-gradient(circle_at_18%_0%,rgba(203,221,238,0.72),transparent_34%),radial-gradient(circle_at_82%_16%,rgba(226,232,240,0.9),transparent_30%),linear-gradient(180deg,#F8FBFE_0%,#EEF3F8_48%,#E9EFF6_100%)] text-[#111827]">
       <header className="landing-header mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
-        <button
-          type="button"
+        <Link
           className="rounded-full px-1 py-2 text-left transition active:scale-[0.98]"
-          onClick={() => navigate('/')}
+          to="/"
+          aria-label="На главную"
         >
           <BrandMark size="lg" />
-        </button>
+        </Link>
 
         <button
           type="button"
@@ -180,7 +182,7 @@ export function LandingPage() {
         <section className="landing-hero-grid relative grid items-stretch gap-4 lg:grid-cols-[1.32fr_0.68fr]">
           <article className="landing-hero-card relative z-10 rounded-[34px] border border-[#D7E2EC] bg-white/92 p-6 shadow-[0_30px_90px_rgba(43,57,75,0.13)] backdrop-blur-2xl sm:p-8 lg:p-9">
             <div className="landing-pill inline-flex items-center gap-2 rounded-full bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">
-              <Sparkles size={15} />
+              <Sparkles size={15} aria-hidden="true" />
               vroom.today
             </div>
 
@@ -205,7 +207,7 @@ export function LandingPage() {
                 onClick={scrollToLeadForm}
               >
                 Оставить заявку
-                <ArrowRight size={18} />
+                <ArrowRight size={18} aria-hidden="true" />
               </button>
               <button
                 type="button"
@@ -219,7 +221,7 @@ export function LandingPage() {
             <div className="mt-8 grid gap-2 sm:grid-cols-3">
               {['ученик записывается сам', 'админ видит запись', 'без таблиц и чатов'].map((item) => (
                 <div key={item} className="landing-proof-chip flex items-start gap-2 rounded-[18px] border border-[#E1EAF2] bg-white/72 px-3 py-3 shadow-[0_8px_24px_rgba(47,65,84,0.045)]">
-                  <CheckCircle2 className="mt-0.5 shrink-0 text-[#3A7A57]" size={16} />
+                  <CheckCircle2 className="mt-0.5 shrink-0 text-[#3A7A57]" size={16} aria-hidden="true" />
                   <span className="text-[13px] font-medium leading-5 text-[#465463]">{item}</span>
                 </div>
               ))}
@@ -239,7 +241,7 @@ export function LandingPage() {
                 className="landing-benefit-card rounded-[30px] border border-[#D7E2EC] bg-white p-5 shadow-[0_18px_54px_rgba(43,57,75,0.12)]"
               >
                 <span className={`grid h-12 w-12 place-items-center rounded-[18px] ${card.tone}`}>
-                  <Icon size={22} />
+                  <Icon size={22} aria-hidden="true" />
                 </span>
                 <h3 className="mt-5 text-[22px] font-semibold leading-7 tracking-[-0.01em] text-[#111827]">{card.title}</h3>
                 <p className="mt-2 text-[14px] font-normal leading-6 text-[#667381]">{card.text}</p>
@@ -255,7 +257,7 @@ export function LandingPage() {
               <article key={pain.title} className="landing-proof-card rounded-[26px] border border-[#D7E2EC] bg-white p-5 shadow-[0_18px_54px_rgba(43,57,75,0.10)]">
                 <div className="flex items-start justify-between gap-4">
                   <span className="landing-proof-icon grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#EAF3FF] text-[#315A7C]">
-                    <Icon size={21} weight="duotone" />
+                    <Icon size={21} weight="duotone" aria-hidden="true" />
                   </span>
                   <span className="landing-proof-label rounded-full border border-[#DDE7F0] bg-[#F8FBFE] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#5A6675]">
                     {pain.label}
@@ -271,7 +273,7 @@ export function LandingPage() {
         <section className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
           <article className="landing-flow-card rounded-[30px] border border-[#D7E2EC] bg-white p-6 shadow-[0_18px_54px_rgba(43,57,75,0.11)]">
             <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF8F1] px-3 py-2 text-[13px] font-medium text-[#2F6E4B]">
-              <Clock3 size={15} />
+              <Clock3 size={15} aria-hidden="true" />
               как это работает
             </div>
             <h2 className="mt-5 text-[30px] font-semibold leading-tight tracking-[-0.01em] text-[#111827]">
@@ -294,7 +296,7 @@ export function LandingPage() {
 
           <article className="landing-admin-card rounded-[30px] border border-[#C9D8E6] bg-[#F8FBFE] p-6 text-[#111827] shadow-[0_18px_54px_rgba(43,57,75,0.12)]">
             <div className="inline-flex items-center gap-2 rounded-full bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">
-              <UserCheck size={15} />
+              <UserCheck size={15} aria-hidden="true" />
               для администратора
             </div>
             <h2 className="mt-5 max-w-[18ch] text-[30px] font-semibold leading-tight tracking-[-0.01em] text-[#111827]">
@@ -319,7 +321,7 @@ export function LandingPage() {
         >
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-[#F2EEFF] px-3 py-2 text-[13px] font-medium text-[#5A4A87]">
-              <Send size={15} />
+              <Send size={15} aria-hidden="true" />
               заявка на подключение
             </div>
             <h2 className="mt-5 text-[30px] font-semibold leading-tight tracking-[-0.01em] text-[#111827]">
@@ -336,6 +338,7 @@ export function LandingPage() {
                 Ваше имя
                 <input
                   className="landing-input min-h-[52px] rounded-[18px] border border-[#D7E2EC] bg-[#FBFDFF] px-4 text-[15px] font-medium text-[#111827] outline-none transition placeholder:text-[#A2ACB7] focus:border-[#9DB3C8]"
+                  name="name"
                   value={lead.name}
                   placeholder="Иван"
                   autoComplete="name"
@@ -346,6 +349,9 @@ export function LandingPage() {
                 Телефон
                 <input
                   className="landing-input min-h-[52px] rounded-[18px] border border-[#D7E2EC] bg-[#FBFDFF] px-4 text-[15px] font-medium text-[#111827] outline-none transition placeholder:text-[#A2ACB7] focus:border-[#9DB3C8]"
+                  name="phone"
+                  type="tel"
+                  inputMode="tel"
                   value={lead.phone}
                   placeholder="+7 999 123-45-67"
                   autoComplete="tel"
@@ -358,6 +364,8 @@ export function LandingPage() {
                 Автошкола
                 <input
                   className="landing-input min-h-[52px] rounded-[18px] border border-[#D7E2EC] bg-[#FBFDFF] px-4 text-[15px] font-medium text-[#111827] outline-none transition placeholder:text-[#A2ACB7] focus:border-[#9DB3C8]"
+                  name="organization"
+                  autoComplete="organization"
                   value={lead.schoolName}
                   placeholder="Название школы"
                   onChange={(event) => updateLead('schoolName', event.target.value)}
@@ -367,6 +375,8 @@ export function LandingPage() {
                 Город
                 <input
                   className="landing-input min-h-[52px] rounded-[18px] border border-[#D7E2EC] bg-[#FBFDFF] px-4 text-[15px] font-medium text-[#111827] outline-none transition placeholder:text-[#A2ACB7] focus:border-[#9DB3C8]"
+                  name="address-level2"
+                  autoComplete="address-level2"
                   value={lead.city}
                   placeholder="Москва"
                   onChange={(event) => updateLead('city', event.target.value)}
@@ -377,6 +387,7 @@ export function LandingPage() {
               Комментарий
               <textarea
                 className="landing-input min-h-[104px] resize-none rounded-[18px] border border-[#D7E2EC] bg-[#FBFDFF] px-4 py-3 text-[15px] font-medium leading-6 text-[#111827] outline-none transition placeholder:text-[#A2ACB7] focus:border-[#9DB3C8]"
+                name="comment"
                 value={lead.comment}
                 placeholder="Сколько филиалов и инструкторов"
                 onChange={(event) => updateLead('comment', event.target.value)}
@@ -384,12 +395,12 @@ export function LandingPage() {
             </label>
 
             {leadStatus === 'success' ? (
-              <div className="rounded-[18px] bg-[#ECF8F1] px-4 py-3 text-[14px] font-medium leading-5 text-[#2F6E4B]">
+              <div aria-live="polite" className="rounded-[18px] bg-[#ECF8F1] px-4 py-3 text-[14px] font-medium leading-5 text-[#2F6E4B]">
                 Заявка отправлена. Я свяжусь с вами в ближайшее время.
               </div>
             ) : null}
             {leadStatus === 'error' ? (
-              <div className="rounded-[18px] bg-[#FFF0EF] px-4 py-3 text-[14px] font-medium leading-5 text-[#B4443D]">
+              <div aria-live="polite" className="rounded-[18px] bg-[#FFF0EF] px-4 py-3 text-[14px] font-medium leading-5 text-[#B4443D]">
                 {leadError || 'Не удалось отправить заявку. Попробуйте еще раз.'}
               </div>
             ) : null}
@@ -399,11 +410,11 @@ export function LandingPage() {
               className="landing-primary inline-flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-[#111827] px-5 text-[15px] font-medium text-white shadow-[0_18px_44px_rgba(17,24,39,0.16)] transition hover:bg-[#1D2633] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#AEB8C3]"
               disabled={leadStatus === 'submitting'}
             >
-              {leadStatus === 'submitting' ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+              {leadStatus === 'submitting' ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
               {leadStatus === 'submitting' ? 'Отправляем' : 'Отправить заявку'}
             </button>
             <p className="text-[12px] font-medium leading-5 text-[#7A8795]">
-              Отправляя заявку, вы соглашаетесь с <a className="font-semibold text-[#111827]" href="/terms">условиями сервиса</a> и <a className="font-semibold text-[#111827]" href="/privacy">политикой конфиденциальности</a>.
+              Отправляя заявку, вы соглашаетесь с <Link className="font-semibold text-[#111827] underline decoration-[#CBD5E1] underline-offset-4 hover:decoration-[#111827]" to="/terms">условиями сервиса</Link> и <Link className="font-semibold text-[#111827] underline decoration-[#CBD5E1] underline-offset-4 hover:decoration-[#111827]" to="/privacy">политикой конфиденциальности</Link>.
             </p>
           </form>
         </section>

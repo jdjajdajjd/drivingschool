@@ -734,29 +734,32 @@ export function AdminStudents() {
           <p className="v-admin-note mt-1">{filtered.length} в списке</p>
         </div>
         <div className="v-toolbar-actions v-students-actions ml-auto flex min-w-0 flex-wrap items-center gap-3">
-          <label className="relative min-w-[220px] flex-1 sm:w-[320px] sm:flex-none">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
+          <label className="relative min-w-[220px] flex-1 sm:w-[320px] sm:flex-none"><span className="sr-only">Поиск ученика</span>
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
             <input
+              name="students-search"
+              autoComplete="off"
+              spellCheck={false}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Имя, телефон, email"
+              placeholder="Имя, телефон, email…"
               className="v-admin-input w-full pl-9 pr-9"
             />
             {search ? (
-              <button type="button" onClick={() => setSearch('')} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-[#8D98A4] hover:bg-[#EEF2F5] hover:text-[#111418]">×</button>
+              <button type="button" onClick={() => setSearch('')} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-[#8D98A4] hover:bg-[#EEF2F5] hover:text-[#111418]" aria-label="Очистить поиск учеников">×</button>
             ) : null}
           </label>
-          <button onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
-            <UserPlus width={16} height={16} />
+          <button type="button" onClick={() => setShowAdd(true)} className="v-admin-button v-toolbar-primary-action">
+            <UserPlus width={16} height={16} aria-hidden="true" />
             Добавить ученика
           </button>
-          <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" className="hidden" onChange={(event) => void importStudentsCsv(event)} />
+          <input ref={fileInputRef} aria-label="Загрузить таблицу учеников" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" className="hidden" onChange={(event) => void importStudentsCsv(event)} />
         </div>
       </div>
 
       <div className="v-tab-row v-tab-row-wrap">
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => setFilterPersisted(tab.id)} className={`v-tab ${filter === tab.id ? 'v-tab-active' : ''}`}>
+          <button key={tab.id} type="button" onClick={() => setFilterPersisted(tab.id)} className={`v-tab ${filter === tab.id ? 'v-tab-active' : ''}`}>
             {tab.label}
             {tab.count !== undefined ? <span className="ml-2 rounded-full bg-[#EEF2F5] px-2 py-0.5 text-[11px] text-[#59626D]">{tab.count}</span> : null}
           </button>
@@ -772,8 +775,8 @@ export function AdminStudents() {
             </p>
           </div>
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing} className="v-admin-button-secondary justify-center disabled:opacity-50">
-            <Upload width={16} height={16} />
-            {importing ? 'Разбираем файл...' : 'Загрузить таблицу'}
+            <Upload width={16} height={16} aria-hidden="true" />
+            {importing ? 'Разбираем файл…' : 'Загрузить таблицу'}
           </button>
         </div>
         {importSummary ? (
@@ -820,18 +823,18 @@ export function AdminStudents() {
               <button type="button" onClick={() => setSelectedIds([])} className="text-[12px] font-black text-[#66717D] hover:text-[#111418]">Снять</button>
             </div>
             <div className="grid gap-2 lg:grid-cols-[minmax(150px,1fr)_auto_minmax(160px,1fr)_auto_minmax(140px,1fr)_auto_auto] lg:items-center">
-              <select value={bulkStage} onChange={(event) => setBulkStage(event.target.value as TrainingStage)} disabled={!canManageStudents || bulkPending} className="v-admin-input w-full">
+              <select name="bulk-stage" autoComplete="off" value={bulkStage} onChange={(event) => setBulkStage(event.target.value as TrainingStage)} disabled={!canManageStudents || bulkPending} className="v-admin-input w-full">
                 {Object.entries(STAGE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <button type="button" disabled={!canManageStudents || bulkPending} onClick={() => void updateSelectedStudents({ trainingStage: bulkStage }, 'Изменен этап')} className="v-admin-button-secondary disabled:opacity-50">Применить</button>
-              <select value={bulkInstructorId} onChange={(event) => setBulkInstructorId(event.target.value)} disabled={!canManageStudents || bulkPending} className="v-admin-input w-full">
+              <select name="bulk-instructor" autoComplete="off" value={bulkInstructorId} onChange={(event) => setBulkInstructorId(event.target.value)} disabled={!canManageStudents || bulkPending} className="v-admin-input w-full">
                 <option value="">Инструктор</option>
                 {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
               </select>
               <button type="button" disabled={!canManageStudents || bulkPending || !bulkInstructorId} onClick={() => void updateSelectedStudents({ assignedInstructorId: bulkInstructorId, assignedBranchId: selectedBulkInstructor?.branchId }, 'Назначен инструктор')} className="v-admin-button-secondary disabled:opacity-50">Назначить</button>
-              <input value={bulkGroupName} onChange={(event) => setBulkGroupName(event.target.value)} disabled={!canManageStudents || bulkPending} placeholder="Группа" className="v-admin-input w-full" />
+              <input name="bulk-group" autoComplete="off" value={bulkGroupName} onChange={(event) => setBulkGroupName(event.target.value)} disabled={!canManageStudents || bulkPending} placeholder="Группа…" className="v-admin-input w-full" />
               <button type="button" disabled={!canManageStudents || bulkPending || !bulkGroupName.trim()} onClick={() => void updateSelectedStudents({ groupName: bulkGroupName.trim() }, 'Назначена группа')} className="v-admin-button-secondary disabled:opacity-50">Группа</button>
-              <button type="button" disabled={!canManageStudents || bulkPending} onClick={() => void updateSelectedStudents({ trainingStage: 'archived' }, 'Перенесены в архив')} className="v-admin-button-secondary disabled:opacity-50"><Archive width={15} height={15} /> Архив</button>
+              <button type="button" disabled={!canManageStudents || bulkPending} onClick={() => void updateSelectedStudents({ trainingStage: 'archived' }, 'Перенесены в архив')} className="v-admin-button-secondary disabled:opacity-50"><Archive width={15} height={15} aria-hidden="true" /> Архив</button>
             </div>
           </div>
         ) : null}
@@ -853,12 +856,15 @@ export function AdminStudents() {
               return (
                 <button
                   key={student.id}
+                  type="button"
                   onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}
                   className="v-human-card w-full min-w-0 overflow-hidden p-3 text-left"
                 >
                   <div className="flex min-w-0 items-start gap-3">
                     <input
                       type="checkbox"
+                      name={`select-${student.id}`}
+                      aria-label={`Выбрать ученика ${student.name}`}
                       checked={selectedIds.includes(student.id)}
                       onChange={(event) => { event.stopPropagation(); toggleSelected(student.id) }}
                       onClick={(event) => event.stopPropagation()}
@@ -884,7 +890,7 @@ export function AdminStudents() {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-medium text-[#667085]">
                     {instructor ? <PersonMarker role="instructor" name={instructor.name} compact className="min-w-0" /> : <span className="v-admin-pill v-tone-warning">нет инструктора</span>}
-                    <ChevronRight className="shrink-0 text-[#98A2B3]" width={17} height={17} />
+                    <ChevronRight aria-hidden="true" className="shrink-0 text-[#98A2B3]" width={17} height={17} />
                   </div>
                 </button>
               )
@@ -898,7 +904,7 @@ export function AdminStudents() {
               const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
               const stage = student.trainingStage
               return (
-                <button key={student.id} className="grid w-full grid-cols-[40px_minmax(240px,1fr)_minmax(160px,.6fr)_minmax(220px,.9fr)_minmax(120px,.45fr)_28px] items-center gap-4 rounded-[20px] border border-[#E5EAF1] bg-white p-4 text-left shadow-[0_10px_24px_rgba(16,20,24,0.035)] transition hover:-translate-y-0.5 hover:border-[#B8D8FF]" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
+                <button key={student.id} type="button" className="grid w-full grid-cols-[40px_minmax(240px,1fr)_minmax(160px,.6fr)_minmax(220px,.9fr)_minmax(120px,.45fr)_28px] items-center gap-4 rounded-[20px] border border-[#E5EAF1] bg-white p-4 text-left shadow-[0_10px_24px_rgba(16,20,24,0.035)] transition hover:-translate-y-0.5 hover:border-[#B8D8FF]" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
                   <span className="v-person-avatar shrink-0">{initials}</span>
                   <PersonMarker role="student" name={student.name} meta={student.phone || 'телефон не указан'} className="min-w-0" />
                   <span><span className={`v-admin-pill ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span></span>
@@ -907,7 +913,7 @@ export function AdminStudents() {
                     {instructor ? <PersonMarker role="instructor" name={instructor.name} compact className="mt-1" /> : <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">инструктор не назначен</span>}
                   </span>
                   <span>{debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">ок</span>}</span>
-                  <ChevronRight className="justify-self-end text-[#98A2B3]" width={18} height={18} />
+                  <ChevronRight aria-hidden="true" className="justify-self-end text-[#98A2B3]" width={18} height={18} />
                 </button>
               )
             })}
@@ -979,7 +985,7 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
           <p className="text-[13px] font-black text-[#8A5A00]">Нужно проверить перед сохранением</p>
           <p className="mt-1 text-[13px] font-semibold leading-5 text-[#8A5A00]">
             {stats.duplicateRows > 0 ? `Повторы телефонов в файле: ${stats.duplicateRows}. Повторные строки не будут сохранены. ` : ''}
-            {stats.invalidRows.length > 0 ? `Строки без имени или телефона: ${stats.invalidRows.slice(0, 8).join(', ')}${stats.invalidRows.length > 8 ? '...' : ''}.` : ''}
+            {stats.invalidRows.length > 0 ? `Строки без имени или телефона: ${stats.invalidRows.slice(0, 8).join(', ')}${stats.invalidRows.length > 8 ? '…' : ''}.` : ''}
           </p>
         </div>
       ) : null}
@@ -1016,7 +1022,7 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
       <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row">
         <button type="button" onClick={onCancel} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
         <button type="button" onClick={onConfirm} disabled={pending || stats.created + stats.updated === 0} className="v-admin-button flex-1 disabled:opacity-50">
-          {pending ? 'Сохраняем...' : `Сохранить ${stats.created + stats.updated} строк`}
+          {pending ? 'Сохраняем…' : `Сохранить ${stats.created + stats.updated} строк`}
         </button>
       </div>
     </div>
@@ -1079,33 +1085,33 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
     <div className="space-y-4 p-5">
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">ФИО</span>
-        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Иванова Анна" className="v-admin-input w-full" autoFocus />
+        <input name="student-name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Иванова Анна…" className="v-admin-input w-full" />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Телефон</span>
-        <input value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setPhone((value) => formatRussianPhoneInput(value))} placeholder="+7 999 123-45-67" className="v-admin-input w-full" />
+        <input name="student-phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setPhone((value) => formatRussianPhoneInput(value))} placeholder="+7 999 123-45-67…" className="v-admin-input w-full" />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Email</span>
-        <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="student@mail.ru" className="v-admin-input w-full" />
+        <input name="student-email" type="email" inputMode="email" autoComplete="email" spellCheck={false} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="student@mail.ru…" className="v-admin-input w-full" />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Пароль для входа ученика</span>
-        <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Можно оставить пустым и выдать позже" className="v-admin-input w-full" />
+        <input name="student-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Можно оставить пустым…" className="v-admin-input w-full" />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Категория</span>
-        <select value={category} onChange={(event) => setCategory(event.target.value)} className="v-admin-input w-full">
+        <select name="student-category" autoComplete="off" value={category} onChange={(event) => setCategory(event.target.value)} className="v-admin-input w-full">
           <option value="B">B</option>
           <option value="A">A</option>
           <option value="C">C</option>
           <option value="D">D</option>
         </select>
       </label>
-      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
+      {error ? <p aria-live="polite" className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
       <div className="v-modal-actions">
-        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
-        <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
+        <button type="button" onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button type="button" onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем…' : 'Сохранить'}</button>
       </div>
     </div>
   )

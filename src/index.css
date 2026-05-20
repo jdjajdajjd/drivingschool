@@ -3989,3 +3989,302 @@
     }
   }
 }
+
+
+@layer components {
+  /* Web Interface Guidelines pass: clearer focus, touch, motion, hierarchy. */
+  :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(10,132,255,0.22), 0 0 0 1px rgba(10,132,255,0.46) !important;
+  }
+
+  :where(button, a, input, select, textarea) {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(10,132,255,0.12);
+  }
+
+  :where(h1, h2, h3, .v-admin-heading, .v-modal-title) {
+    text-wrap: balance;
+    scroll-margin-top: 84px;
+  }
+
+  :where(p, span, label, button, a) {
+    text-wrap: pretty;
+  }
+
+  .v-skip-link {
+    position: fixed;
+    left: 16px;
+    top: 12px;
+    z-index: 200;
+    transform: translateY(-140%);
+    border-radius: 999px;
+    background: #0A84FF;
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: transform 160ms ease;
+  }
+
+  .v-skip-link:focus-visible {
+    transform: translateY(0);
+  }
+
+  .vroom-admin-shell {
+    --role-student-bg: #EAF4FF;
+    --role-student-line: rgba(10,132,255,0.20);
+    --role-student-ink: #075EBC;
+    --role-instructor-bg: #ECF8F0;
+    --role-instructor-line: rgba(34,163,90,0.22);
+    --role-instructor-ink: #188447;
+  }
+
+  .vroom-admin-shell main {
+    overscroll-behavior: contain;
+  }
+
+  .vroom-admin-shell .admin-route-stage {
+    min-height: 100%;
+  }
+
+  .vroom-admin-shell .v-admin-toolbar {
+    position: relative;
+    isolation: isolate;
+    gap: 14px !important;
+  }
+
+  .vroom-admin-shell .v-admin-toolbar::after {
+    content: '';
+    position: absolute;
+    inset: auto 18px 0 18px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(10,132,255,0.16), transparent);
+    pointer-events: none;
+  }
+
+  .vroom-admin-shell .v-toolbar-actions,
+  .vroom-admin-shell .v-schedule-toolbar-actions {
+    align-items: center;
+  }
+
+  .vroom-admin-shell .v-admin-button,
+  .vroom-admin-shell .v-admin-button-secondary,
+  .vroom-admin-shell .v-admin-button-tertiary,
+  .vroom-admin-shell .v-tab,
+  .vroom-admin-shell .admin-sidebar-link,
+  .vroom-admin-shell .admin-mobile-nav-item,
+  .vroom-admin-shell .vroom-slot-card,
+  .vroom-admin-shell .v-mobile-slot-row,
+  .vroom-admin-shell .v-human-card,
+  .vroom-admin-shell .vroom-day-card {
+    transition-property: background-color, border-color, color, box-shadow, transform, opacity, filter;
+    transition-duration: 160ms;
+    transition-timing-function: ease;
+  }
+
+  .vroom-admin-shell .v-admin-button,
+  .vroom-admin-shell .v-admin-button-secondary,
+  .vroom-admin-shell .v-admin-button-tertiary {
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .vroom-admin-shell .v-admin-button:active,
+  .vroom-admin-shell .v-admin-button-secondary:active,
+  .vroom-admin-shell .v-admin-button-tertiary:active,
+  .vroom-admin-shell .v-tab:active,
+  .vroom-admin-shell .vroom-slot-card:active,
+  .vroom-admin-shell .v-mobile-slot-row:active {
+    transform: translateY(1px) scale(0.995);
+  }
+
+  .vroom-admin-shell .v-admin-button-secondary:hover {
+    border-color: rgba(10,132,255,0.22) !important;
+    background: #F8FBFF !important;
+    color: #075EBC !important;
+  }
+
+  .vroom-admin-shell .v-admin-button-tertiary:hover {
+    background: rgba(10,132,255,0.07) !important;
+    color: #075EBC !important;
+  }
+
+  .vroom-admin-shell .v-admin-note,
+  .vroom-admin-shell .v-person-marker-meta {
+    color: #667085 !important;
+  }
+
+  .vroom-admin-shell .v-tab-row-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(10,132,255,0.24) transparent;
+  }
+
+  .vroom-admin-shell .v-tab-row-wrap::-webkit-scrollbar,
+  .vroom-admin-shell .vroom-schedule-filter div::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .vroom-admin-shell .v-tab-row-wrap::-webkit-scrollbar-thumb,
+  .vroom-admin-shell .vroom-schedule-filter div::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(10,132,255,0.24);
+  }
+
+  .vroom-admin-shell .v-tab-active {
+    box-shadow: 0 8px 20px rgba(17,24,39,0.12) !important;
+  }
+
+  .vroom-admin-shell .vroom-calendar-grid {
+    overflow: clip !important;
+  }
+
+  .vroom-admin-shell .vroom-calendar-cell {
+    content-visibility: auto;
+    contain-intrinsic-size: 104px 160px;
+  }
+
+  .vroom-admin-shell .vroom-slot-card {
+    overflow: hidden;
+  }
+
+  .vroom-admin-shell .vroom-slot-card .v-person-marker,
+  .vroom-admin-shell .v-mobile-slot-row .v-person-marker {
+    width: 100%;
+  }
+
+  .vroom-admin-shell .vroom-slot-free-summary {
+    background: linear-gradient(180deg, rgba(236,248,240,0.98), rgba(225,245,232,0.92)) !important;
+  }
+
+  .vroom-admin-shell .v-mobile-slot-row {
+    min-height: 84px;
+  }
+
+  .vroom-admin-shell .v-human-card,
+  .vroom-admin-shell .v-mobile-slot-row,
+  .vroom-admin-shell .vroom-slot-card {
+    will-change: transform;
+  }
+
+  .vroom-admin-shell .v-person-marker-student .v-person-marker-icon,
+  .vroom-admin-shell .v-person-marker-student.v-person-marker {
+    color: var(--role-student-ink);
+  }
+
+  .vroom-admin-shell .v-person-marker-student .v-person-marker-icon {
+    border-color: var(--role-student-line);
+    background: linear-gradient(180deg, #F5FAFF, var(--role-student-bg));
+  }
+
+  .vroom-admin-shell .v-person-marker-instructor .v-person-marker-icon,
+  .vroom-admin-shell .v-person-marker-instructor.v-person-marker {
+    color: var(--role-instructor-ink);
+  }
+
+  .vroom-admin-shell .v-person-marker-instructor .v-person-marker-icon {
+    border-color: var(--role-instructor-line);
+    background: linear-gradient(180deg, #F7FFF9, var(--role-instructor-bg));
+  }
+
+  .vroom-admin-shell .v-person-avatar {
+    color: var(--role-student-ink) !important;
+    background: linear-gradient(180deg, #F7FBFF, var(--role-student-bg)) !important;
+  }
+
+  .vroom-admin-shell input::placeholder,
+  .vroom-admin-shell textarea::placeholder {
+    color: #98A2B3;
+  }
+
+  .vroom-admin-shell input[type='date'],
+  .vroom-admin-shell input[type='time'],
+  .vroom-admin-shell input[type='number'],
+  .vroom-admin-shell select {
+    min-height: 44px;
+  }
+
+  .vroom-admin-shell input[type='checkbox'] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  .v-modal-shell {
+    overscroll-behavior: contain;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .v-modal-card {
+    transform-origin: center top;
+  }
+
+  .v-modal-close:hover {
+    background: #EEF4FA !important;
+    color: #111827 !important;
+  }
+
+  .v-modal-body {
+    overscroll-behavior: contain;
+  }
+
+  .student-lite :where(a, button):focus-visible {
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(53,72,90,0.18), 0 0 0 1px rgba(53,72,90,0.32) !important;
+  }
+
+  .student-lite :where(a, button) {
+    transition-property: background-color, border-color, color, box-shadow, transform, opacity;
+    transition-duration: 160ms;
+    transition-timing-function: ease;
+  }
+
+  @media (max-width: 767px) {
+    .vroom-admin-shell .v-admin-toolbar {
+      align-items: stretch;
+      padding: 14px !important;
+    }
+
+    .vroom-admin-shell .v-toolbar-actions,
+    .vroom-admin-shell .v-schedule-toolbar-actions {
+      display: grid !important;
+      width: 100%;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px !important;
+    }
+
+    .vroom-admin-shell .v-toolbar-primary-action,
+    .vroom-admin-shell .v-schedule-toolbar-actions .v-admin-button.is-blue {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    .vroom-admin-shell .v-schedule-view-toggle {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    .vroom-admin-shell .v-schedule-view-toggle button {
+      flex: 1;
+    }
+
+    .vroom-admin-shell .v-mobile-slot-row {
+      grid-template-columns: 58px minmax(0, 1fr) auto !important;
+      padding: 12px !important;
+    }
+
+    .vroom-admin-shell .v-person-marker-name {
+      max-width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

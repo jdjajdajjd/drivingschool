@@ -17,6 +17,7 @@ export function SegmentedTabs<T extends string>({
   return (
     <div
       className="grid gap-1 p-1"
+      role="tablist"
       style={{
         background: '#F4F5F6',
         borderRadius: '999px',
@@ -30,8 +31,10 @@ export function SegmentedTabs<T extends string>({
             key={tab.value}
             type="button"
             onClick={() => onChange(tab.value)}
+            role="tab"
+            aria-selected={active}
             className={cn(
-              'min-h-9 rounded-full px-4 text-[13px] font-bold transition-all duration-150 active:scale-[0.97]',
+              'min-h-9 rounded-full px-4 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.97]',
               active
                 ? 'bg-white text-[#111418] shadow-[0_8px_20px_rgba(0,0,0,0.08)]'
                 : 'text-[#6F747A] hover:text-[#111418]',

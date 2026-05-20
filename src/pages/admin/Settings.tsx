@@ -121,13 +121,13 @@ export function AdminSettings() {
           <p className="text-[12px] font-medium text-[#667085]">Что нужно, чтобы ученики записывались сами</p>
           <h1 className="truncate text-[24px] font-semibold text-[#111827]">Настройки записи</h1>
         </div>
-        <button onClick={() => void handleSave()} disabled={!canManageSettings || saving} className="v-admin-button is-blue min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
-          {saving ? 'Сохраняем...' : saved ? 'Сохранено' : 'Сохранить'}
+        <button type="button" onClick={() => void handleSave()} disabled={!canManageSettings || saving} className="v-admin-button is-blue min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
+          {saving ? 'Сохраняем…' : saved ? 'Сохранено' : 'Сохранить'}
         </button>
       </div>
 
       <div className="mx-auto max-w-5xl space-y-4 p-3 md:p-6 lg:p-8">
-        {saveError ? <div className="rounded-[18px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-semibold text-[#B42318]">{saveError}</div> : null}
+        {saveError ? <div aria-live="polite" className="rounded-[18px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-semibold text-[#B42318]">{saveError}</div> : null}
 
         <section className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -137,7 +137,7 @@ export function AdminSettings() {
               <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-[#667085]">После этих шагов школа может отправить ссылку ученикам, а записи будут появляться в расписании.</p>
             </div>
             <Link to={`${basePath}/schedule?create=slot`} className="v-admin-button-secondary justify-center">
-              <CalendarPlus width={16} height={16} />
+              <CalendarPlus width={16} height={16} aria-hidden="true" />
               Создать окна
             </Link>
           </div>
@@ -152,33 +152,33 @@ export function AdminSettings() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Телефон школы</span>
-                <input value={schoolPhone} onChange={(event) => setSchoolPhone(event.target.value)} disabled={!canManageSettings} className="v-admin-input w-full" />
+                <input name="school-phone" type="tel" inputMode="tel" autoComplete="tel" value={schoolPhone} onChange={(event) => setSchoolPhone(event.target.value)} disabled={!canManageSettings} className="v-admin-input w-full" />
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Длительность занятия</span>
-                <select value={settings.defaultLessonDuration} onChange={(event) => update('defaultLessonDuration', Number(event.target.value))} className="v-admin-input w-full">
+                <select name="default-lesson-duration" autoComplete="off" value={settings.defaultLessonDuration} onChange={(event) => update('defaultLessonDuration', Number(event.target.value))} className="v-admin-input w-full">
                   {LESSON_DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
                 </select>
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Запись вперед</span>
-                <select value={settings.maxDaysAheadForBooking} onChange={(event) => update('maxDaysAheadForBooking', Number(event.target.value))} className="v-admin-input w-full">
+                <select name="max-days-ahead" autoComplete="off" value={settings.maxDaysAheadForBooking} onChange={(event) => update('maxDaysAheadForBooking', Number(event.target.value))} className="v-admin-input w-full">
                   {BOOKING_DAYS_OPTIONS.map((value) => <option key={value} value={value}>{value} дней</option>)}
                 </select>
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Отмена не позднее</span>
-                <select value={settings.minHoursBeforeCancel} onChange={(event) => update('minHoursBeforeCancel', Number(event.target.value))} className="v-admin-input w-full">
+                <select name="min-hours-before-cancel" autoComplete="off" value={settings.minHoursBeforeCancel} onChange={(event) => update('minHoursBeforeCancel', Number(event.target.value))} className="v-admin-input w-full">
                   {CANCEL_HOURS_OPTIONS.map((value) => <option key={value} value={value}>{value} ч</option>)}
                 </select>
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Начало рабочего дня</span>
-                <input type="number" min={0} max={23} value={settings.workStartHour} onChange={(event) => update('workStartHour', Number(event.target.value))} className="v-admin-input w-full" />
+                <input type="number" name="work-start-hour" inputMode="numeric" autoComplete="off" min={0} max={23} value={settings.workStartHour} onChange={(event) => update('workStartHour', Number(event.target.value))} className="v-admin-input w-full" />
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Конец рабочего дня</span>
-                <input type="number" min={0} max={23} value={settings.workEndHour} onChange={(event) => update('workEndHour', Number(event.target.value))} className="v-admin-input w-full" />
+                <input type="number" name="work-end-hour" inputMode="numeric" autoComplete="off" min={0} max={23} value={settings.workEndHour} onChange={(event) => update('workEndHour', Number(event.target.value))} className="v-admin-input w-full" />
               </label>
             </div>
             <div className="mt-4">
@@ -199,8 +199,8 @@ export function AdminSettings() {
             <p className="mt-1 text-[13px] font-medium leading-5 text-[#667085]">Отправьте ее в чат ученику. Он выберет дату и время с телефона.</p>
             <div className="mt-4 rounded-[16px] border border-[#D7E2EC] bg-[#F8FAFC] px-3 py-2 text-[13px] font-semibold text-[#111827] break-all">{publicUrl}</div>
             <div className="mt-3 grid gap-2">
-              <button type="button" onClick={() => void copyPublicUrl()} className="v-admin-button-secondary justify-center"><LinkIcon width={16} height={16} />{copied ? 'Скопировано' : 'Скопировать ссылку'}</button>
-              <Link to={`/school/${school.slug}`} target="_blank" className="v-admin-button-tertiary justify-center"><OpenNewWindow width={16} height={16} />Открыть страницу</Link>
+              <button type="button" onClick={() => void copyPublicUrl()} className="v-admin-button-secondary justify-center"><LinkIcon width={16} height={16} aria-hidden="true" />{copied ? 'Скопировано' : 'Скопировать ссылку'}</button>
+              <Link to={`/school/${school.slug}`} target="_blank" className="v-admin-button-tertiary justify-center"><OpenNewWindow width={16} height={16} aria-hidden="true" />Открыть страницу</Link>
             </div>
           </aside>
         </section>
@@ -208,9 +208,9 @@ export function AdminSettings() {
         <section className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
           <h2 className="text-[18px] font-semibold text-[#111827]">База для записи</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <Link to={`${basePath}/instructors`} className="v-admin-button-secondary min-h-14 justify-start"><UserBadgeCheck width={18} height={18} />Инструкторы</Link>
-            <Link to={`${basePath}/branches`} className="v-admin-button-secondary min-h-14 justify-start"><Building width={18} height={18} />Филиалы</Link>
-            <Link to={`${basePath}/schedule`} className="v-admin-button-secondary min-h-14 justify-start"><Clock width={18} height={18} />Расписание</Link>
+            <Link to={`${basePath}/instructors`} className="v-admin-button-secondary min-h-14 justify-start"><UserBadgeCheck width={18} height={18} aria-hidden="true" />Инструкторы</Link>
+            <Link to={`${basePath}/branches`} className="v-admin-button-secondary min-h-14 justify-start"><Building width={18} height={18} aria-hidden="true" />Филиалы</Link>
+            <Link to={`${basePath}/schedule`} className="v-admin-button-secondary min-h-14 justify-start"><Clock width={18} height={18} aria-hidden="true" />Расписание</Link>
           </div>
         </section>
       </div>

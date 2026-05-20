@@ -45,21 +45,23 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-5">
         <button
+          type="button"
           onClick={prevMonth}
           className="btn btn-sm btn-secondary"
           aria-label="Предыдущий месяц"
         >
-          <ChevronLeft width={16} height={16} strokeWidth={2.5} />
+          <ChevronLeft width={16} height={16} strokeWidth={2.5} aria-hidden="true" />
         </button>
         <h3 className="t-subheading" style={{ textTransform: 'capitalize' }}>
           {format(viewMonth, 'LLLL yyyy', { locale: ru })}
         </h3>
         <button
+          type="button"
           onClick={nextMonth}
           className="btn btn-sm btn-secondary"
           aria-label="Следующий месяц"
         >
-          <ChevronRight width={16} height={16} strokeWidth={2.5} />
+          <ChevronRight width={16} height={16} strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
 
@@ -94,7 +96,7 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
                 hasSlots && !isSelected ? 'has-slots' : '',
               ].filter(Boolean).join(' ')}
               style={{ position: 'relative' }}
-              aria-label={format(day, 'd MMMM', { locale: ru })}
+              aria-label={`${format(day, 'd MMMM', { locale: ru })}${hasSlots ? `, доступно окон: ${info.slotCount}` : ', нет свободных окон'}`}
               aria-selected={isSelected}
             >
               <span>{format(day, 'd')}</span>
@@ -108,7 +110,7 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
                     width: '4px',
                     height: '4px',
                     borderRadius: '50%',
-                    background: '#C4935A',
+                    background: '#0A84FF',
                   }}
                 />
               )}
@@ -120,11 +122,11 @@ export function CalendarPicker({ days, selectedDate, onSelect }: CalendarPickerP
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-1.5">
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C4935A', display: 'inline-block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0A84FF', display: 'inline-block' }} />
           <span className="t-micro">Есть окна</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6F747A', opacity: 0.4, display: 'inline-block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#98A2B3', opacity: 0.7, display: 'inline-block' }} />
           <span className="t-micro">Нет окон</span>
         </div>
       </div>

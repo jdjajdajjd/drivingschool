@@ -13,6 +13,7 @@ interface AvatarProps {
 }
 
 export function Avatar({ initials, color = '#EFF2FF', src, alt = initials, size = 'md', className }: AvatarProps) {
+  const sizePx = { sm: 32, md: 40, lg: 48, xl: 64 }[size]
   return (
     <div
       className={cn(
@@ -27,7 +28,7 @@ export function Avatar({ initials, color = '#EFF2FF', src, alt = initials, size 
       )}
       style={src ? {} : { backgroundColor: color }}
     >
-      {src ? <img src={src} alt={alt} className="h-full w-full object-cover" /> : (
+      {src ? <img src={src} alt={alt} width={sizePx} height={sizePx} className="h-full w-full object-cover" /> : (
         <span className={src ? '' : 'text-[#2436D9] font-bold'}>
           {initials}
         </span>

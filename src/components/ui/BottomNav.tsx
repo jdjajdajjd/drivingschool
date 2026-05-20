@@ -18,9 +18,11 @@ export function BottomNav({ items }: { items: BottomNavItem[] }) {
       {items.map((item) => (
         <button
           key={item.key}
+          type="button"
           onClick={item.onClick}
+          aria-current={item.active ? 'page' : undefined}
           className={cn(
-            'bottom-nav-item grid min-h-[54px] place-items-center gap-0.5 rounded-[22px] text-[11px] leading-none text-[#8B98A7] transition active:scale-[0.96]',
+            'bottom-nav-item grid min-h-[54px] place-items-center gap-0.5 rounded-[22px] text-[11px] leading-none text-[#8B98A7] transition-[background-color,color,box-shadow,transform] active:scale-[0.96]',
             item.active ? 'active bg-white text-[#111827] shadow-[0_10px_24px_rgba(32,45,62,0.10)] ring-1 ring-[#DCE7F2]' : 'hover:bg-white/55 hover:text-[#394756]',
           )}
         >

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { addDays, eachDayOfInterval, format, isSameDay, startOfWeek } from 'date-fns'
+import { addDays, eachDayOfInterval, format, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from 'iconoir-react'
 import { useLocation } from 'react-router-dom'
@@ -74,7 +74,7 @@ export function AdminSchedule() {
   const school = db.schools.currentAdmin()
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === 'undefined') return 'week'
-    return (getPreference('dd:admin_schedule_view') as ViewMode | null) ?? (window.innerWidth < 760 ? 'day' : 'week')
+    return (getPreference('dd:admin_schedule_view') as ViewMode | null) ?? 'week'
   })
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [slotFilter, setSlotFilter] = useState<ScheduleFilter>('all')
@@ -147,11 +147,13 @@ export function AdminSchedule() {
       cancelled: slots.filter((slot) => slot.status === 'cancelled').length,
     }
   })
-  const mobileDays = (viewMode === 'day' ? [selectedDate] : viewRange).map((date) => {
+  const mobileSourceDays = viewMode === 'day'
+    ? [selectedDate]
+    : viewRange.filter((date) => !isBefore(startOfDay(date), startOfDay(new Date())))
+  const mobileDays = (mobileSourceDays.length ? mobileSourceDays : viewRange).map((date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
     const slots = filteredSlots
       .filter((slot) => slot.date === dateKey)
-      .sort((left, right) => left.time.localeCompare(right.time))
       .map((slot) => ({
         slot,
         booking: slot.bookingId ? data.bookings.find((booking) => booking.id === slot.bookingId) ?? null : null,
@@ -355,25 +357,25 @@ export function AdminSchedule() {
           <p className="v-admin-note mt-1">Календарь занятий, свободных окон и переносов</p>
         </div>
         <div className="v-schedule-toolbar-actions ml-auto flex flex-wrap items-center gap-2">
-          <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
-            <ChevronLeft width={16} height={16} />
+          <button type="button" onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
+            <ChevronLeft width={16} height={16} aria-hidden="true" />
           </button>
-          <button onClick={() => setSelectedDate(new Date())} className="v-admin-button-secondary">Сегодня</button>
-          <button onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? 1 : 7))} className="v-admin-button-secondary px-3" aria-label="Вперёд">
-            <ChevronRight width={16} height={16} />
+          <button type="button" onClick={() => setSelectedDate(new Date())} className="v-admin-button-secondary">Сегодня</button>
+          <button type="button" onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? 1 : 7))} className="v-admin-button-secondary px-3" aria-label="Вперёд">
+            <ChevronRight width={16} height={16} aria-hidden="true" />
           </button>
           <div className="v-schedule-view-toggle flex rounded-full border border-[#111827]/[0.07] bg-white/70 p-1">
             {(['day', 'week'] as ViewMode[]).map((mode) => (
-              <button key={mode} onClick={() => setViewModePersisted(mode)} className={`rounded-full px-3 py-2 text-[13px] font-medium ${viewMode === mode ? 'bg-[#111827] text-white' : 'text-[#687381]'}`}>
+              <button key={mode} type="button" onClick={() => setViewModePersisted(mode)} className={`rounded-full px-3 py-2 text-[13px] font-medium ${viewMode === mode ? 'bg-[#111827] text-white' : 'text-[#687381]'}`}>
                 {mode === 'day' ? 'День' : 'Неделя'}
               </button>
             ))}
           </div>
-          <button onClick={() => setShowCreateModal(true)} className="v-admin-button is-blue">
-            <Plus width={16} height={16} />
+          <button type="button" onClick={() => setShowCreateModal(true)} className="v-admin-button is-blue">
+            <Plus width={16} height={16} aria-hidden="true" />
             Создать окна
           </button>
-          <button onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
+          <button type="button" onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
             Повторить неделю
           </button>
         </div>
@@ -384,6 +386,7 @@ export function AdminSchedule() {
           {(Object.keys(FILTER_LABELS) as ScheduleFilter[]).map((filter) => (
             <button
               key={filter}
+              type="button"
               onClick={() => setSlotFilter(filter)}
               className={`whitespace-nowrap rounded-full px-3 py-2 text-[12px] font-medium ${slotFilter === filter ? 'bg-[#0F172A] text-white' : 'text-[#667085]'}`}
             >
@@ -401,8 +404,8 @@ export function AdminSchedule() {
       {(staleFreeSlots.length || staleActiveBookings.length) ? (
         <div className="mx-3 mt-2 flex flex-wrap items-center gap-2 rounded-[18px] border border-[#E5EAF1] bg-white px-3 py-2 text-[12px] font-medium text-[#667085] md:mx-5">
           <span className="font-semibold text-[#111827]">Проверка прошедшего времени</span>
-          {staleActiveBookings.length ? <button onClick={() => void completeStaleActiveBookings()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Отметить занятия: {staleActiveBookings.length}</button> : null}
-          {staleFreeSlots.length ? <button onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Скрыть окна: {staleFreeSlots.length}</button> : null}
+          {staleActiveBookings.length ? <button type="button" onClick={() => void completeStaleActiveBookings()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Отметить занятия: {staleActiveBookings.length}</button> : null}
+          {staleFreeSlots.length ? <button type="button" onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Скрыть окна: {staleFreeSlots.length}</button> : null}
         </div>
       ) : null}
 
@@ -411,6 +414,7 @@ export function AdminSchedule() {
         {dailySummary.map((day) => (
           <button
             key={day.date.toISOString()}
+            type="button"
             onClick={() => { setSelectedDate(day.date); setViewMode('day') }}
             className={`vroom-day-card rounded-[14px] border p-2 text-left transition hover:-translate-y-0.5 ${isSameDay(day.date, new Date()) ? 'is-today border-[rgba(10,132,255,0.28)] bg-[#EAF4FF]' : 'border-[rgba(15,23,42,0.07)] bg-white'}`}
           >
@@ -467,7 +471,7 @@ export function AdminSchedule() {
                         : 'border-[rgba(10,132,255,0.20)] bg-[#EAF4FF]'
                     const statusClassName = isFree ? 'text-[#188447]' : isCancelled ? 'text-[#667085]' : 'text-[#075EBC]'
                     return (
-                      <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className={
+                      <button key={slot.id} type="button" onClick={() => setSelectedSlotId(slot.id)} className={
                         'v-mobile-slot-row grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] border p-3 text-left transition hover:-translate-y-0.5 ' + rowClass
                       }>
                         <strong className="text-[17px] font-semibold tabular-nums text-[#111827]">{slot.time}</strong>
@@ -518,11 +522,12 @@ export function AdminSchedule() {
                                 return (
                                   <button
                                     key={slot.id}
+                                    type="button"
                                     onClick={() => setSelectedSlotId(slot.id)}
                                     title={format(getSlotDateTime(slot), 'HH:mm') + ' · ' + (booking?.studentName ?? 'Занятие') + ' · ' + (instructor?.name ?? 'Инструктор')}
                                     className={'vroom-slot-card relative min-h-[78px] rounded-[14px] border px-2.5 py-2 text-left text-[12px] font-medium leading-4 transition hover:-translate-y-0.5 hover:brightness-[0.99] ' + statusClass(slot.status)}
                                   >
-                                    <span className={'absolute right-2.5 top-2.5 h-2 w-2 rounded-full ' + statusDotClass(slot.status)} />
+                                    <span className={'absolute right-2.5 top-2.5 h-2 w-2 rounded-full ' + statusDotClass(slot.status)} aria-hidden="true" />
                                     {booking ? <PersonMarker role="student" name={booking.studentName} compact className="pr-4" /> : <span className="line-clamp-2 break-words pr-4 leading-4">Занятие</span>}
                                     <span className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-medium opacity-75">
                                       <span>{format(getSlotDateTime(slot), 'HH:mm')}</span>
@@ -535,11 +540,12 @@ export function AdminSchedule() {
                               {freeSlots.length ? (
                                 <button
                                   key={date.toISOString() + '-' + hour + '-free'}
+                                  type="button"
                                   onClick={() => setSelectedSlotId(freeSlots[0].id)}
                                   title={freeSlots.length + ' свободных окон'}
                                   className="vroom-slot-card vroom-slot-free-summary relative min-h-[62px] rounded-[14px] border border-[rgba(52,199,89,0.20)] bg-[rgba(52,199,89,0.10)] px-2.5 py-2 text-left text-[12px] font-medium leading-4 text-[#1F8F3F] transition hover:-translate-y-0.5"
                                 >
-                                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#34C759]" />
+                                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#34C759]" aria-hidden="true" />
                                   <span className="block pr-4 font-semibold">{freeSlots.length} {plural(freeSlots.length, 'свободное окно', 'свободных окна', 'свободных окон')}</span>
                                   <span className="mt-1 block text-[11px] opacity-75">{freeInstructors} {plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · {formatDuration(freeSlots[0].duration)}</span>
                                 </button>
@@ -595,18 +601,18 @@ export function AdminSchedule() {
               <div className="flex justify-between gap-4"><span className="text-[#687381]">Длительность</span><span className="text-[#111315]">{formatDuration(selectedSlot.duration)}</span></div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <button onClick={duplicateSelectedSlotTomorrow} disabled={actionPending} className="v-admin-button-secondary sm:col-span-2 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Повторить завтра'}</button>
+              <button type="button" onClick={duplicateSelectedSlotTomorrow} disabled={actionPending} className="v-admin-button-secondary sm:col-span-2 disabled:opacity-50">{actionPending ? 'Сохраняем…' : 'Повторить завтра'}</button>
               {selectedSlot.status === 'booked' && selectedBooking ? (
                 <>
-                  <button onClick={() => setShowRescheduleModal(true)} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">Перенести</button>
-                  <button onClick={handleComplete} disabled={actionPending} className="v-admin-button bg-[#247A4B] hover:bg-[#1C623C] disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Засчитать'}</button>
-                  <button onClick={() => void handleNoShow()} disabled={actionPending} className="v-admin-button bg-[#315A7C] hover:bg-[#244760] disabled:opacity-50">Неявка</button>
-                  <button onClick={() => setShowCancelModal(true)} disabled={actionPending} className="v-admin-button bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">Отменить</button>
+                  <button type="button" onClick={() => setShowRescheduleModal(true)} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50">Перенести</button>
+                  <button type="button" onClick={handleComplete} disabled={actionPending} className="v-admin-button bg-[#247A4B] hover:bg-[#1C623C] disabled:opacity-50">{actionPending ? 'Сохраняем…' : 'Засчитать'}</button>
+                  <button type="button" onClick={() => void handleNoShow()} disabled={actionPending} className="v-admin-button bg-[#315A7C] hover:bg-[#244760] disabled:opacity-50">Неявка</button>
+                  <button type="button" onClick={() => setShowCancelModal(true)} disabled={actionPending} className="v-admin-button bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">Отменить</button>
                 </>
               ) : selectedSlot.status === 'available' ? (
                 <>
-                  <button onClick={() => setShowBookModal(true)} className="v-admin-button">Записать ученика</button>
-                  <button onClick={() => void hideSelectedFreeSlot()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50"><Trash width={15} height={15} /> Скрыть окно</button>
+                  <button type="button" onClick={() => setShowBookModal(true)} className="v-admin-button">Записать ученика</button>
+                  <button type="button" onClick={() => void hideSelectedFreeSlot()} disabled={actionPending} className="v-admin-button-secondary disabled:opacity-50"><Trash width={15} height={15} aria-hidden="true" /> Скрыть окно</button>
                 </>
               ) : (
                 <a href={`${getAdminBasePathForLocation()}/students`} className="v-admin-button sm:col-span-2">Открыть учеников</a>
@@ -630,21 +636,21 @@ export function AdminSchedule() {
       <Modal open={showCancelModal} onClose={() => setShowCancelModal(false)} title="Отмена занятия" size="sm">
         <div className="space-y-4 p-5">
           <p className="text-[14px] font-medium text-[#687381]">Занятие ученика <strong className="font-semibold text-[#111315]">{selectedBooking?.studentName}</strong> будет отменено.</p>
-          <textarea value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Причина отмены" className="v-admin-input min-h-[94px] w-full resize-none py-3" />
-          <div className="v-modal-actions"><button onClick={() => setShowCancelModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleCancel} disabled={actionPending} className="v-admin-button flex-1 bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Подтвердить'}</button></div>
+          <label className="block"><span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Причина отмены</span><textarea name="cancel-reason" autoComplete="off" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Например: ученик попросил перенести…" className="v-admin-input min-h-[94px] w-full resize-none py-3" /></label>
+          <div className="v-modal-actions"><button type="button" onClick={() => setShowCancelModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button type="button" onClick={handleCancel} disabled={actionPending} className="v-admin-button flex-1 bg-[#D1433C] hover:bg-[#A9342F] disabled:opacity-50">{actionPending ? 'Сохраняем…' : 'Подтвердить'}</button></div>
         </div>
       </Modal>
 
       <Modal open={showRescheduleModal} onClose={() => setShowRescheduleModal(false)} title="Перенос занятия" size="sm">
         <div className="space-y-4 p-5">
           <p className="text-[14px] font-medium text-[#687381]">Перенести занятие ученика <strong className="font-semibold text-[#111315]">{selectedBooking?.studentName}</strong>.</p>
-          <input type="date" value={rescheduleDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={(event) => setRescheduleDate(event.target.value)} className="v-admin-input w-full" />
-          <select value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} className="v-admin-input w-full">
+          <label className="block"><span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Новая дата</span><input type="date" name="reschedule-date" autoComplete="off" value={rescheduleDate} min={format(new Date(), 'yyyy-MM-dd')} onChange={(event) => setRescheduleDate(event.target.value)} className="v-admin-input w-full" /></label>
+          <label className="block"><span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Свободное окно</span><select name="reschedule-slot" value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} className="v-admin-input w-full">
             <option value="">Выберите свободное окно</option>
             {rescheduleOptions.map((slot) => <option key={slot.id} value={slot.id}>{slot.time} · {formatDuration(slot.duration)} · {data.branches.find((branch) => branch.id === slot.branchId)?.name ?? 'филиал'}</option>)}
-          </select>
+          </select></label>
           {rescheduleDate && rescheduleOptions.length === 0 ? <p className="rounded-[14px] bg-[#FFF8EC] px-3 py-2 text-[13px] font-medium text-[#8A5A00]">На эту дату у инструктора нет свободных окон. Создайте окно в расписании.</p> : null}
-          <div className="v-modal-actions"><button onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Перенести'}</button></div>
+          <div className="v-modal-actions"><button type="button" onClick={() => setShowRescheduleModal(false)} disabled={actionPending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Назад</button><button type="button" onClick={handleReschedule} disabled={actionPending} className="v-admin-button flex-1 disabled:opacity-50">{actionPending ? 'Сохраняем…' : 'Перенести'}</button></div>
         </div>
       </Modal>
     </div>
@@ -705,15 +711,15 @@ function BookStudentForm({ schoolId, slot, students, onBooked }: { schoolId: str
       </div>
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Ученик</span>
-        <select value={studentId} onChange={(event) => setStudentId(event.target.value)} className="v-admin-input w-full">
+        <select name="booking-student" autoComplete="off" value={studentId} onChange={(event) => setStudentId(event.target.value)} className="v-admin-input w-full">
           <option value="">Выберите ученика</option>
           {students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.phone}</option>)}
         </select>
       </label>
-      {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
+      {error ? <p aria-live="polite" className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
       <div className="v-modal-actions">
-        <button onClick={onBooked} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
-        <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Записываем...' : 'Записать'}</button>
+        <button type="button" onClick={onBooked} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button type="button" onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Записываем…' : 'Записать'}</button>
       </div>
     </div>
   )
@@ -758,7 +764,7 @@ function SlotTemplateForm({
           <strong className="block text-[16px] font-black text-[#111827]">Добавьте активный филиал и инструктора</strong>
           <span className="mt-1 block text-[13px] font-bold leading-5 text-[#667085]">Расписание не запустится, пока школе не задано место занятий и ответственный инструктор.</span>
         </div>
-        <div className="v-modal-actions"><button onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
+        <div className="v-modal-actions"><button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
       </div>
     )
   }
@@ -813,13 +819,13 @@ function SlotTemplateForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Инструктор</span>
-          <select value={instructorId} onChange={(event) => { const next = activeInstructors.find((item) => item.id === event.target.value); setInstructorId(event.target.value); if (next) setBranchId(next.branchId) }} className="v-admin-input w-full">
+          <select name="instructor" autoComplete="off" value={instructorId} onChange={(event) => { const next = activeInstructors.find((item) => item.id === event.target.value); setInstructorId(event.target.value); if (next) setBranchId(next.branchId) }} className="v-admin-input w-full">
             {activeInstructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Филиал</span>
-          <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+          <select name="branch" autoComplete="off" value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
             {activeBranches.filter((branch) => !selectedInstructor || branch.id === selectedInstructor.branchId).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
           </select>
         </label>
@@ -827,31 +833,31 @@ function SlotTemplateForm({
       <div className="grid gap-3 sm:grid-cols-4">
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">С даты</span>
-          <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="v-admin-input w-full" />
+          <input type="date" name="template-start-date" autoComplete="off" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="v-admin-input w-full" />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Недель</span>
-          <input type="number" min="1" max="12" value={weeks} onChange={(event) => setWeeks(event.target.value)} className="v-admin-input w-full" />
+          <input type="number" name="template-weeks" inputMode="numeric" autoComplete="off" min="1" max="12" value={weeks} onChange={(event) => setWeeks(event.target.value)} className="v-admin-input w-full" />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Начало</span>
-          <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="v-admin-input w-full" />
+          <input type="time" name="start-time" autoComplete="off" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="v-admin-input w-full" />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Конец</span>
-          <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="v-admin-input w-full" />
+          <input type="time" name="end-time" autoComplete="off" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="v-admin-input w-full" />
         </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность занятия</span>
-          <select value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full">
+          <select name="duration" autoComplete="off" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full">
             {DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Перерыв между окнами</span>
-          <select value={breakMinutes} onChange={(event) => setBreakMinutes(event.target.value)} className="v-admin-input w-full">
+          <select name="break-minutes" autoComplete="off" value={breakMinutes} onChange={(event) => setBreakMinutes(event.target.value)} className="v-admin-input w-full">
             {[0, 10, 15, 30, 45, 60].map((value) => <option key={value} value={value}>{value === 0 ? 'Без перерыва' : formatDuration(value)}</option>)}
           </select>
         </label>
@@ -867,8 +873,8 @@ function SlotTemplateForm({
       </div>
       {result ? <p className="rounded-[16px] bg-[#F2F6FA] px-3 py-2 text-[13px] font-medium text-[#2A2D2F]">{result}</p> : null}
       <div className="v-modal-actions">
-        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Закрыть</button>
-        <button onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаем...' : 'Создать'}</button>
+        <button type="button" onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Закрыть</button>
+        <button type="button" onClick={submit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаём…' : 'Создать'}</button>
       </div>
     </div>
   )
@@ -904,7 +910,7 @@ function CreateSlotForm({
           <strong className="block text-[16px] font-black text-[#111827]">Добавьте активный филиал и инструктора</strong>
           <span className="mt-1 block text-[13px] font-bold leading-5 text-[#667085]">После этого можно создавать окна и показывать их ученикам.</span>
         </div>
-        <div className="v-modal-actions"><button onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
+        <div className="v-modal-actions"><button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
       </div>
     )
   }
@@ -943,36 +949,36 @@ function CreateSlotForm({
     <div className="space-y-4 p-5">
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Инструктор</label>
-        <select value={instructorId} onChange={(event) => { const next = activeInstructors.find((item) => item.id === event.target.value); setInstructorId(event.target.value); if (next) setBranchId(next.branchId) }} className="v-admin-input w-full">
+        <select name="instructor" autoComplete="off" value={instructorId} onChange={(event) => { const next = activeInstructors.find((item) => item.id === event.target.value); setInstructorId(event.target.value); if (next) setBranchId(next.branchId) }} className="v-admin-input w-full">
           {activeInstructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
         </select>
       </div>
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Филиал</label>
-        <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
+        <select name="branch" autoComplete="off" value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
           {activeBranches.filter((branch) => !selectedInstructor || branch.id === selectedInstructor.branchId).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
         </select>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Дата</label>
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="v-admin-input w-full" />
+          <input type="date" name="slot-date" autoComplete="off" value={date} onChange={(event) => setDate(event.target.value)} className="v-admin-input w-full" />
         </div>
         <div>
           <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Время</label>
-          <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="v-admin-input w-full" />
+          <input type="time" name="slot-time" autoComplete="off" value={time} onChange={(event) => setTime(event.target.value)} className="v-admin-input w-full" />
         </div>
         <div>
           <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность</label>
-          <select value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full">
+          <select name="duration" autoComplete="off" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full">
             {DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
           </select>
         </div>
       </div>
       {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}
       <div className="v-modal-actions">
-        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
-        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаем...' : 'Создать'}</button>
+        <button type="button" onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button type="button" onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Создаём…' : 'Создать'}</button>
       </div>
     </div>
   )

@@ -49,6 +49,7 @@ export function Button({
         className,
       )}
       style={{ minHeight, ...style }}
+      type={props.type ?? 'button'}
       {...props}
     >
       {children}

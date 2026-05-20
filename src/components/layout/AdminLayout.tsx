@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
 const Award = Medal
 const BarChart3 = GraphUp
@@ -68,10 +68,10 @@ function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePat
   return (
     <div className="flex h-full flex-col border-r border-white/70 bg-[rgba(255,255,255,0.72)] text-[#111315] shadow-[var(--shadow-card)] backdrop-blur-2xl">
       <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.06] px-4 py-4">
-        <button type="button" onClick={() => onClose?.()} className="flex min-w-0 flex-col items-start text-left">
+        <Link to={basePath} onClick={onClose} className="flex min-w-0 flex-col items-start text-left" aria-label="На главный экран кабинета">
           <BrandMark variant="dark" size="md" />
           <span className="mt-1 text-[12px] font-medium text-[#687381]">админка</span>
-        </button>
+        </Link>
         {onClose ? (
           <button
             type="button"
@@ -103,7 +103,7 @@ function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePat
                   }`
                 }
               >
-                <Icon width={19} height={19} strokeWidth={2.1} />
+                <Icon width={19} height={19} strokeWidth={2.1} aria-hidden="true" />
                 <span className="truncate">{item.label}</span>
               </NavLink>
             )
@@ -266,6 +266,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
 
   return (
     <div className="v-admin-shell vroom-admin-shell flex h-dvh overflow-hidden bg-[var(--admin-bg)] text-[#111315]">
+      <a href="#admin-main" className="v-skip-link">К содержимому</a>
       <aside className="hidden w-[272px] shrink-0 lg:block">
         <Sidebar navItems={navItems} basePath={basePath} />
       </aside>
@@ -305,14 +306,17 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => { if (school) window.open(publicPath, '_blank') }}
-            className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white xl:inline-flex"
-          >
-            <ExternalLink width={16} height={16} />
-            Сайт
-          </button>
+          {school ? (
+            <Link
+              to={publicPath}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white xl:inline-flex"
+            >
+              <ExternalLink width={16} height={16} aria-hidden="true" />
+              Сайт
+            </Link>
+          ) : null}
           {school && nextSetupStep ? (
             <button
               type="button"
@@ -325,7 +329,12 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
           ) : null}
           <div className="relative hidden min-w-[220px] max-w-[360px] flex-[0_1_360px] md:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
+            <label htmlFor="admin-quick-search" className="sr-only">Поиск по кабинету</label>
             <input
+              id="admin-quick-search"
+              name="admin-quick-search"
+              autoComplete="off"
+              spellCheck={false}
               value={quickSearch}
               onChange={(event) => setQuickSearch(event.target.value)}
               onKeyDown={(event) => {
@@ -335,11 +344,11 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
                   setQuickSearch('')
                 }
               }}
-              placeholder="Поиск"
+              placeholder="Поиск…"
               className="h-10 w-full rounded-full border border-[#111827]/[0.07] bg-white/70 pl-9 pr-9 text-[13px] font-medium text-[#111315] outline-none focus:border-[#111827]/[0.2] focus:bg-white"
             />
             {quickSearch ? (
-              <button type="button" onClick={() => setQuickSearch('')} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-[#8D98A4] hover:bg-[#EEF2F5] hover:text-[#111315]">×</button>
+              <button type="button" onClick={() => setQuickSearch('')} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-[#8D98A4] hover:bg-[#EEF2F5] hover:text-[#111315]" aria-label="Очистить поиск">×</button>
             ) : null}
             {quickSearch.trim().length >= 2 ? (
               <div className="absolute right-0 top-12 z-30 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-[22px] border border-white/70 bg-white/90 shadow-[var(--shadow-dark)] backdrop-blur-2xl">
@@ -371,7 +380,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
           </button>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main id="admin-main" className="min-h-0 flex-1 overflow-y-auto pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
           {accessNotice ? (
             <div className={'mx-3 mt-3 rounded-[18px] border px-4 py-3 text-[13px] font-semibold md:mx-5 ' + (accessNotice.tone === 'warning' ? 'border-[#F6D58B] bg-[#FFF8E8] text-[#8A5A00]' : 'border-[#B8D8FF] bg-[#EEF7FF] text-[#075EBC]')}>
               {accessNotice.text}
@@ -399,7 +408,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
                     }`
                   }
                 >
-                  <Icon width={20} height={20} strokeWidth={2.4} />
+                  <Icon width={20} height={20} strokeWidth={2.4} aria-hidden="true" />
                   <span className="max-w-full truncate">{item.label}</span>
                 </NavLink>
               )

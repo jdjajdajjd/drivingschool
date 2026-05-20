@@ -29,10 +29,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ l
           error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           className,
         )}
+        aria-invalid={Boolean(error) || undefined}
+        aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
         {...props}
       />
-      {error && <p className="text-[12px] font-medium" style={{ color: '#E5534B' }}>{error}</p>}
-      {!error && helperText ? <p className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
+      {error && <p id={`${inputId}-error`} aria-live="polite" className="text-[12px] font-medium" style={{ color: '#E5534B' }}>{error}</p>}
+      {!error && helperText ? <p id={`${inputId}-helper`} className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
     </div>
   )
 })
@@ -61,10 +63,12 @@ export function Textarea({ label, error, helperText, className, id, ...props }: 
           error && '!border-[#E5534B] !shadow-[0_0_0_4px_rgba(229,83,75,0.14)]',
           className,
         )}
+        aria-invalid={Boolean(error) || undefined}
+        aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
         {...props}
       />
-      {error && <p className="text-[12px] font-medium" style={{ color: '#E5534B' }}>{error}</p>}
-      {!error && helperText ? <p className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
+      {error && <p id={`${inputId}-error`} aria-live="polite" className="text-[12px] font-medium" style={{ color: '#E5534B' }}>{error}</p>}
+      {!error && helperText ? <p id={`${inputId}-helper`} className="text-[12px]" style={{ color: '#9EA3A8' }}>{helperText}</p> : null}
     </div>
   )
 }

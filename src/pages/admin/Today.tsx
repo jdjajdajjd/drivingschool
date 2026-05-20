@@ -128,16 +128,16 @@ export function AdminToday() {
               Один экран для ежедневной работы: создать свободное время, открыть ссылку ученикам и быстро проверить расписание.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button className="v-admin-button is-blue" onClick={() => navigate(`${basePath}/schedule?create=slot`)}>
-                <CalendarPlus width={16} height={16} />
+              <button type="button" className="v-admin-button is-blue" onClick={() => navigate(`${basePath}/schedule?create=slot`)}>
+                <CalendarPlus width={16} height={16} aria-hidden="true" />
                 Создать окна
               </button>
               <Link to={publicUrl} target="_blank" className="v-admin-button-secondary">
-                <ExternalLink width={16} height={16} />
+                <ExternalLink width={16} height={16} aria-hidden="true" />
                 Страница для учеников
               </Link>
               <Link to={`${basePath}/students`} className="v-admin-button-tertiary">
-                <UserPlus width={16} height={16} />
+                <UserPlus width={16} height={16} aria-hidden="true" />
                 Добавить ученика
               </Link>
               <button type="button" onClick={() => setBlocksOpen(true)} className="v-admin-button-tertiary">Блоки</button>
@@ -207,7 +207,7 @@ export function AdminToday() {
                 const instructor = data.instructors.find((item) => item.id === booking.instructorId)
                 const branch = data.branches.find((item) => item.id === booking.branchId)
                 return (
-                  <button key={booking.id} onClick={() => navigate(`${basePath}/schedule`)} className="grid w-full gap-2 p-4 text-left transition hover:bg-[#F8FAFC] sm:grid-cols-[76px_minmax(0,1fr)_auto] sm:items-center">
+                  <button key={booking.id} type="button" onClick={() => navigate(`${basePath}/schedule`)} className="grid w-full gap-2 p-4 text-left transition hover:bg-[#F8FAFC] sm:grid-cols-[76px_minmax(0,1fr)_auto] sm:items-center">
                     <span className="text-[18px] font-semibold tabular-nums text-[#111827]">{slot.time}</span>
                     <span className="min-w-0">
                       <PersonMarker role="student" name={booking.studentName} compact />
@@ -227,7 +227,7 @@ export function AdminToday() {
               <h2 className="text-[18px] font-semibold text-[#111827]">Свободные окна</h2>
               <p className="v-admin-note mt-1">Что ученики могут выбрать</p>
             </div>
-            <Clock className="h-5 w-5 text-[#188447]" />
+            <Clock className="h-5 w-5 text-[#188447]" aria-hidden="true" />
           </div>
           <div className="mt-4 grid gap-2">
             {data.freeToday.length ? data.freeToday.slice(0, 5).map((slot) => <SlotLine key={slot.id} slot={slot} />) : (
@@ -238,7 +238,7 @@ export function AdminToday() {
             )}
           </div>
           <Link to={`${basePath}/schedule?create=slot`} className="v-admin-button-secondary mt-3 w-full justify-center">
-            <CalendarPlus width={16} height={16} />
+            <CalendarPlus width={16} height={16} aria-hidden="true" />
             Создать окна
           </Link>
         </aside>
@@ -257,7 +257,7 @@ export function AdminToday() {
             {data.upcomingBookings.length ? data.upcomingBookings.map(({ booking, slot }) => {
               const instructor = data.instructors.find((item) => item.id === booking.instructorId)
               return (
-                <button key={booking.id} onClick={() => navigate(`${basePath}/schedule`)} className="grid gap-2 rounded-[18px] border border-[#E5EAF1] bg-white p-3 text-left transition hover:border-[#B8D8FF] sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center">
+                <button key={booking.id} type="button" onClick={() => navigate(`${basePath}/schedule`)} className="grid gap-2 rounded-[18px] border border-[#E5EAF1] bg-white p-3 text-left transition hover:border-[#B8D8FF] sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center">
                   <span className="text-[13px] font-semibold text-[#075EBC]">{format(getSlotDateTime(slot), 'd MMM, HH:mm', { locale: ru })}</span>
                   <span className="min-w-0">
                     <PersonMarker role="student" name={booking.studentName} compact />
@@ -278,9 +278,9 @@ export function AdminToday() {
         <div className="v-admin-panel p-4">
           <h2 className="text-[18px] font-semibold text-[#111827]">База для записи</h2>
           <div className="mt-4 grid gap-2">
-            <Link to={`${basePath}/students`} className="v-admin-button-secondary justify-start"><Group width={16} height={16} />Ученики</Link>
-            <Link to={`${basePath}/instructors`} className="v-admin-button-secondary justify-start"><UserBadgeCheck width={16} height={16} />Инструкторы</Link>
-            <Link to={`${basePath}/branches`} className="v-admin-button-secondary justify-start"><Building width={16} height={16} />Филиалы</Link>
+            <Link to={`${basePath}/students`} className="v-admin-button-secondary justify-start"><Group width={16} height={16} aria-hidden="true" />Ученики</Link>
+            <Link to={`${basePath}/instructors`} className="v-admin-button-secondary justify-start"><UserBadgeCheck width={16} height={16} aria-hidden="true" />Инструкторы</Link>
+            <Link to={`${basePath}/branches`} className="v-admin-button-secondary justify-start"><Building width={16} height={16} aria-hidden="true" />Филиалы</Link>
           </div>
         </div>
       </section>

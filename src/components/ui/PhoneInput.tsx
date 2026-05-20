@@ -45,6 +45,8 @@ export function PhoneInput({
   autoFocus,
 }: PhoneInputProps) {
   const inputId = `${useId()}-phone`
+  const errorId = `${inputId}-error`
+  const successId = `${inputId}-success`
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +99,9 @@ export function PhoneInput({
         disabled={disabled}
         placeholder={placeholder}
         autoFocus={autoFocus}
+        name="phone"
+        aria-invalid={Boolean(error) || undefined}
+        aria-describedby={error ? errorId : isComplete ? successId : undefined}
         className={cn(
           'min-h-[52px] w-full rounded-[20px] border border-[var(--border)] bg-[rgba(255,255,255,0.66)] px-4 text-[16px] font-medium leading-none text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]',
           'shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(20,24,32,0.03)] backdrop-blur-xl transition-[border-color,box-shadow,background-color] duration-150',
@@ -106,9 +111,9 @@ export function PhoneInput({
         )}
         style={{ letterSpacing: 0 }}
       />
-      {error && <p className="text-[12px] font-medium text-[#E5534B]">{error}</p>}
+      {error && <p id={errorId} aria-live="polite" className="text-[12px] font-medium text-[#E5534B]">{error}</p>}
       {!disabled && !error && isComplete && (
-        <p className="text-[12px] font-medium text-[#247A4B]">Номер введён верно</p>
+        <p id={successId} className="text-[12px] font-medium text-[#247A4B]">Номер введён верно</p>
       )}
     </div>
   )
