@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminPayments, adminCars, auditLog } from '../../services/adminStorage'
+import { adminPayments, adminCars, adminDocuments, adminGIBDDExams, adminInternalExams, adminSettings, auditLog, problemCases, studentProgress } from '../../services/adminStorage'
 import type { AuditAction } from '../../types'
 
 type AuditFilter = 'all' | AuditAction
@@ -148,6 +148,37 @@ export function AdminReports() {
     data.slotUtilization < 60 ? `Загрузка окон ${data.slotUtilization}%: есть резерв продаж` : `Загрузка окон ${data.slotUtilization}%`,
   ]
 
+
+  function exportBackupJson() {
+    if (!school) return
+    const students = db.students.bySchool(school.id)
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      product: 'vroom.today',
+      school,
+      branches: db.branches.bySchool(school.id),
+      instructors: db.instructors.bySchool(school.id),
+      slots: db.slots.bySchool(school.id),
+      bookings: db.bookings.bySchool(school.id),
+      students,
+      payments: adminPayments.all(school.id),
+      documents: adminDocuments.all(school.id),
+      cars: adminCars.all(school.id),
+      internalExams: adminInternalExams.all(school.id),
+      gibddExams: adminGIBDDExams.all(school.id),
+      problemCases: problemCases.all(school.id),
+      settings: adminSettings.get(school.id),
+      progress: students.map((student) => studentProgress.get(student.id)).filter(Boolean),
+      audit: auditLog.all(school.id, 2000),
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `vroom-backup-${school.slug}-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   function exportCsv() {
     const rows = [
       ['Показатель', 'Значение'],
@@ -176,7 +207,10 @@ export function AdminReports() {
           <h1 className="text-[24px] font-black tracking-[-0.03em] text-[#111827]">Отчёты</h1>
         </div>
         <p className="rounded-full border border-[#D7DEE8] bg-[#F8FAFC] px-3 py-1 text-[12px] font-bold text-[#667085]">{format(new Date(), 'MMMM yyyy', { locale: ru })}</p>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap gap-2">
+          <button onClick={exportBackupJson} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-[#111827] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#1F2937]">
+            Скачать бэкап
+          </button>
           <button onClick={exportCsv} className="min-h-10 rounded-xl border border-[#D7DEE8] bg-white px-4 py-2 text-[13px] font-bold text-[#334155] transition hover:bg-[#F8FAFC]">
             Скачать CSV
           </button>

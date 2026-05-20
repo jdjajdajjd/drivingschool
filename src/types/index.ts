@@ -1,3 +1,12 @@
+export interface SchoolPaymentHistoryItem {
+  id: string
+  paidAt: string
+  amount: number
+  paidUntil: string
+  note?: string
+  createdAt: string
+}
+
 export interface School {
   id: string
   name: string
@@ -6,6 +15,9 @@ export interface School {
   phone: string
   email: string
   address: string
+  city?: string
+  directorName?: string
+  directorPhone?: string
   createdAt: string
   logoUrl?: string
   primaryColor?: string
@@ -16,14 +28,18 @@ export interface School {
   defaultLessonDuration?: number
   enabledCategoryCodes?: string[]
   isActive?: boolean
-  salesStatus?: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk'
+  salesStatus?: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk' | 'rejected'
   salesNextContact?: string
   salesNote?: string
+  salesPromised?: string
+  salesNeededFromClient?: string
+  salesOwner?: string
   accessStatus?: 'trial' | 'active' | 'expires_soon' | 'overdue' | 'blocked'
   accessPaidUntil?: string
   accessLastPaidAt?: string
   accessLastAmount?: number
   accessPaymentNote?: string
+  accessPaymentHistory?: SchoolPaymentHistoryItem[]
 }
 
 export interface Branch {

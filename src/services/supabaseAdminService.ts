@@ -219,6 +219,9 @@ function mapSupabaseSchool(row: SchoolRow): School {
     phone: row.phone,
     email: row.email,
     address: row.address,
+    city: row.city ?? undefined,
+    directorName: row.director_name ?? undefined,
+    directorPhone: row.director_phone ?? undefined,
     createdAt: row.created_at,
     logoUrl: row.logo_url ?? undefined,
     primaryColor: row.primary_color ?? undefined,
@@ -229,11 +232,18 @@ function mapSupabaseSchool(row: SchoolRow): School {
     defaultLessonDuration: row.default_lesson_duration,
     enabledCategoryCodes: row.enabled_category_codes?.length ? row.enabled_category_codes : undefined,
     isActive: row.is_active,
+    salesStatus: row.sales_status ?? undefined,
+    salesNextContact: row.sales_next_contact ?? undefined,
+    salesNote: row.sales_note ?? undefined,
+    salesPromised: row.sales_promised ?? undefined,
+    salesNeededFromClient: row.sales_needed_from_client ?? undefined,
+    salesOwner: row.sales_owner ?? undefined,
     accessStatus: row.access_status ?? (row.is_active ? 'trial' : 'blocked'),
     accessPaidUntil: row.access_paid_until ?? undefined,
     accessLastPaidAt: row.access_last_paid_at ?? undefined,
     accessLastAmount: row.access_last_amount ?? undefined,
     accessPaymentNote: row.access_payment_note ?? undefined,
+    accessPaymentHistory: Array.isArray(row.access_payment_history) ? row.access_payment_history as unknown as School['accessPaymentHistory'] : undefined,
   }
 }
 
@@ -285,6 +295,32 @@ export async function listSupabaseSchools(): Promise<School[]> {
   return (data ?? []).map(mapSupabaseSchool)
 }
 
+export async function updateSupabaseSchoolSales(school: School): Promise<School> {
+  if (!isSupabaseRemoteConfigured()) {
+    throw new Error('Supabase не подключен.')
+  }
+
+  const data = await runAdminMutation<SchoolRow[]>(
+    supabase.rpc('public_superadmin_update_school_sales' as never, {
+      p_school_id: school.id,
+      p_city: school.city ?? '',
+      p_director_name: school.directorName ?? '',
+      p_director_phone: school.directorPhone ?? '',
+      p_sales_status: school.salesStatus ?? 'lead',
+      p_sales_next_contact: school.salesNextContact ?? null,
+      p_sales_note: school.salesNote ?? '',
+      p_sales_promised: school.salesPromised ?? '',
+      p_sales_needed_from_client: school.salesNeededFromClient ?? '',
+      p_sales_owner: school.salesOwner ?? '',
+      p_superadmin_password: getSuperadminSecret(),
+    } as never),
+  )
+
+  const row = Array.isArray(data) ? data[0] : null
+  if (!row) throw new Error('База не вернула обновлённую автошколу.')
+  return mapSupabaseSchool(row)
+}
+
 export async function updateSupabaseSchoolAccess(school: School): Promise<School> {
   if (!isSupabaseRemoteConfigured()) {
     throw new Error('Supabase не подключен.')
@@ -298,6 +334,7 @@ export async function updateSupabaseSchoolAccess(school: School): Promise<School
       p_access_last_paid_at: school.accessLastPaidAt ?? null,
       p_access_last_amount: school.accessLastAmount ?? null,
       p_access_payment_note: school.accessPaymentNote ?? '',
+      p_access_payment_history: school.accessPaymentHistory ?? [],
       p_superadmin_password: getSuperadminSecret(),
     } as never),
   )

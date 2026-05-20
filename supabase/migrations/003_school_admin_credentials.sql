@@ -504,3 +504,121 @@ end;
 $$;
 
 grant execute on function public.public_superadmin_update_school_access(text, text, date, date, integer, text, text) to anon, authenticated;
+
+
+
+alter table public.schools
+  add column if not exists city text,
+  add column if not exists director_name text,
+  add column if not exists director_phone text,
+  add column if not exists sales_status text not null default 'lead',
+  add column if not exists sales_next_contact date,
+  add column if not exists sales_note text not null default '',
+  add column if not exists sales_promised text not null default '',
+  add column if not exists sales_needed_from_client text not null default '',
+  add column if not exists sales_owner text not null default '',
+  add column if not exists access_payment_history jsonb not null default '[]'::jsonb;
+
+do $$
+begin
+  alter table public.schools drop constraint if exists schools_sales_status_check;
+  alter table public.schools
+    add constraint schools_sales_status_check
+    check (sales_status in ('lead', 'thinking', 'paid', 'onboarding', 'active', 'risk', 'rejected'));
+end;
+$$;
+
+create or replace function public.public_superadmin_update_school_sales(
+  p_school_id text,
+  p_city text,
+  p_director_name text,
+  p_director_phone text,
+  p_sales_status text,
+  p_sales_next_contact date,
+  p_sales_note text,
+  p_sales_promised text,
+  p_sales_needed_from_client text,
+  p_sales_owner text,
+  p_superadmin_password text
+)
+returns setof public.schools
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_staff_secret('superadmin', p_superadmin_password);
+
+  if p_sales_status not in ('lead', 'thinking', 'paid', 'onboarding', 'active', 'risk', 'rejected') then
+    raise exception 'Sales status is invalid.';
+  end if;
+
+  update public.schools
+    set city = nullif(trim(coalesce(p_city, '')), ''),
+        director_name = nullif(trim(coalesce(p_director_name, '')), ''),
+        director_phone = nullif(trim(coalesce(p_director_phone, '')), ''),
+        sales_status = p_sales_status,
+        sales_next_contact = p_sales_next_contact,
+        sales_note = coalesce(p_sales_note, ''),
+        sales_promised = coalesce(p_sales_promised, ''),
+        sales_needed_from_client = coalesce(p_sales_needed_from_client, ''),
+        sales_owner = coalesce(p_sales_owner, ''),
+        updated_at = now()
+    where id = p_school_id;
+
+  if not found then
+    raise exception 'School not found.';
+  end if;
+
+  return query select * from public.schools where id = p_school_id;
+end;
+$$;
+
+grant execute on function public.public_superadmin_update_school_sales(text, text, text, text, text, date, text, text, text, text, text) to anon, authenticated;
+
+create or replace function public.public_superadmin_update_school_access(
+  p_school_id text,
+  p_access_status text,
+  p_access_paid_until date,
+  p_access_last_paid_at date,
+  p_access_last_amount integer,
+  p_access_payment_note text,
+  p_access_payment_history jsonb,
+  p_superadmin_password text
+)
+returns setof public.schools
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.private_assert_staff_secret('superadmin', p_superadmin_password);
+
+  if p_access_status not in ('trial', 'active', 'expires_soon', 'overdue', 'blocked') then
+    raise exception 'Access status is invalid.';
+  end if;
+
+  if jsonb_typeof(coalesce(p_access_payment_history, '[]'::jsonb)) <> 'array' then
+    raise exception 'Payment history is invalid.';
+  end if;
+
+  update public.schools
+    set access_status = p_access_status,
+        access_paid_until = p_access_paid_until,
+        access_last_paid_at = p_access_last_paid_at,
+        access_last_amount = p_access_last_amount,
+        access_payment_note = coalesce(p_access_payment_note, ''),
+        access_payment_history = coalesce(p_access_payment_history, '[]'::jsonb),
+        is_active = p_access_status <> 'blocked',
+        updated_at = now()
+    where id = p_school_id;
+
+  if not found then
+    raise exception 'School not found.';
+  end if;
+
+  return query select * from public.schools where id = p_school_id;
+end;
+$$;
+
+grant execute on function public.public_superadmin_update_school_access(text, text, date, date, integer, text, jsonb, text) to anon, authenticated;

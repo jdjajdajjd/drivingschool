@@ -26,6 +26,7 @@ const SALES_STATUS_LABELS: Record<NonNullable<School['salesStatus']>, string> = 
   onboarding: 'Подключаем',
   active: 'Активен',
   risk: 'Риск',
+  rejected: 'Отказ',
 }
 
 const ACCESS_STATUS_LABELS: Record<NonNullable<School['accessStatus']>, string> = {

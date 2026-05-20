@@ -18,6 +18,15 @@ export interface Database {
           phone: string
           email: string
           address: string
+          city: string | null
+          director_name: string | null
+          director_phone: string | null
+          sales_status: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk' | 'rejected' | null
+          sales_next_contact: string | null
+          sales_note: string | null
+          sales_promised: string | null
+          sales_needed_from_client: string | null
+          sales_owner: string | null
           logo_url: string | null
           primary_color: string | null
           booking_limit_enabled: boolean
@@ -32,6 +41,7 @@ export interface Database {
           access_last_paid_at: string | null
           access_last_amount: number | null
           access_payment_note: string | null
+          access_payment_history: Json
           created_at: string
           updated_at: string
         }
@@ -182,7 +192,7 @@ export interface Database {
           student_name: string
           student_phone: string
           student_email: string
-          status: 'active' | 'cancelled' | 'completed'
+          status: 'active' | 'cancelled' | 'completed' | 'no_show'
           notes: string | null
           comment: string | null
           rescheduled_at: string | null
@@ -315,6 +325,22 @@ export interface Database {
         }
         Returns: Array<Database['public']['Tables']['schools']['Row']>
       }
+      public_superadmin_update_school_sales: {
+        Args: {
+          p_school_id: string
+          p_city: string
+          p_director_name: string
+          p_director_phone: string
+          p_sales_status: 'lead' | 'thinking' | 'paid' | 'onboarding' | 'active' | 'risk' | 'rejected'
+          p_sales_next_contact: string | null
+          p_sales_note: string
+          p_sales_promised: string
+          p_sales_needed_from_client: string
+          p_sales_owner: string
+          p_superadmin_password: string
+        }
+        Returns: Database['public']['Tables']['schools']['Row'][]
+      }
       public_superadmin_update_school_access: {
         Args: {
           p_school_id: string
@@ -323,6 +349,7 @@ export interface Database {
           p_access_last_paid_at: string | null
           p_access_last_amount: number | null
           p_access_payment_note: string
+          p_access_payment_history: Json
           p_superadmin_password: string
         }
         Returns: Array<Database['public']['Tables']['schools']['Row']>
