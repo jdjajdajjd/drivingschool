@@ -19,6 +19,7 @@ type ViewMode = 'day' | 'week'
 type ScheduleFilter = 'all' | 'booked' | 'available' | 'cancelled'
 
 const HOURS = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, '0')}:00`)
+const DURATION_OPTIONS = [45, 60, 90, 120]
 
 const FILTER_LABELS: Record<ScheduleFilter, string> = {
   all: 'Все',
@@ -711,16 +712,33 @@ function SlotTemplateForm({
   branches: Branch[]
   onClose: () => void
 }) {
-  const [instructorId, setInstructorId] = useState(instructors[0]?.id ?? '')
-  const [branchId, setBranchId] = useState(branches[0]?.id ?? '')
+  const activeInstructors = instructors.filter((instructor) => instructor.isActive)
+  const activeBranches = branches.filter((branch) => branch.isActive)
+  const [instructorId, setInstructorId] = useState(activeInstructors[0]?.id ?? '')
+  const [branchId, setBranchId] = useState(activeInstructors[0]?.branchId ?? activeBranches[0]?.id ?? '')
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [weeks, setWeeks] = useState('4')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('18:00')
   const [duration, setDuration] = useState('90')
+  const [breakMinutes, setBreakMinutes] = useState('15')
   const [days, setDays] = useState<number[]>([1, 3, 5])
   const [result, setResult] = useState('')
   const [pending, setPending] = useState(false)
+
+  const selectedInstructor = activeInstructors.find((instructor) => instructor.id === instructorId)
+
+  if (!activeInstructors.length || !activeBranches.length) {
+    return (
+      <div className="space-y-4 p-5">
+        <div className="rounded-[18px] border border-[#BFDBFE] bg-[#EFF6FF] p-4">
+          <strong className="block text-[16px] font-black text-[#111827]">Сначала добавьте активный филиал и инструктора</strong>
+          <span className="mt-1 block text-[13px] font-bold leading-5 text-[#667085]">Расписание не запустится, пока школе не задано место занятий и ответственный инструктор.</span>
+        </div>
+        <div className="v-modal-actions"><button onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
+      </div>
+    )
+  }
 
   const toggleDay = (day: number) => {
     setDays((current) => current.includes(day) ? current.filter((item) => item !== day) : [...current, day])
@@ -733,10 +751,11 @@ function SlotTemplateForm({
 
     const parsedWeeks = Number(weeks)
     const parsedDuration = Number(duration)
+    const parsedBreakMinutes = Number(breakMinutes)
     const start = timeToMinutes(startTime)
     const end = timeToMinutes(endTime)
     setResult('')
-    if (!instructorId || !branchId || !startDate || days.length === 0 || !Number.isFinite(parsedWeeks) || !Number.isFinite(parsedDuration) || start >= end) {
+    if (!instructorId || !branchId || !startDate || days.length === 0 || !Number.isFinite(parsedWeeks) || !Number.isFinite(parsedDuration) || !Number.isFinite(parsedBreakMinutes) || start >= end) {
       setResult('Проверьте поля.')
       return
     }
@@ -755,7 +774,7 @@ function SlotTemplateForm({
       windowEnd: endTime,
       duration: parsedDuration,
       lessonType: 'driving',
-      breakMinutes: 0,
+      breakMinutes: parsedBreakMinutes,
     })
     setPending(false)
     if (!response.ok || !response.result) {
@@ -771,14 +790,14 @@ function SlotTemplateForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Инструктор</span>
-          <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className="v-admin-input w-full">
-            {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+          <select value={instructorId} onChange={(event) => { const next = activeInstructors.find((item) => item.id === event.target.value); setInstructorId(event.target.value); if (next) setBranchId(next.branchId) }} className="v-admin-input w-full">
+            {activeInstructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Филиал</span>
           <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
-            {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+            {activeBranches.filter((branch) => !selectedInstructor || branch.id === selectedInstructor.branchId).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
           </select>
         </label>
       </div>
@@ -800,10 +819,20 @@ function SlotTemplateForm({
           <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="v-admin-input w-full" />
         </label>
       </div>
-      <label className="block">
-        <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность</span>
-        <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность занятия</span>
+          <select value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full">
+            {DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Перерыв между окнами</span>
+          <select value={breakMinutes} onChange={(event) => setBreakMinutes(event.target.value)} className="v-admin-input w-full">
+            {[0, 10, 15, 30, 45, 60].map((value) => <option key={value} value={value}>{value === 0 ? 'Без перерыва' : formatDuration(value)}</option>)}
+          </select>
+        </label>
+      </div>
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
         {[
           [1, 'Пн'], [2, 'Вт'], [3, 'Ср'], [4, 'Чт'], [5, 'Пт'], [6, 'Сб'], [7, 'Вс'],
@@ -833,13 +862,29 @@ function CreateSlotForm({
   branches: Branch[]
   onClose: () => void
 }) {
-  const [instructorId, setInstructorId] = useState(instructors[0]?.id ?? '')
-  const [branchId, setBranchId] = useState(branches[0]?.id ?? '')
+  const activeInstructors = instructors.filter((instructor) => instructor.isActive)
+  const activeBranches = branches.filter((branch) => branch.isActive)
+  const [instructorId, setInstructorId] = useState(activeInstructors[0]?.id ?? '')
+  const [branchId, setBranchId] = useState(activeInstructors[0]?.branchId ?? activeBranches[0]?.id ?? '')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState('90')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+
+  const selectedInstructor = activeInstructors.find((instructor) => instructor.id === instructorId)
+
+  if (!activeInstructors.length || !activeBranches.length) {
+    return (
+      <div className="space-y-4 p-5">
+        <div className="rounded-[18px] border border-[#BFDBFE] bg-[#EFF6FF] p-4">
+          <strong className="block text-[16px] font-black text-[#111827]">Сначала добавьте активный филиал и инструктора</strong>
+          <span className="mt-1 block text-[13px] font-bold leading-5 text-[#667085]">После этого можно создавать окна и показывать их ученикам.</span>
+        </div>
+        <div className="v-modal-actions"><button onClick={onClose} className="v-admin-button-secondary flex-1">Закрыть</button></div>
+      </div>
+    )
+  }
 
   const handleSubmit = async () => {
     const access = assertAdminPermission('schedule.manage')
@@ -875,14 +920,14 @@ function CreateSlotForm({
     <div className="space-y-4 p-5">
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Инструктор</label>
-        <select value={instructorId} onChange={(event) => setInstructorId(event.target.value)} className="v-admin-input w-full">
-          {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+        <select value={instructorId} onChange={(event) => { const next = activeInstructors.find((item) => item.id === event.target.value); setInstructorId(event.target.value); if (next) setBranchId(next.branchId) }} className="v-admin-input w-full">
+          {activeInstructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
         </select>
       </div>
       <div>
         <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Филиал</label>
         <select value={branchId} onChange={(event) => setBranchId(event.target.value)} className="v-admin-input w-full">
-          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+          {activeBranches.filter((branch) => !selectedInstructor || branch.id === selectedInstructor.branchId).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
         </select>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -896,7 +941,9 @@ function CreateSlotForm({
         </div>
         <div>
           <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность</label>
-          <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
+          <select value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full">
+            {DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
+          </select>
         </div>
       </div>
       {error ? <p className="rounded-[16px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-medium text-[#315A7C]">{error}</p> : null}

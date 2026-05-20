@@ -1,7 +1,19 @@
 import { isAfter } from 'date-fns'
 import type { IntegrityIssue } from '../types'
 import { getSlotDateTime } from './bookingService'
+import { formatDuration } from '../lib/utils'
 import { db } from './storage'
+
+function minutesFromTime(value: string): number {
+  const [hours, minutes] = value.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+function slotsOverlap(left: { time: string; duration: number }, right: { time: string; duration: number }): boolean {
+  const leftStart = minutesFromTime(left.time)
+  const rightStart = minutesFromTime(right.time)
+  return leftStart < rightStart + right.duration && rightStart < leftStart + left.duration
+}
 
 export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
   const issues: IntegrityIssue[] = []
@@ -121,6 +133,26 @@ export function validateDataIntegrity(schoolId: string): IntegrityIssue[] {
         id: `slot-branch-school-${slot.id}`,
         level: 'error',
         message: `Время ${slot.date} ${slot.time} связано с филиалом другой школы.`,
+      })
+    }
+  }
+
+  const activeSlots = slots
+    .filter((slot) => slot.status !== 'cancelled')
+    .sort((left, right) => `${left.instructorId}:${left.date}:${left.time}`.localeCompare(`${right.instructorId}:${right.date}:${right.time}`))
+  for (let index = 0; index < activeSlots.length; index += 1) {
+    const current = activeSlots[index]
+    const conflict = activeSlots.slice(index + 1).find((slot) =>
+      slot.instructorId === current.instructorId &&
+      slot.date === current.date &&
+      slotsOverlap(current, slot),
+    )
+    if (conflict) {
+      const instructor = db.instructors.byId(current.instructorId)
+      issues.push({
+        id: `slot-overlap-${current.id}-${conflict.id}`,
+        level: 'error',
+        message: `Пересечение расписания: ${instructor?.name ?? 'инструктор'} ${current.date} ${current.time} (${formatDuration(current.duration)}) и ${conflict.time} (${formatDuration(conflict.duration)}).`,
       })
     }
   }

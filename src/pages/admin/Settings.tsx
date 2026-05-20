@@ -19,6 +19,11 @@ const operationRules = [
   'При инциденте P1: остановить новые подключения, сохранить скрин/время, проверить Supabase и последние изменения.',
 ]
 
+const LESSON_DURATION_OPTIONS = [45, 60, 90, 120]
+const BREAK_DURATION_OPTIONS = [0, 10, 15, 30, 45, 60]
+const BOOKING_DAYS_OPTIONS = [7, 14, 21, 30, 45, 60]
+const CANCEL_HOURS_OPTIONS = [2, 4, 6, 12, 24]
+
 export function AdminSettings() {
   const school = db.schools.currentAdmin()
   const [saved, setSaved] = useState(false)
@@ -114,16 +119,22 @@ export function AdminSettings() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Длительность занятия</label>
-              <input type="number" value={settings.defaultLessonDuration} onChange={(e) => update('defaultLessonDuration', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-              <p className="mt-1 text-[12px] font-semibold text-gray-400">{formatDuration(settings.defaultLessonDuration)}</p>
+              <select value={settings.defaultLessonDuration} onChange={(e) => update('defaultLessonDuration', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
+                {LESSON_DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
+              </select>
+              <p className="mt-1 text-[12px] font-semibold text-gray-400">Показывается ученикам и администраторам как {formatDuration(settings.defaultLessonDuration)}</p>
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Запись на сколько дней вперёд</label>
-              <input type="number" value={settings.maxDaysAheadForBooking} onChange={(e) => update('maxDaysAheadForBooking', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
+              <select value={settings.maxDaysAheadForBooking} onChange={(e) => update('maxDaysAheadForBooking', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
+                {BOOKING_DAYS_OPTIONS.map((value) => <option key={value} value={value}>{value} дней</option>)}
+              </select>
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Мин. часов до отмены</label>
-              <input type="number" value={settings.minHoursBeforeCancel} onChange={(e) => update('minHoursBeforeCancel', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
+              <select value={settings.minHoursBeforeCancel} onChange={(e) => update('minHoursBeforeCancel', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
+                {CANCEL_HOURS_OPTIONS.map((value) => <option key={value} value={value}>{value} ч</option>)}
+              </select>
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Макс. записей на ученика</label>
@@ -135,8 +146,10 @@ export function AdminSettings() {
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Перерыв между занятиями</label>
-              <input type="number" value={settings.breakBetweenLessons} onChange={(e) => update('breakBetweenLessons', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-              <p className="mt-1 text-[12px] font-semibold text-gray-400">{formatDuration(settings.breakBetweenLessons)}</p>
+              <select value={settings.breakBetweenLessons} onChange={(e) => update('breakBetweenLessons', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
+                {BREAK_DURATION_OPTIONS.map((value) => <option key={value} value={value}>{value === 0 ? 'Без перерыва' : formatDuration(value)}</option>)}
+              </select>
+              <p className="mt-1 text-[12px] font-semibold text-gray-400">Буфер защищает от записей вплотную.</p>
             </div>
           </div>
 

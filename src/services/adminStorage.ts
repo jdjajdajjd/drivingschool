@@ -89,9 +89,14 @@ function nsKey(key: string): string {
   return `${getNS()}:${key}`
 }
 
+function storageForCurrentNamespace(): Storage | null {
+  if (typeof window === 'undefined') return null
+  return getNS() === 'demo' ? window.sessionStorage : window.localStorage
+}
+
 function read<T>(key: string): T[] {
   try {
-    const raw = localStorage.getItem(nsKey(key))
+    const raw = storageForCurrentNamespace()?.getItem(nsKey(key))
     return raw ? (JSON.parse(raw) as T[]) : []
   } catch {
     return []
@@ -100,9 +105,9 @@ function read<T>(key: string): T[] {
 
 function write<T>(key: string, data: T[]): void {
   try {
-    localStorage.setItem(nsKey(key), JSON.stringify(data))
+    storageForCurrentNamespace()?.setItem(nsKey(key), JSON.stringify(data))
   } catch {
-    // quota exceeded — ignore
+    // quota exceeded - ignore
   }
 }
 

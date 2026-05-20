@@ -619,12 +619,22 @@ begin
     raise exception 'Slot date is in the past.';
   end if;
 
-  if p_duration < 30 or p_duration > 240 then
+  if p_duration < 30 or p_duration > 240 or p_duration % 15 <> 0 then
     raise exception 'Slot duration is invalid.';
   end if;
 
   if p_lesson_type not in ('driving', 'main', 'extra', 'practice_ground', 'city', 'exam_route', 'internal_exam', 'retake', 'mistakes') then
     raise exception 'Slot lesson type is invalid.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.branches
+    where id = p_branch_id
+      and school_id = p_school_id
+      and is_active = true
+  ) then
+    raise exception 'Branch is not available.';
   end if;
 
   if not exists (
@@ -636,6 +646,19 @@ begin
       and is_active = true
   ) then
     raise exception 'Instructor is not available for this branch.';
+  end if;
+
+  if exists (
+    select 1
+    from public.slots
+    where school_id = p_school_id
+      and instructor_id = p_instructor_id
+      and date = v_slot_date
+      and status <> 'cancelled'
+      and v_slot_time < (time + (duration || ' minutes')::interval)
+      and time < (v_slot_time + (p_duration || ' minutes')::interval)
+  ) then
+    raise exception 'Slot overlaps existing instructor time.';
   end if;
 
   insert into public.slots (
@@ -2153,12 +2176,22 @@ begin
     raise exception 'Slot date is in the past.';
   end if;
 
-  if p_duration < 30 or p_duration > 240 then
+  if p_duration < 30 or p_duration > 240 or p_duration % 15 <> 0 then
     raise exception 'Slot duration is invalid.';
   end if;
 
   if p_lesson_type not in ('driving', 'main', 'extra', 'practice_ground', 'city', 'exam_route', 'internal_exam', 'retake', 'mistakes') then
     raise exception 'Slot lesson type is invalid.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.branches
+    where id = p_branch_id
+      and school_id = p_school_id
+      and is_active = true
+  ) then
+    raise exception 'Branch is not available.';
   end if;
 
   if not exists (
@@ -2170,6 +2203,19 @@ begin
       and is_active = true
   ) then
     raise exception 'Instructor is not available for this branch.';
+  end if;
+
+  if exists (
+    select 1
+    from public.slots
+    where school_id = p_school_id
+      and instructor_id = p_instructor_id
+      and date = v_slot_date
+      and status <> 'cancelled'
+      and v_slot_time < (time + (duration || ' minutes')::interval)
+      and time < (v_slot_time + (p_duration || ' minutes')::interval)
+  ) then
+    raise exception 'Slot overlaps existing instructor time.';
   end if;
 
   insert into public.slots (

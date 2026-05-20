@@ -32,6 +32,7 @@ export function AdminLaunchReadiness() {
   if (!school) return null
 
   const basePath = getAdminBasePathForLocation()
+  const now = new Date()
   const branches = db.branches.bySchool(school.id)
   const activeBranches = branches.filter((branch) => branch.isActive)
   const instructors = db.instructors.bySchool(school.id)
@@ -39,9 +40,12 @@ export function AdminLaunchReadiness() {
   const students = db.students.bySchool(school.id)
   const slots = db.slots.bySchool(school.id)
   const bookings = db.bookings.bySchool(school.id)
+  const activeFutureBookings = bookings.filter((booking) => {
+    const slot = db.slots.byId(booking.slotId)
+    return booking.status === 'active' && slot !== null && getSlotDateTime(slot) > now
+  })
   const documents = adminDocuments.all(school.id)
   const settings = adminSettings.get(school.id)
-  const now = new Date()
   const sevenDays = addDays(now, 7)
   const futureFreeSlots = slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) > now)
   const weekFreeSlots = futureFreeSlots.filter((slot) => getSlotDateTime(slot) <= sevenDays)
@@ -65,7 +69,7 @@ export function AdminLaunchReadiness() {
     { title: 'Инструкторы', text: activeInstructors.length ? `${activeInstructors.length} инструкторов в работе` : 'Добавьте инструкторов, иначе расписание не стартует', done: activeInstructors.length > 0, to: `${basePath}/instructors` },
     { title: 'Ученики', text: students.length ? `${students.length} учеников в базе` : 'Загрузите учеников или добавьте первого вручную', done: students.length > 0, to: `${basePath}/students` },
     { title: 'Свободные окна', text: weekFreeSlots.length ? `${weekFreeSlots.length} окон на ближайшие 7 дней` : 'Откройте время в расписании на неделю', done: weekFreeSlots.length > 0, to: `${basePath}/schedule` },
-    { title: 'Тестовая запись', text: bookings.length ? 'Записи уже есть' : 'Сделайте тестовую запись ученика', done: bookings.length > 0, to: `${basePath}/schedule`, tone: 'warning' },
+    { title: 'Тестовая запись', text: activeFutureBookings.length ? 'Есть будущая активная запись' : 'Сделайте тестовую запись ученика на будущее время', done: activeFutureBookings.length > 0, to: `${basePath}/schedule`, tone: 'warning' },
     { title: 'Долги', text: debtStudents.length ? `${debtStudents.length} учеников должны ${money(totalDebt)}` : 'Критичных долгов не видно', done: debtStudents.length === 0, to: `${basePath}/payments`, tone: debtStudents.length ? 'danger' : 'ok' },
     { title: 'Документы', text: missingDocuments.length ? `${missingDocuments.length} документов требуют внимания` : 'Документы без красных флагов', done: missingDocuments.length === 0, to: `${basePath}/documents`, tone: missingDocuments.length ? 'warning' : 'ok' },
     { title: 'Прошедшие занятия', text: overdueBookings.length ? `${overdueBookings.length} занятий не закрыты` : 'Прошедшие занятия закрыты', done: overdueBookings.length === 0, to: `${basePath}/schedule`, tone: overdueBookings.length ? 'danger' : 'ok' },

@@ -1,5 +1,5 @@
 import { addMinutes, eachDayOfInterval, format, isBefore, parseISO } from 'date-fns'
-import { generateId } from '../lib/utils'
+import { formatDuration, generateId } from '../lib/utils'
 import { isWorkspaceSupabaseReady } from '../lib/supabase'
 import type { BulkSlotCreateResult, LessonType, ResolvedSlot, Slot, SlotStatus } from '../types'
 import { db } from './storage'
@@ -78,10 +78,40 @@ export function getAvailableSlots(
     .sort((left, right) => getSlotDateTime(left).getTime() - getSlotDateTime(right).getTime())
 }
 
+function minutesFromTime(value: string): number {
+  const [hours, minutes] = value.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+function isValidTime(value: string): boolean {
+  return /^\d{2}:\d{2}$/.test(value) && minutesFromTime(value) >= 0 && minutesFromTime(value) < 24 * 60
+}
+
+function validateSlotTiming(startTime: string, duration: number): string | null {
+  if (!isValidTime(startTime)) return 'Укажите корректное время начала.'
+  if (!Number.isFinite(duration) || !Number.isInteger(duration) || duration < 30 || duration > 240 || duration % 15 !== 0) {
+    return 'Длительность должна быть от 30 минут до 4 часов с шагом 15 минут.'
+  }
+  if (minutesFromTime(startTime) + duration > 24 * 60) return 'Занятие не должно переходить на следующий день.'
+  return null
+}
+
+function rangesOverlap(startA: number, durationA: number, startB: number, durationB: number): boolean {
+  return startA < startB + durationB && startB < startA + durationA
+}
+
+export function findSlotConflict(params: { instructorId: string; date: string; startTime: string; duration: number; excludeSlotId?: string }): Slot | null {
+  const start = minutesFromTime(params.startTime)
+  return db.slots
+    .byInstructorAndDate(params.instructorId, params.date)
+    .filter((slot) => slot.id !== params.excludeSlotId && slot.status !== 'cancelled')
+    .find((slot) => rangesOverlap(start, params.duration, minutesFromTime(slot.time), slot.duration)) ?? null
+}
+
 export function checkSlotDuplicate(instructorId: string, date: string, startTime: string): boolean {
   return db.slots
     .byInstructorAndDate(instructorId, date)
-    .some((slot) => slot.time === startTime)
+    .some((slot) => slot.status !== 'cancelled' && slot.time === startTime)
 }
 
 export function createSlot(params: CreateSlotParams, options: { skipRemote?: boolean } = {}): { ok: boolean; slot?: Slot; error?: string } {
@@ -89,8 +119,13 @@ export function createSlot(params: CreateSlotParams, options: { skipRemote?: boo
   if (!access.ok) return access
 
   const instructor = db.instructors.byId(params.instructorId)
+  const branch = db.branches.byId(params.branchId)
   if (!instructor) {
     return { ok: false, error: 'Инструктор не найден.' }
+  }
+
+  if (!branch?.isActive) {
+    return { ok: false, error: 'Нельзя создавать время для выключенного филиала.' }
   }
 
   if (!instructor.isActive) {
@@ -107,13 +142,17 @@ export function createSlot(params: CreateSlotParams, options: { skipRemote?: boo
     return { ok: false, error: 'Инструктор не относится к выбранному филиалу.' }
   }
 
+  const timingError = validateSlotTiming(params.startTime, params.duration)
+  if (timingError) return { ok: false, error: timingError }
+
   const slotDate = new Date(`${params.date}T${params.startTime}:00`)
   if (isBefore(slotDate, new Date())) {
     return { ok: false, error: 'Нельзя создать время в прошлом.' }
   }
 
-  if (checkSlotDuplicate(params.instructorId, params.date, params.startTime)) {
-    return { ok: false, error: 'Такое время уже существует.' }
+  const conflict = findSlotConflict({ instructorId: params.instructorId, date: params.date, startTime: params.startTime, duration: params.duration })
+  if (conflict) {
+    return { ok: false, error: `Окно пересекается с занятием ${conflict.time} на ${formatDuration(conflict.duration)}.` }
   }
 
   const slot: Slot = {
@@ -192,8 +231,13 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
   if (!access.ok) return access
 
   const instructor = db.instructors.byId(params.instructorId)
+  const branch = db.branches.byId(params.branchId)
   if (!instructor) {
     return { ok: false, error: 'Инструктор не найден.' }
+  }
+
+  if (!branch?.isActive) {
+    return { ok: false, error: 'Для выключенного филиала нельзя создать время.' }
   }
 
   if (!instructor.isActive) {
@@ -209,6 +253,17 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
   if (instructor.branchId !== params.branchId) {
     return { ok: false, error: 'Инструктор не относится к выбранному филиалу.' }
   }
+
+  const timingError = validateSlotTiming(params.windowStart, params.duration)
+  if (timingError) return { ok: false, error: timingError }
+  if (!isValidTime(params.windowEnd) || minutesFromTime(params.windowStart) >= minutesFromTime(params.windowEnd)) {
+    return { ok: false, error: 'Укажите корректный интервал рабочего дня.' }
+  }
+  if (!Number.isFinite(params.breakMinutes) || params.breakMinutes < 0 || params.breakMinutes > 180) {
+    return { ok: false, error: 'Перерыв должен быть от 0 до 180 минут.' }
+  }
+  if (!params.weekdays.length) return { ok: false, error: 'Выберите дни недели.' }
+  if (parseISO(params.dateFrom) > parseISO(params.dateTo)) return { ok: false, error: 'Дата окончания не может быть раньше даты начала.' }
 
   const dates = eachDayOfInterval({
     start: parseISO(params.dateFrom),
@@ -240,7 +295,7 @@ export function createBulkSlots(params: CreateBulkSlotsParams, options: { skipRe
         continue
       }
 
-      if (checkSlotDuplicate(params.instructorId, entry.date, entry.time)) {
+      if (findSlotConflict({ instructorId: params.instructorId, date: entry.date, startTime: entry.time, duration: params.duration })) {
         skippedDuplicates += 1
         continue
       }
