@@ -3607,3 +3607,385 @@
     }
   }
 }
+
+
+@layer components {
+  /* Booking OS visual pass: quiet, fast, recognisable, not a generic SaaS skin. */
+  .vroom-admin-shell {
+    --admin-bg: #F5F7FA;
+    --v-ink: #111827;
+    --v-muted: #667085;
+    --v-blue: #0A84FF;
+    --v-green: #22A35A;
+    --v-line: rgba(17,24,39,0.075);
+    --v-card: rgba(255,255,255,0.92);
+    --v-shadow-soft: 0 18px 44px rgba(25, 38, 54, 0.075);
+    --v-shadow-tight: 0 8px 22px rgba(25, 38, 54, 0.055);
+    background:
+      linear-gradient(180deg, #F7F9FC 0%, #F2F5F8 100%) !important;
+  }
+
+  .vroom-admin-shell::before {
+    opacity: 0.5 !important;
+    background:
+      linear-gradient(90deg, rgba(17,24,39,0.028) 1px, transparent 1px) 0 0 / 72px 72px,
+      radial-gradient(680px 300px at 76% -8%, rgba(10,132,255,0.105), transparent 65%),
+      radial-gradient(520px 300px at 6% 8%, rgba(34,163,90,0.06), transparent 66%) !important;
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.74) 48%, transparent 100%);
+  }
+
+  .vroom-admin-shell header {
+    border-bottom: 1px solid rgba(17,24,39,0.06) !important;
+    background: rgba(255,255,255,0.82) !important;
+    box-shadow: 0 10px 32px rgba(25,38,54,0.045) !important;
+  }
+
+  .vroom-admin-shell aside > div {
+    border-right: 1px solid rgba(17,24,39,0.06) !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(247,249,252,0.86)) !important;
+    box-shadow: 16px 0 42px rgba(25,38,54,0.045) !important;
+  }
+
+  .vroom-admin-shell aside nav p {
+    color: #9AA4B2 !important;
+    font-size: 10px !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .vroom-admin-shell .admin-sidebar-link {
+    position: relative;
+    min-height: 46px;
+    border: 1px solid transparent;
+    border-radius: 16px !important;
+  }
+
+  .vroom-admin-shell .admin-sidebar-link.is-active {
+    border-color: rgba(10,132,255,0.14) !important;
+    background: linear-gradient(135deg, #EEF7FF, #FFFFFF) !important;
+    color: #111827 !important;
+    box-shadow: 0 10px 24px rgba(10,132,255,0.10) !important;
+  }
+
+  .vroom-admin-shell .admin-sidebar-link.is-active::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 999px;
+    background: #0A84FF;
+  }
+
+  .vroom-admin-shell .v-admin-toolbar,
+  .vroom-admin-shell .v-admin-panel,
+  .vroom-admin-shell .v-human-card,
+  .vroom-admin-shell .v-admin-empty,
+  .vroom-admin-shell section[class~="rounded-[24px]"],
+  .vroom-admin-shell aside[class~="rounded-[24px]"] {
+    border: 1px solid var(--v-line) !important;
+    background: var(--v-card) !important;
+    box-shadow: var(--v-shadow-tight) !important;
+    backdrop-filter: blur(18px);
+  }
+
+  .vroom-admin-shell .v-admin-panel,
+  .vroom-admin-shell .v-human-card,
+  .vroom-admin-shell section[class~="rounded-[24px]"],
+  .vroom-admin-shell aside[class~="rounded-[24px]"] {
+    border-radius: 22px !important;
+  }
+
+  .vroom-admin-shell .v-admin-panel:hover,
+  .vroom-admin-shell .v-human-card:hover,
+  .vroom-admin-shell section[class~="rounded-[24px]"]:hover,
+  .vroom-admin-shell aside[class~="rounded-[24px]"]:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--v-shadow-soft) !important;
+  }
+
+  .vroom-admin-today > .v-admin-panel:first-child {
+    position: relative;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.96), rgba(245,249,255,0.88)) !important;
+  }
+
+  .vroom-admin-today > .v-admin-panel:first-child::after {
+    content: '';
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    width: 78px;
+    height: 78px;
+    border-radius: 24px;
+    border: 1px solid rgba(10,132,255,0.14);
+    background:
+      linear-gradient(135deg, rgba(10,132,255,0.14), transparent 58%),
+      linear-gradient(90deg, rgba(17,24,39,0.055) 1px, transparent 1px) 0 0 / 16px 16px;
+    opacity: 0.68;
+    pointer-events: none;
+  }
+
+  .vroom-admin-today > .v-admin-panel:first-child h1,
+  .vroom-admin-shell .v-admin-heading,
+  .vroom-admin-shell h1[class~="text-[24px]"],
+  .vroom-admin-shell h1[class~="text-[30px]"] {
+    font-weight: 680 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .vroom-admin-shell .v-route-pill,
+  .vroom-admin-shell .v-admin-pill {
+    min-height: 24px;
+    border: 1px solid rgba(17,24,39,0.055);
+    border-radius: 999px !important;
+    font-weight: 620 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .vroom-admin-shell .v-admin-button,
+  .vroom-admin-shell .v-admin-button-secondary,
+  .vroom-admin-shell .v-admin-button-tertiary {
+    border-radius: 14px !important;
+    font-weight: 620 !important;
+    box-shadow: none !important;
+  }
+
+  .vroom-admin-shell .v-admin-button,
+  .vroom-admin-shell .v-admin-button.is-blue {
+    border: 1px solid rgba(10,132,255,0.24) !important;
+    background: #0A84FF !important;
+    color: #fff !important;
+  }
+
+  .vroom-admin-shell .v-admin-button:hover,
+  .vroom-admin-shell .v-admin-button.is-blue:hover {
+    background: #0876E5 !important;
+    box-shadow: 0 12px 26px rgba(10,132,255,0.20) !important;
+  }
+
+  .vroom-admin-shell .v-admin-button-secondary {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+  }
+
+  .vroom-admin-shell .v-admin-button-tertiary {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: #667085 !important;
+  }
+
+  .vroom-admin-shell .v-admin-input,
+  .vroom-admin-shell input:not([type='checkbox']):not([type='radio']),
+  .vroom-admin-shell select,
+  .vroom-admin-shell textarea {
+    border-color: rgba(17,24,39,0.085) !important;
+    border-radius: 14px !important;
+    background: #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+  }
+
+  .vroom-admin-shell .v-admin-input:focus,
+  .vroom-admin-shell input:not([type='checkbox']):not([type='radio']):focus,
+  .vroom-admin-shell select:focus,
+  .vroom-admin-shell textarea:focus {
+    border-color: rgba(10,132,255,0.38) !important;
+    box-shadow: 0 0 0 4px rgba(10,132,255,0.10) !important;
+  }
+
+  .vroom-admin-shell .vroom-schedule-toolbar {
+    background: rgba(255,255,255,0.92) !important;
+  }
+
+  .vroom-admin-shell .vroom-schedule-filter {
+    border-radius: 18px !important;
+    background: rgba(255,255,255,0.88) !important;
+  }
+
+  .vroom-admin-shell .vroom-schedule-filter button,
+  .vroom-admin-shell .v-tab-row-wrap .v-tab {
+    border-radius: 999px !important;
+  }
+
+  .vroom-admin-shell .vroom-day-card {
+    border-radius: 16px !important;
+    background: rgba(255,255,255,0.88) !important;
+    box-shadow: none !important;
+  }
+
+  .vroom-admin-shell .vroom-day-card.is-today {
+    background: linear-gradient(180deg, #EAF4FF, #FFFFFF) !important;
+    border-color: rgba(10,132,255,0.22) !important;
+  }
+
+  .vroom-admin-shell .vroom-calendar-grid {
+    border-radius: 22px !important;
+    box-shadow: var(--v-shadow-tight) !important;
+  }
+
+  .vroom-admin-shell .vroom-calendar-grid > div:first-child {
+    background: #F7FAFD !important;
+  }
+
+  .vroom-admin-shell .vroom-calendar-cell {
+    background: rgba(255,255,255,0.84) !important;
+  }
+
+  .vroom-admin-shell .vroom-slot-card {
+    box-shadow: none !important;
+  }
+
+  .vroom-admin-shell .vroom-slot-card:hover {
+    box-shadow: 0 14px 26px rgba(25,38,54,0.10) !important;
+  }
+
+  .vroom-admin-shell .v-mobile-slot-row {
+    box-shadow: none !important;
+  }
+
+  .vroom-admin-shell .v-mobile-slot-row:hover {
+    transform: translateY(-1px);
+  }
+
+  .vroom-admin-shell .v-person-marker {
+    --person-bg: #F2F4F7;
+    --person-line: rgba(17,24,39,0.08);
+    --person-ink: #111827;
+    --person-soft: #667085;
+    display: inline-grid;
+    max-width: 100%;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    color: var(--person-ink);
+    vertical-align: middle;
+  }
+
+  .vroom-admin-shell .v-person-marker-icon {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border: 1px solid var(--person-line);
+    border-radius: 9px;
+    background: var(--person-bg);
+    color: var(--person-ink);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+  }
+
+  .vroom-admin-shell .v-person-marker-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .vroom-admin-shell .v-person-marker-name,
+  .vroom-admin-shell .v-person-marker-meta {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vroom-admin-shell .v-person-marker-name {
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .vroom-admin-shell .v-person-marker-meta {
+    margin-top: 1px;
+    font-size: 11px;
+    font-weight: 560;
+    line-height: 1.25;
+    color: var(--person-soft);
+  }
+
+  .vroom-admin-shell .v-person-marker-student {
+    --person-bg: #EEF7FF;
+    --person-line: rgba(10,132,255,0.18);
+    --person-ink: #075EBC;
+    --person-soft: #4E84B8;
+  }
+
+  .vroom-admin-shell .v-person-marker-instructor {
+    --person-bg: #F1FAF4;
+    --person-line: rgba(34,163,90,0.18);
+    --person-ink: #188447;
+    --person-soft: #3E7B59;
+  }
+
+  .vroom-admin-shell .v-person-marker.is-compact {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 7px;
+  }
+
+  .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-name {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-meta {
+    display: none;
+  }
+
+  .vroom-admin-shell .v-person-avatar {
+    border: 1px solid rgba(10,132,255,0.14);
+    background: linear-gradient(135deg, #EAF4FF, #FFFFFF) !important;
+    color: #075EBC !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+  }
+
+  .vroom-admin-shell .admin-mobile-nav {
+    border-top: 1px solid rgba(17,24,39,0.07) !important;
+    background: rgba(255,255,255,0.92) !important;
+    box-shadow: 0 -18px 34px rgba(25,38,54,0.08) !important;
+  }
+
+  .vroom-admin-shell .admin-mobile-nav-item.is-active {
+    background: #EAF4FF !important;
+    color: #075EBC !important;
+  }
+
+  @media (max-width: 767px) {
+    .vroom-admin-shell::before {
+      background:
+        radial-gradient(420px 220px at 85% -4%, rgba(10,132,255,0.12), transparent 68%),
+        linear-gradient(180deg, #F7F9FC, #F2F5F8) !important;
+    }
+
+    .vroom-admin-today > .v-admin-panel:first-child::after {
+      width: 54px;
+      height: 54px;
+      right: 14px;
+      top: 14px;
+      border-radius: 18px;
+      opacity: 0.42;
+    }
+
+    .vroom-admin-shell .v-admin-panel,
+    .vroom-admin-shell .v-human-card,
+    .vroom-admin-shell section[class~="rounded-[24px]"],
+    .vroom-admin-shell aside[class~="rounded-[24px]"] {
+      border-radius: 20px !important;
+    }
+
+    .vroom-admin-shell .v-admin-button,
+    .vroom-admin-shell .v-admin-button-secondary,
+    .vroom-admin-shell .v-admin-button-tertiary {
+      border-radius: 13px !important;
+    }
+  }
+}

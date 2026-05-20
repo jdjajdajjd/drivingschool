@@ -7,6 +7,7 @@ import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
+import { PersonMarker } from '../../components/admin/PersonMarker'
 import type { Payment, Student, StudentProgress, StudentRequestStatus, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
@@ -864,10 +865,7 @@ export function AdminStudents() {
                       className="mt-2 h-5 w-5 shrink-0 accent-[#0A84FF]"
                     />
                     <span className="v-person-avatar shrink-0">{initials}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold text-[#111827]">{student.name}</span>
-                      <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{student.phone}</span>
-                    </span>
+                    <PersonMarker role="student" name={student.name} meta={student.phone} className="min-w-0 flex-1" />
                     <span className={`v-admin-pill max-w-[118px] shrink-0 truncate ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2">
@@ -885,7 +883,7 @@ export function AdminStudents() {
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-medium text-[#667085]">
-                    {instructor ? <span className="truncate">{instructor.name}</span> : <span className="v-admin-pill v-tone-warning">нет инструктора</span>}
+                    {instructor ? <PersonMarker role="instructor" name={instructor.name} compact className="min-w-0" /> : <span className="v-admin-pill v-tone-warning">нет инструктора</span>}
                     <ChevronRight className="shrink-0 text-[#98A2B3]" width={17} height={17} />
                   </div>
                 </button>
@@ -902,14 +900,11 @@ export function AdminStudents() {
               return (
                 <button key={student.id} className="grid w-full grid-cols-[40px_minmax(240px,1fr)_minmax(160px,.6fr)_minmax(220px,.9fr)_minmax(120px,.45fr)_28px] items-center gap-4 rounded-[20px] border border-[#E5EAF1] bg-white p-4 text-left shadow-[0_10px_24px_rgba(16,20,24,0.035)] transition hover:-translate-y-0.5 hover:border-[#B8D8FF]" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
                   <span className="v-person-avatar shrink-0">{initials}</span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-semibold text-[#111827]">{student.name}</span>
-                    <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{student.phone || 'телефон не указан'}</span>
-                  </span>
+                  <PersonMarker role="student" name={student.name} meta={student.phone || 'телефон не указан'} className="min-w-0" />
                   <span><span className={`v-admin-pill ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span></span>
                   <span className="min-w-0">
                     <span className="block truncate text-[13px] font-semibold text-[#111827]">{data.next[student.id] ? formatStudentDate(data.next[student.id]) : 'нет ближайшей записи'}</span>
-                    <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'инструктор не назначен'}</span>
+                    {instructor ? <PersonMarker role="instructor" name={instructor.name} compact className="mt-1" /> : <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">инструктор не назначен</span>}
                   </span>
                   <span>{debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">ок</span>}</span>
                   <ChevronRight className="justify-self-end text-[#98A2B3]" width={18} height={18} />

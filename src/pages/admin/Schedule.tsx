@@ -8,6 +8,7 @@ import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirme
 import { createBulkSlotsConfirmed, createSlotConfirmed, updateSlotStatusConfirmed } from '../../services/slotService'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
+import { PersonMarker } from '../../components/admin/PersonMarker'
 import { useToast } from '../../components/ui/Toast'
 import { createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { filterBookings, filterBranches, filterInstructors, filterSlots, filterStudents } from '../../services/staffScope'
@@ -471,8 +472,9 @@ export function AdminSchedule() {
                       }>
                         <strong className="text-[17px] font-semibold tabular-nums text-[#111827]">{slot.time}</strong>
                         <span className="min-w-0">
-                          <span className="block truncate text-[14px] font-semibold text-[#111827]">{booking?.studentName ?? 'Свободное окно'}</span>
-                          <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
+                          {booking ? <PersonMarker role="student" name={booking.studentName} compact /> : <span className="block truncate text-[14px] font-semibold text-[#188447]">Свободное окно</span>}
+                          <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{lessonLabel} · {branch?.name ?? 'Филиал'}</span>
+                          <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор'} compact className="mt-1" />
                         </span>
                         <span className={'text-[12px] font-semibold ' + statusClassName}>{getSlotStatusLabel(slot.status)}</span>
                       </button>
@@ -521,12 +523,12 @@ export function AdminSchedule() {
                                     className={'vroom-slot-card relative min-h-[78px] rounded-[14px] border px-2.5 py-2 text-left text-[12px] font-medium leading-4 transition hover:-translate-y-0.5 hover:brightness-[0.99] ' + statusClass(slot.status)}
                                   >
                                     <span className={'absolute right-2.5 top-2.5 h-2 w-2 rounded-full ' + statusDotClass(slot.status)} />
-                                    <span className="line-clamp-3 break-words pr-4 leading-4">{booking?.studentName ?? 'Занятие'}</span>
+                                    {booking ? <PersonMarker role="student" name={booking.studentName} compact className="pr-4" /> : <span className="line-clamp-2 break-words pr-4 leading-4">Занятие</span>}
                                     <span className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-medium opacity-75">
                                       <span>{format(getSlotDateTime(slot), 'HH:mm')}</span>
                                       <span>{lessonLabel}</span>
                                     </span>
-                                    <span className="mt-0.5 line-clamp-1 break-words text-[11px] font-medium opacity-75">{instructor?.name ?? 'Инструктор'}</span>
+                                    <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор'} compact className="mt-1 opacity-90" />
                                   </button>
                                 )
                               })}

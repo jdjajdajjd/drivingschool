@@ -4,6 +4,7 @@ import { format, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { CalendarPlus, Clock, OpenNewWindow as ExternalLink, UserPlus, Group, UserBadgeCheck, Building } from 'iconoir-react'
 import { Modal } from '../../components/ui/Modal'
+import { PersonMarker } from '../../components/admin/PersonMarker'
 import { db } from '../../services/storage'
 import { getSlotDateTime } from '../../services/bookingService'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
@@ -86,7 +87,7 @@ function SlotLine({ slot }: { slot: Slot }) {
     <div className="grid gap-1 rounded-[16px] border border-[#E5EAF1] bg-white px-3 py-2.5 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3">
       <strong className="text-[16px] font-semibold tabular-nums text-[#111827]">{slot.time}</strong>
       <span className="min-w-0 text-[13px] font-medium text-[#667085]">
-        <span className="block truncate text-[#111827]">{instructor?.name ?? 'Инструктор не указан'}</span>
+        <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор не указан'} compact />
         <span className="block truncate">{branch?.name ?? 'Филиал не указан'}</span>
       </span>
       <span className="v-route-pill w-max bg-[#ECF8F0] text-[#188447]">{formatDuration(slot.duration)}</span>
@@ -119,12 +120,12 @@ export function AdminToday() {
       <section className="v-admin-panel overflow-hidden p-5 md:p-6">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div className="min-w-0">
-            <p className="v-route-pill bg-[#EAF4FF] text-[#075EBC]">Запись учеников</p>
+            <p className="v-route-pill bg-[#EAF4FF] text-[#075EBC]">Сегодня</p>
             <h1 className="mt-3 text-[30px] font-semibold leading-tight text-[#111827] md:text-[40px]">
-              Простая запись на практику
+              Записи, окна и ближайшие занятия
             </h1>
             <p className="mt-3 max-w-2xl text-[15px] font-medium leading-6 text-[#667085]">
-              Школа открывает свободное время, ученик выбирает окно сам, администратор видит запись в расписании.
+              Один экран для ежедневной работы: создать свободное время, открыть ссылку ученикам и быстро проверить расписание.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <button className="v-admin-button is-blue" onClick={() => navigate(`${basePath}/schedule?create=slot`)}>
@@ -139,9 +140,7 @@ export function AdminToday() {
                 <UserPlus width={16} height={16} />
                 Добавить ученика
               </Link>
-              <button type="button" onClick={() => setBlocksOpen(true)} className="v-admin-button-tertiary">
-                Блоки
-              </button>
+              <button type="button" onClick={() => setBlocksOpen(true)} className="v-admin-button-tertiary">Блоки</button>
             </div>
           </div>
 
@@ -211,7 +210,7 @@ export function AdminToday() {
                   <button key={booking.id} onClick={() => navigate(`${basePath}/schedule`)} className="grid w-full gap-2 p-4 text-left transition hover:bg-[#F8FAFC] sm:grid-cols-[76px_minmax(0,1fr)_auto] sm:items-center">
                     <span className="text-[18px] font-semibold tabular-nums text-[#111827]">{slot.time}</span>
                     <span className="min-w-0">
-                      <strong className="block truncate text-[15px] font-semibold text-[#111827]">{booking.studentName}</strong>
+                      <PersonMarker role="student" name={booking.studentName} compact />
                       <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
                     </span>
                     <span className="v-route-pill w-max bg-[#EAF4FF] text-[#075EBC]">{formatDuration(slot.duration)}</span>
@@ -261,8 +260,8 @@ export function AdminToday() {
                 <button key={booking.id} onClick={() => navigate(`${basePath}/schedule`)} className="grid gap-2 rounded-[18px] border border-[#E5EAF1] bg-white p-3 text-left transition hover:border-[#B8D8FF] sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center">
                   <span className="text-[13px] font-semibold text-[#075EBC]">{format(getSlotDateTime(slot), 'd MMM, HH:mm', { locale: ru })}</span>
                   <span className="min-w-0">
-                    <strong className="block truncate text-[14px] font-semibold text-[#111827]">{booking.studentName}</strong>
-                    <span className="block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'Инструктор'}</span>
+                    <PersonMarker role="student" name={booking.studentName} compact />
+                    <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор'} compact />
                   </span>
                   <span className="v-route-pill w-max">{formatDuration(slot.duration)}</span>
                 </button>
@@ -285,9 +284,12 @@ export function AdminToday() {
           </div>
         </div>
       </section>
+
       <Modal open={blocksOpen} onClose={() => setBlocksOpen(false)} title="Главная" size="sm">
         <div className="p-5">
-          <p className="text-[14px] font-medium leading-6 text-[#667085]">Главная оставлена простой: записи, свободные окна, ученики, инструкторы и ссылка для самостоятельной записи.</p>
+          <p className="text-[14px] font-medium leading-6 text-[#667085]">
+            Главная оставлена короткой: сегодня, ближайшие занятия, свободные окна и ссылка для учеников.
+          </p>
           <div className="v-modal-actions mt-4">
             <button type="button" onClick={() => setBlocksOpen(false)} className="v-admin-button flex-1">Понятно</button>
           </div>
