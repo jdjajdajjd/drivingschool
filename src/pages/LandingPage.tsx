@@ -47,9 +47,24 @@ const schoolFeatures = [
 ]
 
 const pains = [
-  { title: 'Администратор меньше сидит в телефоне', text: 'Ученик сам выбирает окно, а школа видит запись в кабинете.' },
-  { title: 'Директор видит потери', text: 'Свободные окна, долги, просроченные занятия и проблемы собраны на главном экране.' },
-  { title: 'Школу проще подключить', text: 'Филиалы, инструкторы, слоты, ученики и публичная ссылка собраны в один запускной контур.' },
+  {
+    title: 'Администратор меньше сидит в телефоне',
+    text: 'Ученик сам выбирает окно, а школа сразу видит запись в кабинете.',
+    icon: UserCheck,
+    label: 'меньше звонков',
+  },
+  {
+    title: 'Директор видит потери',
+    text: 'Свободные окна, долги, просроченные занятия и проблемы дня собраны на главном экране.',
+    icon: ChartLineUp,
+    label: 'контроль денег',
+  },
+  {
+    title: 'Школу проще подключить',
+    text: 'Филиалы, инструкторы, слоты, ученики и публичная ссылка собраны в один запускной контур.',
+    icon: CheckCircle2,
+    label: 'быстрый старт',
+  },
 ]
 
 function LandingPhoneMockup() {
@@ -233,13 +248,24 @@ export function LandingPage() {
           })}
         </section>
 
-        <section className="mt-5 grid gap-3 lg:grid-cols-3">
-          {pains.map((pain) => (
-            <article key={pain.title} className="landing-proof-card rounded-[26px] border border-[#D7E2EC] bg-[#111827] p-5 text-white shadow-[0_18px_54px_rgba(17,24,39,0.16)]">
-              <h3 className="text-[19px] font-semibold leading-6">{pain.title}</h3>
-              <p className="mt-2 text-[14px] font-normal leading-6 text-[#D4DEE9]">{pain.text}</p>
-            </article>
-          ))}
+        <section className="landing-proof-section mt-5 grid gap-3 lg:grid-cols-3">
+          {pains.map((pain) => {
+            const Icon = pain.icon
+            return (
+              <article key={pain.title} className="landing-proof-card rounded-[26px] border border-[#D7E2EC] bg-white p-5 shadow-[0_18px_54px_rgba(43,57,75,0.10)]">
+                <div className="flex items-start justify-between gap-4">
+                  <span className="landing-proof-icon grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#EAF3FF] text-[#315A7C]">
+                    <Icon size={21} weight="duotone" />
+                  </span>
+                  <span className="landing-proof-label rounded-full border border-[#DDE7F0] bg-[#F8FBFE] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#5A6675]">
+                    {pain.label}
+                  </span>
+                </div>
+                <h3 className="mt-5 text-[20px] font-semibold leading-[1.18] tracking-[-0.01em] text-[#111827]">{pain.title}</h3>
+                <p className="mt-2 text-[15px] font-medium leading-6 text-[#536170]">{pain.text}</p>
+              </article>
+            )
+          })}
         </section>
 
         <section className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">

@@ -193,6 +193,43 @@
     background: rgba(255,255,255,0.68) !important;
   }
 
+  .landing-proof-card {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(17,24,39,0.08) !important;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,251,254,0.88)) !important;
+    color: #111827 !important;
+    transition: transform 220ms var(--ease), border-color 220ms var(--ease), box-shadow 220ms var(--ease);
+  }
+
+  .landing-proof-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #0A84FF, #34C759);
+    opacity: 0.72;
+  }
+
+  .landing-proof-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(10,132,255,0.18) !important;
+    box-shadow: var(--shadow-card-hover) !important;
+  }
+
+  .landing-proof-card:nth-child(2) .landing-proof-icon {
+    background: #EEF8F1 !important;
+    color: #247A4B !important;
+  }
+
+  .landing-proof-card:nth-child(3) .landing-proof-icon {
+    background: #F2EEFF !important;
+    color: #5A4A87 !important;
+  }
+
   .landing-benefit-card,
   .landing-flow-card,
   .landing-admin-card,
@@ -273,6 +310,18 @@
 
     .landing-title {
       max-width: 10ch !important;
+    }
+
+    .landing-proof-card {
+      border-radius: 22px !important;
+      padding: 16px !important;
+    }
+
+    .landing-proof-label {
+      max-width: 138px;
+      white-space: normal;
+      text-align: right;
+      line-height: 1.25;
     }
   }
 
