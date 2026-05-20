@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Archive, Download, NavArrowRight as ChevronRight, Search, Upload, UserPlus } from 'iconoir-react'
+import { Archive, NavArrowRight as ChevronRight, Search, Upload, UserPlus } from 'iconoir-react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
@@ -710,16 +710,17 @@ export function AdminStudents() {
     }
   }
 
+  void toggleVisible
+  void exportStudentsCsv
+  void compactTable
+  void toggleCompactTable
+  void studentStats
+  void problemCount
+
   const tabs: { id: FilterTab; label: string; count?: number }[] = [
     { id: 'all', label: 'Все', count: data.rows.length },
     { id: 'active', label: 'Активные' },
-    { id: 'problem', label: 'Проблемные', count: problemCount || undefined },
-    { id: 'debt', label: 'С задолженностью', count: data.debtStudents.size || undefined },
-    { id: 'no_docs', label: 'Без документов' },
     { id: 'no_instructor', label: 'Без инструктора' },
-    { id: 'no_group', label: 'Без группы' },
-    { id: 'ready_exam', label: 'К экзамену' },
-    { id: 'inactive', label: 'Неактивные' },
   ]
 
   if (!school) return null
@@ -749,14 +750,6 @@ export function AdminStudents() {
             Добавить ученика
           </button>
           <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" className="hidden" onChange={(event) => void importStudentsCsv(event)} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canManageStudents || importing || bulkPending} className="v-admin-button-secondary disabled:opacity-50">
-            <Upload width={16} height={16} />
-            {importing ? 'Импорт...' : bulkPending ? 'Сохраняем...' : 'Умный импорт'}
-          </button>
-          <button type="button" onClick={exportStudentsCsv} className="v-admin-button-secondary">
-            <Download width={16} height={16} />
-            Экспорт
-          </button>
         </div>
       </div>
 
@@ -767,16 +760,10 @@ export function AdminStudents() {
             {tab.count !== undefined ? <span className="ml-2 rounded-full bg-[#EEF2F5] px-2 py-0.5 text-[11px] text-[#59626D]">{tab.count}</span> : null}
           </button>
         ))}
-        <div className="v-tab-tools ml-auto flex shrink-0 items-center gap-2 py-2">
-          {selectedIds.length > 0 ? <span className="rounded-full bg-[#111827] px-3 py-1 text-[11px] font-medium text-white">Выбрано {selectedIds.length}</span> : null}
-          <button type="button" onClick={toggleCompactTable} className={`rounded-full px-3 py-1 text-[11px] font-medium ${compactTable ? 'bg-[#111827] text-white' : 'bg-[#F2F6FA] text-[#667381]'}`}>
-            Плотно
-          </button>
-        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-3 md:p-5">
-        <div className="mb-3 hidden gap-3 rounded-[18px] border border-[#D7E2EC] bg-white p-4 shadow-[0_10px_24px_rgba(16,20,24,0.04)] md:grid lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="hidden">
           <div>
             <p className="text-[14px] font-black text-[#111827]">Умный импорт для таблиц автошкол</p>
             <p className="mt-1 text-[13px] font-semibold leading-5 text-[#667085]">
@@ -825,23 +812,6 @@ export function AdminStudents() {
             </div>
           </section>
         ) : null}
-        <section className="v-students-summary mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {studentStats.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => setFilterPersisted(item.filter)}
-              className={`v-student-stat is-${item.tone} ${filter === item.filter ? 'is-active' : ''}`}
-            >
-              <span className="min-w-0">
-                <span className="block truncate text-[12px] font-semibold text-[#667085]">{item.label}</span>
-                <strong className="mt-1 block text-[28px] font-semibold leading-none text-[#111827] tabular-nums">{item.value}</strong>
-              </span>
-              <span className="truncate text-right text-[12px] font-medium text-[#667085]">{item.caption}</span>
-            </button>
-          ))}
-        </section>
-
         {selectedIds.length > 0 ? (
           <div className="mb-3 rounded-[14px] border border-[#DCE2E8] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.05)]">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -923,54 +893,29 @@ export function AdminStudents() {
             })}
           </div>
 
-          <div className="v-admin-panel v-students-list hidden overflow-hidden md:block">
-            <div className="v-students-list-head grid grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-3 text-[11px] font-semibold uppercase text-[#98A2B3]">
-              <span className="text-center"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} className="h-5 w-5 accent-[#0A84FF]" /></span>
-              <span>Ученик</span>
-              <span>Статус</span>
-              <span>Ближайшее</span>
-              <span>Деньги</span>
-              <span />
-            </div>
-            <div>
-                {filtered.map((student) => {
-                  const debt = getDebtForStudent(student.id)
-                  const missingDocs = data.docs[student.id] ?? 0
-                  const hours = data.hours[student.id] ?? 0
-                  const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
-                  const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
-                  const stage = student.trainingStage
-
-                  return (
-                    <button key={student.id} className="v-student-row grid w-full grid-cols-[40px_minmax(280px,1.35fr)_minmax(150px,.7fr)_minmax(210px,.95fr)_minmax(180px,.8fr)_40px] items-center gap-4 px-4 py-4 text-left transition" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
-                      <span className="text-center" onClick={(event) => event.stopPropagation()}>
-                        <input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggleSelected(student.id)} className="h-5 w-5 accent-[#0A84FF]" />
-                      </span>
-                      <span>
-                        <div className="flex items-center gap-3">
-                          <span className="v-person-avatar shrink-0">{initials}</span>
-                          <span className="min-w-0">
-                            <span className="block truncate text-[15px] font-semibold text-[#111827]">{student.name}</span>
-                            <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">
-                              {student.categoryCodes?.length ? `Категория ${student.categoryCodes.join(', ')}` : 'Категория не выбрана'}
-                            </span>
-                          </span>
-                        </div>
-                      </span>
-                      <span><span className={`v-admin-pill ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span></span>
-                      <span>
-                        <span className="block truncate text-[13px] font-semibold text-[#111827]">{data.next[student.id] ? formatStudentDate(data.next[student.id]) : 'нет записи'}</span>
-                        <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'инструктор не назначен'}</span>
-                      </span>
-                      <span>
-                        {debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">баланс ок</span>}
-                        <span className="mt-1 block text-[12px] font-medium text-[#667085]">{missingDocs > 0 ? `${missingDocs} док. проверить` : `${hours}ч практики · документы готовы`}</span>
-                      </span>
-                      <ChevronRight className="justify-self-end text-[#98A2B3]" width={18} height={18} />
-                    </button>
-                  )
-                })}
-            </div>
+          <div className="hidden gap-3 md:grid">
+            {filtered.map((student) => {
+              const debt = getDebtForStudent(student.id)
+              const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
+              const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+              const stage = student.trainingStage
+              return (
+                <button key={student.id} className="grid w-full grid-cols-[40px_minmax(240px,1fr)_minmax(160px,.6fr)_minmax(220px,.9fr)_minmax(120px,.45fr)_28px] items-center gap-4 rounded-[20px] border border-[#E5EAF1] bg-white p-4 text-left shadow-[0_10px_24px_rgba(16,20,24,0.035)] transition hover:-translate-y-0.5 hover:border-[#B8D8FF]" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
+                  <span className="v-person-avatar shrink-0">{initials}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[15px] font-semibold text-[#111827]">{student.name}</span>
+                    <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{student.phone || 'телефон не указан'}</span>
+                  </span>
+                  <span><span className={`v-admin-pill ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span></span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-semibold text-[#111827]">{data.next[student.id] ? formatStudentDate(data.next[student.id]) : 'нет ближайшей записи'}</span>
+                    <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'инструктор не назначен'}</span>
+                  </span>
+                  <span>{debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">ок</span>}</span>
+                  <ChevronRight className="justify-self-end text-[#98A2B3]" width={18} height={18} />
+                </button>
+              )
+            })}
           </div>
           </>
         )}

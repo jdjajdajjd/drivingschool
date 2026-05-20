@@ -1,109 +1,83 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { OpenNewWindow, UserBadgeCheck, Building, Clock, CalendarPlus, Link as LinkIcon } from 'iconoir-react'
 import { db } from '../../services/storage'
 import { adminSettings, createCurrentStaffAuditEntry } from '../../services/adminStorage'
-import type { DocumentType, SchoolSettings as SchoolSettingsType } from '../../types'
+import type { SchoolSettings as SchoolSettingsType } from '../../types'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { formatDuration } from '../../lib/utils'
 import { updateSchoolConfirmed } from '../../services/schoolService'
-
-const launchSteps = [
-  'Заполнить филиалы, инструкторов и рабочие часы.',
-  'Импортировать учеников из CSV/XLS/XLSX на странице «Ученики» или добавить вручную.',
-  'Создать свободные окна минимум на 7 дней вперёд.',
-  'Проверить публичную ссылку школы и тестовую запись ученика.',
-  'Назначить ответственного администратора и включить уведомления.',
-]
-
-const operationRules = [
-  'Оплата 4 990 ₽/мес принимается вручную переводом; доступ продлевается после подтверждения оплаты.',
-  'Резервное копирование Supabase и проверка /api/health выполняются перед массовой рассылкой.',
-  'При инциденте P1: остановить новые подключения, сохранить скрин/время, проверить Supabase и последние изменения.',
-]
+import { getAdminBasePathForLocation } from '../../services/accessControl'
 
 const LESSON_DURATION_OPTIONS = [45, 60, 90, 120]
-const BREAK_DURATION_OPTIONS = [0, 10, 15, 30, 45, 60]
-const BOOKING_DAYS_OPTIONS = [7, 14, 21, 30, 45, 60]
+const BOOKING_DAYS_OPTIONS = [7, 14, 21, 30]
 const CANCEL_HOURS_OPTIONS = [2, 4, 6, 12, 24]
 
-const DOCUMENT_OPTIONS: Array<{ type: DocumentType; label: string; hint: string }> = [
-  { type: 'contract', label: 'Договор', hint: 'Основа допуска и печатного пакета.' },
-  { type: 'passport', label: 'Паспорт', hint: 'Нужен для договора и экзамена.' },
-  { type: 'medical_certificate', label: 'Медсправка', hint: 'Критична перед экзаменом.' },
-  { type: 'consent_data_processing', label: 'Согласие на данные', hint: 'Для хранения данных ученика.' },
-  { type: 'application', label: 'Заявление', hint: 'Часто требуется в учебном деле.' },
-  { type: 'snils', label: 'СНИЛС', hint: 'Если школа собирает его в пакете.' },
-  { type: 'state_fee_receipt', label: 'Госпошлина', hint: 'Для контроля перед ГИБДД.' },
-  { type: 'photo', label: 'Фото', hint: 'Для личного дела.' },
-  { type: 'gibdd_exam_doc', label: 'Документы ГИБДД', hint: 'Финальный допуск к экзамену.' },
-]
+function plural(value: number, one: string, few: string, many: string): string {
+  const mod10 = Math.abs(value) % 10
+  const mod100 = Math.abs(value) % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
+}
 
-const DEFAULT_REQUIRED_DOCUMENTS: DocumentType[] = ['contract', 'passport', 'medical_certificate', 'consent_data_processing', 'gibdd_exam_doc']
+function SetupCard({ done, index, title, text, to }: { done: boolean; index: number; title: string; text: string; to: string }) {
+  return (
+    <Link to={to} className={`rounded-[20px] border p-4 transition hover:-translate-y-0.5 ${done ? 'border-[rgba(52,199,89,0.20)] bg-[#F1FAF4]' : 'border-[#D7E2EC] bg-white'}`}>
+      <span className={`grid h-8 w-8 place-items-center rounded-full text-[13px] font-semibold ${done ? 'bg-[#188447] text-white' : 'bg-[#EAF4FF] text-[#075EBC]'}`}>{done ? '✓' : index}</span>
+      <strong className="mt-4 block text-[15px] font-semibold text-[#111827]">{title}</strong>
+      <span className="mt-1 block text-[13px] font-medium leading-5 text-[#667085]">{text}</span>
+    </Link>
+  )
+}
 
 export function AdminSettings() {
   const school = db.schools.currentAdmin()
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [copiedTemplate, setCopiedTemplate] = useState('')
+  const [copied, setCopied] = useState(false)
   const [schoolPhone, setSchoolPhone] = useState(school?.phone ?? '')
   const canManageSettings = canUseAdminPermission('settings.manage')
+  const basePath = getAdminBasePathForLocation()
 
   const defaults: SchoolSettingsType = useMemo(() => {
-    if (!school) return { schoolId: '', defaultLessonDuration: 60, maxDaysAheadForBooking: 14, minHoursBeforeCancel: 4, maxActiveBookingsPerStudent: 3, allowBookingWithDebt: false, allowBookingWithoutMedical: false, allowBookingWithoutContract: false, requireManualModeration: false, allowChangeInstructor: true, allowStudentChooseInstructor: true, allowDifferentInstructors: true, maxLessonsPerDay: 2, maxLessonsPerWeek: 6, breakBetweenLessons: 15, workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 20, defaultPricingPlans: [], blockBookingOnDebt: true, debtGracePeriodDays: 7, notifyAdminOnNoShow: true, notifyAdminOnCancel: true, notifyAdminOnNewBooking: true, notifyAdminOnDebt: true, requiredDocuments: [], documentExpiryWarningDays: 14 }
+    if (!school) return { schoolId: '', defaultLessonDuration: 90, maxDaysAheadForBooking: 14, minHoursBeforeCancel: 4, maxActiveBookingsPerStudent: 2, allowBookingWithDebt: true, allowBookingWithoutMedical: true, allowBookingWithoutContract: true, requireManualModeration: false, allowChangeInstructor: true, allowStudentChooseInstructor: true, allowDifferentInstructors: true, maxLessonsPerDay: 2, maxLessonsPerWeek: 6, breakBetweenLessons: 15, workDays: [1, 2, 3, 4, 5, 6], workStartHour: 8, workEndHour: 20, defaultPricingPlans: [], blockBookingOnDebt: false, debtGracePeriodDays: 7, notifyAdminOnNoShow: true, notifyAdminOnCancel: true, notifyAdminOnNewBooking: true, notifyAdminOnDebt: false, requiredDocuments: [], documentExpiryWarningDays: 14 }
     return adminSettings.get(school.id)
   }, [school?.id])
 
   const [settings, setSettings] = useState<SchoolSettingsType>(defaults)
+  const update = (key: keyof SchoolSettingsType, value: unknown) => setSettings((current) => ({ ...current, [key]: value }))
 
-  const update = (key: keyof SchoolSettingsType, value: unknown) => {
-    setSettings((s) => ({ ...s, [key]: value }))
-  }
+  if (!school) return null
 
-  const selectedRequiredDocuments = settings.requiredDocuments?.length ? settings.requiredDocuments : DEFAULT_REQUIRED_DOCUMENTS
+  const instructors = db.instructors.bySchool(school.id)
+  const activeInstructors = instructors.filter((item) => item.isActive)
+  const branches = db.branches.bySchool(school.id)
+  const freeSlots = db.slots.bySchool(school.id).filter((slot) => slot.status === 'available' && new Date(`${slot.date}T${slot.time}:00`) > new Date())
+  const publicUrl = `${window.location.origin}/school/${school.slug}`
+  const setupItems = [
+    { done: activeInstructors.length > 0, title: 'Добавьте инструктора', text: activeInstructors.length ? `${activeInstructors.length} ${plural(activeInstructors.length, 'инструктор активен', 'инструктора активны', 'инструкторов активны')}` : 'Без инструктора ученикам нечего выбирать.', to: `${basePath}/instructors` },
+    { done: branches.length > 0, title: 'Укажите филиал', text: branches.length ? `${branches.length} ${plural(branches.length, 'филиал', 'филиала', 'филиалов')} в базе` : 'Нужно место, где проходит занятие.', to: `${basePath}/branches` },
+    { done: freeSlots.length > 0, title: 'Создайте свободные окна', text: freeSlots.length ? `${freeSlots.length} окон доступно ученикам` : 'Окна появляются на публичной странице.', to: `${basePath}/schedule?create=slot` },
+    { done: true, title: 'Отправьте ссылку ученикам', text: 'Ученик сам выберет дату и время.', to: `/school/${school.slug}` },
+  ]
+  const doneCount = setupItems.filter((item) => item.done).length
+  const setupDone = doneCount === setupItems.length
 
-  const toggleRequiredDocument = (type: DocumentType) => {
-    const current = selectedRequiredDocuments
-    const next = current.includes(type) ? current.filter((item) => item !== type) : [...current, type]
-    update('requiredDocuments', next)
-  }
-
-  const messageTemplates = useMemo(() => {
-    const name = school?.name ?? 'автошкола'
-    return [
-      {
-        id: 'booking',
-        title: 'Подтверждение занятия',
-        text: `Здравствуйте! Вы записаны на практическое занятие в ${name}. Дата: [дата], время: [время], инструктор: [инструктор]. Если не сможете прийти, предупредите заранее.`,
-      },
-      {
-        id: 'debt',
-        title: 'Напоминание об оплате',
-        text: `Здравствуйте! В ${name} есть задолженность [сумма]. Можно перевести оплату на карту и отправить чек администратору. После подтверждения мы отметим оплату в кабинете.`,
-      },
-      {
-        id: 'docs',
-        title: 'Недостающие документы',
-        text: `Здравствуйте! Для продолжения обучения в ${name} нужно донести документы: [список]. Пришлите фото или принесите оригиналы администратору.`,
-      },
-      {
-        id: 'exam',
-        title: 'Экзамен / допуск',
-        text: `Здравствуйте! По вашему обучению в ${name} следующий шаг: [внутренний экзамен/ГИБДД]. Проверьте оплату, документы и связь с инструктором.`,
-      },
-    ]
-  }, [school?.name])
-
-  const copyTemplate = async (id: string, text: string) => {
-    try { await navigator.clipboard?.writeText(text) } catch { return }
-    setCopiedTemplate(id)
-    setTimeout(() => setCopiedTemplate(''), 1600)
+  const copyPublicUrl = async () => {
+    try {
+      await navigator.clipboard?.writeText(publicUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      setCopied(false)
+    }
   }
 
   const handleSave = async () => {
     const access = assertAdminPermission('settings.manage')
-    if (!access.ok || !school) return
-    if (saving) return
-
+    if (!access.ok || !school || saving) return
     setSaving(true)
     setSaveError('')
     const schoolResult = await updateSchoolConfirmed(school.id, {
@@ -115,8 +89,8 @@ export function AdminSettings() {
       address: school.address,
       primaryColor: school.primaryColor,
       logoUrl: school.logoUrl,
-      bookingLimitEnabled: school.bookingLimitEnabled,
-      maxActiveBookingsPerStudent: school.maxActiveBookingsPerStudent,
+      bookingLimitEnabled: true,
+      maxActiveBookingsPerStudent: settings.maxActiveBookingsPerStudent,
       branchSelectionMode: school.branchSelectionMode,
       maxSlotsPerBooking: school.maxSlotsPerBooking,
       defaultLessonDuration: settings.defaultLessonDuration,
@@ -128,245 +102,115 @@ export function AdminSettings() {
       setSaveError(schoolResult.error ?? 'Не удалось сохранить настройки школы.')
       return
     }
-
     try {
-      const settingsToSave = {
-        ...settings,
-        requiredDocuments: settings.requiredDocuments?.length ? settings.requiredDocuments : DEFAULT_REQUIRED_DOCUMENTS,
-      }
-      await adminSettings.saveConfirmed(settingsToSave)
-      setSettings(settingsToSave)
+      await adminSettings.saveConfirmed(settings)
+      createCurrentStaffAuditEntry(school.id, 'settings_changed', 'school_settings', school.id, 'Изменены настройки записи')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1800)
     } catch (error) {
-      setSaving(false)
       setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить правила записи.')
-      return
+    } finally {
+      setSaving(false)
     }
-    createCurrentStaffAuditEntry(school.id, 'settings_changed', 'school_settings', school.id, 'Изменены настройки школы')
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
   }
-
-  if (!school) return null
 
   return (
     <div className="min-h-full overflow-y-auto bg-[#F5F7FA] pb-24 md:pb-6">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#E5EAF1] bg-white/95 px-4 py-3 backdrop-blur md:px-6">
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">правила работы</p>
-          <h1 className="truncate text-[24px] font-black tracking-[-0.03em] text-[#111827]">Настройки школы</h1>
+          <p className="text-[12px] font-medium text-[#667085]">Что нужно, чтобы ученики записывались сами</p>
+          <h1 className="truncate text-[24px] font-semibold text-[#111827]">Настройки записи</h1>
         </div>
-        <button onClick={() => void handleSave()} disabled={!canManageSettings || saving} className="v-admin-button min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
-          {saving ? 'Сохраняем...' : saved ? '✓ Сохранено' : 'Сохранить'}
+        <button onClick={() => void handleSave()} disabled={!canManageSettings || saving} className="v-admin-button is-blue min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
+          {saving ? 'Сохраняем...' : saved ? 'Сохранено' : 'Сохранить'}
         </button>
       </div>
 
       <div className="mx-auto max-w-5xl space-y-4 p-3 md:p-6 lg:p-8">
         {saveError ? <div className="rounded-[18px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-semibold text-[#B42318]">{saveError}</div> : null}
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+
+        <section className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-[12px] font-black uppercase tracking-[0.12em] text-[#315A7C]">Запуск школы</p>
-              <h2 className="mt-2 text-[20px] font-black text-gray-900">Чеклист внедрения за 1-3 дня</h2>
-              <p className="mt-2 max-w-[620px] text-[14px] font-semibold leading-6 text-gray-600">
-                Этот блок закрывает подключение первой реальной автошколы: данные, расписание, тестовая запись, уведомления и операционный контроль.
-              </p>
+              <span className={`v-admin-pill ${setupDone ? 'v-tone-ok' : 'v-tone-info'}`}>Настройка {doneCount}/{setupItems.length}</span>
+              <h2 className="mt-3 text-[20px] font-semibold text-[#111827]">Базовый запуск записи</h2>
+              <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-[#667085]">После этих шагов школа может отправить ссылку ученикам, а записи будут появляться в расписании.</p>
             </div>
-            <span className="rounded-full bg-[#EEF8F1] px-3 py-1.5 text-[12px] font-black text-[#2F6E4B]">готово к продажам</span>
+            <Link to={`${basePath}/schedule?create=slot`} className="v-admin-button-secondary justify-center">
+              <CalendarPlus width={16} height={16} />
+              Создать окна
+            </Link>
           </div>
-          <div className="mt-5 grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-2">
-              {launchSteps.map((step, index) => (
-                <div key={step} className="flex gap-3 rounded-xl bg-[#F8FBFE] p-3">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[12px] font-black text-[#315A7C] shadow-sm">{index + 1}</span>
-                  <span className="text-[13px] font-semibold leading-5 text-gray-700">{step}</span>
-                </div>
-              ))}
+          <div className="mt-5 grid gap-3 md:grid-cols-4">
+            {setupItems.map((item, index) => <SetupCard key={item.title} index={index + 1} {...item} />)}
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+            <h2 className="text-[18px] font-semibold text-[#111827]">Правила записи</h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Телефон школы</span>
+                <input value={schoolPhone} onChange={(event) => setSchoolPhone(event.target.value)} disabled={!canManageSettings} className="v-admin-input w-full" />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Длительность занятия</span>
+                <select value={settings.defaultLessonDuration} onChange={(event) => update('defaultLessonDuration', Number(event.target.value))} className="v-admin-input w-full">
+                  {LESSON_DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Запись вперед</span>
+                <select value={settings.maxDaysAheadForBooking} onChange={(event) => update('maxDaysAheadForBooking', Number(event.target.value))} className="v-admin-input w-full">
+                  {BOOKING_DAYS_OPTIONS.map((value) => <option key={value} value={value}>{value} дней</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Отмена не позднее</span>
+                <select value={settings.minHoursBeforeCancel} onChange={(event) => update('minHoursBeforeCancel', Number(event.target.value))} className="v-admin-input w-full">
+                  {CANCEL_HOURS_OPTIONS.map((value) => <option key={value} value={value}>{value} ч</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Начало рабочего дня</span>
+                <input type="number" min={0} max={23} value={settings.workStartHour} onChange={(event) => update('workStartHour', Number(event.target.value))} className="v-admin-input w-full" />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] font-medium text-[#667085]">Конец рабочего дня</span>
+                <input type="number" min={0} max={23} value={settings.workEndHour} onChange={(event) => update('workEndHour', Number(event.target.value))} className="v-admin-input w-full" />
+              </label>
             </div>
-            <div className="rounded-xl border border-[#E1EAF2] bg-[#F8FBFE] p-4">
-              <h3 className="text-[14px] font-black text-gray-900">Операционные правила</h3>
-              <div className="mt-3 space-y-3">
-                {operationRules.map((rule) => (
-                  <p key={rule} className="text-[13px] font-semibold leading-5 text-gray-600">{rule}</p>
-                ))}
+            <div className="mt-4">
+              <span className="mb-2 block text-[13px] font-medium text-[#667085]">Рабочие дни</span>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((day, index) => {
+                  const active = settings.workDays.includes(index)
+                  return (
+                    <button key={day} type="button" onClick={() => update('workDays', active ? settings.workDays.filter((item) => item !== index) : [...settings.workDays, index])} className={`h-10 rounded-xl text-[13px] font-medium transition ${active ? 'bg-[#0A84FF] text-white' : 'border border-[#D7DEE8] bg-[#F8FAFC] text-[#667085]'}`}>{day}</button>
+                  )
+                })}
               </div>
             </div>
           </div>
+
+          <aside className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+            <h2 className="text-[18px] font-semibold text-[#111827]">Ссылка для учеников</h2>
+            <p className="mt-1 text-[13px] font-medium leading-5 text-[#667085]">Отправьте ее в чат ученику. Он выберет дату и время с телефона.</p>
+            <div className="mt-4 rounded-[16px] border border-[#D7E2EC] bg-[#F8FAFC] px-3 py-2 text-[13px] font-semibold text-[#111827] break-all">{publicUrl}</div>
+            <div className="mt-3 grid gap-2">
+              <button type="button" onClick={() => void copyPublicUrl()} className="v-admin-button-secondary justify-center"><LinkIcon width={16} height={16} />{copied ? 'Скопировано' : 'Скопировать ссылку'}</button>
+              <Link to={`/school/${school.slug}`} target="_blank" className="v-admin-button-tertiary justify-center"><OpenNewWindow width={16} height={16} />Открыть страницу</Link>
+            </div>
+          </aside>
         </section>
 
-        {/* General */}
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <h2 className="mb-4 text-[16px] font-bold text-gray-900">Общие настройки</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Название школы</label>
-              <input value={school.name} readOnly className="w-full cursor-not-allowed rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-400" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Телефон</label>
-              <input value={schoolPhone} onChange={(e) => setSchoolPhone(e.target.value)} disabled={!canManageSettings} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 disabled:cursor-not-allowed disabled:text-gray-400" />
-            </div>
-          </div>
-        </section>
-
-        {/* Lesson rules */}
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <h2 className="mb-4 text-[16px] font-bold text-gray-900">Правила записи</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Длительность занятия</label>
-              <select value={settings.defaultLessonDuration} onChange={(e) => update('defaultLessonDuration', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
-                {LESSON_DURATION_OPTIONS.map((value) => <option key={value} value={value}>{formatDuration(value)}</option>)}
-              </select>
-              <p className="mt-1 text-[12px] font-semibold text-gray-400">Показывается ученикам и администраторам как {formatDuration(settings.defaultLessonDuration)}</p>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Запись на сколько дней вперёд</label>
-              <select value={settings.maxDaysAheadForBooking} onChange={(e) => update('maxDaysAheadForBooking', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
-                {BOOKING_DAYS_OPTIONS.map((value) => <option key={value} value={value}>{value} дней</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Мин. часов до отмены</label>
-              <select value={settings.minHoursBeforeCancel} onChange={(e) => update('minHoursBeforeCancel', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
-                {CANCEL_HOURS_OPTIONS.map((value) => <option key={value} value={value}>{value} ч</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Макс. записей на ученика</label>
-              <input type="number" value={settings.maxActiveBookingsPerStudent} onChange={(e) => update('maxActiveBookingsPerStudent', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Занятий в день макс.</label>
-              <input type="number" value={settings.maxLessonsPerDay} onChange={(e) => update('maxLessonsPerDay', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Перерыв между занятиями</label>
-              <select value={settings.breakBetweenLessons} onChange={(e) => update('breakBetweenLessons', parseInt(e.target.value, 10))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900">
-                {BREAK_DURATION_OPTIONS.map((value) => <option key={value} value={value}>{value === 0 ? 'Без перерыва' : formatDuration(value)}</option>)}
-              </select>
-              <p className="mt-1 text-[12px] font-semibold text-gray-400">Буфер защищает от записей вплотную.</p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-2 md:grid-cols-2">
-            {[
-              { key: 'allowBookingWithDebt', label: 'Разрешить запись при задолженности' },
-              { key: 'allowBookingWithoutMedical', label: 'Разрешить запись без медсправки' },
-              { key: 'allowBookingWithoutContract', label: 'Разрешить запись без договора' },
-              { key: 'requireManualModeration', label: 'Ручная модерация записей' },
-              { key: 'allowStudentChooseInstructor', label: 'Ученик может выбрать инструктора' },
-              { key: 'blockBookingOnDebt', label: 'Блокировать запись при задолженности' },
-              { key: 'notifyAdminOnNoShow', label: 'Уведомлять о неявке' },
-              { key: 'notifyAdminOnCancel', label: 'Уведомлять об отмене' },
-              { key: 'notifyAdminOnNewBooking', label: 'Уведомлять о новой записи' },
-            ].map((opt) => (
-              <label key={opt.key} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-[#E5EAF1] bg-[#F8FAFC] p-3">
-                <input
-                  type="checkbox"
-                  checked={Boolean((settings as unknown as Record<string, unknown>)[opt.key])}
-                  onChange={(e) => update(opt.key as keyof SchoolSettingsType, e.target.checked)}
-                  className="h-5 w-5 rounded border-gray-300"
-                />
-                <span className="text-[14px] font-semibold text-gray-700">{opt.label}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {/* Work hours */}
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <h2 className="mb-4 text-[16px] font-bold text-gray-900">Рабочие часы</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Начало работы</label>
-              <input type="number" min={0} max={23} value={settings.workStartHour} onChange={(e) => update('workStartHour', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Конец работы</label>
-              <input type="number" min={0} max={23} value={settings.workEndHour} onChange={(e) => update('workEndHour', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <label className="mb-2 block text-[13px] font-semibold text-gray-600">Рабочие дни</label>
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-              {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map((day, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    const days = settings.workDays.includes(i) ? settings.workDays.filter((d) => d !== i) : [...settings.workDays, i]
-                    update('workDays', days)
-                  }}
-                  className={`h-10 rounded-xl text-[13px] font-semibold transition ${
-                    settings.workDays.includes(i) ? 'bg-[#111827] text-white' : 'border border-gray-200 bg-gray-50 text-gray-500'
-                  }`}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-[16px] font-bold text-gray-900">Шаблоны сообщений</h2>
-              <p className="mt-1 text-[13px] font-semibold text-gray-500">Для WhatsApp, SMS или Telegram. Ничего не отправляется автоматически: администратор копирует готовый текст и подставляет дату, сумму или список документов.</p>
-            </div>
-            <span className="rounded-full bg-[#EAF3FF] px-3 py-1 text-[12px] font-black text-[#315A7C]">ручной режим</span>
-          </div>
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            {messageTemplates.map((template) => (
-              <article key={template.id} className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FAFC] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-[14px] font-black text-[#111827]">{template.title}</h3>
-                  <button type="button" onClick={() => void copyTemplate(template.id, template.text)} className="min-h-9 rounded-xl border border-[#D7DEE8] bg-white px-3 text-[12px] font-black text-[#334155] transition hover:bg-[#F1F5F9]">
-                    {copiedTemplate === template.id ? 'Скопировано' : 'Копировать'}
-                  </button>
-                </div>
-                <p className="mt-3 text-[13px] font-semibold leading-5 text-[#667085]">{template.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-[16px] font-bold text-gray-900">Пакет документов</h2>
-              <p className="mt-1 text-[13px] font-semibold text-gray-500">От этих галочек зависит очередь допуска в разделе документов. Школа может оставить только то, что реально ведёт в своей работе.</p>
-            </div>
-            <span className="rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-black text-[#667085]">{selectedRequiredDocuments.length} в пакете</span>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {DOCUMENT_OPTIONS.map((doc) => {
-              const active = selectedRequiredDocuments.includes(doc.type)
-              return (
-                <button key={doc.type} type="button" onClick={() => toggleRequiredDocument(doc.type)} disabled={!canManageSettings} className={`min-h-[104px] rounded-[16px] border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${active ? 'border-[#B7DCC3] bg-[#F1FAF4]' : 'border-[#E5EAF1] bg-[#F8FAFC]'}`}>
-                  <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${active ? 'bg-white text-[#157347]' : 'bg-white text-[#667085]'}`}>{active ? 'нужен' : 'не обязателен'}</span>
-                  <strong className="mt-3 block text-[14px] font-black text-[#111827]">{doc.label}</strong>
-                  <span className="mt-1 block text-[12px] font-semibold leading-4 text-[#667085]">{doc.hint}</span>
-                </button>
-              )
-            })}
-          </div>
-          <div className="mt-4 max-w-xs">
-            <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Предупреждать об истечении за</label>
-            <select value={settings.documentExpiryWarningDays} onChange={(e) => update('documentExpiryWarningDays', parseInt(e.target.value, 10))} disabled={!canManageSettings} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900 disabled:opacity-60">
-              {[7, 14, 21, 30, 45].map((value) => <option key={value} value={value}>{value} дней</option>)}
-            </select>
-          </div>
-        </section>
-
-        {/* Debt */}
-        <section className="rounded-[18px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <h2 className="mb-4 text-[16px] font-bold text-gray-900">Финансы и задолженности</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Дней отсрочки по оплате</label>
-              <input type="number" value={settings.debtGracePeriodDays} onChange={(e) => update('debtGracePeriodDays', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
-            </div>
+        <section className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+          <h2 className="text-[18px] font-semibold text-[#111827]">База для записи</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <Link to={`${basePath}/instructors`} className="v-admin-button-secondary min-h-14 justify-start"><UserBadgeCheck width={18} height={18} />Инструкторы</Link>
+            <Link to={`${basePath}/branches`} className="v-admin-button-secondary min-h-14 justify-start"><Building width={18} height={18} />Филиалы</Link>
+            <Link to={`${basePath}/schedule`} className="v-admin-button-secondary min-h-14 justify-start"><Clock width={18} height={18} />Расписание</Link>
           </div>
         </section>
       </div>

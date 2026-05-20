@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Filter, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
+import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
 const Award = Medal
 const BarChart3 = GraphUp
 const Building2 = Building
@@ -9,7 +9,6 @@ const CalendarDays = Calendar
 const ExternalLink = OpenNewWindow
 const FileText = Page
 const LayoutDashboard = Dashboard
-const SlidersHorizontal = Filter
 const UserCog = UserBadgeCheck
 const Users = Group
 const X = Xmark
@@ -25,14 +24,12 @@ import type { StaffPermission } from '../../types'
 import {
   BOOKING_TOOL_ADMIN_NAV_IDS,
   getEnabledAdminNavIds,
-  saveEnabledAdminNavIds,
   type AdminNavDefinition,
   type AdminNavItemId,
 } from '../../services/adminPanelPreferences'
 import { BrandMark } from './BrandMark'
 import { AdminAccessDenied } from './AdminAccessDenied'
 import { SchoolRequiredState } from './SchoolRequiredState'
-import { Modal } from '../ui/Modal'
 import { AdminContentLoader, LoadingScreen } from '../ui/loader'
 import { filterBranches, filterInstructors, filterStudents } from '../../services/staffScope'
 
@@ -47,7 +44,7 @@ type AdminNavItem = AdminNavDefinition & {
 
 function buildNavItems(basePath: string): AdminNavItem[] {
   return [
-    { id: 'today', to: basePath, label: 'Главная', description: 'Записи, свободные окна и ссылка для учеников.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
+    { id: 'today', to: basePath, label: 'Сегодня', description: 'Что происходит сегодня.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
     { id: 'schedule', to: `${basePath}/schedule`, label: 'Расписание', description: 'Окна, записи и переносы занятий.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
     { id: 'bookings', to: `${basePath}/bookings`, label: 'Записи', description: 'Журнал звонков, переносов и отмен.', icon: Headset, permission: permission('schedule.manage'), required: false },
     { id: 'slots', to: `${basePath}/slots`, label: 'Окна', description: 'Сборка сетки и контроль свободного времени.', icon: Clock, permission: permission('schedule.manage'), required: false },
@@ -60,14 +57,14 @@ function buildNavItems(basePath: string): AdminNavItem[] {
     { id: 'exams', to: `${basePath}/exams`, label: 'Экзамены', description: 'Внутренние и ГИБДД экзамены.', icon: Award, permission: permission('exams.manage'), required: false },
     { id: 'reports', to: `${basePath}/reports`, label: 'Отчёты', description: 'Сводки и показатели школы.', icon: BarChart3, permission: permission('reports.view'), required: false },
     { id: 'launch', to: `${basePath}/launch`, label: 'Запуск', description: 'Готовность школы к работе.', icon: CheckCircle, permission: permission('reports.view'), required: false },
-    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки', description: 'Публичная ссылка и данные школы.', icon: Settings, permission: permission('settings.manage'), required: false },
+    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки записи', description: 'Инструкторы, филиалы, часы и ссылка для учеников.', icon: Settings, permission: permission('settings.manage'), required: true },
     { id: 'users', to: `${basePath}/users`, label: 'Команда', description: 'Сотрудники, роли и филиалы.', icon: ShieldCheck, permission: permission('staff.manage'), required: false },
   ]
 }
 
 type NavItem = ReturnType<typeof buildNavItems>[number]
 
-function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavItem[]; basePath: string; onClose?: () => void; onCustomize: () => void }) {
+function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePath: string; onClose?: () => void }) {
   return (
     <div className="flex h-full flex-col border-r border-white/70 bg-[rgba(255,255,255,0.72)] text-[#111315] shadow-[var(--shadow-card)] backdrop-blur-2xl">
       <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.06] px-4 py-4">
@@ -113,16 +110,6 @@ function Sidebar({ navItems, basePath, onClose, onCustomize }: { navItems: NavIt
           })}
         </div>
       </nav>
-      <div className="border-t border-[#111827]/[0.06] p-3">
-        <button
-          type="button"
-          onClick={() => { onCustomize(); onClose?.() }}
-          className="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-[14px] font-medium text-[#667381] hover:bg-white/70 hover:text-[#111315]"
-        >
-          <SlidersHorizontal width={18} height={18} />
-          Настроить меню
-        </button>
-      </div>
     </div>
   )
 }
@@ -169,8 +156,6 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   const location = useLocation()
   const [ready, setReady] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [menuSettingsOpen, setMenuSettingsOpen] = useState(false)
-  const [menuVersion, setMenuVersion] = useState(0)
   const [quickSearch, setQuickSearch] = useState('')
   const staffContext = getWorkspaceStaffContext()
   const branchScoped = mode === 'workspace' && isBranchAdminContext()
@@ -185,7 +170,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   const permittedNavItems = permittedRouteItems.filter((item) => bookingToolNavIds.has(item.id as AdminNavItemId))
   const navItems = permittedNavItems.filter((item) => item.required || enabledIds.includes(item.id as AdminNavItemId))
   const mobileNavItems = navItems.filter((item) =>
-    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/instructors`].includes(item.to),
+    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/settings`].includes(item.to),
   )
 
   useEffect(() => {
@@ -282,7 +267,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   return (
     <div className="v-admin-shell vroom-admin-shell flex h-dvh overflow-hidden bg-[var(--admin-bg)] text-[#111315]">
       <aside className="hidden w-[272px] shrink-0 lg:block">
-        <Sidebar navItems={navItems} basePath={basePath} onCustomize={() => setMenuSettingsOpen(true)} />
+        <Sidebar navItems={navItems} basePath={basePath} />
       </aside>
 
       {sidebarOpen ? (
@@ -294,7 +279,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
             onClick={() => setSidebarOpen(false)}
           />
           <aside className="relative h-full w-[286px] max-w-[86vw] shadow-2xl">
-            <Sidebar navItems={navItems} basePath={basePath} onClose={() => setSidebarOpen(false)} onCustomize={() => setMenuSettingsOpen(true)} />
+            <Sidebar navItems={navItems} basePath={basePath} onClose={() => setSidebarOpen(false)} />
           </aside>
         </div>
       ) : null}
@@ -338,14 +323,6 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
               {setupSteps.filter((step) => step.done).length}/{setupSteps.length} · {nextSetupStep.label}
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={() => setMenuSettingsOpen(true)}
-            className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white lg:inline-flex"
-          >
-            <SlidersHorizontal width={16} height={16} />
-            Меню
-          </button>
           <div className="relative hidden min-w-[220px] max-w-[360px] flex-[0_1_360px] md:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
             <input
@@ -408,7 +385,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
         </main>
 
         <nav className="admin-mobile-nav fixed bottom-0 left-0 right-0 z-40 border-t border-white/70 bg-white/85 backdrop-blur-2xl lg:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-5 px-2 pb-[env(safe-area-inset-bottom)] pt-1">
+          <div className="mx-auto grid max-w-lg grid-cols-4 px-2 pb-[env(safe-area-inset-bottom)] pt-1">
             {mobileNavItems.slice(0, 4).map((item) => {
               const Icon = item.icon
               return (
@@ -427,94 +404,10 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
                 </NavLink>
               )
             })}
-            <button
-              type="button"
-              onClick={() => setMenuSettingsOpen(true)}
-              className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[10px] font-medium text-[#7A8490]"
-            >
-              <SlidersHorizontal width={20} height={20} strokeWidth={2.4} />
-              <span className="max-w-full truncate">Разделы</span>
-            </button>
           </div>
         </nav>
       </div>
-      {school ? (
-        <AdminMenuSettingsModal
-          open={menuSettingsOpen}
-          schoolId={school.id}
-          items={permittedNavItems}
-          enabledIds={enabledIds}
-          onClose={() => setMenuSettingsOpen(false)}
-          onSaved={() => setMenuVersion((value) => value + 1)}
-          version={menuVersion}
-        />
-      ) : null}
     </div>
-  )
-}
-
-function AdminMenuSettingsModal({
-  open,
-  schoolId,
-  items,
-  enabledIds,
-  onClose,
-  onSaved,
-}: {
-  open: boolean
-  schoolId: string
-  items: Array<NavItem & AdminNavDefinition>
-  enabledIds: AdminNavItemId[]
-  onClose: () => void
-  onSaved: () => void
-  version: number
-}) {
-  const [draft, setDraft] = useState<AdminNavItemId[]>(enabledIds)
-
-  useEffect(() => {
-    if (open) setDraft(enabledIds)
-  }, [enabledIds, open])
-
-  const toggle = (id: AdminNavItemId) => {
-    setDraft((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
-  }
-
-  const save = () => {
-    saveEnabledAdminNavIds(schoolId, draft)
-    onSaved()
-    onClose()
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="Разделы" size="md">
-      <div className="border-b border-[#111827]/[0.07] bg-[#F8FAFC] px-5 py-3 text-[13px] font-medium leading-5 text-[#687381]">
-        Здесь только разделы, нужные для самостоятельной записи учеников. Остальные CRM-разделы временно скрыты.
-      </div>
-      <div className="grid max-h-[min(64vh,560px)] gap-2 overflow-y-auto p-4 sm:p-5">
-          {items.map((item) => (
-            <label key={item.id} className="v-menu-section-option flex items-start gap-3 rounded-[20px] border border-white/70 bg-white/75 p-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-5 w-5 shrink-0 accent-[#0A84FF]"
-                checked={item.required || draft.includes(item.id as AdminNavItemId)}
-                disabled={item.required}
-                onChange={() => toggle(item.id as AdminNavItemId)}
-              />
-              <span className="min-w-0">
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="block truncate text-[14px] font-semibold text-[#111315]">{item.label}</span>
-                  {item.required ? <span className="v-admin-pill v-tone-muted shrink-0">основной</span> : null}
-                </span>
-                <span className="mt-0.5 block text-[12px] leading-5 text-[#687381]">{item.required ? 'Основной раздел' : item.description}</span>
-              </span>
-            </label>
-          ))}
-      </div>
-      <div className="v-modal-actions">
-        <button type="button" onClick={onClose} className="v-admin-button-secondary flex-1">Отмена</button>
-        <button type="button" onClick={save} className="v-admin-button flex-1">Сохранить</button>
-      </div>
-    </Modal>
   )
 }
 

@@ -436,12 +436,12 @@ export function AdminSchedule() {
             </div>
           </div>
         ) : null}
-        <div className="v-mobile-schedule-calendar grid gap-3 lg:hidden">
+        <div className="grid gap-3 lg:hidden">
           {mobileDays.map(({ date, slots }) => {
             const booked = slots.filter((entry) => entry.slot.status === 'booked').length
             const free = slots.filter((entry) => entry.slot.status === 'available').length
             return (
-              <section key={date.toISOString()} className="v-mobile-day-group overflow-hidden">
+              <section key={date.toISOString()} className="overflow-hidden rounded-[24px] border border-[#D7E2EC] bg-white shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
                 <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] px-4 py-3">
                   <div>
                     <p className="text-[12px] font-medium text-[#667085]">{format(date, 'EEEE', { locale: ru })}</p>
@@ -449,47 +449,33 @@ export function AdminSchedule() {
                   </div>
                   <span className="v-admin-pill v-tone-muted">{booked} занято · {free} свободно</span>
                 </div>
-                <div className="v-mobile-calendar-grid">
-                  {HOURS.map((hour) => {
-                    const hourSlots = slots.filter(({ slot }) => slot.time.startsWith(hour.slice(0, 2)))
+                <div className="grid gap-2 p-3">
+                  {slots.length === 0 ? (
+                    <div className="v-admin-empty m-0">
+                      <strong>Окон на этот день нет</strong>
+                      <span>Создайте свободное время, чтобы ученики могли записаться.</span>
+                    </div>
+                  ) : slots.map(({ slot, booking, instructor, branch }) => {
+                    const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
+                    const isFree = slot.status === 'available'
+                    const isCancelled = slot.status === 'cancelled'
+                    const rowClass = isFree
+                      ? 'border-[rgba(52,199,89,0.22)] bg-[#F1FAF4]'
+                      : isCancelled
+                        ? 'border-[#E5EAF1] bg-[#F8FAFC] opacity-80'
+                        : 'border-[rgba(10,132,255,0.20)] bg-[#EAF4FF]'
+                    const statusClassName = isFree ? 'text-[#188447]' : isCancelled ? 'text-[#667085]' : 'text-[#075EBC]'
                     return (
-                      <div key={hour} className="v-mobile-calendar-row">
-                        <span className="v-mobile-calendar-time">{hour}</span>
-                        <div className="v-mobile-calendar-cell">
-                          {hourSlots.length === 0 ? <span className="v-mobile-calendar-empty">-</span> : (() => {
-                            const busySlots = hourSlots.filter(({ slot }) => slot.status !== 'available')
-                            const freeSlots = hourSlots.filter(({ slot }) => slot.status === 'available')
-                            const freeInstructors = new Set(freeSlots.map(({ slot }) => slot.instructorId)).size
-                            return (
-                              <>
-                                {busySlots.map(({ slot, booking, instructor, branch }) => {
-                                  const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
-                                  return (
-                                    <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className={'v-mobile-slot-row v-mobile-calendar-event ' + (slot.status === 'cancelled' ? 'is-cancelled' : 'is-booked')}>
-                                      <span className="flex items-center justify-between gap-2">
-                                        <strong>{slot.time}</strong>
-                                        <em>{getSlotStatusLabel(slot.status)}</em>
-                                      </span>
-                                      <span className="mt-1 block truncate">{booking?.studentName ?? 'Занятие'}</span>
-                                      <small>{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</small>
-                                    </button>
-                                  )
-                                })}
-                                {freeSlots.length ? (
-                                  <button key={hour + '-free'} onClick={() => setSelectedSlotId(freeSlots[0].slot.id)} className="v-mobile-slot-row v-mobile-calendar-event is-free">
-                                    <span className="flex items-center justify-between gap-2">
-                                      <strong>{freeSlots[0].slot.time}</strong>
-                                      <em>Свободно</em>
-                                    </span>
-                                    <span className="mt-1 block truncate">{freeSlots.length} {plural(freeSlots.length, 'свободное окно', 'свободных окна', 'свободных окон')}</span>
-                                    <small>{freeInstructors} {plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · {formatDuration(freeSlots[0].slot.duration)}</small>
-                                  </button>
-                                ) : null}
-                              </>
-                            )
-                          })()}
-                        </div>
-                      </div>
+                      <button key={slot.id} onClick={() => setSelectedSlotId(slot.id)} className={
+                        'v-mobile-slot-row grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] border p-3 text-left transition hover:-translate-y-0.5 ' + rowClass
+                      }>
+                        <strong className="text-[17px] font-semibold tabular-nums text-[#111827]">{slot.time}</strong>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[14px] font-semibold text-[#111827]">{booking?.studentName ?? 'Свободное окно'}</span>
+                          <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
+                        </span>
+                        <span className={'text-[12px] font-semibold ' + statusClassName}>{getSlotStatusLabel(slot.status)}</span>
+                      </button>
                     )
                   })}
                 </div>
