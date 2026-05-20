@@ -38,7 +38,7 @@ import { DEMO_SCHOOL_SLUG } from '../services/schoolRoutes'
 import type { Booking, Branch, Instructor, School, Slot } from '../types'
 import { lessonTypeLabel } from './student/studentUtils'
 import { formatHumanDate, formatTimeRange, isoDate } from '../utils/date'
-import { formatInstructorName, generateId } from '../lib/utils'
+import { formatDuration, formatInstructorName, generateId } from '../lib/utils'
 import { normalizePersonName } from '../lib/nameFormat'
 import { addDays, format, isSameDay, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -304,7 +304,7 @@ function VroomSchedulerPicker({
                 {active ? <CheckCircle2 size={16} style={{ color: ui.surface }} /> : null}
               </div>
               <p className="mt-1 truncate text-[12px] font-semibold" style={{ color: active ? ui.surface : ui.textMuted, opacity: active ? 0.7 : 1 }}>
-                {lessonTypeLabel(item.slot)} · {item.slot.duration} мин
+                {lessonTypeLabel(item.slot)} · {formatDuration(item.slot.duration)}
               </p>
               <p className="mt-3 truncate text-[13px] font-bold" style={{ color: active ? ui.surface : ui.text }}>
                 {item.instructor ? formatInstructorName(item.instructor.name) : 'Инструктор'}

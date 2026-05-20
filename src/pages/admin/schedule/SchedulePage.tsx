@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { format, addDays, subDays, parseISO, isSameDay, addMinutes } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomSheet } from '../../../components/admin/core/BottomSheet'
+import { formatDuration } from '../../../lib/utils'
 import { useToast } from '../../../components/ui/Toast'
 import { db } from '../../../services/storage'
 import { getSlotsBySchool, createSlot, createBulkSlots, getSlotsByInstructor, type CreateSlotParams } from '../../../services/slotService'
@@ -420,7 +421,7 @@ export function SchedulePage() {
                       {slot.time.slice(0, 5)}
                     </span>
                     <p className="text-[10px] font-medium text-text-muted">
-                      {slot.duration}м
+                      {formatDuration(slot.duration)}
                     </p>
                   </div>
 
@@ -521,7 +522,7 @@ export function SchedulePage() {
                       : 'border-border bg-surface text-ink hover:border-border-strong'
                   }`}
                 >
-                  {d} мин
+                  {formatDuration(d)}
                 </button>
               ))}
             </div>
@@ -744,7 +745,7 @@ export function SchedulePage() {
                     className="w-full rounded-[10px] border border-border bg-surface-soft px-3 py-2.5 text-[14px] font-medium text-ink focus:border-border-strong focus:outline-none"
                   >
                     {DURATIONS.map(d => (
-                      <option key={d} value={d}>{d} мин</option>
+                    <option key={d} value={d}>{formatDuration(d)}</option>
                     ))}
                   </select>
                 </div>
@@ -758,10 +759,10 @@ export function SchedulePage() {
                     className="w-full rounded-[10px] border border-border bg-surface-soft px-3 py-2.5 text-[14px] font-medium text-ink focus:border-border-strong focus:outline-none"
                   >
                     <option value={0}>Без перерыва</option>
-                    <option value={5}>5 мин</option>
-                    <option value={10}>10 мин</option>
-                    <option value={15}>15 мин</option>
-                    <option value={30}>30 мин</option>
+                    <option value={5}>{formatDuration(5)}</option>
+                    <option value={10}>{formatDuration(10)}</option>
+                    <option value={15}>{formatDuration(15)}</option>
+                    <option value={30}>{formatDuration(30)}</option>
                   </select>
                 </div>
               </div>
@@ -818,7 +819,7 @@ export function SchedulePage() {
                 <p><strong>Инструктор:</strong> {db.instructors.byId(bulkInstructor)?.name || '—'}</p>
                 <p><strong>Период:</strong> {format(parseISO(bulkDateFrom), 'd MMM')} — {format(parseISO(bulkDateTo), 'd MMM yyyy', { locale: ru })}</p>
                 <p><strong>Время:</strong> {bulkStartTime} — {bulkEndTime}</p>
-                <p><strong>Длительность:</strong> {bulkDuration} мин</p>
+                <p><strong>Длительность:</strong> {formatDuration(bulkDuration)}</p>
               </div>
 
               <div className="flex gap-2">

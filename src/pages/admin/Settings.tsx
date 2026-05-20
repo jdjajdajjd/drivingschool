@@ -3,6 +3,7 @@ import { db } from '../../services/storage'
 import { adminSettings, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import type { SchoolSettings as SchoolSettingsType } from '../../types'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
+import { formatDuration } from '../../lib/utils'
 
 const launchSteps = [
   'Заполнить филиалы, инструкторов и рабочие часы.',
@@ -112,8 +113,9 @@ export function AdminSettings() {
           <h2 className="mb-4 text-[16px] font-bold text-gray-900">Правила записи</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Длительность занятия (мин)</label>
+              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Длительность занятия</label>
               <input type="number" value={settings.defaultLessonDuration} onChange={(e) => update('defaultLessonDuration', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
+              <p className="mt-1 text-[12px] font-semibold text-gray-400">{formatDuration(settings.defaultLessonDuration)}</p>
             </div>
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Запись на сколько дней вперёд</label>
@@ -132,8 +134,9 @@ export function AdminSettings() {
               <input type="number" value={settings.maxLessonsPerDay} onChange={(e) => update('maxLessonsPerDay', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
             </div>
             <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Перерыв между (мин)</label>
+              <label className="mb-1.5 block text-[13px] font-semibold text-gray-600">Перерыв между занятиями</label>
               <input type="number" value={settings.breakBetweenLessons} onChange={(e) => update('breakBetweenLessons', parseInt(e.target.value))} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-[14px] font-semibold text-gray-900" />
+              <p className="mt-1 text-[12px] font-semibold text-gray-400">{formatDuration(settings.breakBetweenLessons)}</p>
             </div>
           </div>
 

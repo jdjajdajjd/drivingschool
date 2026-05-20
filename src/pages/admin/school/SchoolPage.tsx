@@ -6,6 +6,7 @@ import { getInstructorsBySchool } from '../../../services/instructorService'
 import { DRIVING_CATEGORIES } from '../../../services/drivingCategories'
 import { useToast } from '../../../components/ui/Toast'
 import { db } from '../../../services/storage'
+import { formatDuration } from '../../../lib/utils'
 
 type SchoolTab = 'main' | 'branches' | 'categories' | 'rules' | 'public'
 
@@ -290,7 +291,7 @@ export function AdminSchoolSettings() {
               <div>
                 <label className="mb-1 block text-[11px] font-bold text-[#6F747A]">Длительность занятия по умолчанию</label>
                 <select value={lessonDuration} onChange={(e) => setLessonDuration(Number(e.target.value))} className="min-h-10 w-full rounded-lg border border-border bg-surface px-3 text-[14px] font-semibold text-ink outline-none focus:border-[#9EA3A8]">
-                  {[45, 60, 90, 120, 180].map((n) => <option key={n} value={n}>{n} мин</option>)}
+                  {[45, 60, 90, 120, 180].map((n) => <option key={n} value={n}>{formatDuration(n)}</option>)}
                 </select>
               </div>
               <div>

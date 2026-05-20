@@ -8,6 +8,7 @@ import { db } from '../../../services/storage'
 import { getTodayBookings, getSlotDateTime, getUpcomingBookings } from '../../../services/bookingService'
 import { getAvailableSlots } from '../../../services/slotService'
 import type { ResolvedBooking } from '../../../types'
+import { formatDuration } from '../../../lib/utils'
 
 // Icons
 const PhoneIcon = () => (
@@ -266,7 +267,7 @@ export function TodayPage() {
                           size="sm"
                         />
                         <span className="text-[11px] font-bold text-text-muted">
-                          {slot.duration} мин
+                          {formatDuration(slot.duration)}
                         </span>
                       </div>
                     </div>

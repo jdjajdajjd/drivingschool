@@ -4,7 +4,7 @@ import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
-import { formatInstructorName } from '../../lib/utils'
+import { formatDuration, formatInstructorName } from '../../lib/utils'
 import { formatHumanDate, formatTimeRange } from '../../utils/date'
 import {
   createBulkSlotsConfirmed,
@@ -328,7 +328,7 @@ export function AdminSlots() {
                       <div><StatusBadge status={entry.slot.status} kind="slot" /></div>
                       <div className="min-w-0"><p className="truncate font-black text-[#0F172A]">{entry.instructor ? formatInstructorName(entry.instructor.name) : '—'}</p><p className="truncate text-[11px] font-bold text-[#64748B]">{entry.instructor?.phone || 'телефон не указан'}</p></div>
                       <div className="min-w-0"><p className="truncate font-bold text-[#334155]">{entry.branch?.name ?? '—'}</p>{entry.booking ? <p className="truncate text-[12px] font-black text-[#0F172A]">{entry.booking.studentName} · {entry.booking.studentPhone}</p> : <p className="text-[12px] font-bold text-[#94A3B8]">свободная линия</p>}</div>
-                      <div className="text-[12px] font-black text-[#475569]">{lessonTypeLabels[entry.slot.lessonType ?? 'driving']} · {entry.slot.duration} мин</div>
+                      <div className="text-[12px] font-black text-[#475569]">{lessonTypeLabels[entry.slot.lessonType ?? 'driving']} · {formatDuration(entry.slot.duration)}</div>
                       <div className="md:text-right">
                         {entry.slot.status !== 'booked' ? <button onClick={() => setToggleId(entry.slot.id)} className={`min-h-9 border px-3 text-[11px] font-black ${entry.slot.status === 'cancelled' ? 'border-[#16A34A] text-[#16A34A]' : 'border-[#DC2626] text-[#DC2626]'}`}>{entry.slot.status === 'cancelled' ? 'Вернуть' : 'Скрыть'}</button> : <span className="text-[11px] font-black text-[#94A3B8]">занято</span>}
                       </div>

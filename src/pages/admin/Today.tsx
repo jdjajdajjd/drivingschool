@@ -12,6 +12,7 @@ import { adminCars, adminDocuments, adminInternalExams, adminPayments, problemCa
 import { loadStudentRequests, refreshStudentRequestsFromSupabase } from '../../services/studentProfile'
 import { getSlotDateTime } from '../../services/bookingService'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
+import { formatDuration } from '../../lib/utils'
 import {
   ADMIN_DASHBOARD_BLOCKS,
   getEnabledDashboardBlockIds,
@@ -342,7 +343,7 @@ export function AdminToday() {
               <div className="mt-5 min-w-0">
                 <strong className="block truncate text-[19px] font-semibold text-[#111827]">{nextEntry.booking.studentName}</strong>
                 <span className="mt-1 block truncate text-[14px] font-medium text-[#667085]">
-                  {nextInstructor?.name ?? 'Инструктор не назначен'} · {nextBranch?.name ?? 'Филиал не указан'} · {nextEntry.slot.duration} мин
+                  {nextInstructor?.name ?? 'Инструктор не назначен'} · {nextBranch?.name ?? 'Филиал не указан'} · {formatDuration(nextEntry.slot.duration)}
                 </span>
               </div>
             </>
@@ -374,7 +375,7 @@ export function AdminToday() {
           {firstFreeSlot ? (
             <>
               <strong className="mt-4 block text-[34px] font-semibold leading-none text-[#111827] tabular-nums">{firstFreeSlot.time}</strong>
-              <span className="mt-3 block truncate text-[14px] font-medium text-[#667085]">{firstFreeInstructor?.name ?? 'Инструктор'} · {firstFreeBranch?.name ?? 'Филиал'} · {firstFreeSlot.duration} мин</span>
+              <span className="mt-3 block truncate text-[14px] font-medium text-[#667085]">{firstFreeInstructor?.name ?? 'Инструктор'} · {firstFreeBranch?.name ?? 'Филиал'} · {formatDuration(firstFreeSlot.duration)}</span>
             </>
           ) : (
             <>
@@ -422,7 +423,7 @@ export function AdminToday() {
                       <span className="v-route-title">{booking.studentName}</span>
                       <span className="v-route-meta">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'} · {format(getSlotDateTime(slot), 'dd.MM')}</span>
                     </span>
-                    <span className="v-route-pill hidden sm:inline-flex">{slot.duration} мин</span>
+                    <span className="v-route-pill hidden sm:inline-flex">{formatDuration(slot.duration)}</span>
                   </button>
                 )
               })}
@@ -504,7 +505,7 @@ export function AdminToday() {
                 return (
                   <button key={slot.id} onClick={() => navigate(`${getAdminBasePathForLocation()}/schedule`)} className="rounded-[22px] border border-[rgba(52,199,89,0.18)] bg-[rgba(52,199,89,0.08)] p-3 text-left transition hover:-translate-y-0.5 hover:bg-[rgba(52,199,89,0.12)]">
                     <span className="flex items-center gap-2 text-[13px] font-semibold text-[#1F8F3F]"><span className="h-2 w-2 rounded-full bg-[#34C759]" />{slot.time}</span>
-                    <strong className="mt-2 block text-[15px] font-semibold text-[#111827]">{slot.duration} мин</strong>
+                    <strong className="mt-2 block text-[15px] font-semibold text-[#111827]">{formatDuration(slot.duration)}</strong>
                     <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">{instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
                   </button>
                 )

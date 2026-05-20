@@ -13,6 +13,7 @@ import { createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { filterBookings, filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
 import type { Booking, Branch, Instructor, Slot, Student } from '../../types'
 import { assertAdminPermission } from '../../services/adminAccess'
+import { formatDuration } from '../../lib/utils'
 
 type ViewMode = 'day' | 'week'
 type ScheduleFilter = 'all' | 'booked' | 'available' | 'cancelled'
@@ -427,7 +428,7 @@ export function AdminSchedule() {
                         <span className="v-route-time">{format(getSlotDateTime(slot), 'HH:mm')}</span>
                         <span className="min-w-0">
                           <span className="flex min-w-0 items-center gap-2">
-                            <span className="v-route-title">{booking?.studentName ?? `Свободно · ${slot.duration} мин`}</span>
+                            <span className="v-route-title">{booking?.studentName ?? `Свободно · ${formatDuration(slot.duration)}`}</span>
                             <span className={`v-admin-pill shrink-0 ${slot.status === 'available' ? 'v-tone-ok' : slot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{slot.status === 'available' ? 'Свободно' : slot.status === 'cancelled' ? 'Отменено' : 'Занято'}</span>
                           </span>
                           <span className="v-route-meta">{lessonLabel} · {instructor?.name ?? 'Инструктор'} · {branch?.name ?? 'Филиал'}</span>
@@ -473,7 +474,7 @@ export function AdminSchedule() {
                               className={`vroom-slot-card relative min-h-[112px] rounded-[18px] border px-3 py-2.5 text-left text-[12px] font-medium leading-4 transition hover:-translate-y-0.5 hover:brightness-[0.99] ${statusClass(slot.status)}`}
                             >
                               <span className={`absolute right-2.5 top-2.5 h-2 w-2 rounded-full ${statusDotClass(slot.status)}`} />
-                              <span className="line-clamp-4 break-words pr-4 leading-4">{booking?.studentName ?? `Свободно · ${slot.duration} мин`}</span>
+                              <span className="line-clamp-4 break-words pr-4 leading-4">{booking?.studentName ?? `Свободно · ${formatDuration(slot.duration)}`}</span>
                               <span className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-medium opacity-75">
                                 <span>{format(getSlotDateTime(slot), 'HH:mm')}</span>
                                 <span>{lessonLabel}</span>
@@ -527,7 +528,7 @@ export function AdminSchedule() {
                   <div className="flex justify-between gap-4"><span className="text-[#687381]">Телефон</span><a href={`tel:${selectedBooking.studentPhone}`} className="text-right text-[#315A7C]">{selectedBooking.studentPhone}</a></div>
                 </>
               ) : null}
-              <div className="flex justify-between gap-4"><span className="text-[#687381]">Длительность</span><span className="text-[#111315]">{selectedSlot.duration} минут</span></div>
+              <div className="flex justify-between gap-4"><span className="text-[#687381]">Длительность</span><span className="text-[#111315]">{formatDuration(selectedSlot.duration)}</span></div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <button onClick={duplicateSelectedSlotTomorrow} disabled={actionPending} className="v-admin-button-secondary sm:col-span-2 disabled:opacity-50">{actionPending ? 'Сохраняем...' : 'Дубль завтра'}</button>
@@ -756,7 +757,7 @@ function SlotTemplateForm({
         </label>
       </div>
       <label className="block">
-        <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность, мин</span>
+        <span className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность</span>
         <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
       </label>
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
@@ -850,7 +851,7 @@ function CreateSlotForm({
           <input type="time" value={time} onChange={(event) => setTime(event.target.value)} className="v-admin-input w-full" />
         </div>
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность, мин</label>
+          <label className="mb-1.5 block text-[13px] font-semibold text-[#66717D]">Длительность</label>
           <input type="number" min="30" step="15" value={duration} onChange={(event) => setDuration(event.target.value)} className="v-admin-input w-full" />
         </div>
       </div>

@@ -5,7 +5,7 @@ import { BottomSheet } from '../../../components/admin/core/BottomSheet'
 import { Button } from '../../../components/ui/Button'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
 import { useToast } from '../../../components/ui/Toast'
-import { formatPhone, formatInstructorName } from '../../../lib/utils'
+import { formatDuration, formatPhone, formatInstructorName } from '../../../lib/utils'
 import { formatHumanDate, formatTimeRange, isoDate } from '../../../utils/date'
 import {
   cancelBookingConfirmed,
@@ -240,7 +240,7 @@ export default function BookingsPage() {
                 {/* Meta */}
                 {entry.slot && (
                   <p className="mt-1 text-[11px] font-semibold text-[#C5C9CF]">
-                    {entry.slot.duration} мин
+                    {formatDuration(entry.slot.duration)}
                     {entry.booking.studentEmail ? ` · ${entry.booking.studentEmail}` : ''}
                   </p>
                 )}
@@ -365,7 +365,7 @@ export default function BookingsPage() {
                   >
                     <span>
                       <span className="block text-[13px] font-black">{formatHumanDate(slot.date, false)} · {formatTimeRange(slot)}</span>
-                      <span className="block text-[11px] font-semibold opacity-70">{inst?.name} · {br?.name} · {slot.duration} мин</span>
+                      <span className="block text-[11px] font-semibold opacity-70">{inst?.name} · {br?.name} · {formatDuration(slot.duration)}</span>
                     </span>
                     <span className={`text-[11px] font-black ${selectedSlot === slot.id ? 'text-white' : 'text-[#9EA3A8]'}`}>выбрать</span>
                   </button>
