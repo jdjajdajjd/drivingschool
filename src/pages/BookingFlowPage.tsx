@@ -24,6 +24,7 @@ import { createSupabaseBooking } from '../services/supabasePublicService'
 import {
   acquireSlotLock,
   createBooking,
+  validateBookingForSlot,
   generateIcs,
   getAvailableSlots as getInstructorSlots,
   getOrCreateStudent,
@@ -564,6 +565,20 @@ export function BookingFlowPage() {
       ) {
         setSlotsVersion((current) => current + 1)
         throw new Error('Это время только что заняли. Выберите другое время.')
+      }
+
+      const policy = validateBookingForSlot({
+        schoolId: school.id,
+        branchId: freshSlot.branchId,
+        instructorId: freshSlot.instructorId,
+        slotId: freshSlot.id,
+        studentName: normalizePersonName(form.name),
+        studentPhone: form.phone,
+        sessionId: sessionId.current,
+      })
+      if (!policy.ok) {
+        setSlotsVersion((current) => current + 1)
+        throw new Error(policy.error ?? 'Это время сейчас недоступно для записи.')
       }
 
       let bookingId = ''

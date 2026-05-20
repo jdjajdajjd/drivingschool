@@ -14,7 +14,7 @@ import {
 } from './supabaseAdminService'
 import { createSupabaseBooking } from './supabasePublicService'
 import { loadStudentProgress, saveStudentProgress } from './studentProfile'
-import { adminSettings, getDebtForStudent } from './adminStorage'
+import { adminDocuments, adminSettings, getDebtForStudent } from './adminStorage'
 
 const SLOT_LOCK_TTL_MS = 2 * 60 * 1000
 
@@ -223,6 +223,109 @@ function checkBookingLimit(school: School, normalizedPhone: string): string | nu
   return null
 }
 
+function slotMinutes(slot: Pick<Slot, 'time' | 'duration'>): { start: number; duration: number } {
+  const [hours, minutes] = slot.time.split(':').map(Number)
+  return { start: hours * 60 + minutes, duration: slot.duration }
+}
+
+function sameWeek(left: Date, right: Date): boolean {
+  const toMonday = (date: Date) => {
+    const copy = startOfDay(date)
+    const day = copy.getDay() || 7
+    copy.setDate(copy.getDate() - day + 1)
+    return copy.getTime()
+  }
+  return toMonday(left) === toMonday(right)
+}
+
+function isVerifiedDocument(studentId: string, type: 'contract' | 'medical_certificate'): boolean {
+  const doc = adminDocuments.byType(studentId, type)
+  return Boolean(doc && ['uploaded', 'verified'].includes(doc.status) && (!doc.expiresAt || endOfDay(parseISO(doc.expiresAt)) >= new Date()))
+}
+
+function getActiveStudentBookingsForSlot(schoolId: string, normalizedPhone: string, studentId?: string): Array<{ booking: Booking; slot: Slot }> {
+  return db.bookings.bySchool(schoolId)
+    .filter((booking) => booking.status === 'active')
+    .filter((booking) => booking.studentPhone === normalizedPhone || (studentId ? booking.studentId === studentId : false))
+    .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
+    .filter((entry): entry is { booking: Booking; slot: Slot } => Boolean(entry.slot))
+}
+
+function getStudentSlotPolicyError(school: School, student: Student | null, normalizedPhone: string, targetSlot: Slot): string | null {
+  const settings = adminSettings.get(school.id)
+  const activeEntries = getActiveStudentBookingsForSlot(school.id, normalizedPhone, student?.id)
+  const targetTime = getSlotDateTime(targetSlot)
+  const target = slotMinutes(targetSlot)
+
+  const overlap = activeEntries.find(({ slot }) => {
+    if (slot.id === targetSlot.id) return false
+    if (slot.date !== targetSlot.date) return false
+    const current = slotMinutes(slot)
+    return target.start < current.start + current.duration && current.start < target.start + target.duration
+  })
+  if (overlap) return `У ученика уже есть занятие ${overlap.slot.date} в ${overlap.slot.time}. Выберите другое время.`
+
+  const sameDayCount = activeEntries.filter(({ slot }) => slot.id !== targetSlot.id && isSameDay(getSlotDateTime(slot), targetTime)).length
+  if (settings.maxLessonsPerDay > 0 && sameDayCount >= settings.maxLessonsPerDay) {
+    return `У ученика уже максимум занятий на этот день: ${settings.maxLessonsPerDay}.`
+  }
+
+  const sameWeekCount = activeEntries.filter(({ slot }) => slot.id !== targetSlot.id && sameWeek(getSlotDateTime(slot), targetTime)).length
+  if (settings.maxLessonsPerWeek > 0 && sameWeekCount >= settings.maxLessonsPerWeek) {
+    return `У ученика уже максимум занятий на эту неделю: ${settings.maxLessonsPerWeek}.`
+  }
+
+  if (!student) return null
+
+  const debt = getDebtForStudent(student.id)
+  if (settings.blockBookingOnDebt && debt > 0) {
+    return `Запись закрыта из-за долга ${debt.toLocaleString('ru-RU')} ₽. Обратитесь в автошколу.`
+  }
+
+  if (!settings.allowBookingWithoutContract && !isVerifiedDocument(student.id, 'contract')) {
+    return 'Запись закрыта: в карточке ученика нет загруженного договора.'
+  }
+
+  if (!settings.allowBookingWithoutMedical && !isVerifiedDocument(student.id, 'medical_certificate')) {
+    return 'Запись закрыта: в карточке ученика нет действующей медсправки.'
+  }
+
+  return null
+}
+
+export function validateBookingForSlot(params: CreateBookingParams): BookingMutationResult {
+  const studentName = normalizePersonName(params.studentName)
+  const normalizedPhone = normalizePhone(params.studentPhone)
+
+  if (!params.branchId || !params.instructorId || !params.slotId) return { ok: false, error: 'Выберите филиал, инструктора и время.' }
+  if (!studentName) return { ok: false, error: 'Введите имя ученика.' }
+  if (!validateRussianPhone(normalizedPhone)) return { ok: false, error: 'Введите корректный номер телефона в российском формате.' }
+
+  const school = db.schools.byId(params.schoolId)
+  const slot = db.slots.byId(params.slotId)
+  const instructor = db.instructors.byId(params.instructorId)
+  const branch = db.branches.byId(params.branchId)
+
+  if (!school || !slot || !instructor || !branch) return { ok: false, error: 'Не удалось найти данные для записи.' }
+  if (!school.isActive || school.accessStatus === 'blocked' || school.accessStatus === 'overdue') return { ok: false, error: 'Автошкола недоступна для записи.' }
+  if (slot.schoolId !== params.schoolId || branch.schoolId !== params.schoolId || instructor.schoolId !== params.schoolId) return { ok: false, error: 'Выбранные ресурсы не относятся к этой автошколе.' }
+  if (!branch.isActive || !instructor.isActive) return { ok: false, error: 'Это время больше недоступно для записи.' }
+  if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) return { ok: false, error: 'Данные выбранного времени изменились. Выберите другое время.' }
+  if (slot.status !== 'available' || slot.bookingId) return { ok: false, error: 'Это время уже занято. Выберите другое время.' }
+
+  const lockOwner = getSlotLockOwner(slot.id)
+  if (lockOwner && lockOwner !== params.sessionId) return { ok: false, error: 'Это время уже занято другим учеником.' }
+
+  const limitError = checkBookingLimit(school, normalizedPhone)
+  if (limitError) return { ok: false, error: limitError }
+
+  const student = getStudentByNormalizedPhone(params.schoolId, normalizedPhone)
+  const policyError = getStudentSlotPolicyError(school, student, normalizedPhone, slot)
+  if (policyError) return { ok: false, error: policyError }
+
+  return { ok: true }
+}
+
 function saveBookingAndSlot(booking: Booking, slot: Slot): BookingMutationResult {
   db.bookings.upsert(booking)
   db.slots.upsert(slot)
@@ -233,70 +336,24 @@ export function createBooking(params: CreateBookingParams): BookingMutationResul
   const studentName = normalizePersonName(params.studentName)
   const normalizedPhone = normalizePhone(params.studentPhone)
 
-  if (!params.branchId || !params.instructorId || !params.slotId) {
-    return { ok: false, error: 'Выберите филиал, инструктора и время.' }
-  }
+  const policy = validateBookingForSlot(params)
+  if (!policy.ok) return policy
 
-  if (!studentName) {
-    return { ok: false, error: 'Введите имя ученика.' }
-  }
-
-  if (!validateRussianPhone(normalizedPhone)) {
-    return { ok: false, error: 'Введите корректный номер телефона в российском формате.' }
-  }
-
-  const school = db.schools.byId(params.schoolId)
   const slot = db.slots.byId(params.slotId)
-  const instructor = db.instructors.byId(params.instructorId)
-  const branch = db.branches.byId(params.branchId)
-
-  if (!school || !slot || !instructor || !branch) {
-    return { ok: false, error: 'Не удалось найти данные для записи.' }
-  }
-
-  if (!school.isActive) {
-    return { ok: false, error: 'Автошкола недоступна для записи.' }
-  }
-
-  if (slot.schoolId !== params.schoolId || branch.schoolId !== params.schoolId || instructor.schoolId !== params.schoolId) {
-    return { ok: false, error: 'Выбранные ресурсы не относятся к этой автошколе.' }
-  }
-
-  if (!branch.isActive || !instructor.isActive) {
-    return { ok: false, error: 'Это время больше недоступно для записи.' }
-  }
-
-  if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) {
-    return { ok: false, error: 'Данные выбранного времени изменились. Выберите другое время.' }
-  }
-
-  if (slot.status !== 'available') {
-    return { ok: false, error: 'Это время уже занято. Выберите другое время.' }
-  }
-
-  const lockOwner = getSlotLockOwner(slot.id)
-  if (lockOwner && lockOwner !== params.sessionId) {
-    return { ok: false, error: 'Это время уже занято другим учеником.' }
-  }
+  if (!slot) return { ok: false, error: 'Выбранное время не найдено.' }
 
   const lockResult = acquireSlotLock(slot.id, params.sessionId)
   if (!lockResult.ok) {
     return { ok: false, error: lockResult.error }
   }
 
-  const limitError = checkBookingLimit(school, normalizedPhone)
-  if (limitError) {
+  const afterLockPolicy = validateBookingForSlot(params)
+  if (!afterLockPolicy.ok) {
     releaseSlotLock(slot.id, params.sessionId)
-    return { ok: false, error: limitError }
+    return afterLockPolicy
   }
 
   const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
-  const settings = adminSettings.get(params.schoolId)
-  const debt = getDebtForStudent(student.id)
-  if (settings.blockBookingOnDebt && debt > 0) {
-    releaseSlotLock(slot.id, params.sessionId)
-    return { ok: false, error: `Запись закрыта из-за долга ${debt.toLocaleString('ru-RU')} ₽. Обратитесь в автошколу.` }
-  }
   const booking: Booking = {
     id: generateId('booking'),
     schoolId: params.schoolId,
@@ -329,56 +386,13 @@ export async function createBookingConfirmed(params: CreateBookingParams): Promi
   const studentName = normalizePersonName(params.studentName)
   const normalizedPhone = normalizePhone(params.studentPhone)
 
-  if (!params.branchId || !params.instructorId || !params.slotId) {
-    return { ok: false, error: 'Выберите филиал, инструктора и время.' }
-  }
+  const policy = validateBookingForSlot(params)
+  if (!policy.ok) return policy
 
-  if (!studentName) {
-    return { ok: false, error: 'Введите имя ученика.' }
-  }
-
-  if (!validateRussianPhone(normalizedPhone)) {
-    return { ok: false, error: 'Введите корректный номер телефона в российском формате.' }
-  }
-
-  const school = db.schools.byId(params.schoolId)
   const slot = db.slots.byId(params.slotId)
-  const instructor = db.instructors.byId(params.instructorId)
-  const branch = db.branches.byId(params.branchId)
-
-  if (!school || !slot || !instructor || !branch) {
-    return { ok: false, error: 'Не удалось найти данные для записи.' }
-  }
-
-  if (!school.isActive) {
-    return { ok: false, error: 'Автошкола недоступна для записи.' }
-  }
-
-  if (slot.schoolId !== params.schoolId || branch.schoolId !== params.schoolId || instructor.schoolId !== params.schoolId) {
-    return { ok: false, error: 'Выбранные ресурсы не относятся к этой автошколе.' }
-  }
-
-  if (!branch.isActive || !instructor.isActive) {
-    return { ok: false, error: 'Это время больше недоступно для записи.' }
-  }
-
-  if (slot.branchId !== branch.id || slot.instructorId !== instructor.id) {
-    return { ok: false, error: 'Данные выбранного времени изменились. Выберите другое время.' }
-  }
-
-  if (slot.status !== 'available' || slot.bookingId) {
-    return { ok: false, error: 'Это время уже занято. Выберите другое время.' }
-  }
-
-  const limitError = checkBookingLimit(school, normalizedPhone)
-  if (limitError) return { ok: false, error: limitError }
+  if (!slot) return { ok: false, error: 'Выбранное время не найдено.' }
 
   const student = getOrCreateStudent(params.schoolId, studentName, normalizedPhone)
-  const settings = adminSettings.get(params.schoolId)
-  const debt = getDebtForStudent(student.id)
-  if (settings.blockBookingOnDebt && debt > 0) {
-    return { ok: false, error: `Запись закрыта из-за долга ${debt.toLocaleString('ru-RU')} ₽. Обратитесь в автошколу.` }
-  }
 
   const remote = await createSupabaseBooking({
     schoolId: params.schoolId,
