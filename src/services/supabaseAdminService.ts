@@ -462,7 +462,7 @@ export async function updateSupabaseSchoolSettings(
   )
 }
 
-export async function updateSupabaseStudentAdmin(student: Student): Promise<void> {
+export async function updateSupabaseStudentAdmin(student: Student, password?: string): Promise<void> {
   await runAdminMutation(
     supabase.rpc('public_admin_update_student', {
       p_student_id: student.id,
@@ -483,6 +483,7 @@ export async function updateSupabaseStudentAdmin(student: Student): Promise<void
       p_driving_end_date: student.drivingEndDate ?? null,
       p_branch_change_requested_at: student.branchChangeRequestedAt ?? null,
       p_branch_change_note: student.branchChangeNote ?? null,
+      p_password: password && password.trim().length >= 6 ? password.trim() : null,
       p_staff_password: getAdminSecret(),
     }),
   )

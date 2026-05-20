@@ -5,6 +5,7 @@ import { normalizePersonName } from '../lib/nameFormat'
 import { db } from './storage'
 import { getBookingById, getBookingsByStudent, getSlotDateTime, normalizePhone } from './bookingService'
 import { updateSupabaseStudentAdmin } from './supabaseAdminService'
+import { saveStudentCredentials } from './studentProfile'
 import { assertAdminPermission } from './adminAccess'
 
 export function getStudentById(studentId: string): Student | null {
@@ -82,6 +83,7 @@ export function getStudentByPhone(schoolId: string, phone: string): Student | nu
 export async function updateStudentAdminConfirmed(
   studentId: string,
   patch: Partial<Student>,
+  options: { password?: string } = {},
 ): Promise<{ ok: boolean; student?: Student; error?: string }> {
   const access = assertAdminPermission('students.manage')
   if (!access.ok) return access
@@ -95,18 +97,21 @@ export async function updateStudentAdminConfirmed(
 
   if (isWorkspaceSupabaseReady()) {
     try {
-      await updateSupabaseStudentAdmin(nextStudent)
+      await updateSupabaseStudentAdmin(nextStudent, options.password)
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить ученика.' }
     }
   }
 
-  db.students.upsert(nextStudent)
-  return { ok: true, student: nextStudent }
+  const savedStudent = { ...nextStudent, hasPassword: Boolean(options.password?.trim()) || nextStudent.hasPassword }
+  db.students.upsert(savedStudent)
+  if (options.password?.trim()) saveStudentCredentials(savedStudent.phone, options.password.trim(), savedStudent.schoolId)
+  return { ok: true, student: savedStudent }
 }
 
 export async function createStudentAdminConfirmed(
   student: Student,
+  options: { password?: string } = {},
 ): Promise<{ ok: boolean; student?: Student; error?: string }> {
   const access = assertAdminPermission('students.manage')
   if (!access.ok) return access
@@ -122,14 +127,15 @@ export async function createStudentAdminConfirmed(
 
   if (isWorkspaceSupabaseReady()) {
     try {
-      await updateSupabaseStudentAdmin(nextStudent)
+      await updateSupabaseStudentAdmin(nextStudent, options.password)
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : 'Не удалось сохранить ученика.' }
     }
   }
 
-  db.students.upsert(nextStudent)
-  return { ok: true, student: nextStudent }
+  db.students.upsert({ ...nextStudent, hasPassword: Boolean(options.password?.trim()) || nextStudent.hasPassword })
+  if (options.password?.trim()) saveStudentCredentials(nextStudent.phone, options.password.trim(), nextStudent.schoolId)
+  return { ok: true, student: { ...nextStudent, hasPassword: Boolean(options.password?.trim()) || nextStudent.hasPassword } }
 }
 
 export function getResolvedStudentBooking(bookingId: string): ResolvedBooking | null {

@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react'
+import { Modal } from '../../components/ui/Modal'
+import { useToast } from '../../components/ui/Toast'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
-import { adminDocuments, getDebtForStudent, studentProgress } from '../../services/adminStorage'
-import { getAdminBasePathForLocation } from '../../services/accessControl'
-import type { DocumentStatus } from '../../types'
+import { adminDocuments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
+import { assertAdminPermission } from '../../services/adminAccess'
+import { getAccessSecret, getAdminBasePathForLocation, getWorkspaceStaffContext } from '../../services/accessControl'
+import type { Document, DocumentStatus, DocumentType, Student } from '../../types'
+import { imageFileToDataUrl } from '../student/studentUtils'
 
 const DOC_LABELS: Record<string, string> = {
   contract: 'Договор', passport: 'Паспорт', medical_certificate: 'Медсправка',
@@ -39,9 +43,132 @@ function isBlockingStatus(status: DocumentStatus) {
   return status === 'missing' || status === 'rejected' || status === 'expired' || status === 'required'
 }
 
+
+type DocumentUploadFormProps = {
+  schoolId: string
+  students: Student[]
+  onSaved: () => void
+  onClose: () => void
+}
+
+function DocumentUploadForm({ schoolId, students, onSaved, onClose }: DocumentUploadFormProps) {
+  const [studentId, setStudentId] = useState(students[0]?.id ?? '')
+  const [type, setType] = useState<DocumentType>('contract')
+  const [status, setStatus] = useState<DocumentStatus>('uploaded')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [notes, setNotes] = useState('')
+  const [fileName, setFileName] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  const [scanning, setScanning] = useState(false)
+
+  const selectedStudent = students.find((student) => student.id === studentId) ?? null
+
+  async function scanFile(file?: File): Promise<void> {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setFileName(file.name)
+      setNotes((current) => current || 'Файл загружен без распознавания: поддерживается ручная проверка.')
+      return
+    }
+    try {
+      setScanning(true)
+      setError('')
+      const imageDataUrl = await imageFileToDataUrl(file)
+      const response = await fetch('/api/document-scan', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-vroom-staff-token': getAccessSecret('admin'),
+          'x-vroom-staff-role': getWorkspaceStaffContext().role,
+        },
+        body: JSON.stringify({ imageDataUrl, fileName: file.name, studentName: selectedStudent?.name ?? '' }),
+      })
+      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error ?? 'Не удалось распознать документ.')
+      const data = await response.json() as { scan?: { documentType?: DocumentType; status?: DocumentStatus; expiresAt?: string; notes?: string; summary?: string; confidence?: number } }
+      const scan = data.scan
+      if (scan?.documentType) setType(scan.documentType)
+      if (scan?.status) setStatus(scan.status)
+      if (scan?.expiresAt) setExpiresAt(scan.expiresAt)
+      setNotes([scan?.summary, scan?.notes, typeof scan?.confidence === 'number' ? `Уверенность: ${Math.round(scan.confidence * 100)}%` : ''].filter(Boolean).join('\n'))
+      setFileName(file.name)
+    } catch (error) {
+      setFileName(file.name)
+      setError(error instanceof Error ? error.message : 'Не удалось распознать документ.')
+    } finally {
+      setScanning(false)
+    }
+  }
+
+  async function save(): Promise<void> {
+    const access = assertAdminPermission('documents.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (!schoolId || !selectedStudent) { setError('Выберите ученика.'); return }
+    if (!fileName && (status === 'uploaded' || status === 'verified')) { setError('Загрузите файл с устройства или поставьте другой статус.'); return }
+    const document: Document = {
+      id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      schoolId,
+      studentId: selectedStudent.id,
+      type,
+      status,
+      fileName: fileName || undefined,
+      uploadedAt: status === 'uploaded' || status === 'verified' ? new Date().toISOString() : undefined,
+      verifiedAt: status === 'verified' ? new Date().toISOString() : undefined,
+      expiresAt: expiresAt || undefined,
+      notes: notes.trim() || undefined,
+      createdAt: new Date().toISOString(),
+    }
+    try {
+      setPending(true)
+      setError('')
+      await adminDocuments.upsertConfirmed(document)
+      createCurrentStaffAuditEntry(schoolId, status === 'verified' ? 'document_verified' : 'document_uploaded', 'document', document.id, `Документ ${DOC_LABELS[type] ?? type}: ${selectedStudent.name}`)
+      onSaved()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось сохранить документ.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      {students.length === 0 ? (
+        <div className="rounded-[16px] border border-[#F5D0D0] bg-[#FFF6F6] px-4 py-3 text-[13px] font-bold text-[#B42318]">Сначала добавьте ученика, потом загружайте документы.</div>
+      ) : null}
+      <label className="block">
+        <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#667085]">Ученик</span>
+        <select value={studentId} onChange={(event) => setStudentId(event.target.value)} className="v-admin-input w-full">
+          {students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+        </select>
+      </label>
+      <label className="block rounded-2xl border border-dashed border-[#C9D6E2] bg-[#F8FAFC] p-4 text-center">
+        <span className="block text-[14px] font-black text-[#111827]">Файл с устройства</span>
+        <span className="mt-1 block text-[12px] font-semibold text-[#667085]">Фото распознаётся нейронкой, PDF/файл можно сохранить для ручной проверки.</span>
+        <input type="file" accept="image/*,.pdf" className="mt-3 block w-full text-[13px] font-semibold text-[#667085] file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-[13px] file:font-bold file:text-white" disabled={pending || scanning || students.length === 0} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; void scanFile(file) }} />
+        {fileName ? <span className="mt-2 block break-all text-[12px] font-black text-[#111827]">{fileName}</span> : null}
+        {scanning ? <span className="mt-2 block text-[12px] font-black text-[#315A7C]">Распознаём...</span> : null}
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <select value={type} onChange={(event) => setType(event.target.value as DocumentType)} className="v-admin-input w-full">{Object.entries(DOC_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+        <select value={status} onChange={(event) => setStatus(event.target.value as DocumentStatus)} className="v-admin-input w-full"><option value="uploaded">Загружен</option><option value="verified">Проверен</option><option value="pending">На проверке</option><option value="missing">Не загружен</option><option value="rejected">Отклонён</option><option value="expired">Просрочен</option></select>
+      </div>
+      <input type="date" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} className="v-admin-input w-full" />
+      <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Заметки по документу" rows={3} className="v-admin-input min-h-[92px] w-full resize-none py-3" />
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
+      <div className="v-modal-actions"><button onClick={onClose} disabled={pending || scanning} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button><button onClick={() => void save()} disabled={pending || scanning || students.length === 0} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button></div>
+    </div>
+  )
+}
+
 export function AdminDocuments() {
   const school = db.schools.currentAdmin()
   const [filter, setFilter] = useState<FilterTab>('all')
+  const [showAddDocument, setShowAddDocument] = useState(false)
+  const [version, setVersion] = useState(0)
+  const { showToast } = useToast()
+
+  const students = useMemo(() => school ? db.students.bySchool(school.id) : [], [school?.id, version])
 
   const data = useMemo(() => {
     if (!school) return []
@@ -49,7 +176,7 @@ export function AdminDocuments() {
       const student = db.students.byId(doc.studentId)
       return { doc, student }
     })
-  }, [school?.id])
+  }, [school?.id, version])
 
   const filtered = filter === 'all' ? data : data.filter((d) => d.doc.status === filter)
 
@@ -85,12 +212,25 @@ export function AdminDocuments() {
 
   return (
     <div className="flex h-full flex-col">
+      <Modal open={showAddDocument} onClose={() => setShowAddDocument(false)} title="Загрузить документ" size="md">
+        <DocumentUploadForm
+          schoolId={school?.id ?? ''}
+          students={students}
+          onSaved={() => {
+            setVersion((current) => current + 1)
+            setShowAddDocument(false)
+            showToast('Документ сохранён.', 'success')
+          }}
+          onClose={() => setShowAddDocument(false)}
+        />
+      </Modal>
       <div className="v-admin-toolbar">
         <div>
           <h1 className="v-admin-heading">Документы</h1>
           <p className="v-admin-note mt-1">Допуски к экзаменам, медсправки и договоры</p>
         </div>
         <span className="v-admin-pill v-tone-muted">{filtered.length}</span>
+        <button type="button" onClick={() => setShowAddDocument(true)} className="v-admin-button ml-auto min-h-10 px-4 text-[13px]">Загрузить документ</button>
         <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-4">
           <div className="rounded-[10px] bg-red-50 px-3 py-2"><p className="text-[11px] font-black uppercase text-red-500">Нет</p><p className="text-[18px] font-black text-gray-900">{summary.missing + summary.rejected + summary.expired}</p></div>
           <div className="rounded-[10px] bg-[#EAF3FF] px-3 py-2"><p className="text-[11px] font-black uppercase text-[#315A7C]">Проверка</p><p className="text-[18px] font-black text-gray-900">{summary.pending}</p></div>

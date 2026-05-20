@@ -934,6 +934,7 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [category, setCategory] = useState('B')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
@@ -947,6 +948,10 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
     setError('')
     if (!normalizedName || !validateRussianPhone(normalizedPhone)) {
       setError('Проверьте ФИО и телефон.')
+      return
+    }
+    if (password.trim() && password.trim().length < 6) {
+      setError('Пароль ученика должен быть не короче 6 символов.')
       return
     }
     const duplicate = db.students.bySchool(schoolId).find((student) => student.normalizedPhone === normalizedPhone)
@@ -966,7 +971,7 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
       createdAt: new Date().toISOString(),
     }
     setPending(true)
-    const result = await createStudentAdminConfirmed(student)
+    const result = await createStudentAdminConfirmed(student, { password: password.trim() || undefined })
     setPending(false)
     if (!result.ok) {
       setError(result.error ?? 'Не удалось сохранить ученика.')
@@ -989,6 +994,10 @@ function StudentForm({ schoolId, onClose, onCreated }: { schoolId: string; onClo
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Email</span>
         <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="student@mail.ru" className="v-admin-input w-full" />
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Пароль для входа ученика</span>
+        <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Можно оставить пустым и выдать позже" className="v-admin-input w-full" />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-[13px] font-black text-[#38424D]">Категория</span>

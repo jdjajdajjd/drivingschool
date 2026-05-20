@@ -13,6 +13,13 @@ import { updateStudentAdminConfirmed } from '../../services/studentService'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 
+function generateStudentPassword(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+  const bytes = new Uint8Array(12)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('')
+}
+
 function imageFileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
@@ -89,6 +96,8 @@ export function AdminStudentDetail() {
   const [showEdit, setShowEdit] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [noteSaved, setNoteSaved] = useState(false)
+  const [resetPasswordMessage, setResetPasswordMessage] = useState('')
+  const [resetPasswordPending, setResetPasswordPending] = useState(false)
 
   const data = useMemo(() => {
     if (!school || !id) return null
@@ -135,6 +144,25 @@ export function AdminStudentDetail() {
   const canManageStudents = canUseAdminPermission('students.manage')
   const canManageFinance = canUseAdminPermission('finance.manage')
   const canManageDocuments = canUseAdminPermission('documents.manage')
+
+  async function resetStudentPassword(): Promise<void> {
+    if (!school || !student || resetPasswordPending) return
+    const access = assertAdminPermission('students.manage')
+    if (!access.ok) { setResetPasswordMessage(access.error ?? 'Недостаточно прав.'); return }
+    const password = generateStudentPassword()
+    setResetPasswordPending(true)
+    setResetPasswordMessage('')
+    const result = await updateStudentAdminConfirmed(student.id, {}, { password })
+    setResetPasswordPending(false)
+    if (!result.ok) {
+      setResetPasswordMessage(result.error ?? 'Не удалось сбросить пароль.')
+      return
+    }
+    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', student.id, `Сброшен пароль ученика ${student.name}`)
+    const text = [`Доступ к кабинету vroom.today для ${student.name}:`, `Вход: ${window.location.origin}/school/${school.slug}/login`, `Телефон: ${student.phone}`, `Пароль: ${password}`].join('\n')
+    try { await navigator.clipboard.writeText(text) } catch { /* ignore */ }
+    setResetPasswordMessage('Новый пароль скопирован сообщением для ученика.')
+  }
   const canManageExams = canUseAdminPermission('exams.manage')
   const missingDocs = documents.filter((doc) => doc.status === 'missing' || doc.status === 'rejected' || doc.status === 'expired').length
   const nextBooking = bookings
@@ -257,9 +285,11 @@ export function AdminStudentDetail() {
                   {canManageFinance ? <button onClick={() => setShowAddPayment(true)} className="v-admin-button min-h-10 px-3 text-[12px]">Оплата</button> : null}
                   {canManageDocuments ? <button onClick={() => setShowAddDocument(true)} className="v-admin-button-secondary min-h-10 px-3 text-[12px]">Документ</button> : null}
                   {canManageStudents ? <button onClick={() => setShowEdit(true)} className="v-admin-button-secondary min-h-10 px-3 text-[12px]">Править</button> : null}
+                  {canManageStudents ? <button onClick={() => void resetStudentPassword()} disabled={resetPasswordPending} className="v-admin-button-secondary min-h-10 px-3 text-[12px] disabled:opacity-50">{resetPasswordPending ? 'Сбрасываем...' : 'Доступ ученика'}</button> : null}
                   <button onClick={copyPhone} className="v-admin-button-secondary min-h-10 px-3 text-[12px]">Телефон</button>
                 </div>
               </div>
+              {resetPasswordMessage ? <div className="mt-4 rounded-[14px] border border-[#D7E2EC] bg-[#F8FAFC] px-4 py-3 text-[13px] font-bold text-[#315A7C]">{resetPasswordMessage}</div> : null}
               <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
                 {profileRows.map((row) => (
                   <div key={row.label} className="rounded-[16px] border border-[#E5EAF1] bg-[#F8FAFC] p-3">
