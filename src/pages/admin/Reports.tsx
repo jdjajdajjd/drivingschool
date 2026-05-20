@@ -81,6 +81,18 @@ export function AdminReports() {
     const lowestReadiness = lifecycleStates.slice(0, 8)
     const debtQueue = lifecycleStates.filter((state) => state.debt > 0).sort((left, right) => right.debt - left.debt).slice(0, 8)
     const noFutureQueue = lifecycleStates.filter((state) => state.futureLessons === 0 && !['Выпуск'].includes(state.currentStep)).slice(0, 8)
+    const practiceQueue = lifecycleStates.filter((state) => {
+      const progress = studentProgress.get(state.student.id)
+      const total = progress?.drivingHoursTotal ?? 0
+      const done = progress?.confirmedHours ?? progress?.drivingHoursCompleted ?? 0
+      return total > 0 && done < total && state.futureLessons === 0
+    }).slice(0, 8)
+    const examQueue = lifecycleStates.filter((state) => {
+      const progress = studentProgress.get(state.student.id)
+      const total = progress?.drivingHoursTotal ?? 56
+      const done = progress?.confirmedHours ?? 0
+      return done >= total && !progress?.internalExamPassed
+    }).slice(0, 8)
 
     // Instructor stats
     const instructorStats = instructors.map((instructor) => {
@@ -140,6 +152,8 @@ export function AdminReports() {
       lowestReadiness,
       debtQueue,
       noFutureQueue,
+      practiceQueue,
+      examQueue,
     }
   }, [school?.id])
 
@@ -221,6 +235,22 @@ export function AdminReports() {
       meta: state.blockers.slice(0, 2).join(' · ') || state.currentStep,
       action: 'Поставить занятие',
       tone: 'info',
+    })),
+    ...data.practiceQueue.map((state) => ({
+      id: `practice-${state.student.id}`,
+      studentId: state.student.id,
+      title: state.student.name,
+      meta: 'Практика не закрыта, будущей записи нет',
+      action: 'Дать окно',
+      tone: 'warning',
+    })),
+    ...data.examQueue.map((state) => ({
+      id: `exam-${state.student.id}`,
+      studentId: state.student.id,
+      title: state.student.name,
+      meta: 'Часы закрыты, внутренний экзамен не сдан',
+      action: 'Назначить экзамен',
+      tone: 'danger',
     })),
     ...data.lowestReadiness.filter((state) => state.blockers.length).map((state) => ({
       id: `path-${state.student.id}`,

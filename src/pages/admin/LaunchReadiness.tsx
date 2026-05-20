@@ -3,7 +3,7 @@ import { NavArrowRight as ChevronRight, CheckCircle, WarningTriangle } from 'ico
 import { Link } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
-import { adminCars, adminDocuments, adminSettings, getDebtForStudent } from '../../services/adminStorage'
+import { adminCars, adminDocuments, adminGIBDDExams, adminInternalExams, adminPayments, adminSettings, adminUsers, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { loadStudentRequests } from '../../services/studentProfile'
 import { getSlotDateTime } from '../../services/bookingService'
 import { validateDataIntegrity } from '../../services/integrityService'
@@ -48,6 +48,10 @@ export function AdminLaunchReadiness() {
     return booking.status === 'active' && slot !== null && getSlotDateTime(slot) > now
   })
   const documents = adminDocuments.all(school.id)
+  const payments = adminPayments.all(school.id)
+  const internalExams = adminInternalExams.all(school.id)
+  const gibddExams = adminGIBDDExams.all(school.id)
+  const users = adminUsers.all(school.id)
   const studentRequests = loadStudentRequests(school.id)
   const settings = adminSettings.get(school.id)
   const sevenDays = addDays(now, 7)
@@ -73,6 +77,22 @@ export function AdminLaunchReadiness() {
     const slot = db.slots.byId(booking.slotId)
     return booking.studentId === student.id && booking.status === 'active' && slot !== null && getSlotDateTime(slot) > now
   }))
+  const studentsWithoutProgress = students.filter((student) => !studentProgress.get(student.id))
+  const studentsWithPracticePlan = students.filter((student) => (studentProgress.get(student.id)?.drivingHoursTotal ?? 0) > 0)
+  const studentsPracticeDoneNoInternal = students.filter((student) => {
+    const progress = studentProgress.get(student.id)
+    if (!progress) return false
+    return (progress.confirmedHours ?? 0) >= (progress.drivingHoursTotal ?? 56) && !progress.internalExamPassed && !internalExams.some((exam) => exam.studentId === student.id && exam.status === 'passed')
+  })
+  const studentsInternalPassedNoGibdd = students.filter((student) => {
+    const progress = studentProgress.get(student.id)
+    const internalPassed = progress?.internalExamPassed || internalExams.some((exam) => exam.studentId === student.id && exam.status === 'passed')
+    const gibddPassed = gibddExams.some((exam) => exam.studentId === student.id && exam.status === 'passed')
+    return internalPassed && !gibddPassed
+  })
+  const partialPayments = payments.filter((payment) => payment.status === 'partial' || payment.status === 'overdue' || payment.status === 'unpaid')
+  const hasDocumentTemplates = documents.some((document) => document.type === 'contract') || students.length === 0
+  const hasRoleCoverage = ['director', 'admin'].every((role) => users.some((user) => user.role === role && user.isActive))
   const integrityIssues = validateDataIntegrity(school.id)
 
   const items: ReadinessItem[] = [
@@ -91,6 +111,12 @@ export function AdminLaunchReadiness() {
     { title: 'Прошедшие занятия', text: overdueBookings.length ? `${overdueBookings.length} занятий не закрыты` : 'Прошедшие занятия закрыты', done: overdueBookings.length === 0, to: `${basePath}/schedule`, tone: overdueBookings.length ? 'danger' : 'ok' },
     { title: 'Настройки записи', text: settings.blockBookingOnDebt ? 'Запись при долге блокируется' : 'Проверьте правило записи при долге', done: settings.blockBookingOnDebt, to: `${basePath}/settings`, tone: 'warning' },
     { title: 'Связи данных', text: integrityIssues.length ? `${integrityIssues.length} проблем связей` : 'Связи данных выглядят нормально', done: integrityIssues.length === 0, to: `${basePath}/reports`, tone: integrityIssues.length ? 'danger' : 'ok' },
+    { title: 'Учет практики', text: studentsWithoutProgress.length ? `${studentsWithoutProgress.length} учеников без плана часов` : `${studentsWithPracticePlan.length} учеников с планом практики`, done: students.length > 0 && studentsWithoutProgress.length === 0, to: `${basePath}/students`, tone: studentsWithoutProgress.length ? 'warning' : 'ok' },
+    { title: 'Допуск к экзаменам', text: studentsPracticeDoneNoInternal.length ? `${studentsPracticeDoneNoInternal.length} завершили практику без внутреннего` : 'Практика связана с внутренним экзаменом', done: studentsPracticeDoneNoInternal.length === 0, to: `${basePath}/exams`, tone: studentsPracticeDoneNoInternal.length ? 'danger' : 'ok' },
+    { title: 'Экзамены ГИБДД', text: studentsInternalPassedNoGibdd.length ? `${studentsInternalPassedNoGibdd.length} после внутреннего без ГИБДД` : 'После внутреннего не теряем следующий шаг', done: studentsInternalPassedNoGibdd.length === 0, to: `${basePath}/exams`, tone: studentsInternalPassedNoGibdd.length ? 'warning' : 'ok' },
+    { title: 'Частичные оплаты', text: partialPayments.length ? `${partialPayments.length} оплат требуют контроля` : 'Частичные оплаты и просрочки закрыты', done: partialPayments.length === 0, to: `${basePath}/payments`, tone: partialPayments.length ? 'warning' : 'ok' },
+    { title: 'Пакет документов', text: hasDocumentTemplates ? 'Договор и печатные формы доступны' : 'Добавьте договор или сформируйте пакет документов', done: hasDocumentTemplates, to: `${basePath}/documents`, tone: hasDocumentTemplates ? 'ok' : 'warning' },
+    { title: 'Роли сотрудников', text: hasRoleCoverage ? 'Есть директор и администратор' : 'Нужны минимум директор и администратор', done: hasRoleCoverage, to: `${basePath}/users`, tone: hasRoleCoverage ? 'ok' : 'danger' },
   ]
 
   const doneCount = items.filter((item) => item.done).length
@@ -102,6 +128,9 @@ export function AdminLaunchReadiness() {
     studentsWithoutInstructor.length ? { label: 'Назначить инструкторов', text: `${studentsWithoutInstructor.length} учеников без инструктора`, to: `${basePath}/students`, danger: false } : null,
     studentsWithoutAccess.length ? { label: 'Выдать доступ ученикам', text: `${studentsWithoutAccess.length} учеников без личного кабинета`, to: `${basePath}/students`, danger: false } : null,
     studentsWithoutFutureBooking.length ? { label: 'Вернуть учеников в график', text: `${studentsWithoutFutureBooking.length} учеников без будущей записи`, to: `${basePath}/students`, danger: false } : null,
+    studentsWithoutProgress.length ? { label: 'Заполнить практику', text: `${studentsWithoutProgress.length} учеников без плана часов`, to: `${basePath}/students`, danger: false } : null,
+    studentsPracticeDoneNoInternal.length ? { label: 'Назначить внутренний', text: `${studentsPracticeDoneNoInternal.length} учеников закрыли практику`, to: `${basePath}/exams`, danger: true } : null,
+    studentsInternalPassedNoGibdd.length ? { label: 'Довести до ГИБДД', text: `${studentsInternalPassedNoGibdd.length} учеников ждут следующий шаг`, to: `${basePath}/exams`, danger: false } : null,
     overdueBookings.length ? { label: 'Закрыть прошедшие занятия', text: `${overdueBookings.length} занятий не отмечены`, to: `${basePath}/schedule`, danger: true } : null,
     freeSlotsToday.length ? { label: 'Пустые окна сегодня', text: `${freeSlotsToday.length} свободных окон можно заполнить`, to: `${basePath}/schedule`, danger: false } : null,
     pendingStudentRequests.length ? { label: 'Ответить ученикам', text: `${pendingStudentRequests.length} запросов ждут решения`, to: `${basePath}/students`, danger: false } : null,

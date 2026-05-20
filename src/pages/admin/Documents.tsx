@@ -10,6 +10,7 @@ import { getAccessSecret, getAdminBasePathForLocation, getWorkspaceStaffContext 
 import type { Document, DocumentStatus, DocumentType, Student } from '../../types'
 import { imageFileToDataUrl } from '../student/studentUtils'
 import { filterStudents } from '../../services/staffScope'
+import { openStudentPrintForm } from '../../services/documentTemplates'
 
 const DOC_LABELS: Record<string, string> = {
   contract: 'Договор', passport: 'Паспорт', medical_certificate: 'Медсправка',
@@ -211,6 +212,14 @@ export function AdminDocuments() {
     { id: 'expired', label: 'Просрочены' },
   ]
 
+  const printPacket = (student: Student) => {
+    if (!school) return
+    const branch = db.branches.byId(student.assignedBranchId ?? '')
+    const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
+    openStudentPrintForm('contract', { school, student, branch, instructor })
+    window.setTimeout(() => openStudentPrintForm('application', { school, student, branch, instructor }), 250)
+  }
+
   return (
     <div className="flex h-full flex-col">
       <Modal open={showAddDocument} onClose={() => setShowAddDocument(false)} title="Загрузить документ" size="md">
@@ -269,14 +278,15 @@ export function AdminDocuments() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {admissionQueue.map(({ student, blockers, debt, isNearExam, hours, total }) => (
-                  <a key={student.id} href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="grid gap-3 p-4 transition hover:bg-[#F8FAFC] sm:grid-cols-[minmax(0,1fr)_160px_170px] sm:items-center">
+                  <div key={student.id} className="grid gap-3 p-4 transition hover:bg-[#F8FAFC] sm:grid-cols-[minmax(0,1fr)_160px_170px_130px] sm:items-center">
                     <span className="min-w-0">
-                      <strong className="block truncate text-[15px] font-black text-gray-900">{student.name}</strong>
+                      <a href={`${getAdminBasePathForLocation()}/students/${student.id}`} className="block truncate text-[15px] font-black text-gray-900 hover:text-[#075EBC]">{student.name}</a>
                       <span className="mt-1 block text-[12px] font-bold text-gray-400">Практика {hours}/{total} ч · {isNearExam ? 'близко к экзамену' : 'в обучении'}</span>
                     </span>
                     <span className="text-[13px] font-black text-gray-700">{blockers.length ? blockers.map((type) => DOC_LABELS[type] ?? type).join(', ') : 'документы ок'}</span>
                     <span className={`w-max rounded-full px-3 py-1 text-[12px] font-black ${debt > 0 || blockers.length ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>{debt > 0 ? `долг ${debt.toLocaleString('ru-RU')} ₽` : blockers.length ? 'допуск закрыт' : 'готов'}</span>
-                  </a>
+                    <button type="button" onClick={() => printPacket(student)} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">Пакет PDF</button>
+                  </div>
                 ))}
               </div>
             )}

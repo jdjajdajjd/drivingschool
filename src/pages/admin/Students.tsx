@@ -7,7 +7,7 @@ import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import type { Payment, Student, StudentRequestStatus, TrainingStage } from '../../types'
+import type { Payment, Student, StudentProgress, StudentRequestStatus, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { getSlotDateTime, normalizePhone, validateRussianPhone } from '../../services/bookingService'
@@ -15,7 +15,7 @@ import { createStudentAdminConfirmed, updateStudentAdminConfirmed } from '../../
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { getPreference, setPreference } from '../../services/preferenceStorage'
-import { loadStudentRequests, refreshStudentRequestsFromSupabase, studentRequestStatusLabels, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
+import { loadStudentRequests, refreshStudentRequestsFromSupabase, saveStudentProgressAdminConfirmed, studentRequestStatusLabels, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
 
 type FilterTab = 'all' | 'active' | 'problem' | 'debt' | 'no_docs' | 'no_instructor' | 'no_group' | 'ready_exam' | 'inactive'
 type ImportSource = 'ai' | 'manual'
@@ -94,11 +94,24 @@ const IMPORT_HEADERS: Record<string, string> = {
   debt: 'debt',
   долг: 'debt',
   остаток: 'debt',
+  paid: 'paidAmount',
+  оплачено: 'paidAmount',
+  практика: 'confirmedHours',
+  часы: 'confirmedHours',
+  откатано: 'confirmedHours',
+  подтверждено: 'confirmedHours',
+  планчасов: 'drivingHoursTotal',
+  купленочасов: 'drivingHoursTotal',
+  всегочасов: 'drivingHoursTotal',
+  темвсего: 'theoryTopicsTotal',
+  темпройдено: 'theoryTopicsCompleted',
+  теория: 'theoryTopicsCompleted',
+  внутренний: 'internalExamPassed',
   notes: 'notes',
   комментарий: 'notes',
 }
 
-const IMPORT_FIELDS = ['name', 'phone', 'email', 'category', 'groupName', 'instructorName', 'branchName', 'trainingStage', 'debt', 'notes', 'ignore'] as const
+const IMPORT_FIELDS = ['name', 'phone', 'email', 'category', 'groupName', 'instructorName', 'branchName', 'trainingStage', 'debt', 'paidAmount', 'drivingHoursTotal', 'drivingHoursCompleted', 'confirmedHours', 'theoryTopicsTotal', 'theoryTopicsCompleted', 'internalExamPassed', 'notes', 'ignore'] as const
 type ImportField = typeof IMPORT_FIELDS[number]
 
 function splitCsvLine(line: string, delimiter: string): string[] {
@@ -219,6 +232,22 @@ function parseMoney(value: string): number {
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 0
 }
 
+function parseImportNumber(value: string): number {
+  const normalized = String(value ?? '').replace(/\s/g, '').replace(',', '.').replace(/[^0-9.-]/g, '')
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+function parseImportBoolean(value: string): boolean {
+  const source = String(value ?? '').trim().toLowerCase()
+  return /^(1|да|yes|true|сдан|сдала|зачет|зачёт|passed)$/.test(source)
+}
+
+function hasPracticeImportData(row: Record<string, string>): boolean {
+  return ['drivingHoursTotal', 'drivingHoursCompleted', 'confirmedHours', 'theoryTopicsTotal', 'theoryTopicsCompleted', 'internalExamPassed']
+    .some((field) => String(row[field] ?? '').trim().length > 0)
+}
+
 function resolveStage(value: string): TrainingStage {
   const source = String(value ?? '').trim().toLowerCase()
   const byKey = Object.keys(STAGE_LABELS).find((key) => key.toLowerCase() === source)
@@ -245,6 +274,8 @@ function getImportPreviewStats(rows: Record<string, string>[], schoolId: string)
   let updated = 0
   let skipped = 0
   let debtRows = 0
+  let practiceRows = 0
+  let paidRows = 0
   const seenPhones = new Set<string>()
   const duplicatePhones = new Set<string>()
   const invalidRows: number[] = []
@@ -265,9 +296,11 @@ function getImportPreviewStats(rows: Record<string, string>[], schoolId: string)
     if (existingPhones.has(normalizedPhone)) updated += 1
     else created += 1
     if (parseMoney(row.debt ?? '') > 0) debtRows += 1
+    if (parseMoney(row.paidAmount ?? '') > 0) paidRows += 1
+    if (hasPracticeImportData(row)) practiceRows += 1
   })
 
-  return { created, updated, skipped, debtRows, total: rows.length, duplicateRows: duplicatePhones.size, invalidRows }
+  return { created, updated, skipped, debtRows, paidRows, practiceRows, total: rows.length, duplicateRows: duplicatePhones.size, invalidRows }
 }
 
 export function AdminStudents() {
@@ -480,6 +513,7 @@ export function AdminStudents() {
     let updated = 0
     let skipped = 0
     let paymentsCreated = 0
+    let progressUpdated = 0
     const activeInstructors = db.instructors.bySchool(school.id)
     const branches = db.branches.bySchool(school.id)
     const seenPhones = new Set<string>()
@@ -502,6 +536,7 @@ export function AdminStudents() {
       const branch = branches.find((item) => item.name.toLowerCase() === (row.branchName ?? '').trim().toLowerCase())
       const stage = resolveStage(row.trainingStage ?? '')
       const debt = parseMoney(row.debt ?? '')
+      const paidAmount = parseMoney(row.paidAmount ?? '')
       const duplicate = db.students.bySchool(school.id).find((student) => student.normalizedPhone === normalizedPhone)
       let studentId = duplicate?.id ?? `stu_${Date.now()}_${created}_${updated}_${skipped}`
 
@@ -570,10 +605,63 @@ export function AdminStudents() {
           // Student import should not fail because a debt row could not be saved.
         }
       }
+
+      if (paidAmount > 0) {
+        const payment: Payment = {
+          id: `pay_import_paid_${Date.now()}_${paymentsCreated}`,
+          schoolId: school.id,
+          studentId,
+          amount: paidAmount,
+          paidAmount,
+          remainingAmount: 0,
+          status: 'paid',
+          method: 'transfer',
+          description: 'Оплата по импорту',
+          paidAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        }
+        try {
+          await adminPayments.upsertConfirmed(payment)
+          paymentsCreated += 1
+        } catch {
+          // Student import should not fail because a payment row could not be saved.
+        }
+      }
+
+      if (hasPracticeImportData(row)) {
+        const current = studentProgress.get(studentId)
+        const confirmed = parseImportNumber(row.confirmedHours ?? '') || parseImportNumber(row.drivingHoursCompleted ?? '') || current?.confirmedHours || 0
+        const completed = parseImportNumber(row.drivingHoursCompleted ?? '') || confirmed || current?.drivingHoursCompleted || 0
+        const total = parseImportNumber(row.drivingHoursTotal ?? '') || current?.drivingHoursTotal || Math.max(56, confirmed, completed)
+        const theoryDone = parseImportNumber(row.theoryTopicsCompleted ?? '') || current?.theoryTopicsCompleted || 0
+        const theoryTotal = parseImportNumber(row.theoryTopicsTotal ?? '') || current?.theoryTopicsTotal || Math.max(theoryDone, 0)
+        const progress: StudentProgress = {
+          id: current?.id ?? `progress_${studentId}`,
+          schoolId: school.id,
+          studentId,
+          theoryTopicsTotal: theoryTotal,
+          theoryTopicsCompleted: Math.min(theoryDone, theoryTotal || theoryDone),
+          drivingHoursTotal: total,
+          drivingHoursCompleted: completed,
+          confirmedHours: confirmed,
+          internalExamPassed: parseImportBoolean(row.internalExamPassed ?? '') || current?.internalExamPassed || false,
+          internalExamDate: current?.internalExamDate ?? null,
+          internalExamStatus: parseImportBoolean(row.internalExamPassed ?? '') ? 'passed' : current?.internalExamStatus ?? 'not_scheduled',
+          gaidExamDate: current?.gaidExamDate ?? null,
+          gibddExamStatus: current?.gibddExamStatus ?? 'not_scheduled',
+          notes: current?.notes ?? '',
+          updatedAt: new Date().toISOString(),
+        }
+        const result = await saveStudentProgressAdminConfirmed(progress)
+        if (result.ok) {
+          studentProgress.save(progress)
+          progressUpdated += 1
+        }
+      }
     }
 
-    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', 'import', `Импорт учеников (${source}): +${created}, обновлено ${updated}, пропущено ${skipped}, долгов ${paymentsCreated}`)
-    setImportSummary(`Импорт завершён: добавлено ${created}, обновлено ${updated}, пропущено ${skipped}, долгов создано ${paymentsCreated}.`)
+    createCurrentStaffAuditEntry(school.id, 'student_note', 'student', 'import', `Импорт учеников (${source}): +${created}, обновлено ${updated}, пропущено ${skipped}, оплат ${paymentsCreated}, практики ${progressUpdated}`)
+    setImportSummary(`Импорт завершён: добавлено ${created}, обновлено ${updated}, пропущено ${skipped}, оплат создано ${paymentsCreated}, практику обновили ${progressUpdated}.`)
   }
 
   const importStudentsCsv = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -929,12 +1017,14 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
         </p>
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-4">
+      <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {[
           ['Создать', stats.created, 'text-[#188447]'],
           ['Обновить', stats.updated, 'text-[#075EBC]'],
           ['Пропустить', stats.skipped, 'text-[#C92820]'],
           ['Долги', stats.debtRows, 'text-[#8A5A00]'],
+          ['Оплаты', stats.paidRows, 'text-[#188447]'],
+          ['Практика', stats.practiceRows, 'text-[#075EBC]'],
         ].map(([label, value, color]) => (
           <div key={label} className="rounded-[16px] border border-[#E5EAF1] bg-white p-3">
             <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">{label}</p>
@@ -963,18 +1053,20 @@ function ImportPreviewModal({ schoolId, preview, pending, onCancel, onConfirm }:
       ) : null}
 
       <div className="mt-4 overflow-x-auto rounded-[16px] border border-[#E5EAF1] bg-white">
-        <div className="grid min-w-[520px] grid-cols-[minmax(170px,1fr)_120px_90px_90px] gap-3 border-b border-[#E5EAF1] bg-[#F8FAFC] px-4 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">
-          <span>Ученик</span><span>Телефон</span><span>Группа</span><span>Долг</span>
+        <div className="grid min-w-[760px] grid-cols-[minmax(170px,1fr)_120px_90px_90px_90px_110px] gap-3 border-b border-[#E5EAF1] bg-[#F8FAFC] px-4 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#667085]">
+          <span>Ученик</span><span>Телефон</span><span>Группа</span><span>Долг</span><span>Оплата</span><span>Практика</span>
         </div>
         {sample.map((row, index) => {
           const normalizedPhone = normalizePhone(row.phone ?? '')
           const valid = Boolean(normalizePersonName(row.name ?? '') && validateRussianPhone(normalizedPhone))
           return (
-            <div key={`${row.name}-${index}`} className="grid min-w-[520px] grid-cols-[minmax(170px,1fr)_120px_90px_90px] gap-3 border-b border-[#EEF2F5] px-4 py-3 text-[13px] font-semibold last:border-b-0">
+            <div key={`${row.name}-${index}`} className="grid min-w-[760px] grid-cols-[minmax(170px,1fr)_120px_90px_90px_90px_110px] gap-3 border-b border-[#EEF2F5] px-4 py-3 text-[13px] font-semibold last:border-b-0">
               <span className={valid ? 'text-[#111827]' : 'text-[#C92820]'}>{row.name || 'без имени'}</span>
               <span className="truncate text-[#667085]">{row.phone || '—'}</span>
               <span className="truncate text-[#667085]">{row.groupName || '—'}</span>
               <span className={parseMoney(row.debt ?? '') > 0 ? 'text-[#C92820]' : 'text-[#667085]'}>{parseMoney(row.debt ?? '') || '—'}</span>
+              <span className={parseMoney(row.paidAmount ?? '') > 0 ? 'text-[#188447]' : 'text-[#667085]'}>{parseMoney(row.paidAmount ?? '') || '—'}</span>
+              <span className={hasPracticeImportData(row) ? 'text-[#075EBC]' : 'text-[#667085]'}>{parseImportNumber(row.confirmedHours ?? '') || parseImportNumber(row.drivingHoursCompleted ?? '') || '—'}</span>
             </div>
           )
         })}

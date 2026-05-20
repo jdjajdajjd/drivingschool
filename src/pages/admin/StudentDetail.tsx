@@ -7,9 +7,10 @@ import { adminPayments, adminDocuments, adminInternalExams, adminGIBDDExams, stu
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
 import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import type { Document, DocumentStatus, DocumentType, Payment, PaymentMethod, PaymentStatus, Student, TrainingStage } from '../../types'
+import type { Document, DocumentStatus, DocumentType, Payment, PaymentMethod, PaymentStatus, Student, StudentProgress, TrainingStage } from '../../types'
 import { filterBookings, filterStudents } from '../../services/staffScope'
 import { updateStudentAdminConfirmed } from '../../services/studentService'
+import { saveStudentProgressAdminConfirmed } from '../../services/studentProfile'
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { openStudentPrintForm } from '../../services/documentTemplates'
@@ -92,8 +93,10 @@ export function AdminStudentDetail() {
   const school = db.schools.currentAdmin()
   const [showAddPayment, setShowAddPayment] = useState(false)
   const [showAddDocument, setShowAddDocument] = useState(false)
+  const [showEditProgress, setShowEditProgress] = useState(false)
   const [gibddExamError, setGibddExamError] = useState('')
   const [gibddExamPending, setGibddExamPending] = useState(false)
+  const [version, setVersion] = useState(0)
   const [showEdit, setShowEdit] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [noteSaved, setNoteSaved] = useState(false)
@@ -118,7 +121,7 @@ export function AdminStudentDetail() {
     const completedHours = progress?.confirmedHours ?? 0
 
     return { student, instructor, branch, bookings, payments, documents, internalExams, gibddExams, progress, debt, completedHours }
-  }, [school?.id, id])
+  }, [school?.id, id, version])
 
   if (!data) {
     return (
@@ -133,6 +136,10 @@ export function AdminStudentDetail() {
 
   const totalHours = progress?.drivingHoursTotal ?? 56
   const hoursPercent = Math.min((completedHours / totalHours) * 100, 100)
+  const plannedHours = Math.max(totalHours, 0)
+  const doneHours = Math.max(progress?.drivingHoursCompleted ?? completedHours, completedHours, 0)
+  const leftHours = Math.max(plannedHours - completedHours, 0)
+  const theoryPercent = progress?.theoryTopicsTotal ? Math.min(Math.round((progress.theoryTopicsCompleted / progress.theoryTopicsTotal) * 100), 100) : 0
 
   const canGoToGIBDD =
     progress?.internalExamPassed === true &&
@@ -353,7 +360,17 @@ export function AdminStudentDetail() {
         <div className="space-y-4">
           {/* Progress */}
           <div className="rounded-2xl border border-gray-100 bg-white p-5">
-            <h2 className="mb-4 text-[16px] font-bold text-gray-900">Прогресс обучения</h2>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-[16px] font-bold text-gray-900">Прогресс обучения</h2>
+                <p className="mt-1 text-[12px] font-semibold text-gray-400">Часы, теория и допуск к экзаменам в одной точке</p>
+              </div>
+              {canManageStudents ? (
+                <button onClick={() => setShowEditProgress(true)} className="v-admin-button-secondary min-h-9 px-3 text-[12px]">
+                  Настроить практику
+                </button>
+              ) : null}
+            </div>
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[13px] font-semibold text-gray-400">Практика</span>
               <span className="text-[15px] font-black text-gray-900">{completedHours} / {totalHours} часов</span>
@@ -365,11 +382,12 @@ export function AdminStudentDetail() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
+                { label: 'Подтверждено', value: `${completedHours} ч` },
+                { label: 'Осталось', value: `${leftHours} ч` },
                 { label: 'Проведено', value: bookings.filter((b) => b.status === 'completed').length },
-                { label: 'Активных', value: bookings.filter((b) => b.status === 'active').length },
-                { label: 'Отменено', value: bookings.filter((b) => b.status === 'cancelled').length },
+                { label: 'Неявки', value: bookings.filter((b) => b.status === 'no_show').length },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl bg-gray-50 p-3 text-center">
                   <p className="text-[20px] font-black text-gray-900">{item.value}</p>
@@ -377,6 +395,21 @@ export function AdminStudentDetail() {
                 </div>
               ))}
             </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border border-gray-100 bg-white p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-gray-400">куплено</p>
+                <p className="mt-1 text-[14px] font-black text-gray-900">{plannedHours || 'не задано'} ч</p>
+              </div>
+              <div className="rounded-xl border border-gray-100 bg-white p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-gray-400">факт занятий</p>
+                <p className="mt-1 text-[14px] font-black text-gray-900">{doneHours} ч</p>
+              </div>
+              <div className="rounded-xl border border-gray-100 bg-white p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.08em] text-gray-400">теория</p>
+                <p className="mt-1 text-[14px] font-black text-gray-900">{progress?.theoryTopicsCompleted ?? 0}/{progress?.theoryTopicsTotal ?? 0} тем · {theoryPercent}%</p>
+              </div>
+            </div>
+            {progress?.notes ? <p className="mt-3 rounded-xl bg-[#F8FAFC] p-3 text-[12px] font-semibold leading-5 text-[#667085]">{progress.notes}</p> : null}
           </div>
 
           {/* Documents */}
@@ -645,6 +678,125 @@ export function AdminStudentDetail() {
       <Modal open={showAddDocument} onClose={() => setShowAddDocument(false)} title="Добавить документ" size="md">
         <DocumentForm schoolId={school.id} student={student} onClose={() => setShowAddDocument(false)} />
       </Modal>
+
+      <Modal open={showEditProgress} onClose={() => setShowEditProgress(false)} title="Практика и допуск" size="md">
+        <PracticeProgressForm
+          schoolId={school.id}
+          student={student}
+          progress={progress}
+          onSaved={() => setVersion((value) => value + 1)}
+          onClose={() => setShowEditProgress(false)}
+        />
+      </Modal>
+    </div>
+  )
+}
+
+function PracticeProgressForm({ schoolId, student, progress, onSaved, onClose }: { schoolId: string; student: Student; progress: StudentProgress | null; onSaved: () => void; onClose: () => void }) {
+  const [drivingHoursTotal, setDrivingHoursTotal] = useState(String(progress?.drivingHoursTotal ?? 56))
+  const [drivingHoursCompleted, setDrivingHoursCompleted] = useState(String(progress?.drivingHoursCompleted ?? progress?.confirmedHours ?? 0))
+  const [confirmedHours, setConfirmedHours] = useState(String(progress?.confirmedHours ?? progress?.drivingHoursCompleted ?? 0))
+  const [theoryTopicsTotal, setTheoryTopicsTotal] = useState(String(progress?.theoryTopicsTotal ?? 0))
+  const [theoryTopicsCompleted, setTheoryTopicsCompleted] = useState(String(progress?.theoryTopicsCompleted ?? 0))
+  const [internalExamPassed, setInternalExamPassed] = useState(progress?.internalExamPassed ?? false)
+  const [internalExamDate, setInternalExamDate] = useState(progress?.internalExamDate ?? '')
+  const [gaidExamDate, setGaidExamDate] = useState(progress?.gaidExamDate ?? '')
+  const [notes, setNotes] = useState(progress?.notes ?? '')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+
+  const toNumber = (value: string) => Math.max(Number(value.replace(',', '.')) || 0, 0)
+
+  const handleSubmit = async () => {
+    const access = assertAdminPermission('students.manage')
+    if (!access.ok) { setError(access.error ?? 'Недостаточно прав.'); return }
+    if (pending) return
+
+    const total = toNumber(drivingHoursTotal)
+    const completed = Math.min(toNumber(drivingHoursCompleted), Math.max(total, toNumber(drivingHoursCompleted)))
+    const confirmed = Math.min(toNumber(confirmedHours), Math.max(total, toNumber(confirmedHours)))
+    const theoryTotal = toNumber(theoryTopicsTotal)
+    const theoryDone = Math.min(toNumber(theoryTopicsCompleted), theoryTotal || toNumber(theoryTopicsCompleted))
+    if (total <= 0) { setError('Укажите купленные часы практики.'); return }
+
+    const next: StudentProgress = {
+      id: progress?.id ?? `progress_${student.id}`,
+      studentId: student.id,
+      schoolId,
+      theoryTopicsTotal: theoryTotal,
+      theoryTopicsCompleted: theoryDone,
+      drivingHoursTotal: total,
+      drivingHoursCompleted: completed,
+      confirmedHours: confirmed,
+      internalExamPassed,
+      internalExamDate: internalExamDate || null,
+      internalExamStatus: internalExamPassed ? 'passed' : progress?.internalExamStatus ?? 'not_scheduled',
+      gaidExamDate: gaidExamDate || null,
+      gibddExamStatus: progress?.gibddExamStatus ?? 'not_scheduled',
+      notes: notes.trim(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    setPending(true)
+    setError('')
+    const result = await saveStudentProgressAdminConfirmed(next)
+    setPending(false)
+    if (!result.ok) {
+      setError(result.error ?? 'Не удалось сохранить практику.')
+      return
+    }
+    studentProgress.save(next)
+    createCurrentStaffAuditEntry(schoolId, 'settings_changed', 'student_progress', student.id, `Обновлен прогресс практики ${student.name}`)
+    onSaved()
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4 p-5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Куплено часов</span>
+          <input type="number" min="0" step="0.5" value={drivingHoursTotal} onChange={(event) => setDrivingHoursTotal(event.target.value)} className="v-admin-input w-full" />
+        </label>
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Факт занятий</span>
+          <input type="number" min="0" step="0.5" value={drivingHoursCompleted} onChange={(event) => setDrivingHoursCompleted(event.target.value)} className="v-admin-input w-full" />
+        </label>
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Подтверждено</span>
+          <input type="number" min="0" step="0.5" value={confirmedHours} onChange={(event) => setConfirmedHours(event.target.value)} className="v-admin-input w-full" />
+        </label>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Тем теории всего</span>
+          <input type="number" min="0" value={theoryTopicsTotal} onChange={(event) => setTheoryTopicsTotal(event.target.value)} className="v-admin-input w-full" />
+        </label>
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Тем пройдено</span>
+          <input type="number" min="0" value={theoryTopicsCompleted} onChange={(event) => setTheoryTopicsCompleted(event.target.value)} className="v-admin-input w-full" />
+        </label>
+      </div>
+      <label className="flex items-center gap-3 rounded-xl border border-[#E5EAF1] bg-[#F8FAFC] p-3 text-[13px] font-bold text-[#111827]">
+        <input type="checkbox" checked={internalExamPassed} onChange={(event) => setInternalExamPassed(event.target.checked)} className="h-4 w-4" />
+        Внутренний экзамен сдан
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Дата внутреннего</span>
+          <input type="date" value={internalExamDate} onChange={(event) => setInternalExamDate(event.target.value)} className="v-admin-input w-full" />
+        </label>
+        <label className="space-y-1">
+          <span className="text-[12px] font-bold text-[#667085]">Дата ГИБДД</span>
+          <input type="date" value={gaidExamDate} onChange={(event) => setGaidExamDate(event.target.value)} className="v-admin-input w-full" />
+        </label>
+      </div>
+      <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Комментарий по практике, допуску или пересдаче" rows={3} className="v-admin-input min-h-[92px] w-full resize-none py-3" />
+      {error ? <p className="rounded-[10px] bg-[#EAF3FF] px-3 py-2 text-[13px] font-bold text-[#315A7C]">{error}</p> : null}
+      <div className="v-modal-actions">
+        <button onClick={onClose} disabled={pending} className="v-admin-button-secondary flex-1 disabled:opacity-50">Отмена</button>
+        <button onClick={handleSubmit} disabled={pending} className="v-admin-button flex-1 disabled:opacity-50">{pending ? 'Сохраняем...' : 'Сохранить'}</button>
+      </div>
     </div>
   )
 }
