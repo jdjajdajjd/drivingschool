@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "bot:dev": "tsx bot/src/index.ts",
+    "bot:start": "tsx bot/src/index.ts",
     "preview": "npx serve@latest out",
     "start": "next start",
     "typecheck": "tsc --noEmit"
@@ -16,7 +18,9 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "framer-motion": "^12.40.0",
+    "grammy": "^1.43.0",
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
@@ -29,6 +33,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "playwright": "^1.60.0",
+    "tsx": "^4.22.3",
     "typescript": "^5.4.5"
   }
 }
