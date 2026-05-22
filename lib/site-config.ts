@@ -1,7 +1,9 @@
 const fallbackBotUsername = "codexskillsbot";
+const retiredBotUsernames = new Set(["vroomleadsbot"]);
 
 function cleanUsername(value: string | undefined) {
-  return (value || fallbackBotUsername).replace(/^@/, "").trim();
+  const username = (value || fallbackBotUsername).replace(/^@/, "").trim();
+  return retiredBotUsernames.has(username.toLowerCase()) ? fallbackBotUsername : username;
 }
 
 export const siteConfig = {
