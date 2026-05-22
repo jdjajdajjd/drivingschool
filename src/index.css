@@ -6286,6 +6286,7 @@
   .vroom-admin-shell .v-home-action-row.is-amber strong { background: #FFF7E6; color: #B76A00; }
   .vroom-admin-shell .v-home-action-row.is-red strong { background: #FFF0F0; color: #D92D20; }
   .vroom-admin-shell .v-home-action-row.is-gray strong { background: #F2F4F7; color: #475467; }
+  .vroom-admin-shell .v-home-action-row.is-green strong { background: #EAF7EE; color: #188447; }
 
   .vroom-admin-shell .v-home-action-row span,
   .vroom-admin-shell .v-home-line-main strong,
@@ -6377,6 +6378,85 @@
 
   .vroom-admin-shell .v-home-secondary-actions a + a {
     border-left: 1px solid #EDF1F5;
+  }
+
+  .vroom-admin-shell .v-control-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    overflow: hidden;
+    border: 1px solid #DDE5EE;
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .vroom-admin-shell .v-control-strip > div {
+    min-width: 0;
+    padding: 12px 10px;
+  }
+
+  .vroom-admin-shell .v-control-strip > div + div {
+    border-left: 1px solid #EDF1F5;
+  }
+
+  .vroom-admin-shell .v-control-strip strong {
+    display: block;
+    color: #111827;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vroom-admin-shell .v-control-strip span {
+    display: block;
+    margin-top: 5px;
+    color: #667085 !important;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .vroom-admin-shell .v-control-process {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .vroom-admin-shell .v-control-process > div {
+    min-height: 76px;
+    border-bottom: 1px solid #EDF1F5;
+    padding: 13px;
+  }
+
+  .vroom-admin-shell .v-control-process > div:nth-child(odd) {
+    border-right: 1px solid #EDF1F5;
+  }
+
+  .vroom-admin-shell .v-control-process strong {
+    display: block;
+    color: #111827;
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .vroom-admin-shell .v-control-process span {
+    display: block;
+    margin-top: 7px;
+    color: #667085 !important;
+    font-size: 12px;
+    font-weight: 640;
+    line-height: 1.25;
+  }
+
+  .vroom-admin-shell .v-home-ok {
+    display: flex;
+    min-height: 72px;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    color: #188447;
+    font-size: 15px;
+    font-weight: 760;
   }
 
   .vroom-admin-shell .admin-mobile-nav > div {

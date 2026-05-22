@@ -44,10 +44,10 @@ type AdminNavItem = AdminNavDefinition & {
 function buildNavItems(basePath: string): AdminNavItem[] {
   return [
     { id: 'today', to: basePath, label: 'Сегодня', description: 'Что происходит сегодня.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
-    { id: 'schedule', to: `${basePath}/schedule`, label: 'Запись', description: 'Окна, занятия и переносы.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
-    { id: 'bookings', to: `${basePath}/bookings`, label: 'Заявки', description: 'Звонки, новые обращения и ручная запись.', icon: Headset, permission: permission('schedule.manage'), required: true },
     { id: 'slots', to: `${basePath}/slots`, label: 'Окна', description: 'Сборка сетки и контроль свободного времени.', icon: Clock, permission: permission('schedule.manage'), required: false },
     { id: 'students', to: `${basePath}/students`, label: 'Ученики', description: 'Кому доступна самостоятельная запись.', icon: Users, permission: permission('students.manage'), required: true },
+    { id: 'schedule', to: `${basePath}/schedule`, label: 'Запись', description: 'Окна, занятия и переносы.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
+    { id: 'bookings', to: `${basePath}/bookings`, label: 'Заявки', description: 'Звонки, новые обращения и ручная запись.', icon: Headset, permission: permission('schedule.manage'), required: true },
     { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Кто проводит занятия и открывает окна.', icon: UserCog, permission: permission('branches.manage'), required: true },
     { id: 'branches', to: `${basePath}/branches`, label: 'Филиалы', description: 'Где проходят занятия.', icon: Building2, permission: permission('branches.manage'), required: false },
     { id: 'cars', to: `${basePath}/cars`, label: 'Машины', description: 'Автопарк, статусы, страховки.', icon: Car, permission: permission('vehicles.manage'), required: false },
@@ -64,7 +64,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
 type NavItem = ReturnType<typeof buildNavItems>[number]
 
 function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePath: string; onClose?: () => void }) {
-  const coreItems = navItems.filter((item) => ['today', 'schedule', 'students', 'bookings', 'settings'].includes(item.id))
+  const coreItems = navItems.filter((item) => ['today', 'students', 'schedule', 'bookings', 'settings'].includes(item.id))
   return (
     <div className="flex h-full flex-col border-r border-[#E5EAF1] bg-white text-[#111315]">
       <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F6] px-4 py-4">
