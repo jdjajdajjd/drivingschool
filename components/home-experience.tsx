@@ -27,6 +27,14 @@ const copy = {
     picksText: "A small selection from the catalog. The full shelf is built for fast search and Telegram delivery.",
     catalogTitle: "Open the working catalog.",
     catalogText: "Search by use case, filter by agent compatibility, and get each skill through Telegram.",
+    shelvesKicker: "Curated shelves",
+    shelvesTitle: "Picked like a working library.",
+    shelvesText: "Collections are grouped by real engineering moments, not directory categories.",
+    shelves: [
+      { title: "Editor's picks", why: "A tight starting shelf for design, testing, docs, security, and deploy work.", slugs: ["frontend-design", "webapp-testing", "openai-docs"] },
+      { title: "Best for frontend polish", why: "Useful when the page works, but still needs taste, clarity, and mobile care.", slugs: ["component-audit", "accessibility-pass", "mobile-ui-qa"] },
+      { title: "Power tools", why: "For moments where the agent needs more context, checks, and restraint.", slugs: ["threat-modeling", "release-risk-scan", "migration-planner"] },
+    ],
   },
   ru: {
     nav: ["Каталог", "О проекте", "Отправить"],
@@ -42,6 +50,14 @@ const copy = {
     picksText: "Небольшая выборка из каталога. Полная версия сделана для быстрого поиска и выдачи через Telegram.",
     catalogTitle: "Перейти в рабочий каталог.",
     catalogText: "Ищите по сценариям, фильтруйте по совместимости и получайте skills через Telegram.",
+    shelvesKicker: "Подборки",
+    shelvesTitle: "Собрано как рабочая библиотека.",
+    shelvesText: "Подборки сгруппированы по реальным инженерным задачам, а не только по категориям.",
+    shelves: [
+      { title: "Выбор редакции", why: "Стартовая полка для дизайна, тестов, docs, security и деплоя.", slugs: ["frontend-design", "webapp-testing", "openai-docs"] },
+      { title: "Frontend polish", why: "Когда страница уже работает, но ей нужны вкус, ясность и аккуратный mobile.", slugs: ["component-audit", "accessibility-pass", "mobile-ui-qa"] },
+      { title: "Power tools", why: "Для задач, где агенту нужны контекст, проверки и осторожность.", slugs: ["threat-modeling", "release-risk-scan", "migration-planner"] },
+    ],
   },
 } as const;
 
@@ -100,6 +116,19 @@ export function HomeExperience() {
         </div>
         <div className="grid gap-4 md:grid-cols-4">
           {featured.map((skill, index) => <FeatureTile key={skill.slug} skill={skill} index={index} locale={locale} />)}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8">
+        <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.shelvesKicker}</p>
+            <h2 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">{t.shelvesTitle}</h2>
+          </div>
+          <p className="max-w-sm text-sm leading-6 text-[#5f6470]">{t.shelvesText}</p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {t.shelves.map((shelf, index) => <HomeShelf key={shelf.title} shelf={shelf} index={index} locale={locale} />)}
         </div>
       </section>
 
@@ -178,6 +207,26 @@ function FeatureTile({ skill, index, locale }: { skill: Skill; index: number; lo
       </div>
       <h3 className="font-display text-3xl font-semibold">{skillTitle(skill, locale)}</h3>
       <p className="mt-3 text-sm leading-6 text-[#5f6470]">{skillSummary(skill, locale)}</p>
+    </motion.div>
+  );
+}
+
+function HomeShelf({ shelf, index, locale }: { shelf: { title: string; why: string; slugs: readonly string[] }; index: number; locale: "en" | "ru" }) {
+  const shelfSkills = shelf.slugs.map((slug) => skills.find((skill) => skill.slug === slug)).filter(Boolean) as Skill[];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.55, ease: smooth }} className="pearl-surface rounded-[30px] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/82">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8e95a3]">{locale === "en" ? "Why this collection" : "Почему эта подборка"}</p>
+      <h3 className="mt-2 text-2xl font-semibold leading-tight text-[#111]">{shelf.title}</h3>
+      <p className="mt-3 text-sm font-medium leading-6 text-[#5f6470]">{shelf.why}</p>
+      <div className="mt-5 grid gap-2">
+        {shelfSkills.map((skill) => (
+          <Link key={skill.slug} href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "home_shelf" })} className="flex items-center justify-between gap-3 rounded-[18px] border border-black/10 bg-white/48 px-3 py-2.5 transition hover:bg-white">
+            <span className="min-w-0 truncate text-sm font-semibold text-[#111]"><span className="mr-2">{skill.emoji}</span>{skillTitle(skill, locale)}</span>
+            <ArrowRight size={15} className="shrink-0 text-[#8e95a3]" />
+          </Link>
+        ))}
+      </div>
     </motion.div>
   );
 }

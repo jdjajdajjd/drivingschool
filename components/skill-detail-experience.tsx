@@ -108,7 +108,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
         <Wordmark />
         <div className="flex items-center gap-2">
           <LocaleToggle locale={locale} setLocale={setLocale} />
-          <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/58 px-4 py-2.5 text-sm font-semibold text-[#5f6470] shadow-[0_14px_42px_rgba(30,35,45,.06)] backdrop-blur-xl transition hover:bg-white hover:text-[#111]">
+          <Link href="/catalog" className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/58 px-4 py-2.5 text-sm font-semibold text-[#5f6470] shadow-[0_14px_42px_rgba(30,35,45,.06)] backdrop-blur-xl transition hover:bg-white hover:text-[#111]">
             <ArrowLeft size={16} /> <span className="hidden sm:inline">{t.catalog}</span>
           </Link>
         </div>
@@ -120,11 +120,11 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
             <Pill dark>{categoryLabels[locale][skill.category]}</Pill>
             {skill.compatibility.map((item) => <Pill key={item}>{item}</Pill>)}
           </div>
-          <h1 className="flex items-start gap-4 font-display text-[clamp(3.2rem,8vw,8rem)] font-semibold leading-[0.9] tracking-normal">
-            <span aria-hidden="true" className="mt-1 shrink-0 text-[clamp(2.4rem,5.4vw,5.8rem)] leading-none">{skill.emoji}</span>
+          <h1 className="flex items-start gap-3 font-display text-[clamp(2.8rem,6.6vw,6.6rem)] font-semibold leading-[0.92] tracking-normal sm:gap-4">
+            <span aria-hidden="true" className="mt-1 shrink-0 text-[clamp(2.1rem,4.8vw,4.9rem)] leading-none">{skill.emoji}</span>
             <span>{skillTitle(skill, locale)}</span>
           </h1>
-          <p className="mt-7 max-w-3xl text-balance text-xl leading-8 text-[#5f6470] sm:text-2xl sm:leading-9">{skillSummary(skill, locale)}</p>
+          <p className="mt-6 max-w-3xl text-balance text-lg leading-8 text-[#5f6470] sm:text-xl sm:leading-9">{skillSummary(skill, locale)}</p>
           <p className="mt-5 max-w-3xl text-base leading-7 text-[#5f6470]">{skillDescription(skill, locale)}</p>
           <div className="mt-7 grid max-w-3xl gap-3 sm:grid-cols-3">
             <Metric label={t.score} value={String(skill.score)} />
@@ -138,7 +138,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8e95a3]">{t.get}</p>
-                <p className="mt-2 font-display text-3xl font-semibold">{skillTitle(skill, locale)}</p>
+            <p className="mt-2 text-2xl font-semibold leading-tight">{skillTitle(skill, locale)}</p>
               </div>
               <div className="grid size-14 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#8fb7ff)] text-2xl shadow-[inset_0_1px_10px_rgba(255,255,255,.9)]">{skill.emoji}</div>
             </div>
@@ -185,7 +185,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
         <div className="pearl-surface rounded-[30px] p-6">
           <SectionTitle icon={<FolderGit2 size={18} />} title={t.source} />
           <div className="rounded-[24px] border border-black/10 bg-white/58 p-5">
-            <p className="font-display text-3xl font-semibold">{skill.source}</p>
+            <p className="text-2xl font-semibold">{skill.source}</p>
             {skill.sourceUrl ? (
               <a href={skill.sourceUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/72 px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-white">
                 {t.source} <ArrowUpRight size={16} />
@@ -201,14 +201,14 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
         <div className="mb-6 flex items-end justify-between gap-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.related}</p>
-            <h2 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">{t.relatedTitle}</h2>
+            <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">{t.relatedTitle}</h2>
           </div>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {related.map((item) => (
             <Link key={item.slug} href={`/skills/${item.slug}`} onClick={() => track("skill_open", { slug: item.slug, source: "related" })} className="pearl-surface group rounded-[30px] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/86">
               <div className="mb-4 flex items-start justify-between gap-3">
-                <h3 className="font-display text-3xl font-semibold leading-none"><span className="mr-2 text-2xl">{item.emoji}</span>{skillTitle(item, locale)}</h3>
+                <h3 className="text-2xl font-semibold leading-tight"><span className="mr-2 text-xl">{item.emoji}</span>{skillTitle(item, locale)}</h3>
                 <ArrowRight size={18} className="mt-1 shrink-0 text-[#8e95a3] transition group-hover:text-[#111]" />
               </div>
               <p className="line-clamp-2 text-sm leading-6 text-[#5f6470]">{skillSummary(item, locale)}</p>
@@ -225,7 +225,7 @@ function Pill({ children, dark = false }: { children: ReactNode; dark?: boolean 
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-[24px] border border-black/10 bg-white/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8e95a3]">{label}</p><p className="mt-2 font-display text-3xl font-semibold">{value}</p></div>;
+  return <div className="rounded-[24px] border border-black/10 bg-white/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8e95a3]">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></div>;
 }
 
 function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {

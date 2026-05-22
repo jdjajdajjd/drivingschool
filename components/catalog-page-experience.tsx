@@ -49,6 +49,17 @@ const copy = {
     list: "List",
     score: "Score",
     telegram: "Telegram bot",
+    popular: "Popular searches",
+    shelves: "Curated shelves",
+    shelfWhy: "Why this collection",
+    fullList: "Full catalog",
+    quickQueries: ["frontend polish", "testing", "safe", "deploy", "docs", "security"],
+    collections: [
+      { title: "Editor's picks", why: "High-signal skills that cover design, QA, security, and deployment without much setup." },
+      { title: "Safe for beginners", why: "Low-risk workflows that help you build better habits before running scripts." },
+      { title: "Frontend polish", why: "Small passes for layout, accessibility, copy, and mobile quality." },
+      { title: "Power tools", why: "More advanced skills for releases, security reviews, migrations, and automation." },
+    ],
   },
   ru: {
     nav: ["Каталог", "О проекте", "Отправить"],
@@ -80,8 +91,26 @@ const copy = {
     list: "Список",
     score: "Оценка",
     telegram: "Telegram bot",
+    popular: "Популярные запросы",
+    shelves: "Подборки",
+    shelfWhy: "Почему эта подборка",
+    fullList: "Полный каталог",
+    quickQueries: ["frontend polish", "testing", "safe", "deploy", "docs", "security"],
+    collections: [
+      { title: "Выбор редакции", why: "Самые полезные skills для дизайна, QA, безопасности и деплоя без лишней настройки." },
+      { title: "Безопасно для старта", why: "Низкорисковые workflows, которые помогают навести порядок без запуска сложных scripts." },
+      { title: "Frontend polish", why: "Короткие passes для layout, accessibility, copy и mobile качества." },
+      { title: "Power tools", why: "Более продвинутые skills для релизов, security review, migrations и automation." },
+    ],
   },
 } as const;
+
+const collectionFilters = [
+  (skill: Skill) => skill.featured,
+  (skill: Skill) => skill.risk === "Low" && skill.difficulty === "Easy",
+  (skill: Skill) => ["Frontend", "Design"].includes(skill.category) || skill.tags.some((tag) => ["a11y", "mobile", "copy", "UI", "performance"].includes(tag)),
+  (skill: Skill) => skill.difficulty === "Advanced" || skill.risk === "High" || skill.hasScripts,
+];
 
 export function CatalogPageExperience() {
   const [query, setQuery] = useState("");
@@ -112,6 +141,7 @@ export function CatalogPageExperience() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const terms = q.split(/\s+/).filter(Boolean);
     const result = skills.filter((skill) => {
       const searchable = [
         skill.title,
@@ -124,12 +154,18 @@ export function CatalogPageExperience() {
         categoryLabels.ru[skill.category],
         skill.difficulty,
         skill.risk,
+        skill.marker,
+        skill.setup,
+        skill.source,
         ...skill.tags,
         ...skill.ru.tags,
         ...skill.compatibility,
         ...skill.useCases,
         ...skill.ru.useCases,
         ...skill.examples,
+        ...(skill.category === "Frontend" || skill.category === "Design" ? ["frontend polish visual mobile ui"] : []),
+        ...(skill.risk === "Low" && skill.difficulty === "Easy" ? ["safe beginner easy"] : []),
+        ...(skill.category === "Deployment" ? ["deploy deployment release"] : []),
       ].join(" ").toLowerCase();
       return (active === all || skill.category === active)
         && (compatible === any || skill.compatibility.includes(compatible))
@@ -137,7 +173,7 @@ export function CatalogPageExperience() {
         && (risk === any || skill.risk === risk)
         && (hasScripts === "All" || skill.hasScripts === (hasScripts === "Yes"))
         && (!freeOnly || skill.free)
-        && (!q || searchable.includes(q));
+        && (!terms.length || terms.every((term) => searchable.includes(term)));
     });
     return [...result].sort((a, b) => {
       if (sort === "Featured") return Number(b.featured) - Number(a.featured) || b.score - a.score;
@@ -156,6 +192,10 @@ export function CatalogPageExperience() {
   }, [query, filtered.length]);
 
   const hasActiveFilters = query || active !== all || compatible !== any || difficulty !== any || risk !== any || hasScripts !== "All" || freeOnly;
+  const collections = useMemo(() => copy[locale].collections.map((collection, index) => ({
+    ...collection,
+    skills: skills.filter(collectionFilters[index]).sort((a, b) => b.score - a.score).slice(0, 5),
+  })), [locale]);
   const resetFilters = () => {
     setQuery("");
     setActive(all);
@@ -189,13 +229,21 @@ export function CatalogPageExperience() {
               )}
             </label>
           </div>
+          <div className="mt-3 flex items-center gap-2 overflow-x-auto px-1 pb-1 text-xs font-bold text-[#8e95a3] scrollbar-hide">
+            <span className="shrink-0 uppercase tracking-[0.14em]">{t.popular}</span>
+            {t.quickQueries.map((item) => (
+              <button key={item} type="button" onClick={() => setQuery(item)} className="shrink-0 rounded-full border border-black/10 bg-white/54 px-3 py-1.5 text-[#5f6470] transition hover:bg-white hover:text-[#111]">
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.eyebrow}</p>
-            <h1 className="mt-2 font-display text-[clamp(2.4rem,4.8vw,4rem)] font-semibold leading-[0.94] tracking-normal">{t.title}</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-[#5f6470] sm:text-lg">{t.subtitle}</p>
+            <h1 className="mt-2 text-[clamp(2rem,3.4vw,3.25rem)] font-semibold leading-[1.02] tracking-normal">{t.title}</h1>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-[#5f6470]">{t.subtitle}</p>
           </div>
           <a href={telegramBotUrl("catalog")} onClick={() => track("telegram_click", { source: "catalog_header", payload: "catalog" })} className="hidden items-center gap-2 rounded-full border border-black/10 bg-white/60 px-4 py-2.5 text-sm font-semibold text-[#111] shadow-[0_14px_36px_rgba(30,35,45,.06)] transition hover:bg-white md:inline-flex">
             <Send size={16} /> {t.telegram}
@@ -228,8 +276,18 @@ export function CatalogPageExperience() {
           </div>
         </div>
 
+        <section className="mb-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#8e95a3]">{t.shelves}</h2>
+            <span className="hidden text-xs font-semibold text-[#8e95a3] sm:inline">{t.shelfWhy}</span>
+          </div>
+          <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+            {collections.map((collection, index) => <CollectionShelf key={collection.title} collection={collection} index={index} locale={locale} />)}
+          </div>
+        </section>
+
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-[#8e95a3]">
-          <span>{t.showing} {filtered.length} / {skills.length} {t.total}</span>
+          <span><span className="text-[#111]">{t.fullList}</span> · {t.showing} {filtered.length} / {skills.length} {t.total}</span>
           <div className="flex flex-wrap items-center gap-2">
             <div className="hidden items-center gap-1 rounded-full border border-black/10 bg-white/58 p-1 md:flex">
               <button type="button" onClick={() => setView("grid")} className={cn("inline-flex h-9 items-center gap-1 rounded-full px-3 text-xs font-bold transition", view === "grid" ? "ink-button bg-[#111] text-white" : "text-[#5f6470] hover:bg-white hover:text-[#111]")}><Grid2X2 size={14} /> {t.grid}</button>
@@ -312,10 +370,32 @@ function SkillCard({ skill, index, locale, t }: { skill: Skill; index: number; l
   );
 }
 
+function CollectionShelf({ collection, index, locale }: { collection: { title: string; why: string; skills: Skill[] }; index: number; locale: "en" | "ru" }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36, delay: index * 0.04 }} className="group min-w-[285px] max-w-[285px] rounded-[26px] border border-black/10 bg-white/48 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.72),0_14px_42px_rgba(30,35,45,.045)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/66 md:min-w-[360px] md:max-w-[360px]">
+      <div className="mb-3 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-base font-bold leading-tight text-[#111]">{collection.title}</h3>
+          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-[#7b8392]">{collection.why}</p>
+        </div>
+        <span className="rounded-full border border-black/10 bg-white/64 px-2.5 py-1 text-xs font-bold text-[#7b8392]">{collection.skills.length}</span>
+      </div>
+      <div className="grid gap-1.5">
+        {collection.skills.map((skill) => (
+          <Link key={skill.slug} href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "collection_shelf" })} className="flex items-center justify-between gap-3 rounded-[16px] px-2.5 py-2 transition hover:bg-white/72">
+            <span className="min-w-0 truncate text-sm font-semibold text-[#111]"><span className="mr-2">{skill.emoji}</span>{skillTitle(skill, locale)}</span>
+            <span className="shrink-0 text-xs font-bold text-[#8e95a3]">{skill.score}</span>
+          </Link>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 function SkillRow({ skill, index, locale, t }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru }) {
   return (
     <motion.article layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, delay: Math.min(index * 0.01, 0.1) }} className="pearl-surface rounded-[22px] p-3 md:p-4">
-      <div className="grid grid-cols-[1fr_auto] items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+      <div className="grid grid-cols-[1fr_auto] items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <div className="min-w-0">
           <h2 className="truncate font-display text-xl font-semibold"><span className="mr-2 text-lg">{skill.emoji}</span>{skillTitle(skill, locale)}</h2>
           <p className="line-clamp-2 mt-1 text-sm leading-5 text-[#5f6470]">{skillSummary(skill, locale)}</p>
@@ -323,6 +403,7 @@ function SkillRow({ skill, index, locale, t }: { skill: Skill; index: number; lo
         </div>
         <div className="rounded-full border border-black/10 bg-white/70 px-2.5 py-1 text-xs font-bold text-[#111]">{skill.score}</div>
         <a href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "catalog_row", slug: skill.slug })} className="ink-button hidden min-h-10 items-center justify-center gap-2 rounded-full bg-[#111] px-4 text-sm font-semibold text-white md:inline-flex"><Send size={15} /> {t.get}</a>
+        <Link href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "catalog_row" })} className="hidden min-h-10 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 text-sm font-semibold text-[#111] transition hover:bg-white md:inline-flex">{t.details}</Link>
       </div>
       <div className="mt-3 grid grid-cols-[1fr_auto] gap-2 md:hidden">
         <a href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "catalog_row", slug: skill.slug })} className="ink-button inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#111] px-3 text-sm font-semibold text-white"><Send size={15} /> {t.get}</a>

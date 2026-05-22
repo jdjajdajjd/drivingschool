@@ -32,7 +32,7 @@ function parseAdminIds(value: string | undefined) {
 export function loadConfig(): BotConfig {
   return {
     token: required("TELEGRAM_BOT_TOKEN"),
-    username: cleanUsername(process.env.TELEGRAM_BOT_USERNAME || "vroomleadsbot"),
+    username: cleanUsername(process.env.TELEGRAM_BOT_USERNAME || "codexskillsbot"),
     channelUsername: optionalUsername(process.env.TELEGRAM_CHANNEL_USERNAME),
     siteUrl: process.env.SITE_URL || "https://drivingschool-6wy.pages.dev",
     analyticsPath: process.env.BOT_ANALYTICS_PATH || "bot/data/analytics.json",
