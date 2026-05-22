@@ -28,13 +28,14 @@ export interface AdminNavDefinition {
   required: boolean
 }
 
-export const REQUIRED_ADMIN_NAV_IDS: AdminNavItemId[] = ['today', 'schedule', 'students', 'settings']
+export const REQUIRED_ADMIN_NAV_IDS: AdminNavItemId[] = ['today', 'schedule', 'bookings', 'students', 'settings']
 
 export const DEFAULT_OPTIONAL_ADMIN_NAV_IDS: AdminNavItemId[] = []
 
 export const BOOKING_TOOL_ADMIN_NAV_IDS: AdminNavItemId[] = [
   'today',
   'schedule',
+  'bookings',
   'students',
   'settings',
 ]

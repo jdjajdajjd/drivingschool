@@ -560,8 +560,8 @@ export function AdminSchedule() {
     <div className="vroom-schedule flex h-full flex-col">
       <div className="v-admin-toolbar vroom-schedule-toolbar">
         <div>
-          <h1 className="v-admin-heading">Расписание</h1>
-          <p className="v-admin-note mt-1">Занятые и свободные окна по времени</p>
+          <h1 className="v-admin-heading">Запись</h1>
+          <p className="v-admin-note mt-1">Занятия и свободные окна</p>
         </div>
         <div className="v-schedule-toolbar-actions ml-auto flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">

@@ -6142,3 +6142,270 @@
     }
   }
 }
+
+@layer components {
+  /* SaaS home: action-first mobile admin for directors. */
+  .vroom-admin-shell .v-saas-home {
+    display: grid;
+    gap: 10px;
+  }
+
+  .vroom-admin-shell .v-home-hero {
+    display: grid;
+    gap: 14px;
+    border-radius: 18px;
+    background: #111827;
+    padding: 16px;
+    color: #fff;
+  }
+
+  .vroom-admin-shell .v-home-kicker {
+    color: rgba(255,255,255,.64);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .vroom-admin-shell .v-home-hero h1 {
+    margin-top: 3px;
+    color: #fff !important;
+    font-size: 30px;
+    font-weight: 760;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .vroom-admin-shell .v-home-hero span {
+    display: block;
+    margin-top: 7px;
+    color: rgba(255,255,255,.72) !important;
+    font-size: 14px;
+    font-weight: 560;
+  }
+
+  .vroom-admin-shell .v-home-primary {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-radius: 14px;
+    background: #0F7EF2;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 760;
+  }
+
+  .vroom-admin-shell .v-home-search {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #DDE5EE;
+    border-radius: 14px;
+    background: #fff;
+    padding: 0 14px;
+    color: #667085;
+    text-align: left;
+  }
+
+  .vroom-admin-shell .v-home-search span {
+    color: #667085 !important;
+    font-size: 14px;
+    font-weight: 620;
+  }
+
+  .vroom-admin-shell .v-home-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .vroom-admin-shell .v-home-panel {
+    overflow: hidden;
+    border: 1px solid #DDE5EE;
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .vroom-admin-shell .v-home-panel-head {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid #EDF1F5;
+    padding: 0 13px;
+  }
+
+  .vroom-admin-shell .v-home-panel-head span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #111827 !important;
+    font-size: 15px;
+    font-weight: 740;
+  }
+
+  .vroom-admin-shell .v-home-panel-head a {
+    color: #0F7EF2;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .vroom-admin-shell .v-home-action-list,
+  .vroom-admin-shell .v-home-lines {
+    display: grid;
+  }
+
+  .vroom-admin-shell .v-home-action-row,
+  .vroom-admin-shell .v-home-line,
+  .vroom-admin-shell .v-home-next {
+    display: grid;
+    align-items: center;
+    min-height: 58px;
+    border-bottom: 1px solid #EDF1F5;
+    padding: 10px 13px;
+  }
+
+  .vroom-admin-shell .v-home-action-row {
+    grid-template-columns: 42px minmax(0,1fr) 18px;
+    gap: 10px;
+  }
+
+  .vroom-admin-shell .v-home-action-row strong {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 12px;
+    background: #EEF4FF;
+    color: #0F54C6;
+    font-size: 18px;
+    font-weight: 780;
+  }
+
+  .vroom-admin-shell .v-home-action-row.is-amber strong { background: #FFF7E6; color: #B76A00; }
+  .vroom-admin-shell .v-home-action-row.is-red strong { background: #FFF0F0; color: #D92D20; }
+  .vroom-admin-shell .v-home-action-row.is-gray strong { background: #F2F4F7; color: #475467; }
+
+  .vroom-admin-shell .v-home-action-row span,
+  .vroom-admin-shell .v-home-line-main strong,
+  .vroom-admin-shell .v-home-next b {
+    overflow: hidden;
+    color: #111827 !important;
+    font-size: 14px;
+    font-weight: 720;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vroom-admin-shell .v-home-line {
+    grid-template-columns: 56px minmax(0,1fr) 18px;
+    gap: 10px;
+  }
+
+  .vroom-admin-shell .v-home-time {
+    color: #111827 !important;
+    font-size: 17px;
+    font-weight: 780;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vroom-admin-shell .v-home-line-main small,
+  .vroom-admin-shell .v-home-next small {
+    display: block;
+    overflow: hidden;
+    margin-top: 3px;
+    color: #667085;
+    font-size: 12px;
+    font-weight: 560;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vroom-admin-shell .v-home-next {
+    grid-template-columns: 60px minmax(0,1fr) 38px;
+    gap: 10px;
+  }
+
+  .vroom-admin-shell .v-home-next > strong {
+    color: #111827;
+    font-size: 22px;
+    font-weight: 780;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vroom-admin-shell .v-home-next > svg {
+    justify-self: end;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #EAF7EE;
+    padding: 9px;
+    color: #188447;
+    box-sizing: border-box;
+  }
+
+  .vroom-admin-shell .v-home-empty {
+    padding: 14px;
+    color: #667085;
+    font-size: 14px;
+    font-weight: 620;
+  }
+
+  .vroom-admin-shell .v-home-empty a {
+    display: inline-flex;
+    margin-top: 10px;
+    color: #0F7EF2;
+    font-weight: 740;
+  }
+
+  .vroom-admin-shell .v-home-secondary-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .vroom-admin-shell .v-home-secondary-actions a {
+    display: inline-flex;
+    min-height: 52px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 720;
+  }
+
+  .vroom-admin-shell .v-home-secondary-actions a + a {
+    border-left: 1px solid #EDF1F5;
+  }
+
+  .vroom-admin-shell .admin-mobile-nav > div {
+    grid-template-columns: repeat(5, minmax(0,1fr)) !important;
+  }
+
+  @media (min-width: 1024px) {
+    .vroom-admin-shell .v-saas-home {
+      grid-template-columns: minmax(0,1fr) 360px;
+      align-items: start;
+    }
+
+    .vroom-admin-shell .v-home-hero,
+    .vroom-admin-shell .v-home-search {
+      grid-column: 1 / -1;
+    }
+
+    .vroom-admin-shell .v-home-hero {
+      grid-template-columns: minmax(0,1fr) 220px;
+      align-items: center;
+    }
+
+    .vroom-admin-shell .v-home-grid {
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0,1fr) minmax(320px,.72fr);
+    }
+
+    .vroom-admin-shell .v-home-attention {
+      grid-row: span 2;
+    }
+  }
+}

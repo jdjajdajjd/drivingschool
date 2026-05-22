@@ -44,8 +44,8 @@ type AdminNavItem = AdminNavDefinition & {
 function buildNavItems(basePath: string): AdminNavItem[] {
   return [
     { id: 'today', to: basePath, label: 'Сегодня', description: 'Что происходит сегодня.', icon: LayoutDashboard, permission: permission('schedule.manage'), required: true },
-    { id: 'schedule', to: `${basePath}/schedule`, label: 'Расписание', description: 'Окна, записи и переносы занятий.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
-    { id: 'bookings', to: `${basePath}/bookings`, label: 'Записи', description: 'Журнал звонков, переносов и отмен.', icon: Headset, permission: permission('schedule.manage'), required: false },
+    { id: 'schedule', to: `${basePath}/schedule`, label: 'Запись', description: 'Окна, занятия и переносы.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
+    { id: 'bookings', to: `${basePath}/bookings`, label: 'Заявки', description: 'Звонки, новые обращения и ручная запись.', icon: Headset, permission: permission('schedule.manage'), required: true },
     { id: 'slots', to: `${basePath}/slots`, label: 'Окна', description: 'Сборка сетки и контроль свободного времени.', icon: Clock, permission: permission('schedule.manage'), required: false },
     { id: 'students', to: `${basePath}/students`, label: 'Ученики', description: 'Кому доступна самостоятельная запись.', icon: Users, permission: permission('students.manage'), required: true },
     { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Кто проводит занятия и открывает окна.', icon: UserCog, permission: permission('branches.manage'), required: true },
@@ -56,7 +56,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
     { id: 'exams', to: `${basePath}/exams`, label: 'Экзамены', description: 'Внутренние и ГИБДД экзамены.', icon: Award, permission: permission('exams.manage'), required: false },
     { id: 'reports', to: `${basePath}/reports`, label: 'Отчёты', description: 'Сводки и показатели школы.', icon: BarChart3, permission: permission('reports.view'), required: false },
     { id: 'launch', to: `${basePath}/launch`, label: 'Запуск', description: 'Готовность школы к работе.', icon: CheckCircle, permission: permission('reports.view'), required: false },
-    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки', description: 'Инструкторы, филиалы, часы и ссылка для учеников.', icon: Settings, permission: permission('settings.manage'), required: true },
+    { id: 'settings', to: `${basePath}/settings`, label: 'Ещё', description: 'Инструкторы, филиалы, часы и ссылка для учеников.', icon: Settings, permission: permission('settings.manage'), required: true },
     { id: 'users', to: `${basePath}/users`, label: 'Команда', description: 'Сотрудники, роли и филиалы.', icon: ShieldCheck, permission: permission('staff.manage'), required: false },
   ]
 }
@@ -64,7 +64,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
 type NavItem = ReturnType<typeof buildNavItems>[number]
 
 function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePath: string; onClose?: () => void }) {
-  const coreItems = navItems.filter((item) => ['today', 'schedule', 'students', 'settings'].includes(item.id))
+  const coreItems = navItems.filter((item) => ['today', 'schedule', 'students', 'bookings', 'settings'].includes(item.id))
   return (
     <div className="flex h-full flex-col border-r border-[#E5EAF1] bg-white text-[#111315]">
       <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F6] px-4 py-4">
@@ -168,7 +168,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   const permittedNavItems = permittedRouteItems.filter((item) => bookingToolNavIds.has(item.id as AdminNavItemId))
   const navItems = permittedNavItems.filter((item) => item.required || enabledIds.includes(item.id as AdminNavItemId))
   const mobileNavItems = navItems.filter((item) =>
-    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/settings`].includes(item.to),
+    [basePath, `${basePath}/schedule`, `${basePath}/students`, `${basePath}/bookings`, `${basePath}/settings`].includes(item.to),
   )
 
   useEffect(() => {
@@ -313,8 +313,8 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
         </main>
 
         <nav className="admin-mobile-nav fixed bottom-0 left-0 right-0 z-40 border-t border-white/70 bg-white/85 backdrop-blur-2xl lg:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-4 px-2 pb-[env(safe-area-inset-bottom)] pt-1">
-            {mobileNavItems.slice(0, 4).map((item) => {
+          <div className="mx-auto grid max-w-lg grid-cols-5 px-2 pb-[env(safe-area-inset-bottom)] pt-1">
+            {mobileNavItems.slice(0, 5).map((item) => {
               const Icon = item.icon
               return (
                 <NavLink

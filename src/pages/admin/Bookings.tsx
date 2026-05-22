@@ -188,9 +188,9 @@ export function AdminBookings() {
         <aside className="space-y-3">
           <section className="v-ops-hero border border-[#D7DEE8] bg-white text-[#0F172A]">
             <div className="p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">журнал оператора</p>
-              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.04em] text-[#111827]">Записи</h1>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-[#667085]">Ручная запись после звонка, переносы, отмены, закрытие занятий.</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">звонки и сайт</p>
+              <h1 className="mt-1 text-[30px] font-black leading-none tracking-[-0.04em] text-[#111827]">Заявки</h1>
+              <p className="mt-2 text-[13px] font-bold leading-5 text-[#667085]">Быстро записать ученика после звонка или заявки с сайта.</p>
             </div>
             <div className="grid grid-cols-3 border-t border-[#E5EAF1]">
               <button onClick={() => { setStatus('all'); setPeriod('all') }} className="min-h-[76px] border-r border-[#E5EAF1] bg-[#F8FAFC] p-3 text-left transition hover:bg-white">
@@ -207,8 +207,7 @@ export function AdminBookings() {
 
           <section className="v-ops-panel border border-[#D7DEE8] bg-white">
             <div className="border-b border-[#CBD5E1] px-4 py-3">
-              <h2 className="text-[16px] font-black">Принять звонок</h2>
-              <p className="mt-1 text-[12px] font-bold text-[#64748B]">Телефон/SMS/любой канал связи → запись в окно.</p>
+              <h2 className="text-[16px] font-black">Записать ученика</h2>
             </div>
             <div className="space-y-2 p-3">
               <input value={intakeForm.studentName} onChange={(e) => setIntakeForm((f) => ({ ...f, studentName: e.target.value }))} placeholder="Имя ученика" className="min-h-11 w-full border border-[#CBD5E1] bg-white px-3 text-[14px] font-bold outline-none focus:border-[#0F172A]" />
