@@ -10,6 +10,7 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://drivingschool-6wy.pages.dev",
   telegramBotUsername: cleanUsername(process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME),
   telegramChannelUsername: cleanUsername(process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_USERNAME || process.env.TELEGRAM_CHANNEL_USERNAME),
+  packStorageUrl: (process.env.NEXT_PUBLIC_PACK_STORAGE_URL || process.env.PACK_STORAGE_URL || "https://82742d4a8c060a.lhr.life").replace(/\/$/, ""),
 };
 
 export function telegramBotUrl(start?: string) {

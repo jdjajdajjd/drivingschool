@@ -31,6 +31,11 @@ export type Skill = {
   safetyNotes: string[];
   createdAt: string;
   featured: boolean;
+  promptPurpose: string;
+  agentInstructions: string[];
+  bestFor: string[];
+  constraints: string[];
+  relatedSkills: string[];
   summary: string;
   source: string;
   install: string;
@@ -49,11 +54,16 @@ export type Skill = {
   };
 };
 
-type SkillSeed = Omit<Skill, "id" | "summary" | "source" | "install" | "popularity" | "addedAt" | "free" | "setup" | "marker" | "ru"> & {
+type SkillSeed = Omit<Skill, "id" | "summary" | "source" | "install" | "popularity" | "addedAt" | "free" | "setup" | "marker" | "ru" | "promptPurpose" | "agentInstructions" | "bestFor" | "constraints" | "relatedSkills"> & {
   ruDescription: string;
   ruUseCases?: string[];
   ruExamples?: string[];
   ruTags?: string[];
+  promptPurpose?: string;
+  agentInstructions?: string[];
+  bestFor?: string[];
+  constraints?: string[];
+  relatedSkills?: string[];
 };
 
 export const categories: Category[] = [
@@ -145,6 +155,28 @@ const publishedSeeds = seeds.slice(0, 60);
 export const skills: Skill[] = publishedSeeds.map((seed, index) => {
   const hasKeys = seed.risk === "High" || seed.tags.some((tag) => ["deploy", "Cloudflare", "payments", "webhooks"].includes(tag));
   const setup: Skill["setup"] = hasKeys ? "Requires keys" : seed.hasScripts ? "Scripted" : seed.hasReferences ? "Light setup" : "Zero config";
+  const promptPurpose = seed.promptPurpose || seed.longDescription || seed.description;
+  const agentInstructions = seed.agentInstructions || [
+    `Use ${seed.title} to address the selected ${seed.category.toLowerCase()} work.`,
+    "Inspect the current project before changing files.",
+    "Make focused changes that match the existing codebase and design system.",
+    "Verify the result and report risks or follow-up work.",
+  ];
+  const bestFor = seed.bestFor || seed.useCases.slice(0, 4);
+  const constraints = seed.constraints || [
+    "Do not rewrite unrelated flows.",
+    "Do not add unnecessary features or dependencies.",
+    "Keep accessibility, maintainability, and performance in mind.",
+  ];
+  const related = publishedSeeds
+    .filter((candidate) => candidate.slug !== seed.slug)
+    .sort((a, b) => {
+      const aScore = (a.category === seed.category ? 2 : 0) + a.tags.filter((tag) => seed.tags.includes(tag)).length;
+      const bScore = (b.category === seed.category ? 2 : 0) + b.tags.filter((tag) => seed.tags.includes(tag)).length;
+      return bScore - aScore || b.score - a.score;
+    })
+    .slice(0, 5)
+    .map((candidate) => candidate.slug);
   return {
     ...seed,
     id: `skill-${String(index + 1).padStart(3, "0")}`,
@@ -156,6 +188,11 @@ export const skills: Skill[] = publishedSeeds.map((seed, index) => {
     free: true,
     setup,
     marker: seed.risk === "High" ? "Advanced" : seed.hasScripts ? "Script" : "Safe",
+    promptPurpose,
+    agentInstructions,
+    bestFor,
+    constraints,
+    relatedSkills: seed.relatedSkills || related,
     ru: {
       title: seed.title,
       summary: seed.ruDescription,

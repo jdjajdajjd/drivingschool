@@ -1,10 +1,12 @@
 import "dotenv/config";
 import { Bot, InlineKeyboard, session, type Context, type SessionFlavor } from "grammy";
 import { getSkill, skills, skillTitle, type Locale } from "../../lib/skills";
+import { agentLabel, buildAgentPrompt, type AgentFormat, type StoredPack } from "../../lib/prompt-builder";
 import { JsonAnalyticsStore } from "./analytics";
 import { channelChatId, channelUrl, loadConfig } from "./config";
 import { deliverSkill } from "./delivery";
-import { skillCard, ui } from "./messages";
+import { escapeHtml, ui } from "./messages";
+import { JsonPackStore, startPackServer } from "./pack-store";
 
 type SessionData = { locale?: Locale };
 type BotContext = Context & SessionFlavor<SessionData>;
@@ -13,11 +15,17 @@ const activeStatuses = new Set(["creator", "administrator", "member"]);
 const config = loadConfig();
 const bot = new Bot<BotContext>(config.token);
 const analytics = new JsonAnalyticsStore(config.analyticsPath);
+const packStore = new JsonPackStore(config.packStoragePath);
 
 bot.use(session({ initial: (): SessionData => ({}) }));
 
 bot.command("start", async (ctx) => {
   const payload = ctx.match?.trim();
+  const packId = parsePackPayload(payload);
+  if (packId) {
+    await handlePackStart(ctx, packId);
+    return;
+  }
   const slug = parseSkillPayload(payload);
   if (slug) {
     await handleSkillRequest(ctx, slug);
@@ -74,6 +82,21 @@ bot.callbackQuery(/^check:(.+)$/, async (ctx) => {
   const locale = await getLocale(ctx);
   await ctx.answerCallbackQuery(ui[locale].subscribedCheck);
   await handleSkillRequest(ctx, ctx.match[1]);
+});
+
+bot.callbackQuery(/^agent_(codex|claude|cursor|universal):(.+)$/, async (ctx) => {
+  const format = ctx.match[1] as AgentFormat;
+  const packId = ctx.match[2];
+  await ctx.answerCallbackQuery(`Preparing ${agentLabel(format)} prompt...`);
+  await handlePackFormat(ctx, packId, format);
+});
+
+bot.callbackQuery(/^checkpack:(codex|claude|cursor|universal):(.+)$/, async (ctx) => {
+  const format = ctx.match[1] as AgentFormat;
+  const packId = ctx.match[2];
+  const locale = await getLocale(ctx);
+  await ctx.answerCallbackQuery(ui[locale].subscribedCheck);
+  await handlePackFormat(ctx, packId, format);
 });
 
 bot.on("message:text", async (ctx) => {
@@ -136,6 +159,100 @@ async function handleSkillRequest(ctx: BotContext, slug: string) {
   });
 }
 
+async function handlePackStart(ctx: BotContext, packId: string) {
+  const locale = await getLocale(ctx);
+  const pack = await fetchPack(packId);
+  if (!pack) {
+    await ctx.reply(ui[locale].missingPack, { reply_markup: new InlineKeyboard().url(ui[locale].catalog, `${config.siteUrl}/catalog`) });
+    return;
+  }
+  await ctx.reply(ui[locale].packReady, { reply_markup: agentKeyboard(pack.packId) });
+}
+
+async function handlePackFormat(ctx: BotContext, packId: string, format: AgentFormat) {
+  const locale = await getLocale(ctx);
+  const userId = ctx.from?.id;
+  const chatId = ctx.chat?.id || ctx.callbackQuery?.message?.chat.id;
+  if (!userId || !chatId) return;
+
+  const pack = await fetchPack(packId);
+  if (!pack) {
+    await ctx.reply(ui[locale].missingPack, { reply_markup: new InlineKeyboard().url(ui[locale].catalog, `${config.siteUrl}/catalog`) });
+    return;
+  }
+
+  const subscribed = await isSubscribed(userId);
+  if (!subscribed) {
+    await analytics.track({ type: "subscription_block", userId, username: ctx.from?.username, skillSlug: `pack:${pack.packId}`, subscribed: false });
+    await ctx.reply(ui[locale].joinRequired("Skill Pack"), {
+      reply_markup: new InlineKeyboard()
+        .url(ui[locale].channel, channelUrl(config))
+        .row()
+        .text(ui[locale].check, `checkpack:${format}:${pack.packId}`),
+    });
+    return;
+  }
+
+  await analytics.track({ type: "pack_prompt", userId, username: ctx.from?.username, skillSlug: `pack:${pack.packId}:${format}`, subscribed: true });
+  const prompt = buildAgentPrompt(pack, format, pack.language || locale);
+  await sendPrompt(ctx, prompt, locale, pack.packId);
+}
+
+async function sendPrompt(ctx: BotContext, prompt: string, locale: Locale, packId: string) {
+  await ctx.reply(ui[locale].copyPrompt);
+  const chunks = chunkText(prompt, 3400);
+  for (const chunk of chunks) {
+    await ctx.reply(`<pre><code>${escapeHtml(chunk)}</code></pre>`, { parse_mode: "HTML" });
+  }
+  await ctx.reply(ui[locale].packReady, {
+    reply_markup: new InlineKeyboard()
+      .text(ui[locale].regenerateCodex, `agent_codex:${packId}`)
+      .row()
+      .text(ui[locale].regenerateClaude, `agent_claude:${packId}`)
+      .row()
+      .text(ui[locale].regenerateCursor, `agent_cursor:${packId}`)
+      .row()
+      .text(ui[locale].regenerateUniversal, `agent_universal:${packId}`)
+      .row()
+      .url(ui[locale].catalog, `${config.siteUrl}/catalog`),
+  });
+}
+
+function agentKeyboard(packId: string) {
+  return new InlineKeyboard()
+    .text("Codex", `agent_codex:${packId}`)
+    .text("Claude", `agent_claude:${packId}`)
+    .row()
+    .text("Cursor", `agent_cursor:${packId}`)
+    .text("Universal", `agent_universal:${packId}`);
+}
+
+async function fetchPack(packId: string): Promise<StoredPack | undefined> {
+  const localPack = await packStore.get(packId);
+  if (localPack) return localPack;
+  try {
+    const response = await fetch(`${config.packStorageUrl}/api/packs/${packId}`);
+    if (!response.ok) return undefined;
+    return await response.json() as StoredPack;
+  } catch (error) {
+    console.warn("Pack fetch failed", error);
+    return undefined;
+  }
+}
+
+function chunkText(value: string, maxLength: number) {
+  const chunks: string[] = [];
+  let remaining = value;
+  while (remaining.length > maxLength) {
+    const splitAt = remaining.lastIndexOf("\n", maxLength);
+    const index = splitAt > 500 ? splitAt : maxLength;
+    chunks.push(remaining.slice(0, index));
+    remaining = remaining.slice(index).trimStart();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
 async function isSubscribed(userId: number) {
   if (config.adminUserIds.includes(userId)) return true;
   const chatId = channelChatId(config);
@@ -169,6 +286,12 @@ function parseSkillPayload(payload?: string) {
   return undefined;
 }
 
+function parsePackPayload(payload?: string) {
+  if (!payload) return undefined;
+  if (payload.startsWith("pack_")) return payload.slice("pack_".length);
+  return undefined;
+}
+
 await bot.api.setMyCommands([
   { command: "start", description: "Start bot" },
   { command: "catalog", description: "Open catalog" },
@@ -178,6 +301,7 @@ await bot.api.setMyCommands([
 ]);
 
 await bot.api.deleteWebhook({ drop_pending_updates: false });
+startPackServer(packStore, config.packApiPort);
 
 console.log(`@${config.username} is running. Catalog has ${skills.length} skills.`);
 await bot.start();

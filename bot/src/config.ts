@@ -3,6 +3,9 @@ export type BotConfig = {
   username: string;
   channelUsername?: string;
   siteUrl: string;
+  packStorageUrl: string;
+  packApiPort: number;
+  packStoragePath: string;
   analyticsPath: string;
   adminUserIds: number[];
 };
@@ -35,6 +38,9 @@ export function loadConfig(): BotConfig {
     username: cleanUsername(process.env.TELEGRAM_BOT_USERNAME || "codexskillsbot"),
     channelUsername: optionalUsername(process.env.TELEGRAM_CHANNEL_USERNAME),
     siteUrl: process.env.SITE_URL || "https://drivingschool-6wy.pages.dev",
+    packStorageUrl: (process.env.PACK_STORAGE_URL || "https://codex-skills-pack-api.qsenseeee.workers.dev").replace(/\/$/, ""),
+    packApiPort: Number(process.env.PACK_API_PORT || 8787),
+    packStoragePath: process.env.PACK_STORAGE_PATH || "bot/data/packs.json",
     analyticsPath: process.env.BOT_ANALYTICS_PATH || "bot/data/analytics.json",
     adminUserIds: parseAdminIds(process.env.TELEGRAM_ADMIN_IDS || process.env.TELEGRAM_ADMIN_ID),
   };

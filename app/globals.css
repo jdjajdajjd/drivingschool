@@ -124,6 +124,10 @@ button { cursor: pointer; }
   transform: translateX(32%);
 }
 
+.skill-pack-panel {
+  position: absolute;
+}
+
 .spotlight-panel {
   position: relative;
   border: 1px solid rgba(17, 24, 39, .08);

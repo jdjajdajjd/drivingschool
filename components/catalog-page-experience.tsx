@@ -1,19 +1,22 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, Grid2X2, List, RotateCcw, Search, Send, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Check, Grid2X2, List, Loader2, PackageCheck, Plus, RotateCcw, Search, Send, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { Wordmark } from "@/components/brand";
-import { categories, categoryLabels, compatibilityOptions, difficultyLabels, difficultyOptions, riskLabels, riskOptions, skillSummary, skillTags, skillTitle, skills, type Category, type Compatibility, type Difficulty, type Risk, type Skill } from "@/lib/skills";
-import { telegramBotUrl, telegramSkillUrl } from "@/lib/site-config";
+import { categories, categoryLabels, compatibilityOptions, difficultyLabels, difficultyOptions, riskLabels, riskOptions, skillSummary, skillTitle, skills, type Category, type Compatibility, type Difficulty, type Risk, type Skill } from "@/lib/skills";
+import { telegramBotUrl } from "@/lib/site-config";
+import { createPack, telegramPackUrl } from "@/lib/pack-client";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 
 const all = "All";
 const any = "Any";
+const basketStorageKey = "codex-skills-basket";
+const basketLimit = 12;
 type SortKey = "Featured" | "Newest" | "Popular" | "Name" | "Score";
 type HasScriptsFilter = "All" | "Yes" | "No";
 type ViewMode = "grid" | "list";
@@ -49,6 +52,22 @@ const copy = {
     list: "List",
     score: "Score",
     telegram: "Telegram bot",
+    basket: "Skill Pack",
+    selected: "selected",
+    add: "Add",
+    added: "Added",
+    remove: "Remove",
+    clearAll: "Clear all",
+    generatePrompt: "Generate prompt",
+    openTelegram: "Open in Telegram",
+    noSkills: "No skills selected",
+    noSkillsText: "Add skills to build an agent prompt.",
+    tooMany: "Skill Pack can include up to 12 skills.",
+    noSelectedError: "No skills selected.",
+    packFailed: "Pack creation failed.",
+    botMissing: "Bot username missing.",
+    networkError: "Network error.",
+    retry: "Retry",
     popular: "Popular searches",
     shelves: "Curated shelves",
     shelfWhy: "Why this collection",
@@ -91,6 +110,22 @@ const copy = {
     list: "Список",
     score: "Оценка",
     telegram: "Telegram bot",
+    basket: "Набор skills",
+    selected: "выбрано",
+    add: "Добавить",
+    added: "Добавлено",
+    remove: "Убрать",
+    clearAll: "Очистить",
+    generatePrompt: "Собрать промпт",
+    openTelegram: "Открыть в Telegram",
+    noSkills: "Skills не выбраны",
+    noSkillsText: "Добавьте skills, чтобы собрать agent prompt.",
+    tooMany: "В наборе может быть максимум 12 skills.",
+    noSelectedError: "Skills не выбраны.",
+    packFailed: "Не удалось создать pack.",
+    botMissing: "Bot username не задан.",
+    networkError: "Network error.",
+    retry: "Повторить",
     popular: "Популярные запросы",
     shelves: "Подборки",
     shelfWhy: "Почему эта подборка",
@@ -123,6 +158,12 @@ export function CatalogPageExperience() {
   const [sort, setSort] = useState<SortKey>("Featured");
   const [view, setView] = useState<ViewMode>("grid");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
+  const [basket, setBasket] = useState<string[]>([]);
+  const [basketNotice, setBasketNotice] = useState("");
+  const [packError, setPackError] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [lastPackUrl, setLastPackUrl] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const { locale, setLocale } = useLocale();
   const t = copy[locale];
@@ -132,12 +173,34 @@ export function CatalogPageExperience() {
     const q = params.get("q");
     if (q) setQuery(q);
     track("page_view", { page: "catalog" });
+    const savedBasket = window.localStorage.getItem(basketStorageKey);
+    if (savedBasket) {
+      try {
+        const slugs = JSON.parse(savedBasket) as string[];
+        setBasket(slugs.filter((slug) => skills.some((skill) => skill.slug === slug)).slice(0, basketLimit));
+      } catch {
+        window.localStorage.removeItem(basketStorageKey);
+      }
+    }
     const query = window.matchMedia("(max-width: 767px)");
     const update = () => setIsMobile(query.matches);
     update();
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(basketStorageKey, JSON.stringify(basket));
+  }, [basket]);
+
+  useEffect(() => {
+    if (!basketNotice && !packError) return;
+    const timeout = window.setTimeout(() => {
+      setBasketNotice("");
+      setPackError("");
+    }, 3200);
+    return () => window.clearTimeout(timeout);
+  }, [basketNotice, packError]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -206,6 +269,47 @@ export function CatalogPageExperience() {
     setFreeOnly(false);
     setSort("Featured");
   };
+  const selectedSkills = useMemo(() => basket.map((slug) => skills.find((skill) => skill.slug === slug)).filter(Boolean) as Skill[], [basket]);
+  const addSkill = (skill: Skill) => {
+    setPackError("");
+    setBasket((current) => {
+      if (current.includes(skill.slug)) return current;
+      if (current.length >= basketLimit) {
+        setBasketNotice(t.tooMany);
+        return current;
+      }
+      setBasketNotice("");
+      track("basket_add", { slug: skill.slug });
+      return [...current, skill.slug];
+    });
+  };
+  const removeSkill = (slug: string) => setBasket((current) => current.filter((item) => item !== slug));
+  const toggleSkill = (skill: Skill) => basket.includes(skill.slug) ? removeSkill(skill.slug) : addSkill(skill);
+  const generatePrompt = async () => {
+    setPackError("");
+    setLastPackUrl("");
+    if (!basket.length) {
+      setPackError(t.noSelectedError);
+      return;
+    }
+    if (basket.length > basketLimit) {
+      setPackError(t.tooMany);
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const pack = await createPack({ slugs: basket, language: locale, source: "catalog" });
+      const url = telegramPackUrl(pack.packId);
+      setLastPackUrl(url);
+      track("pack_create", { packId: pack.packId, count: basket.length });
+      window.location.href = url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t.networkError;
+      setPackError(message || t.packFailed);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden pb-20">
@@ -214,7 +318,7 @@ export function CatalogPageExperience() {
         <div className="contour-lines absolute inset-x-0 top-28 h-80 opacity-35" />
       </div>
 
-      <TopNav t={t} locale={locale} setLocale={setLocale} />
+      <TopNav t={t} locale={locale} setLocale={setLocale} basketCount={basket.length} onOpenBasket={() => { setFiltersOpen(false); setBasketOpen(true); }} />
 
       <section className="mx-auto w-full max-w-7xl px-5 pb-10 pt-6 sm:px-8">
         <div className="mobile-sticky-glass z-30 mb-5 rounded-[30px] p-2 sm:p-0">
@@ -258,7 +362,7 @@ export function CatalogPageExperience() {
               </button>
             ))}
           </div>
-          <button type="button" onClick={() => setFiltersOpen(true)} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-black/10 bg-white/64 px-4 text-sm font-bold text-[#111] shadow-[0_14px_36px_rgba(30,35,45,.06)] md:hidden">
+          <button type="button" onClick={() => { setBasketOpen(false); setFiltersOpen(true); }} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-black/10 bg-white/64 px-4 text-sm font-bold text-[#111] shadow-[0_14px_36px_rgba(30,35,45,.06)] md:hidden">
             <SlidersHorizontal size={16} /> {t.filters}
           </button>
         </div>
@@ -310,59 +414,61 @@ export function CatalogPageExperience() {
               <p className="mt-2 text-sm font-medium text-[#5f6470]">{t.emptyText}</p>
               <button onClick={resetFilters} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#23252a]"><RotateCcw size={14} /> {t.reset}</button>
             </motion.div>
-          ) : view === "list" || isMobile ? (
+          ) : view === "list" && !isMobile ? (
             <motion.div layout className="grid gap-3">
-              {filtered.map((skill, index) => <SkillRow key={skill.slug} skill={skill} index={index} locale={locale} t={t} />)}
+              {filtered.map((skill, index) => <SkillRow key={skill.slug} skill={skill} index={index} locale={locale} t={t} isAdded={basket.includes(skill.slug)} onToggle={() => toggleSkill(skill)} />)}
             </motion.div>
           ) : (
-            <motion.div layout className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((skill, index) => <SkillCard key={skill.slug} skill={skill} index={index} locale={locale} t={t} />)}
+            <motion.div layout className="grid grid-cols-2 gap-3 md:gap-5 lg:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((skill, index) => <SkillCard key={skill.slug} skill={skill} index={index} locale={locale} t={t} isAdded={basket.includes(skill.slug)} onToggle={() => toggleSkill(skill)} />)}
             </motion.div>
           )}
         </AnimatePresence>
       </section>
 
+      <SkillPackPanel open={basketOpen} onClose={() => setBasketOpen(false)} t={t} locale={locale} selectedSkills={selectedSkills} removeSkill={removeSkill} clear={() => setBasket([])} generatePrompt={generatePrompt} isGenerating={isGenerating} error={packError} notice={basketNotice} lastPackUrl={lastPackUrl} />
       <MobileFilters open={filtersOpen} onClose={() => setFiltersOpen(false)} t={t} locale={locale} compatible={compatible} setCompatible={setCompatible} difficulty={difficulty} setDifficulty={setDifficulty} risk={risk} setRisk={setRisk} hasScripts={hasScripts} setHasScripts={setHasScripts} freeOnly={freeOnly} setFreeOnly={setFreeOnly} resetFilters={resetFilters} />
       <SiteFooter />
     </main>
   );
 }
 
-function TopNav({ t, locale, setLocale }: { t: typeof copy.en | typeof copy.ru; locale: "en" | "ru"; setLocale: (locale: "en" | "ru") => void }) {
+function TopNav({ t, locale, setLocale, basketCount, onOpenBasket }: { t: typeof copy.en | typeof copy.ru; locale: "en" | "ru"; setLocale: (locale: "en" | "ru") => void; basketCount: number; onOpenBasket: () => void }) {
   return (
     <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
       <Wordmark />
       <div className="hidden items-center gap-2 rounded-full border border-black/10 bg-white/52 px-2 py-2 shadow-[0_16px_50px_rgba(30,35,45,.06)] backdrop-blur-xl md:flex">
         {t.nav.map((item, index) => <Link key={item} href={index === 0 ? "/catalog" : index === 1 ? "/about" : "/submit"} className="rounded-full px-4 py-2 text-sm font-medium text-[#5f6470] transition hover:bg-white hover:text-[#111]">{item}</Link>)}
       </div>
-      <LocaleToggle locale={locale} setLocale={setLocale} />
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={onOpenBasket} className="inline-flex h-11 items-center gap-2 rounded-full border border-black/10 bg-white/62 px-3 text-sm font-bold text-[#111] shadow-[0_14px_42px_rgba(30,35,45,.06)] backdrop-blur-xl transition hover:bg-white" aria-label={`${t.basket}: ${basketCount}`}>
+          <PackageCheck size={16} /> <span className="hidden sm:inline">{t.basket}</span><span className="grid min-w-5 place-items-center rounded-full bg-[#111] px-1.5 text-[11px] leading-5 text-white">{basketCount}</span>
+        </button>
+        <LocaleToggle locale={locale} setLocale={setLocale} />
+      </div>
     </nav>
   );
 }
 
-function SkillCard({ skill, index, locale, t }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru }) {
+function SkillCard({ skill, index, locale, t, isAdded, onToggle }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru; isAdded: boolean; onToggle: () => void }) {
   return (
-    <motion.article layout initial={{ opacity: 0, y: 14, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.28, delay: Math.min(index * 0.014, 0.12) }} className="pearl-surface rounded-[24px] p-4 md:rounded-[28px] md:p-5">
-      <div className="flex items-start justify-between gap-3">
+    <motion.article layout initial={{ opacity: 0, y: 14, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.28, delay: Math.min(index * 0.014, 0.12) }} className="pearl-surface rounded-[20px] p-3 md:rounded-[28px] md:p-5">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="flex min-w-0 items-start gap-2 font-display text-[1.35rem] font-semibold leading-[1.04] md:text-[1.65rem]"><span className="shrink-0 text-[1.2rem] md:text-[1.45rem]">{skill.emoji}</span><span className="min-w-0">{skillTitle(skill, locale)}</span></h2>
-          <p className="line-clamp-2 mt-2 text-sm leading-5 text-[#5f6470] md:leading-6">{skillSummary(skill, locale)}</p>
+          <h2 className="flex min-w-0 items-start gap-1.5 text-[1rem] font-bold leading-[1.08] md:gap-2 md:font-display md:text-[1.65rem] md:font-semibold md:leading-[1.04]"><span className="shrink-0 text-[1rem] md:text-[1.45rem]">{skill.emoji}</span><span className="min-w-0">{skillTitle(skill, locale)}</span></h2>
+          <p className="line-clamp-2 mt-2 text-[12px] font-medium leading-4 text-[#5f6470] md:text-sm md:leading-6">{skillSummary(skill, locale)}</p>
         </div>
-        <div className="shrink-0 rounded-full border border-black/10 bg-white/70 px-2.5 py-1 text-xs font-bold text-[#111] md:rounded-[16px] md:px-3 md:py-2" aria-label={`${t.score} ${skill.score}`}>{skill.score}</div>
+        <div className="w-fit shrink-0 rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[11px] font-bold text-[#111] md:rounded-[16px] md:px-3 md:py-2 md:text-xs" aria-label={`${t.score} ${skill.score}`}>{skill.score}</div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-bold text-[#5f6470]">
-        <span className="rounded-full bg-[#f2f3f0] px-2.5 py-1">{categoryLabels[locale][skill.category]}</span>
-        <span className="rounded-full border border-black/10 bg-white/52 px-2.5 py-1 md:hidden">{difficultyLabels[locale][skill.difficulty]} · {riskLabels[locale][skill.risk]}</span>
-        {skill.compatibility.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-black/10 bg-white/52 px-2.5 py-1">{item}</span>)}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] font-bold text-[#5f6470] md:text-xs">
+        <span className="rounded-full bg-[#f2f3f0] px-2 py-1 md:px-2.5">{categoryLabels[locale][skill.category]}</span>
+        {skill.compatibility.slice(0, 2).map((item) => <span key={item} className="hidden rounded-full border border-black/10 bg-white/52 px-2.5 py-1 md:inline-flex">{item}</span>)}
       </div>
-      <div className="mt-3 hidden flex-wrap gap-2 md:flex">
-        {skillTags(skill, locale).slice(0, 3).map((tag) => <span key={tag} className="rounded-full border border-black/10 bg-white/42 px-3 py-1 text-xs font-semibold text-[#5f6470]">{tag}</span>)}
-      </div>
-      <div className="mt-4 grid grid-cols-[1fr_auto] items-center gap-2">
-        <a href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "catalog_card", slug: skill.slug })} className="ink-button shine-layer relative inline-flex min-h-10 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-3 text-sm font-semibold text-white transition hover:bg-[#23252a] md:min-h-11 md:px-4">
-          <Send size={15} /> <span className="md:hidden">{t.get}</span><span className="hidden md:inline">{t.getFull}</span>
-        </a>
-        <Link href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "catalog_card" })} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-3 text-sm font-semibold text-[#111] transition hover:bg-white md:min-h-11 md:px-4">
+      <div className="mt-3 grid grid-cols-1 items-center gap-2 md:mt-4 md:grid-cols-[1fr_auto]">
+        <button type="button" onClick={onToggle} className={cn("inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition md:min-h-11 md:gap-2 md:px-4 md:text-sm", isAdded ? "border border-black/10 bg-white/72 text-[#111] hover:bg-white" : "ink-button shine-layer relative overflow-hidden bg-[#111] text-white hover:bg-[#23252a]")}>
+          {isAdded ? <Check size={15} /> : <Plus size={15} />} {isAdded ? t.added : t.add}
+        </button>
+        <Link href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "catalog_card" })} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-black/10 bg-white/62 px-3 text-xs font-semibold text-[#111] transition hover:bg-white md:min-h-11 md:gap-2 md:px-4 md:text-sm">
           {t.details} <ArrowRight size={15} />
         </Link>
       </div>
@@ -392,7 +498,7 @@ function CollectionShelf({ collection, index, locale }: { collection: { title: s
   );
 }
 
-function SkillRow({ skill, index, locale, t }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru }) {
+function SkillRow({ skill, index, locale, t, isAdded, onToggle }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru; isAdded: boolean; onToggle: () => void }) {
   return (
     <motion.article layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, delay: Math.min(index * 0.01, 0.1) }} className="pearl-surface rounded-[22px] p-3 md:p-4">
       <div className="grid grid-cols-[1fr_auto] items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
@@ -402,14 +508,72 @@ function SkillRow({ skill, index, locale, t }: { skill: Skill; index: number; lo
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs font-bold text-[#5f6470]"><span className="rounded-full bg-[#f2f3f0] px-2.5 py-1">{categoryLabels[locale][skill.category]}</span><span className="rounded-full border border-black/10 bg-white/52 px-2.5 py-1">{skill.compatibility[0]}</span></div>
         </div>
         <div className="rounded-full border border-black/10 bg-white/70 px-2.5 py-1 text-xs font-bold text-[#111]">{skill.score}</div>
-        <a href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "catalog_row", slug: skill.slug })} className="ink-button hidden min-h-10 items-center justify-center gap-2 rounded-full bg-[#111] px-4 text-sm font-semibold text-white md:inline-flex"><Send size={15} /> {t.get}</a>
+        <button type="button" onClick={onToggle} className={cn("hidden min-h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition md:inline-flex", isAdded ? "border border-black/10 bg-white/62 text-[#111] hover:bg-white" : "ink-button bg-[#111] text-white hover:bg-[#23252a]")}>{isAdded ? <Check size={15} /> : <Plus size={15} />} {isAdded ? t.added : t.add}</button>
         <Link href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "catalog_row" })} className="hidden min-h-10 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 text-sm font-semibold text-[#111] transition hover:bg-white md:inline-flex">{t.details}</Link>
       </div>
       <div className="mt-3 grid grid-cols-[1fr_auto] gap-2 md:hidden">
-        <a href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "catalog_row", slug: skill.slug })} className="ink-button inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#111] px-3 text-sm font-semibold text-white"><Send size={15} /> {t.get}</a>
+        <button type="button" onClick={onToggle} className={cn("inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold", isAdded ? "border border-black/10 bg-white/62 text-[#111]" : "ink-button bg-[#111] text-white")}>{isAdded ? <Check size={15} /> : <Plus size={15} />} {isAdded ? t.added : t.add}</button>
         <Link href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "catalog_row" })} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-3 text-sm font-semibold text-[#111]">{t.details}</Link>
       </div>
     </motion.article>
+  );
+}
+
+function SkillPackPanel(props: { open: boolean; onClose: () => void; t: typeof copy.en | typeof copy.ru; locale: "en" | "ru"; selectedSkills: Skill[]; removeSkill: (slug: string) => void; clear: () => void; generatePrompt: () => void; isGenerating: boolean; error: string; notice: string; lastPackUrl: string }) {
+  const { open, onClose, t, locale, selectedSkills } = props;
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#111]/18 backdrop-blur-sm" onClick={onClose}>
+          <motion.aside initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }} className="skill-pack-panel pearl-surface absolute bottom-0 right-0 top-auto flex max-h-[84vh] w-full origin-bottom flex-col rounded-t-[34px] p-5 shadow-[0_30px_100px_rgba(30,35,45,.18)] md:bottom-5 md:right-5 md:top-5 md:max-h-none md:w-[420px] md:origin-right md:rounded-[34px]" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8e95a3]">{selectedSkills.length} {t.selected}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-[#111]">{t.basket}</h2>
+              </div>
+              <button type="button" onClick={onClose} aria-label={t.close} className="grid size-10 shrink-0 place-items-center rounded-full border border-black/10 bg-white/70 text-[#7b8392] transition hover:bg-white hover:text-[#111]"><X size={18} /></button>
+            </div>
+
+            {(props.error || props.notice) && <div className={cn("mb-3 rounded-[18px] border px-4 py-3 text-sm font-semibold", props.error ? "border-red-500/20 bg-red-50/70 text-red-700" : "border-black/10 bg-white/64 text-[#5f6470]")}>{props.error || props.notice}</div>}
+
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              {selectedSkills.length === 0 ? (
+                <div className="grid min-h-56 place-items-center rounded-[26px] border border-black/10 bg-white/48 p-6 text-center">
+                  <div>
+                    <div className="mx-auto mb-4 grid size-12 place-items-center rounded-full bg-white/70 text-[#7b8392]"><PackageCheck size={20} /></div>
+                    <p className="text-lg font-semibold text-[#111]">{t.noSkills}</p>
+                    <p className="mt-2 text-sm font-medium leading-6 text-[#5f6470]">{t.noSkillsText}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  {selectedSkills.map((skill) => (
+                    <div key={skill.slug} className="flex items-center gap-3 rounded-[20px] border border-black/10 bg-white/54 px-3 py-2.5">
+                      <span className="text-xl">{skill.emoji}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-[#111]">{skillTitle(skill, locale)}</p>
+                        <p className="text-xs font-semibold text-[#8e95a3]">{categoryLabels[locale][skill.category]}</p>
+                      </div>
+                      <button type="button" onClick={() => props.removeSkill(skill.slug)} aria-label={`${t.remove}: ${skillTitle(skill, locale)}`} className="grid size-8 shrink-0 place-items-center rounded-full border border-black/10 bg-white/64 text-[#7b8392] transition hover:bg-white hover:text-[#111]"><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 border-t border-black/10 pt-4 pb-[max(env(safe-area-inset-bottom),0px)]">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <button type="button" onClick={props.clear} disabled={!selectedSkills.length || props.isGenerating} className="rounded-full border border-black/10 bg-white/58 px-4 py-2 text-sm font-bold text-[#5f6470] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45">{t.clearAll}</button>
+                {props.lastPackUrl && <a href={props.lastPackUrl} className="rounded-full border border-black/10 bg-white/58 px-4 py-2 text-sm font-bold text-[#111] transition hover:bg-white">{t.openTelegram}</a>}
+              </div>
+              <button type="button" onClick={props.generatePrompt} disabled={props.isGenerating || !selectedSkills.length} className="ink-button shine-layer relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 text-sm font-semibold text-white transition hover:bg-[#23252a] disabled:cursor-not-allowed disabled:opacity-45">
+                {props.isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} {props.isGenerating ? `${t.generatePrompt}...` : t.generatePrompt}
+              </button>
+            </div>
+          </motion.aside>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

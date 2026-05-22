@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 export type AnalyticsEvent = {
-  type: "skill_request" | "subscription_block" | "skill_delivered" | "language_set";
+  type: "skill_request" | "subscription_block" | "skill_delivered" | "language_set" | "pack_prompt";
   userId: number;
   username?: string;
   skillSlug?: string;
