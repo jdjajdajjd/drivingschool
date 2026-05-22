@@ -1,45 +1,44 @@
 export type Category =
-  | "Frontend"
-  | "Backend"
-  | "Design"
-  | "Testing"
-  | "Security"
-  | "Docs"
-  | "Automation"
-  | "Research"
-  | "Data"
-  | "Productivity"
-  | "Prompting"
-  | "Deployment";
+  | "Frontend" | "Backend" | "Design" | "Testing" | "Security" | "Docs"
+  | "Automation" | "Research" | "Data" | "Productivity" | "Prompting" | "Deployment";
 
 export type Difficulty = "Easy" | "Medium" | "Advanced";
 export type Risk = "Low" | "Medium" | "High";
 export type Compatibility = "Codex" | "ChatGPT" | "Claude" | "Universal";
+export type Locale = "en" | "ru";
 
 export type Skill = {
+  id: string;
   slug: string;
-  title: string;
-  summary: string;
-  description: string;
-  category: Category;
   emoji: string;
+  title: string;
+  description: string;
+  longDescription: string;
+  category: Category;
   tags: string[];
   compatibility: Compatibility[];
-  source: string;
-  sourceUrl?: string;
-  install: string;
-  score: number;
-  popularity: number;
-  addedAt: string;
-  featured: boolean;
   difficulty: Difficulty;
   risk: Risk;
+  score: number;
   hasScripts: boolean;
+  hasReferences: boolean;
+  hasAssets: boolean;
+  installCommand: string;
+  sourceUrl: string;
+  telegramPayload: string;
+  useCases: string[];
+  examples: string[];
+  safetyNotes: string[];
+  createdAt: string;
+  featured: boolean;
+  summary: string;
+  source: string;
+  install: string;
+  popularity: number;
+  addedAt: string;
   free: boolean;
   setup: "Zero config" | "Light setup" | "Scripted" | "Requires keys";
   marker: "Safe" | "Script" | "Advanced";
-  examples: string[];
-  useCases: string[];
   ru: {
     title: string;
     summary: string;
@@ -50,490 +49,127 @@ export type Skill = {
   };
 };
 
-export type Locale = "en" | "ru";
+type SkillSeed = Omit<Skill, "id" | "summary" | "source" | "install" | "popularity" | "addedAt" | "free" | "setup" | "marker" | "ru"> & {
+  ruDescription: string;
+  ruUseCases?: string[];
+  ruExamples?: string[];
+  ruTags?: string[];
+};
 
 export const categories: Category[] = [
-  "Frontend",
-  "Backend",
-  "Design",
-  "Testing",
-  "Security",
-  "Docs",
-  "Automation",
-  "Research",
-  "Data",
-  "Productivity",
-  "Prompting",
-  "Deployment",
+  "Frontend", "Backend", "Design", "Testing", "Security", "Docs",
+  "Automation", "Research", "Data", "Productivity", "Prompting", "Deployment",
 ];
 
 export const compatibilityOptions: Compatibility[] = ["Codex", "ChatGPT", "Claude", "Universal"];
 export const difficultyOptions: Difficulty[] = ["Easy", "Medium", "Advanced"];
 export const riskOptions: Risk[] = ["Low", "Medium", "High"];
 
-export const skills: Skill[] = [
-  {
-    slug: "frontend-design",
-    title: "Frontend Design",
-    summary: "Production-grade interfaces with a clear visual point of view.",
-    description:
-      "A design-focused workflow for building polished React, HTML, and app surfaces that feel intentional instead of templated.",
-    category: "Design",
-    emoji: "🎨",
-    tags: ["UI", "visual systems", "React"],
-    compatibility: ["Codex", "Claude", "ChatGPT"],
-    source: "System skill",
-    install: "codex skills install frontend-design",
-    score: 98,
-    popularity: 980,
-    addedAt: "2026-05-10",
-    featured: true,
-    difficulty: "Medium",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Redesign a product dashboard", "Create a refined landing page", "Polish a component library"],
-    useCases: ["Brand-led UI", "High-touch prototypes", "Design QA before shipping"],
-    ru: {
-      title: "Frontend Design",
-      summary: "Интерфейсы production-уровня с ясным визуальным характером.",
-      description: "Дизайн-ориентированный workflow для React, HTML и app surfaces, которые выглядят собранно, а не шаблонно.",
-      tags: ["UI", "визуальные системы", "React"],
-      examples: ["Переделать product dashboard", "Собрать утонченный landing page", "Отполировать component library"],
-      useCases: ["Брендовый UI", "Прототипы высокого качества", "Design QA перед релизом"],
-    },
-  },
-  {
-    slug: "webapp-testing",
-    title: "Webapp Testing",
-    summary: "Browser checks, screenshots, and interaction tests for local apps.",
-    description:
-      "A pragmatic Playwright workflow for inspecting rendered pages, catching console errors, and verifying real user paths.",
-    category: "Testing",
-    emoji: "🧪",
-    tags: ["Playwright", "screenshots", "QA"],
-    compatibility: ["Codex", "Claude"],
-    source: "System skill",
-    install: "codex skills install webapp-testing",
-    score: 95,
-    popularity: 910,
-    addedAt: "2026-05-11",
-    featured: true,
-    difficulty: "Easy",
-    risk: "Medium",
-    hasScripts: true,
-    free: true,
-    setup: "Light setup",
-    marker: "Script",
-    examples: ["Capture mobile screenshots", "Test a checkout flow", "Find broken interactive states"],
-    useCases: ["Visual QA", "Regression checks", "Local product reviews"],
-    ru: {
-      title: "Webapp Testing",
-      summary: "Браузерные проверки, скриншоты и interaction tests для локальных приложений.",
-      description: "Практичный Playwright workflow для проверки отрисованных страниц, console errors и реальных пользовательских сценариев.",
-      tags: ["Playwright", "скриншоты", "QA"],
-      examples: ["Снять mobile screenshots", "Проверить checkout flow", "Найти сломанные интерактивные состояния"],
-      useCases: ["Visual QA", "Regression checks", "Локальные product reviews"],
-    },
-  },
-  {
-    slug: "openai-docs",
-    title: "OpenAI Docs",
-    summary: "Current official references for OpenAI APIs and models.",
-    description:
-      "Keeps agent answers grounded in official OpenAI documentation when choosing models, upgrading prompts, or wiring API features.",
-    category: "Docs",
-    emoji: "📚",
-    tags: ["API", "models", "official docs"],
-    compatibility: ["Codex", "ChatGPT"],
-    source: "System skill",
-    install: "codex skills install openai-docs",
-    score: 92,
-    popularity: 780,
-    addedAt: "2026-04-28",
-    featured: true,
-    difficulty: "Easy",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Pick a model for a coding tool", "Update a Responses API flow", "Check latest SDK guidance"],
-    useCases: ["API planning", "Migration notes", "Documentation-backed answers"],
-    ru: {
-      title: "OpenAI Docs",
-      summary: "Актуальные официальные материалы по OpenAI APIs и моделям.",
-      description: "Удерживает ответы агента в рамках официальной документации OpenAI при выборе моделей, обновлении prompts и API-интеграций.",
-      tags: ["API", "модели", "официальные docs"],
-      examples: ["Выбрать модель для coding tool", "Обновить Responses API flow", "Проверить свежие SDK рекомендации"],
-      useCases: ["API planning", "Migration notes", "Ответы с опорой на документацию"],
-    },
-  },
-  {
-    slug: "security-best-practices",
-    title: "Security Best Practices",
-    summary: "Framework-aware security review for JS, Python, and Go.",
-    description:
-      "A focused AppSec pass for common coding risks, secure defaults, dependency hygiene, and practical remediation steps.",
-    category: "Security",
-    emoji: "🛡️",
-    tags: ["AppSec", "review", "secure defaults"],
-    compatibility: ["Codex", "Claude", "ChatGPT"],
-    source: "System skill",
-    install: "codex skills install security-best-practices",
-    score: 91,
-    popularity: 720,
-    addedAt: "2026-04-30",
-    featured: true,
-    difficulty: "Medium",
-    risk: "Medium",
-    hasScripts: false,
-    free: true,
-    setup: "Light setup",
-    marker: "Advanced",
-    examples: ["Review auth handlers", "Harden file uploads", "Audit API input validation"],
-    useCases: ["Pre-release checks", "Secure refactors", "Risk-focused reviews"],
-    ru: {
-      title: "Security Best Practices",
-      summary: "Security review с учетом framework для JS, Python и Go.",
-      description: "Сфокусированный AppSec проход по типовым рискам, secure defaults, зависимостям и практичным исправлениям.",
-      tags: ["AppSec", "review", "secure defaults"],
-      examples: ["Проверить auth handlers", "Усилить file uploads", "Проверить input validation в API"],
-      useCases: ["Pre-release checks", "Secure refactors", "Risk-focused reviews"],
-    },
-  },
-  {
-    slug: "cloudflare-deploy",
-    title: "Cloudflare Deploy",
-    summary: "Publish Workers, Pages, and full-stack apps with clean defaults.",
-    description:
-      "A deployment workflow for taking local web projects to Cloudflare, including configuration, build commands, and checks.",
-    category: "Deployment",
-    emoji: "🚀",
-    tags: ["Cloudflare", "deploy", "Pages"],
-    compatibility: ["Codex"],
-    source: "Local skill",
-    install: "codex skills install cloudflare-deploy",
-    score: 89,
-    popularity: 700,
-    addedAt: "2026-05-12",
-    featured: true,
-    difficulty: "Medium",
-    risk: "High",
-    hasScripts: true,
-    free: true,
-    setup: "Requires keys",
-    marker: "Script",
-    examples: ["Deploy a Next.js app", "Configure Wrangler", "Publish a Worker API"],
-    useCases: ["Production previews", "Static sites", "Edge functions"],
-    ru: {
-      title: "Cloudflare Deploy",
-      summary: "Публикация Workers, Pages и full-stack apps с чистыми defaults.",
-      description: "Deployment workflow для вывода локальных web projects в Cloudflare: config, build commands и проверки.",
-      tags: ["Cloudflare", "deploy", "Pages"],
-      examples: ["Задеплоить Next.js app", "Настроить Wrangler", "Опубликовать Worker API"],
-      useCases: ["Production previews", "Static sites", "Edge functions"],
-    },
-  },
-  {
-    slug: "skill-creator",
-    title: "Skill Creator",
-    summary: "Turn repeatable agent workflows into reusable skills.",
-    description:
-      "A structured authoring guide for creating skills with clear triggers, compact instructions, and useful local assets.",
-    category: "Productivity",
-    emoji: "🛠️",
-    tags: ["authoring", "workflows", "agents"],
-    compatibility: ["Codex"],
-    source: "System skill",
-    install: "codex skills install skill-creator",
-    score: 88,
-    popularity: 650,
-    addedAt: "2026-05-08",
-    featured: false,
-    difficulty: "Easy",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Package a review workflow", "Create a design QA skill", "Document a deployment routine"],
-    useCases: ["Team workflows", "Personal automation", "Agent memory"],
-    ru: {
-      title: "Skill Creator",
-      summary: "Превращает повторяемые agent workflows в переиспользуемые skills.",
-      description: "Структурный guide для создания skills с ясными triggers, компактными инструкциями и полезными локальными assets.",
-      tags: ["authoring", "workflows", "agents"],
-      examples: ["Упаковать review workflow", "Создать design QA skill", "Описать deployment routine"],
-      useCases: ["Team workflows", "Personal automation", "Agent memory"],
-    },
-  },
-  {
-    slug: "data-canvas",
-    title: "Data Canvas",
-    summary: "Shape raw CSV or JSON into readable product-facing views.",
-    description:
-      "A lightweight data skill for profiling datasets, drafting schemas, and producing chart-ready structures without heavy tooling.",
-    category: "Data",
-    emoji: "📊",
-    tags: ["CSV", "JSON", "charts"],
-    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
-    source: "Curated pack",
-    install: "codex skills install data-canvas",
-    score: 84,
-    popularity: 520,
-    addedAt: "2026-04-24",
-    featured: false,
-    difficulty: "Easy",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Light setup",
-    marker: "Safe",
-    examples: ["Normalize a CSV export", "Draft a chart model", "Find malformed rows"],
-    useCases: ["Internal tools", "Reports", "Product analytics"],
-    ru: {
-      title: "Data Canvas",
-      summary: "Превращает raw CSV или JSON в читаемые product-facing views.",
-      description: "Легкий data skill для профилирования datasets, черновиков schemas и chart-ready структур без тяжелого tooling.",
-      tags: ["CSV", "JSON", "charts"],
-      examples: ["Нормализовать CSV export", "Собрать chart model", "Найти malformed rows"],
-      useCases: ["Internal tools", "Reports", "Product analytics"],
-    },
-  },
-  {
-    slug: "research-brief",
-    title: "Research Brief",
-    summary: "Compact source-backed briefs for technical decisions.",
-    description:
-      "A research workflow that favors primary sources, dated claims, and short decision notes that engineers can act on.",
-    category: "Research",
-    emoji: "🔍",
-    tags: ["sources", "briefs", "decisions"],
-    compatibility: ["Codex", "ChatGPT"],
-    source: "Curated pack",
-    install: "codex skills install research-brief",
-    score: 87,
-    popularity: 560,
-    addedAt: "2026-05-02",
-    featured: false,
-    difficulty: "Medium",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Compare two libraries", "Summarize a new API", "Prepare a build-vs-buy note"],
-    useCases: ["Technical planning", "Vendor checks", "Architecture notes"],
-    ru: {
-      title: "Research Brief",
-      summary: "Короткие source-backed briefs для технических решений.",
-      description: "Research workflow, который предпочитает primary sources, датированные claims и короткие decision notes для инженеров.",
-      tags: ["sources", "briefs", "decisions"],
-      examples: ["Сравнить две библиотеки", "Кратко разобрать новый API", "Подготовить build-vs-buy note"],
-      useCases: ["Technical planning", "Vendor checks", "Architecture notes"],
-    },
-  },
-  {
-    slug: "backend-routes",
-    title: "Backend Routes",
-    summary: "Small, reliable API endpoints with validation and tests.",
-    description:
-      "A backend implementation guide for focused route work, sane input parsing, and minimal-but-real coverage.",
-    category: "Backend",
-    emoji: "🧩",
-    tags: ["API", "validation", "tests"],
-    compatibility: ["Codex", "Claude"],
-    source: "Curated pack",
-    install: "codex skills install backend-routes",
-    score: 86,
-    popularity: 610,
-    addedAt: "2026-05-03",
-    featured: false,
-    difficulty: "Medium",
-    risk: "Medium",
-    hasScripts: true,
-    free: true,
-    setup: "Light setup",
-    marker: "Script",
-    examples: ["Add a REST endpoint", "Validate request bodies", "Write contract tests"],
-    useCases: ["API slices", "Service cleanup", "Integration work"],
-    ru: {
-      title: "Backend Routes",
-      summary: "Небольшие надежные API endpoints с validation и tests.",
-      description: "Backend guide для аккуратной route work, нормального input parsing и минимального, но реального test coverage.",
-      tags: ["API", "validation", "tests"],
-      examples: ["Добавить REST endpoint", "Проверить request bodies", "Написать contract tests"],
-      useCases: ["API slices", "Service cleanup", "Integration work"],
-    },
-  },
-  {
-    slug: "accessibility-pass",
-    title: "Accessibility Pass",
-    summary: "Practical accessibility checks for product UI.",
-    description:
-      "A compact review workflow for keyboard paths, contrast, labels, focus states, and responsive readability.",
-    category: "Frontend",
-    emoji: "♿",
-    tags: ["a11y", "keyboard", "contrast"],
-    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
-    source: "Curated pack",
-    install: "codex skills install accessibility-pass",
-    score: 90,
-    popularity: 690,
-    addedAt: "2026-05-05",
-    featured: false,
-    difficulty: "Easy",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Audit a settings page", "Fix focus rings", "Check mobile forms"],
-    useCases: ["UI reviews", "Design systems", "Release polish"],
-    ru: {
-      title: "Accessibility Pass",
-      summary: "Практичные accessibility checks для product UI.",
-      description: "Компактный review workflow для keyboard paths, contrast, labels, focus states и responsive readability.",
-      tags: ["a11y", "keyboard", "contrast"],
-      examples: ["Проверить settings page", "Исправить focus rings", "Проверить mobile forms"],
-      useCases: ["UI reviews", "Design systems", "Release polish"],
-    },
-  },
-  {
-    slug: "prompt-shaper",
-    title: "Prompt Shaper",
-    summary: "Tight prompts, reusable briefs, and calmer agent instructions.",
-    description:
-      "A prompting workflow for turning loose requests into concise task briefs, guardrails, and reusable instruction patterns.",
-    category: "Prompting",
-    emoji: "✍️",
-    tags: ["prompts", "briefs", "instructions"],
-    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
-    source: "Curated pack",
-    install: "codex skills install prompt-shaper",
-    score: 85,
-    popularity: 570,
-    addedAt: "2026-05-13",
-    featured: false,
-    difficulty: "Easy",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Rewrite a vague feature request", "Draft agent guardrails", "Create a reusable bug-fix prompt"],
-    useCases: ["Prompt cleanup", "Team instructions", "Agent handoffs"],
-    ru: {
-      title: "Prompt Shaper",
-      summary: "Точные prompts, переиспользуемые briefs и спокойные инструкции для агентов.",
-      description: "Prompting workflow для превращения рыхлых запросов в компактные task briefs, guardrails и повторяемые instruction patterns.",
-      tags: ["prompts", "briefs", "instructions"],
-      examples: ["Переписать расплывчатый feature request", "Собрать guardrails для агента", "Создать bug-fix prompt"],
-      useCases: ["Prompt cleanup", "Team instructions", "Agent handoffs"],
-    },
-  },
-  {
-    slug: "docs-polish",
-    title: "Docs Polish",
-    summary: "Clear README, changelog, and release notes without filler.",
-    description:
-      "A documentation pass for tightening structure, examples, and release language so project docs stay useful under pressure.",
-    category: "Docs",
-    emoji: "📝",
-    tags: ["README", "release notes", "writing"],
-    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
-    source: "Curated pack",
-    install: "codex skills install docs-polish",
-    score: 82,
-    popularity: 430,
-    addedAt: "2026-04-18",
-    featured: false,
-    difficulty: "Easy",
-    risk: "Low",
-    hasScripts: false,
-    free: true,
-    setup: "Zero config",
-    marker: "Safe",
-    examples: ["Rewrite a README", "Prepare release notes", "Clean setup instructions"],
-    useCases: ["Project handoff", "Open-source hygiene", "Launch notes"],
-    ru: {
-      title: "Docs Polish",
-      summary: "Понятные README, changelog и release notes без воды.",
-      description: "Documentation pass для структуры, примеров и release language, чтобы docs оставались полезными в рабочем ритме.",
-      tags: ["README", "release notes", "writing"],
-      examples: ["Переписать README", "Подготовить release notes", "Очистить setup instructions"],
-      useCases: ["Project handoff", "Open-source hygiene", "Launch notes"],
-    },
-  },
-  {
-    slug: "repo-automation",
-    title: "Repo Automation",
-    summary: "Small repository chores handled with scripts and checks.",
-    description:
-      "An automation skill for formatting passes, issue triage, generated reports, and safe mechanical repository work.",
-    category: "Automation",
-    emoji: "⚙️",
-    tags: ["scripts", "maintenance", "reports"],
-    compatibility: ["Codex"],
-    source: "Curated pack",
-    install: "codex skills install repo-automation",
-    score: 83,
-    popularity: 470,
-    addedAt: "2026-05-01",
-    featured: false,
-    difficulty: "Advanced",
-    risk: "Medium",
-    hasScripts: true,
-    free: true,
-    setup: "Scripted",
-    marker: "Script",
-    examples: ["Generate a dependency report", "Bulk-format files", "Summarize open issues"],
-    useCases: ["Maintenance", "Repository hygiene", "Repeatable checks"],
-    ru: {
-      title: "Repo Automation",
-      summary: "Небольшие repo chores через scripts и checks.",
-      description: "Automation skill для formatting passes, issue triage, generated reports и аккуратной mechanical repository work.",
-      tags: ["scripts", "maintenance", "reports"],
-      examples: ["Собрать dependency report", "Массово отформатировать files", "Суммировать open issues"],
-      useCases: ["Maintenance", "Repository hygiene", "Repeatable checks"],
-    },
-  },
+const github = "https://github.com/codex-skills/catalog/tree/main/skills";
+const safetyLow = ["Review generated edits before applying them.", "Keep credentials out of prompts.", "Use a branch for broad changes."];
+const safetyMedium = ["Read scripts before running them.", "Run on a branch or disposable workspace first.", "Check external calls and file changes."];
+const safetyHigh = ["Confirm credentials, targets, and permissions.", "Run dry checks first.", "Prepare a rollback path before shipping."];
+
+const seeds: SkillSeed[] = [
+  { slug: "frontend-design", emoji: "🎨", title: "Frontend Design", description: "Production-grade interfaces with a clear visual point of view.", longDescription: "A design workflow for building polished app screens, components, and responsive surfaces without falling into template UI.", category: "Design", tags: ["UI", "visual systems", "React"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Medium", risk: "Low", score: 98, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install frontend-design", sourceUrl: `${github}/frontend-design`, telegramPayload: "skill_frontend-design", useCases: ["Brand-led UI", "High-touch prototypes", "Design QA"], examples: ["Redesign a dashboard", "Polish a component library", "Create a refined landing page"], safetyNotes: safetyLow, createdAt: "2026-05-10", featured: true, ruDescription: "Интерфейсы production-уровня с ясным визуальным характером." },
+  { slug: "webapp-testing", emoji: "🧪", title: "Webapp Testing", description: "Browser checks, screenshots, and interaction tests for local apps.", longDescription: "A Playwright-based workflow for verifying real pages, capturing screenshots, and catching broken states before release.", category: "Testing", tags: ["Playwright", "screenshots", "QA"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Medium", score: 95, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install webapp-testing", sourceUrl: `${github}/webapp-testing`, telegramPayload: "skill_webapp-testing", useCases: ["Visual QA", "Regression checks", "Local product reviews"], examples: ["Capture mobile screenshots", "Test a checkout flow", "Find broken states"], safetyNotes: safetyMedium, createdAt: "2026-05-11", featured: true, ruDescription: "Браузерные проверки, скриншоты и interaction tests для локальных приложений." },
+  { slug: "openai-docs", emoji: "📚", title: "OpenAI Docs", description: "Current official references for OpenAI APIs and models.", longDescription: "Keeps agent answers grounded in official OpenAI documentation when choosing models, upgrading prompts, or wiring API features.", category: "Docs", tags: ["API", "models", "official docs"], compatibility: ["Codex", "ChatGPT"], difficulty: "Easy", risk: "Low", score: 92, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install openai-docs", sourceUrl: `${github}/openai-docs`, telegramPayload: "skill_openai-docs", useCases: ["API planning", "Migration notes", "Documentation-backed answers"], examples: ["Pick a model", "Update an API flow", "Check SDK guidance"], safetyNotes: safetyLow, createdAt: "2026-04-28", featured: true, ruDescription: "Актуальные официальные материалы по OpenAI APIs и моделям." },
+  { slug: "security-best-practices", emoji: "🛡️", title: "Security Best Practices", description: "Framework-aware security review for JS, Python, and Go.", longDescription: "A focused AppSec pass for common coding risks, secure defaults, dependency hygiene, and practical remediation steps.", category: "Security", tags: ["AppSec", "review", "secure defaults"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Medium", risk: "Medium", score: 91, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install security-best-practices", sourceUrl: `${github}/security-best-practices`, telegramPayload: "skill_security-best-practices", useCases: ["Pre-release checks", "Secure refactors", "Risk reviews"], examples: ["Review auth handlers", "Harden uploads", "Audit validation"], safetyNotes: safetyMedium, createdAt: "2026-04-30", featured: true, ruDescription: "Security review с учетом framework для JS, Python и Go." },
+  { slug: "backend-routes", emoji: "🧩", title: "Backend Routes", description: "Small, reliable API endpoints with validation and tests.", longDescription: "A backend implementation guide for focused route work, sane input parsing, and minimal but real coverage.", category: "Backend", tags: ["API", "validation", "tests"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 86, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install backend-routes", sourceUrl: `${github}/backend-routes`, telegramPayload: "skill_backend-routes", useCases: ["API slices", "Service cleanup", "Integration work"], examples: ["Add REST endpoint", "Validate body", "Write contract tests"], safetyNotes: safetyMedium, createdAt: "2026-05-03", featured: false, ruDescription: "Небольшие надежные API endpoints с validation и tests." },
+  { slug: "cloudflare-deploy", emoji: "🚀", title: "Cloudflare Deploy", description: "Publish Workers, Pages, and full-stack apps with clean defaults.", longDescription: "A deployment workflow for taking local web projects to Cloudflare with configuration, build commands, and checks.", category: "Deployment", tags: ["Cloudflare", "deploy", "Pages"], compatibility: ["Codex"], difficulty: "Medium", risk: "High", score: 89, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install cloudflare-deploy", sourceUrl: `${github}/cloudflare-deploy`, telegramPayload: "skill_cloudflare-deploy", useCases: ["Production previews", "Static sites", "Edge functions"], examples: ["Deploy Next.js", "Configure Wrangler", "Publish Worker API"], safetyNotes: safetyHigh, createdAt: "2026-05-12", featured: true, ruDescription: "Публикация Workers, Pages и full-stack apps с чистыми defaults." },
+  { slug: "accessibility-pass", emoji: "♿", title: "Accessibility Pass", description: "Practical accessibility checks for product UI.", longDescription: "A compact workflow for keyboard paths, contrast, labels, focus states, and responsive readability.", category: "Frontend", tags: ["a11y", "keyboard", "contrast"], compatibility: ["Codex", "ChatGPT", "Claude", "Universal"], difficulty: "Easy", risk: "Low", score: 90, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install accessibility-pass", sourceUrl: `${github}/accessibility-pass`, telegramPayload: "skill_accessibility-pass", useCases: ["UI reviews", "Design systems", "Release polish"], examples: ["Audit settings page", "Fix focus rings", "Check mobile forms"], safetyNotes: safetyLow, createdAt: "2026-05-05", featured: false, ruDescription: "Практичные accessibility checks для product UI." },
+  { slug: "research-brief", emoji: "🔍", title: "Research Brief", description: "Compact source-backed briefs for technical decisions.", longDescription: "A research workflow that favors primary sources, dated claims, and short decision notes engineers can act on.", category: "Research", tags: ["sources", "briefs", "decisions"], compatibility: ["Codex", "ChatGPT"], difficulty: "Medium", risk: "Low", score: 87, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install research-brief", sourceUrl: `${github}/research-brief`, telegramPayload: "skill_research-brief", useCases: ["Technical planning", "Vendor checks", "Architecture notes"], examples: ["Compare libraries", "Summarize an API", "Prepare build-vs-buy note"], safetyNotes: safetyLow, createdAt: "2026-05-02", featured: false, ruDescription: "Короткие source-backed briefs для технических решений." },
+  { slug: "data-canvas", emoji: "📊", title: "Data Canvas", description: "Shape raw CSV or JSON into readable product-facing views.", longDescription: "A lightweight data skill for profiling datasets, drafting schemas, and producing chart-ready structures without heavy tooling.", category: "Data", tags: ["CSV", "JSON", "charts"], compatibility: ["Codex", "ChatGPT", "Claude", "Universal"], difficulty: "Easy", risk: "Low", score: 84, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install data-canvas", sourceUrl: `${github}/data-canvas`, telegramPayload: "skill_data-canvas", useCases: ["Internal tools", "Reports", "Product analytics"], examples: ["Normalize CSV", "Draft chart model", "Find malformed rows"], safetyNotes: safetyLow, createdAt: "2026-04-24", featured: false, ruDescription: "Превращает raw CSV или JSON в читаемые product-facing views." },
+  { slug: "skill-creator", emoji: "🛠️", title: "Skill Creator", description: "Turn repeatable agent workflows into reusable skills.", longDescription: "A structured authoring guide for creating skills with clear triggers, compact instructions, and useful local assets.", category: "Productivity", tags: ["authoring", "workflows", "agents"], compatibility: ["Codex"], difficulty: "Easy", risk: "Low", score: 88, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install skill-creator", sourceUrl: `${github}/skill-creator`, telegramPayload: "skill_skill-creator", useCases: ["Team workflows", "Personal automation", "Agent memory"], examples: ["Package review workflow", "Create design QA skill", "Document deploy routine"], safetyNotes: safetyLow, createdAt: "2026-05-08", featured: false, ruDescription: "Превращает повторяемые agent workflows в переиспользуемые skills." },
+  { slug: "component-audit", emoji: "🧱", title: "Component Audit", description: "Find brittle props, layout drift, and duplicated UI patterns.", longDescription: "Audits a component set for inconsistent states, prop sprawl, accessibility gaps, and opportunities to consolidate without heavy refactors.", category: "Frontend", tags: ["components", "design system", "audit"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Low", score: 91, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install component-audit", sourceUrl: `${github}/component-audit`, telegramPayload: "skill_component-audit", useCases: ["Design system cleanup", "UI refactor planning", "Component QA"], examples: ["Audit Button variants", "Find duplicate cards", "Review empty states"], safetyNotes: safetyLow, createdAt: "2026-05-14", featured: true, ruDescription: "Находит хрупкие props, layout drift и дублирующиеся UI patterns." },
+  { slug: "docs-writer", emoji: "📝", title: "Docs Writer", description: "Write clear README sections, setup notes, and usage guides.", longDescription: "Turns code context into concise docs with prerequisites, commands, examples, and troubleshooting notes.", category: "Docs", tags: ["README", "guides", "writing"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Low", score: 86, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install docs-writer", sourceUrl: `${github}/docs-writer`, telegramPayload: "skill_docs-writer", useCases: ["Project docs", "Setup guides", "Internal handoff"], examples: ["Write README", "Explain CLI usage", "Document env vars"], safetyNotes: safetyLow, createdAt: "2026-05-15", featured: false, ruDescription: "Пишет понятные README sections, setup notes и usage guides." },
+  { slug: "bug-reproduction", emoji: "🐞", title: "Bug Reproduction", description: "Turn vague bug reports into repeatable repro steps.", longDescription: "Builds a tight reproduction plan with environment notes, expected behavior, actual behavior, and minimal test cases.", category: "Testing", tags: ["bugs", "repro", "debugging"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Easy", risk: "Low", score: 89, hasScripts: false, hasReferences: false, hasAssets: false, installCommand: "codex skills install bug-reproduction", sourceUrl: `${github}/bug-reproduction`, telegramPayload: "skill_bug-reproduction", useCases: ["Bug triage", "QA handoff", "Regression tests"], examples: ["Repro auth bug", "Reduce flaky issue", "Draft bug ticket"], safetyNotes: safetyLow, createdAt: "2026-05-16", featured: true, ruDescription: "Превращает расплывчатые bug reports в повторяемые шаги." },
+  { slug: "secrets-check", emoji: "🔐", title: "Secrets Check", description: "Inspect code and config for accidental credentials exposure.", longDescription: "Checks common places for leaked secrets, unsafe examples, committed tokens, and risky env documentation.", category: "Security", tags: ["secrets", "env", "tokens"], compatibility: ["Codex"], difficulty: "Medium", risk: "High", score: 93, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install secrets-check", sourceUrl: `${github}/secrets-check`, telegramPayload: "skill_secrets-check", useCases: ["Pre-commit review", "Repo audit", "Incident cleanup"], examples: ["Scan env examples", "Review logs", "Check config files"], safetyNotes: safetyHigh, createdAt: "2026-05-17", featured: true, ruDescription: "Проверяет код и config на случайную утечку credentials." },
+  { slug: "ci-fixer", emoji: "⚙️", title: "CI Fixer", description: "Diagnose failing CI jobs and propose small fixes.", longDescription: "Reads logs, identifies likely failure causes, and scopes fixes to workflows, package scripts, or test setup.", category: "Automation", tags: ["CI", "GitHub Actions", "logs"], compatibility: ["Codex"], difficulty: "Medium", risk: "Medium", score: 87, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install ci-fixer", sourceUrl: `${github}/ci-fixer`, telegramPayload: "skill_ci-fixer", useCases: ["Broken pipelines", "Release blockers", "Test infra"], examples: ["Fix node version", "Repair cache key", "Explain failing job"], safetyNotes: safetyMedium, createdAt: "2026-05-18", featured: false, ruDescription: "Диагностирует падающие CI jobs и предлагает небольшие fixes." },
+  { slug: "refactor-plan", emoji: "🧹", title: "Refactor Plan", description: "Create a staged, low-risk plan before touching code.", longDescription: "Maps a refactor into small steps, risk points, verification commands, and rollback notes.", category: "Productivity", tags: ["planning", "refactor", "risk"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Easy", risk: "Low", score: 88, hasScripts: false, hasReferences: false, hasAssets: false, installCommand: "codex skills install refactor-plan", sourceUrl: `${github}/refactor-plan`, telegramPayload: "skill_refactor-plan", useCases: ["Large cleanup", "Legacy modules", "Shared APIs"], examples: ["Plan module split", "Reduce duplication", "Prepare migration"], safetyNotes: safetyLow, createdAt: "2026-05-19", featured: false, ruDescription: "Создает staged low-risk plan перед изменением кода." },
+  { slug: "dependency-review", emoji: "📦", title: "Dependency Review", description: "Review dependencies for risk, overlap, and maintenance cost.", longDescription: "Summarizes package purpose, redundancy, version risk, and upgrade path with pragmatic recommendations.", category: "Security", tags: ["dependencies", "packages", "maintenance"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 85, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install dependency-review", sourceUrl: `${github}/dependency-review`, telegramPayload: "skill_dependency-review", useCases: ["Upgrade planning", "Supply chain review", "Bundle cleanup"], examples: ["Audit package.json", "Find stale libs", "Compare alternatives"], safetyNotes: safetyMedium, createdAt: "2026-05-20", featured: false, ruDescription: "Проверяет зависимости на риск, дублирование и стоимость поддержки." },
+  { slug: "codebase-map", emoji: "🧭", title: "Codebase Map", description: "Build a concise map of modules, flows, and ownership.", longDescription: "Creates a navigable summary of key directories, entry points, data flow, and places to inspect first.", category: "Research", tags: ["architecture", "onboarding", "map"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Low", score: 90, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install codebase-map", sourceUrl: `${github}/codebase-map`, telegramPayload: "skill_codebase-map", useCases: ["Onboarding", "Feature planning", "Legacy exploration"], examples: ["Map Next app", "Trace auth flow", "Find core modules"], safetyNotes: safetyLow, createdAt: "2026-05-21", featured: true, ruDescription: "Строит короткую карту modules, flows и ownership." },
+  { slug: "pr-reviewer", emoji: "🧾", title: "PR Reviewer", description: "Review pull requests for bugs, regressions, and missing tests.", longDescription: "Applies a senior review stance focused on correctness, behavior changes, edge cases, and verification gaps.", category: "Productivity", tags: ["review", "PR", "quality"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Medium", risk: "Low", score: 92, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install pr-reviewer", sourceUrl: `${github}/pr-reviewer`, telegramPayload: "skill_pr-reviewer", useCases: ["Code review", "Release gates", "Team quality"], examples: ["Review auth PR", "Check migration", "Find missing tests"], safetyNotes: safetyLow, createdAt: "2026-05-22", featured: true, ruDescription: "Ревьюит pull requests на bugs, regressions и missing tests." },
+  { slug: "prompt-architect", emoji: "🧠", title: "Prompt Architect", description: "Design durable prompts and agent instructions.", longDescription: "Turns messy intent into concise agent instructions with boundaries, examples, and verification criteria.", category: "Prompting", tags: ["prompts", "agents", "instructions"], compatibility: ["Codex", "ChatGPT", "Claude", "Universal"], difficulty: "Medium", risk: "Low", score: 89, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install prompt-architect", sourceUrl: `${github}/prompt-architect`, telegramPayload: "skill_prompt-architect", useCases: ["Agent setup", "Reusable prompts", "Team workflows"], examples: ["Rewrite system prompt", "Add guardrails", "Create task template"], safetyNotes: safetyLow, createdAt: "2026-05-23", featured: false, ruDescription: "Проектирует устойчивые prompts и инструкции для агентов." },
+  { slug: "landing-page-polish", emoji: "🪄", title: "Landing Page Polish", description: "Tighten landing pages without turning them into templates.", longDescription: "Improves hierarchy, CTA clarity, copy density, visual rhythm, and responsive polish for product pages.", category: "Design", tags: ["landing", "copy", "visual QA"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Low", score: 87, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install landing-page-polish", sourceUrl: `${github}/landing-page-polish`, telegramPayload: "skill_landing-page-polish", useCases: ["Launch pages", "Product sites", "Conversion cleanup"], examples: ["Improve hero", "Tighten sections", "Fix mobile copy"], safetyNotes: safetyLow, createdAt: "2026-05-24", featured: false, ruDescription: "Улучшает landing pages без превращения их в шаблон." },
+  { slug: "api-integration", emoji: "🧑‍💻", title: "API Integration", description: "Wire external APIs with typed clients and clear error paths.", longDescription: "Plans and implements API integration with env setup, request typing, retries, and pragmatic error handling.", category: "Backend", tags: ["API", "integration", "clients"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 88, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install api-integration", sourceUrl: `${github}/api-integration`, telegramPayload: "skill_api-integration", useCases: ["SaaS APIs", "Webhooks", "Internal services"], examples: ["Add Stripe client", "Handle webhook", "Type API response"], safetyNotes: safetyMedium, createdAt: "2026-05-25", featured: false, ruDescription: "Подключает внешние APIs с typed clients и понятными error paths." },
+  { slug: "database-schema-review", emoji: "🗃️", title: "Database Schema Review", description: "Review schema shape, indexes, migrations, and data risk.", longDescription: "Checks tables, relationships, constraints, naming, migration safety, and likely query patterns.", category: "Data", tags: ["database", "schema", "migrations"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Advanced", risk: "High", score: 86, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install database-schema-review", sourceUrl: `${github}/database-schema-review`, telegramPayload: "skill_database-schema-review", useCases: ["Schema design", "Migration review", "Performance checks"], examples: ["Review indexes", "Check constraints", "Plan migration"], safetyNotes: safetyHigh, createdAt: "2026-05-26", featured: false, ruDescription: "Проверяет schema shape, indexes, migrations и data risk." },
+  { slug: "seo-pass", emoji: "🔎", title: "SEO Pass", description: "Review metadata, page structure, and crawl basics.", longDescription: "A practical SEO pass for titles, descriptions, headings, canonical URLs, robots signals, and content gaps.", category: "Frontend", tags: ["SEO", "metadata", "content"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Low", score: 82, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install seo-pass", sourceUrl: `${github}/seo-pass`, telegramPayload: "skill_seo-pass", useCases: ["Marketing pages", "Docs sites", "Static sites"], examples: ["Fix metadata", "Review headings", "Check canonical"], safetyNotes: safetyLow, createdAt: "2026-05-27", featured: false, ruDescription: "Проверяет metadata, структуру страниц и crawl basics." },
+  { slug: "mobile-ui-qa", emoji: "📱", title: "Mobile UI QA", description: "Find cramped layouts, clipped text, and broken mobile flows.", longDescription: "Reviews mobile breakpoints, touch targets, sticky UI, forms, visual hierarchy, and overflow issues.", category: "Testing", tags: ["mobile", "responsive", "QA"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Low", score: 91, hasScripts: true, hasReferences: true, hasAssets: true, installCommand: "codex skills install mobile-ui-qa", sourceUrl: `${github}/mobile-ui-qa`, telegramPayload: "skill_mobile-ui-qa", useCases: ["Responsive QA", "Release polish", "Design review"], examples: ["Check iPhone width", "Find overflow", "Review mobile nav"], safetyNotes: safetyLow, createdAt: "2026-05-28", featured: true, ruDescription: "Находит тесные layouts, clipped text и сломанные mobile flows." },
+  { slug: "devtools-debug", emoji: "🧰", title: "DevTools Debug", description: "Use browser signals to debug UI behavior and runtime errors.", longDescription: "A browser-first debugging workflow for console errors, network calls, storage, layout, and interaction state.", category: "Testing", tags: ["DevTools", "debugging", "browser"], compatibility: ["Codex"], difficulty: "Medium", risk: "Medium", score: 84, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install devtools-debug", sourceUrl: `${github}/devtools-debug`, telegramPayload: "skill_devtools-debug", useCases: ["Runtime bugs", "Network issues", "Layout debugging"], examples: ["Inspect failed fetch", "Read console", "Check localStorage"], safetyNotes: safetyMedium, createdAt: "2026-05-29", featured: false, ruDescription: "Использует browser signals для debugging UI behavior и runtime errors." },
+  { slug: "image-asset-optimizer", emoji: "🖼️", title: "Image Asset Optimizer", description: "Clean up image assets for size, format, and responsive use.", longDescription: "Reviews image dimensions, compression, naming, alt text, responsive loading, and unused assets.", category: "Design", tags: ["images", "assets", "performance"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Low", score: 80, hasScripts: true, hasReferences: true, hasAssets: true, installCommand: "codex skills install image-asset-optimizer", sourceUrl: `${github}/image-asset-optimizer`, telegramPayload: "skill_image-asset-optimizer", useCases: ["Performance cleanup", "Asset hygiene", "Launch QA"], examples: ["Compress hero images", "Add alt text", "Find unused assets"], safetyNotes: safetyLow, createdAt: "2026-05-30", featured: false, ruDescription: "Оптимизирует image assets по size, format и responsive use." },
+  { slug: "playwright-tests", emoji: "🧪", title: "Playwright Tests", description: "Generate focused browser tests for critical user paths.", longDescription: "Creates Playwright tests around real flows with stable selectors, waits, and meaningful assertions.", category: "Testing", tags: ["Playwright", "e2e", "tests"], compatibility: ["Codex"], difficulty: "Medium", risk: "Medium", score: 90, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install playwright-tests", sourceUrl: `${github}/playwright-tests`, telegramPayload: "skill_playwright-tests", useCases: ["E2E coverage", "Regression gates", "Release confidence"], examples: ["Test login", "Check checkout", "Verify filters"], safetyNotes: safetyMedium, createdAt: "2026-05-31", featured: true, ruDescription: "Генерирует focused browser tests для ключевых user paths." },
+  { slug: "typescript-strictness", emoji: "🧬", title: "TypeScript Strictness", description: "Raise type safety without a noisy rewrite.", longDescription: "Finds weak types, unsafe casts, implicit any patterns, and builds a staged strictness plan.", category: "Backend", tags: ["TypeScript", "types", "strict"], compatibility: ["Codex", "Claude"], difficulty: "Advanced", risk: "Medium", score: 87, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install typescript-strictness", sourceUrl: `${github}/typescript-strictness`, telegramPayload: "skill_typescript-strictness", useCases: ["Type hardening", "Refactor prep", "Library cleanup"], examples: ["Remove any", "Type API response", "Enable strict flag"], safetyNotes: safetyMedium, createdAt: "2026-06-01", featured: false, ruDescription: "Повышает type safety без шумного rewrite." },
+  { slug: "error-handling-pass", emoji: "🧯", title: "Error Handling Pass", description: "Make failure paths explicit, useful, and testable.", longDescription: "Reviews thrown errors, user-facing states, logging, retries, and fallback behavior across flows.", category: "Backend", tags: ["errors", "retries", "logging"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 86, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install error-handling-pass", sourceUrl: `${github}/error-handling-pass`, telegramPayload: "skill_error-handling-pass", useCases: ["API robustness", "UX states", "Observability"], examples: ["Handle timeout", "Add fallback", "Improve error message"], safetyNotes: safetyMedium, createdAt: "2026-06-02", featured: false, ruDescription: "Делает failure paths явными, полезными и testable." },
+  { slug: "changelog-writer", emoji: "🧾", title: "Changelog Writer", description: "Turn commits or PRs into clean release notes.", longDescription: "Summarizes changes by impact, audience, and migration notes without noisy marketing language.", category: "Docs", tags: ["changelog", "release", "notes"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Low", score: 81, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install changelog-writer", sourceUrl: `${github}/changelog-writer`, telegramPayload: "skill_changelog-writer", useCases: ["Release notes", "PR summaries", "Stakeholder updates"], examples: ["Write changelog", "Summarize PRs", "Draft migration note"], safetyNotes: safetyLow, createdAt: "2026-06-03", featured: false, ruDescription: "Превращает commits или PRs в чистые release notes." },
+  { slug: "auth-flow-review", emoji: "🪪", title: "Auth Flow Review", description: "Review login, sessions, redirects, and permission edges.", longDescription: "Checks auth flows for broken redirects, weak session handling, missing guards, and confusing user states.", category: "Security", tags: ["auth", "sessions", "permissions"], compatibility: ["Codex", "Claude"], difficulty: "Advanced", risk: "High", score: 92, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install auth-flow-review", sourceUrl: `${github}/auth-flow-review`, telegramPayload: "skill_auth-flow-review", useCases: ["Login QA", "Permission review", "Security fixes"], examples: ["Review session expiry", "Check redirects", "Audit protected routes"], safetyNotes: safetyHigh, createdAt: "2026-06-04", featured: true, ruDescription: "Проверяет login, sessions, redirects и permission edges." },
+  { slug: "state-management-audit", emoji: "🧵", title: "State Management Audit", description: "Find tangled UI state and simplify data flow.", longDescription: "Reviews client state, server state, derived values, effects, and synchronization bugs.", category: "Frontend", tags: ["state", "React", "data flow"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 84, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install state-management-audit", sourceUrl: `${github}/state-management-audit`, telegramPayload: "skill_state-management-audit", useCases: ["React cleanup", "Bug reduction", "Refactor planning"], examples: ["Remove duplicate state", "Fix stale effect", "Map server state"], safetyNotes: safetyMedium, createdAt: "2026-06-05", featured: false, ruDescription: "Находит запутанный UI state и упрощает data flow." },
+  { slug: "ui-cleanup", emoji: "🧼", title: "UI Cleanup", description: "Remove visual clutter and tighten spacing, labels, and states.", longDescription: "A restrained UI pass for density, alignment, hierarchy, hover states, and inconsistent copy.", category: "Design", tags: ["UI", "cleanup", "polish"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Easy", risk: "Low", score: 83, hasScripts: false, hasReferences: false, hasAssets: true, installCommand: "codex skills install ui-cleanup", sourceUrl: `${github}/ui-cleanup`, telegramPayload: "skill_ui-cleanup", useCases: ["Product polish", "Internal tools", "Design QA"], examples: ["Tighten forms", "Fix card spacing", "Clarify labels"], safetyNotes: safetyLow, createdAt: "2026-06-06", featured: false, ruDescription: "Убирает visual clutter и улучшает spacing, labels и states." },
+  { slug: "empty-states-designer", emoji: "🧊", title: "Empty States Designer", description: "Design useful empty, loading, and no-results states.", longDescription: "Creates compact states with clear copy, helpful actions, and visual restraint for product workflows.", category: "Design", tags: ["empty states", "loading", "UX"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Easy", risk: "Low", score: 85, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install empty-states-designer", sourceUrl: `${github}/empty-states-designer`, telegramPayload: "skill_empty-states-designer", useCases: ["Search pages", "Dashboards", "Onboarding"], examples: ["No results state", "First-run screen", "Loading copy"], safetyNotes: safetyLow, createdAt: "2026-06-07", featured: false, ruDescription: "Проектирует полезные empty, loading и no-results states." },
+  { slug: "modal-dialog-qa", emoji: "🪟", title: "Modal/Dialog QA", description: "Check dialogs for focus, escape paths, and mobile fit.", longDescription: "Reviews modals, drawers, alerts, and popovers for accessibility, scroll behavior, actions, and state reset.", category: "Testing", tags: ["modal", "dialog", "a11y"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Low", score: 82, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install modal-dialog-qa", sourceUrl: `${github}/modal-dialog-qa`, telegramPayload: "skill_modal-dialog-qa", useCases: ["UI QA", "Accessibility", "Mobile polish"], examples: ["Test focus trap", "Check escape key", "Review drawer height"], safetyNotes: safetyLow, createdAt: "2026-06-08", featured: false, ruDescription: "Проверяет dialogs на focus, escape paths и mobile fit." },
+  { slug: "migration-planner", emoji: "🔄", title: "Migration Planner", description: "Plan framework, schema, or package migrations safely.", longDescription: "Breaks migrations into phases with risk notes, compatibility checks, verification commands, and rollback points.", category: "Automation", tags: ["migration", "planning", "upgrade"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Advanced", risk: "High", score: 88, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install migration-planner", sourceUrl: `${github}/migration-planner`, telegramPayload: "skill_migration-planner", useCases: ["Framework upgrades", "DB changes", "Package moves"], examples: ["Plan Next upgrade", "Migrate ORM", "Move API client"], safetyNotes: safetyHigh, createdAt: "2026-06-09", featured: false, ruDescription: "Планирует framework, schema или package migrations безопасно." },
+  { slug: "onboarding-flow", emoji: "🧭", title: "Onboarding Flow", description: "Improve first-run product paths and setup guidance.", longDescription: "Reviews activation steps, account setup, sample data, product hints, and friction in the first useful action.", category: "Productivity", tags: ["onboarding", "activation", "UX"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Medium", risk: "Low", score: 82, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install onboarding-flow", sourceUrl: `${github}/onboarding-flow`, telegramPayload: "skill_onboarding-flow", useCases: ["New users", "Setup flows", "Activation"], examples: ["Review signup", "Add sample state", "Clarify first action"], safetyNotes: safetyLow, createdAt: "2026-06-10", featured: false, ruDescription: "Улучшает first-run product paths и setup guidance." },
+  { slug: "ux-copy-polish", emoji: "💬", title: "UX Copy Polish", description: "Make interface copy shorter, clearer, and calmer.", longDescription: "Tightens labels, button text, empty states, errors, and onboarding copy without marketing filler.", category: "Design", tags: ["copy", "UX writing", "microcopy"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Low", score: 86, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install ux-copy-polish", sourceUrl: `${github}/ux-copy-polish`, telegramPayload: "skill_ux-copy-polish", useCases: ["Product polish", "Forms", "Error messages"], examples: ["Rewrite errors", "Shorten labels", "Improve CTA text"], safetyNotes: safetyLow, createdAt: "2026-06-11", featured: false, ruDescription: "Делает interface copy короче, яснее и спокойнее." },
+  { slug: "analytics-events-map", emoji: "📈", title: "Analytics Events Map", description: "Map product events before adding tracking code.", longDescription: "Defines event names, properties, trigger points, privacy notes, and validation steps for analytics work.", category: "Data", tags: ["analytics", "events", "tracking"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Medium", risk: "Medium", score: 84, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install analytics-events-map", sourceUrl: `${github}/analytics-events-map`, telegramPayload: "skill_analytics-events-map", useCases: ["Product analytics", "Funnels", "Instrumentation"], examples: ["Map checkout events", "Define properties", "Plan QA"], safetyNotes: safetyMedium, createdAt: "2026-06-12", featured: false, ruDescription: "Картирует product events перед добавлением tracking code." },
+  { slug: "i18n-pass", emoji: "🌐", title: "i18n Pass", description: "Prepare UI for multiple languages without layout breakage.", longDescription: "Checks dictionaries, missing strings, date formats, language persistence, and text expansion in responsive UI.", category: "Frontend", tags: ["i18n", "localization", "copy"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Low", score: 85, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install i18n-pass", sourceUrl: `${github}/i18n-pass`, telegramPayload: "skill_i18n-pass", useCases: ["Localization", "Global UI", "Copy QA"], examples: ["Find hardcoded text", "Check RU layout", "Persist locale"], safetyNotes: safetyLow, createdAt: "2026-06-13", featured: false, ruDescription: "Готовит UI к нескольким языкам без layout breakage." },
+  { slug: "legal-pages-draft", emoji: "🧑‍⚖️", title: "Legal Pages Draft", description: "Draft plain privacy, terms, and disclaimer pages.", longDescription: "Creates practical non-lawyer draft pages with clear scope, external links, data notes, and disclaimers.", category: "Docs", tags: ["legal", "privacy", "terms"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Medium", score: 78, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install legal-pages-draft", sourceUrl: `${github}/legal-pages-draft`, telegramPayload: "skill_legal-pages-draft", useCases: ["MVP launch", "Static sites", "Product docs"], examples: ["Draft privacy page", "Write disclaimer", "Add external link note"], safetyNotes: safetyMedium, createdAt: "2026-06-14", featured: false, ruDescription: "Готовит черновики privacy, terms и disclaimer pages простым языком." },
+  { slug: "pricing-page-review", emoji: "🧮", title: "Pricing Page Review", description: "Review pricing page clarity, tiers, and conversion friction.", longDescription: "Checks plan naming, feature comparison, CTA placement, FAQs, trust signals, and mobile readability.", category: "Design", tags: ["pricing", "conversion", "SaaS"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Medium", risk: "Low", score: 79, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install pricing-page-review", sourceUrl: `${github}/pricing-page-review`, telegramPayload: "skill_pricing-page-review", useCases: ["SaaS pricing", "Plan comparison", "Launch review"], examples: ["Review tiers", "Fix FAQ", "Clarify CTA"], safetyNotes: safetyLow, createdAt: "2026-06-15", featured: false, ruDescription: "Проверяет pricing page clarity, tiers и conversion friction." },
+  { slug: "checkout-qa", emoji: "🛒", title: "Checkout QA", description: "Test checkout paths, edge cases, and payment-state copy.", longDescription: "Reviews cart, checkout, payment states, errors, confirmation, email handoff, and analytics events.", category: "Testing", tags: ["checkout", "payments", "QA"], compatibility: ["Codex", "Claude"], difficulty: "Advanced", risk: "High", score: 91, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install checkout-qa", sourceUrl: `${github}/checkout-qa`, telegramPayload: "skill_checkout-qa", useCases: ["Ecommerce", "Billing", "Payment QA"], examples: ["Test failed card", "Check receipt", "Verify coupon"], safetyNotes: safetyHigh, createdAt: "2026-06-16", featured: true, ruDescription: "Тестирует checkout paths, edge cases и payment-state copy." },
+  { slug: "threat-modeling", emoji: "🕵️", title: "Threat Modeling", description: "Map assets, trust boundaries, and abuse paths.", longDescription: "Produces a concise threat model with attacker capabilities, data flows, abuse cases, and mitigations.", category: "Security", tags: ["threat model", "AppSec", "abuse cases"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Advanced", risk: "Medium", score: 94, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install threat-modeling", sourceUrl: `${github}/threat-modeling`, telegramPayload: "skill_threat-modeling", useCases: ["AppSec planning", "Architecture review", "Pre-launch risk"], examples: ["Model auth flow", "Map data boundary", "List abuse paths"], safetyNotes: safetyMedium, createdAt: "2026-06-17", featured: true, ruDescription: "Картирует assets, trust boundaries и abuse paths." },
+  { slug: "unit-test-generator", emoji: "🧪", title: "Unit Test Generator", description: "Generate focused unit tests around edge cases.", longDescription: "Adds small tests for pure logic, validators, formatters, reducers, and bug-prone branches.", category: "Testing", tags: ["unit tests", "coverage", "edge cases"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Medium", score: 85, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install unit-test-generator", sourceUrl: `${github}/unit-test-generator`, telegramPayload: "skill_unit-test-generator", useCases: ["Coverage gaps", "Bug fixes", "Refactors"], examples: ["Test validator", "Cover reducer", "Lock bug repro"], safetyNotes: safetyMedium, createdAt: "2026-06-18", featured: false, ruDescription: "Генерирует focused unit tests вокруг edge cases." },
+  { slug: "incident-response-draft", emoji: "🧯", title: "Incident Response Draft", description: "Draft a calm incident note and follow-up checklist.", longDescription: "Structures incident summary, impact, timeline, mitigations, customer notes, and action items.", category: "Docs", tags: ["incident", "postmortem", "ops"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Medium", risk: "Medium", score: 80, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install incident-response-draft", sourceUrl: `${github}/incident-response-draft`, telegramPayload: "skill_incident-response-draft", useCases: ["Incidents", "Postmortems", "Ops handoff"], examples: ["Draft timeline", "Write impact note", "Create action list"], safetyNotes: safetyMedium, createdAt: "2026-06-19", featured: false, ruDescription: "Готовит спокойную incident note и follow-up checklist." },
+  { slug: "deploy-checklist", emoji: "📤", title: "Deploy Checklist", description: "Create a release checklist for risky deploys.", longDescription: "Builds a practical deploy plan with preflight checks, env validation, monitoring, and rollback steps.", category: "Deployment", tags: ["release", "checklist", "rollback"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Easy", risk: "High", score: 87, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install deploy-checklist", sourceUrl: `${github}/deploy-checklist`, telegramPayload: "skill_deploy-checklist", useCases: ["Production deploys", "Migrations", "Launches"], examples: ["Preflight release", "Plan rollback", "Check env vars"], safetyNotes: safetyHigh, createdAt: "2026-06-20", featured: false, ruDescription: "Создает release checklist для рискованных deploys." },
+  { slug: "skeleton-loading-pass", emoji: "🧊", title: "Skeleton Loading Pass", description: "Design loading states that preserve layout and feel quiet.", longDescription: "Reviews loading surfaces for layout stability, visual restraint, perceived speed, and reduced content jump.", category: "Design", tags: ["loading", "skeleton", "UX"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Low", score: 83, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install skeleton-loading-pass", sourceUrl: `${github}/skeleton-loading-pass`, telegramPayload: "skill_skeleton-loading-pass", useCases: ["Async UI", "Dashboards", "Mobile polish"], examples: ["Add table skeleton", "Prevent layout shift", "Design loading card"], safetyNotes: safetyLow, createdAt: "2026-06-21", featured: false, ruDescription: "Проектирует loading states, которые держат layout и выглядят спокойно." },
+  { slug: "docs-polish", emoji: "📝", title: "Docs Polish", description: "Clear README, changelog, and release notes without filler.", longDescription: "A documentation pass for tightening structure, examples, and release language so project docs stay useful under pressure.", category: "Docs", tags: ["README", "release notes", "writing"], compatibility: ["Codex", "ChatGPT", "Claude", "Universal"], difficulty: "Easy", risk: "Low", score: 82, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install docs-polish", sourceUrl: `${github}/docs-polish`, telegramPayload: "skill_docs-polish", useCases: ["Project handoff", "Open-source hygiene", "Launch notes"], examples: ["Rewrite README", "Prepare release notes", "Clean setup"], safetyNotes: safetyLow, createdAt: "2026-04-18", featured: false, ruDescription: "Понятные README, changelog и release notes без воды." },
+  { slug: "repo-automation", emoji: "⚙️", title: "Repo Automation", description: "Small repository chores handled with scripts and checks.", longDescription: "An automation skill for formatting passes, issue triage, generated reports, and safe mechanical repository work.", category: "Automation", tags: ["scripts", "maintenance", "reports"], compatibility: ["Codex"], difficulty: "Advanced", risk: "Medium", score: 83, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install repo-automation", sourceUrl: `${github}/repo-automation`, telegramPayload: "skill_repo-automation", useCases: ["Maintenance", "Repository hygiene", "Repeatable checks"], examples: ["Generate dependency report", "Bulk-format files", "Summarize issues"], safetyNotes: safetyMedium, createdAt: "2026-05-01", featured: false, ruDescription: "Небольшие repo chores через scripts и checks." },
+  { slug: "prompt-shaper", emoji: "✍️", title: "Prompt Shaper", description: "Tight prompts, reusable briefs, and calmer agent instructions.", longDescription: "A prompting workflow for turning loose requests into concise task briefs, guardrails, and reusable instruction patterns.", category: "Prompting", tags: ["prompts", "briefs", "instructions"], compatibility: ["Codex", "ChatGPT", "Claude", "Universal"], difficulty: "Easy", risk: "Low", score: 85, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install prompt-shaper", sourceUrl: `${github}/prompt-shaper`, telegramPayload: "skill_prompt-shaper", useCases: ["Prompt cleanup", "Team instructions", "Agent handoffs"], examples: ["Rewrite vague request", "Draft guardrails", "Create bug-fix prompt"], safetyNotes: safetyLow, createdAt: "2026-05-13", featured: false, ruDescription: "Точные prompts, переиспользуемые briefs и спокойные инструкции для агентов." },
+  { slug: "release-risk-scan", emoji: "📡", title: "Release Risk Scan", description: "Spot risky files, missing checks, and unclear rollback before release.", longDescription: "A pre-release scan that reviews changed files, dependency shifts, migrations, feature flags, and verification gaps.", category: "Deployment", tags: ["release", "risk", "verification"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "High", score: 88, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install release-risk-scan", sourceUrl: `${github}/release-risk-scan`, telegramPayload: "skill_release-risk-scan", useCases: ["Release review", "Hotfix planning", "Rollback prep"], examples: ["Scan diff", "List risky files", "Plan smoke tests"], safetyNotes: safetyHigh, createdAt: "2026-06-22", featured: false, ruDescription: "Находит risky files, missing checks и неясный rollback перед release." },
+  { slug: "feature-flag-audit", emoji: "🚩", title: "Feature Flag Audit", description: "Review flags, rollout states, and cleanup debt.", longDescription: "Audits feature flags for stale paths, inconsistent defaults, risky targeting, and missing observability.", category: "Automation", tags: ["feature flags", "rollout", "cleanup"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 81, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install feature-flag-audit", sourceUrl: `${github}/feature-flag-audit`, telegramPayload: "skill_feature-flag-audit", useCases: ["Rollouts", "Cleanup", "Release safety"], examples: ["Find stale flags", "Check defaults", "Review targeting"], safetyNotes: safetyMedium, createdAt: "2026-06-23", featured: false, ruDescription: "Проверяет flags, rollout states и cleanup debt." },
+  { slug: "log-signal-review", emoji: "🪵", title: "Log Signal Review", description: "Turn noisy logs into useful operational signals.", longDescription: "Reviews log levels, message quality, correlation ids, sensitive data, and missing diagnostics.", category: "Backend", tags: ["logs", "observability", "debugging"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Medium", score: 82, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install log-signal-review", sourceUrl: `${github}/log-signal-review`, telegramPayload: "skill_log-signal-review", useCases: ["Observability", "Incident prep", "Debugging"], examples: ["Improve error logs", "Add request id", "Remove secret logs"], safetyNotes: safetyMedium, createdAt: "2026-06-24", featured: false, ruDescription: "Превращает noisy logs в полезные operational signals." },
+  { slug: "form-validation-qa", emoji: "📋", title: "Form Validation QA", description: "Check form validation, errors, and keyboard paths.", longDescription: "Reviews forms for required states, invalid input handling, focus movement, accessibility, and mobile ergonomics.", category: "Frontend", tags: ["forms", "validation", "a11y"], compatibility: ["Codex", "Claude"], difficulty: "Easy", risk: "Low", score: 83, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install form-validation-qa", sourceUrl: `${github}/form-validation-qa`, telegramPayload: "skill_form-validation-qa", useCases: ["Signup forms", "Settings", "Checkout"], examples: ["Check required fields", "Review errors", "Test keyboard submit"], safetyNotes: safetyLow, createdAt: "2026-06-25", featured: false, ruDescription: "Проверяет form validation, errors и keyboard paths." },
+  { slug: "cache-strategy-review", emoji: "🗄️", title: "Cache Strategy Review", description: "Review cache keys, invalidation, TTLs, and stale data risk.", longDescription: "Audits client, server, CDN, and data caches to reduce stale behavior and accidental over-caching.", category: "Backend", tags: ["cache", "TTL", "performance"], compatibility: ["Codex", "Claude"], difficulty: "Advanced", risk: "High", score: 84, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install cache-strategy-review", sourceUrl: `${github}/cache-strategy-review`, telegramPayload: "skill_cache-strategy-review", useCases: ["Performance", "Stale data bugs", "CDN review"], examples: ["Review cache headers", "Plan invalidation", "Check query keys"], safetyNotes: safetyHigh, createdAt: "2026-06-26", featured: false, ruDescription: "Проверяет cache keys, invalidation, TTLs и stale data risk." },
+  { slug: "webhook-handler", emoji: "🪝", title: "Webhook Handler", description: "Build reliable webhook handlers with verification and retries.", longDescription: "Guides webhook implementation with signature checks, idempotency, logging, queueing, and failure handling.", category: "Backend", tags: ["webhooks", "idempotency", "queues"], compatibility: ["Codex"], difficulty: "Advanced", risk: "High", score: 87, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install webhook-handler", sourceUrl: `${github}/webhook-handler`, telegramPayload: "skill_webhook-handler", useCases: ["Payments", "Integrations", "Async processing"], examples: ["Verify signature", "Add idempotency", "Handle retries"], safetyNotes: safetyHigh, createdAt: "2026-06-27", featured: false, ruDescription: "Строит reliable webhook handlers с verification и retries." },
+  { slug: "test-data-builder", emoji: "🧫", title: "Test Data Builder", description: "Create realistic fixtures without brittle test setup.", longDescription: "Designs builders, factories, and seeded examples that keep tests readable and resilient.", category: "Testing", tags: ["fixtures", "testing", "factories"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Low", score: 80, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install test-data-builder", sourceUrl: `${github}/test-data-builder`, telegramPayload: "skill_test-data-builder", useCases: ["Unit tests", "E2E setup", "Mocks"], examples: ["Create user factory", "Seed product data", "Build mock API data"], safetyNotes: safetyLow, createdAt: "2026-06-28", featured: false, ruDescription: "Создает realistic fixtures без хрупкого test setup." },
+  { slug: "readme-troubleshooter", emoji: "🧰", title: "README Troubleshooter", description: "Find where setup docs fail a new user.", longDescription: "Runs a README from a fresh-user perspective and flags missing prerequisites, broken commands, and unclear assumptions.", category: "Docs", tags: ["README", "setup", "DX"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Low", score: 79, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install readme-troubleshooter", sourceUrl: `${github}/readme-troubleshooter`, telegramPayload: "skill_readme-troubleshooter", useCases: ["Developer experience", "Open source", "Onboarding"], examples: ["Check install steps", "Find missing env", "Rewrite quickstart"], safetyNotes: safetyLow, createdAt: "2026-06-29", featured: false, ruDescription: "Находит места, где setup docs ломаются для нового пользователя." },
+  { slug: "admin-panel-density", emoji: "📐", title: "Admin Panel Density", description: "Make operational screens scannable without feeling cramped.", longDescription: "Reviews dense product surfaces for table layout, filters, actions, hierarchy, and repeated-use ergonomics.", category: "Design", tags: ["admin", "tables", "operations"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Low", score: 81, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install admin-panel-density", sourceUrl: `${github}/admin-panel-density`, telegramPayload: "skill_admin-panel-density", useCases: ["CRM", "Dashboards", "Back office"], examples: ["Tighten table", "Fix filters", "Review action bar"], safetyNotes: safetyLow, createdAt: "2026-06-30", featured: false, ruDescription: "Делает operational screens сканируемыми без перегруза." },
+  { slug: "api-contract-diff", emoji: "📜", title: "API Contract Diff", description: "Compare API shapes and flag breaking changes.", longDescription: "Reviews endpoint changes, response shapes, status codes, and client assumptions before integration breaks.", category: "Backend", tags: ["API", "contracts", "breaking changes"], compatibility: ["Codex", "Claude"], difficulty: "Advanced", risk: "Medium", score: 86, hasScripts: true, hasReferences: true, hasAssets: false, installCommand: "codex skills install api-contract-diff", sourceUrl: `${github}/api-contract-diff`, telegramPayload: "skill_api-contract-diff", useCases: ["API migrations", "Client updates", "Release review"], examples: ["Compare OpenAPI", "Find removed field", "Review status codes"], safetyNotes: safetyMedium, createdAt: "2026-07-01", featured: false, ruDescription: "Сравнивает API shapes и отмечает breaking changes." },
+  { slug: "notification-copy-qa", emoji: "🔔", title: "Notification Copy QA", description: "Review email, toast, and push copy for clarity.", longDescription: "Checks notification timing, tone, actionability, error cases, and duplicate messages across channels.", category: "Docs", tags: ["notifications", "copy", "email"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Easy", risk: "Low", score: 78, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install notification-copy-qa", sourceUrl: `${github}/notification-copy-qa`, telegramPayload: "skill_notification-copy-qa", useCases: ["Transactional email", "Toasts", "Push messages"], examples: ["Rewrite error toast", "Review welcome email", "Fix duplicate alerts"], safetyNotes: safetyLow, createdAt: "2026-07-02", featured: false, ruDescription: "Проверяет email, toast и push copy на ясность." },
+  { slug: "permission-matrix", emoji: "🧮", title: "Permission Matrix", description: "Map roles, actions, and access edge cases.", longDescription: "Creates a clear permission matrix and checks UI/API enforcement gaps across roles and resources.", category: "Security", tags: ["RBAC", "permissions", "roles"], compatibility: ["Codex", "Claude", "ChatGPT"], difficulty: "Advanced", risk: "High", score: 90, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install permission-matrix", sourceUrl: `${github}/permission-matrix`, telegramPayload: "skill_permission-matrix", useCases: ["RBAC design", "Admin tools", "Security review"], examples: ["Map roles", "Check API guards", "Review UI permissions"], safetyNotes: safetyHigh, createdAt: "2026-07-03", featured: false, ruDescription: "Картирует roles, actions и access edge cases." },
+  { slug: "performance-budget", emoji: "🏎️", title: "Performance Budget", description: "Set practical limits for bundle, images, and runtime cost.", longDescription: "Defines budgets, measurement points, and remediation steps for page weight, loading, hydration, and assets.", category: "Frontend", tags: ["performance", "bundle", "budget"], compatibility: ["Codex", "Claude"], difficulty: "Medium", risk: "Low", score: 84, hasScripts: true, hasReferences: true, hasAssets: true, installCommand: "codex skills install performance-budget", sourceUrl: `${github}/performance-budget`, telegramPayload: "skill_performance-budget", useCases: ["Launch QA", "Core Web Vitals", "Bundle cleanup"], examples: ["Set bundle budget", "Review images", "Find heavy route"], safetyNotes: safetyLow, createdAt: "2026-07-04", featured: false, ruDescription: "Задает practical limits для bundle, images и runtime cost." },
+  { slug: "schema-to-ui", emoji: "🧬", title: "Schema to UI", description: "Turn structured data models into usable UI plans.", longDescription: "Maps schemas into forms, tables, detail pages, validation states, and user-facing labels.", category: "Data", tags: ["schema", "UI", "forms"], compatibility: ["Codex", "ChatGPT", "Claude"], difficulty: "Medium", risk: "Low", score: 82, hasScripts: false, hasReferences: true, hasAssets: true, installCommand: "codex skills install schema-to-ui", sourceUrl: `${github}/schema-to-ui`, telegramPayload: "skill_schema-to-ui", useCases: ["Internal tools", "Admin forms", "Data products"], examples: ["Draft CRUD UI", "Map validation", "Name fields"], safetyNotes: safetyLow, createdAt: "2026-07-05", featured: false, ruDescription: "Превращает structured data models в usable UI plans." },
+  { slug: "queue-worker-review", emoji: "📬", title: "Queue Worker Review", description: "Review async jobs for retries, idempotency, and dead letters.", longDescription: "Checks queue workers, cron jobs, and background tasks for operational safety and observability.", category: "Backend", tags: ["queues", "workers", "retries"], compatibility: ["Codex"], difficulty: "Advanced", risk: "High", score: 85, hasScripts: false, hasReferences: true, hasAssets: false, installCommand: "codex skills install queue-worker-review", sourceUrl: `${github}/queue-worker-review`, telegramPayload: "skill_queue-worker-review", useCases: ["Background jobs", "Async processing", "Ops review"], examples: ["Check retry policy", "Review idempotency", "Add dead-letter plan"], safetyNotes: safetyHigh, createdAt: "2026-07-06", featured: false, ruDescription: "Проверяет async jobs на retries, idempotency и dead letters." },
 ];
 
+const publishedSeeds = seeds.slice(0, 60);
+
+export const skills: Skill[] = publishedSeeds.map((seed, index) => {
+  const hasKeys = seed.risk === "High" || seed.tags.some((tag) => ["deploy", "Cloudflare", "payments", "webhooks"].includes(tag));
+  const setup: Skill["setup"] = hasKeys ? "Requires keys" : seed.hasScripts ? "Scripted" : seed.hasReferences ? "Light setup" : "Zero config";
+  return {
+    ...seed,
+    id: `skill-${String(index + 1).padStart(3, "0")}`,
+    summary: seed.description,
+    source: seed.sourceUrl.includes("github.com") ? "GitHub" : "Curated pack",
+    install: seed.installCommand,
+    popularity: Math.max(320, seed.score * 9 + (seed.featured ? 120 : 0) - index * 3),
+    addedAt: seed.createdAt,
+    free: true,
+    setup,
+    marker: seed.risk === "High" ? "Advanced" : seed.hasScripts ? "Script" : "Safe",
+    ru: {
+      title: seed.title,
+      summary: seed.ruDescription,
+      description: seed.ruDescription,
+      tags: seed.ruTags || seed.tags,
+      examples: seed.ruExamples || seed.examples,
+      useCases: seed.ruUseCases || seed.useCases,
+    },
+  };
+});
+
 export const categoryLabels: Record<Locale, Record<Category | "All", string>> = {
-  en: {
-    All: "All",
-    Frontend: "Frontend",
-    Backend: "Backend",
-    Design: "Design",
-    Testing: "Testing",
-    Security: "Security",
-    Docs: "Docs",
-    Automation: "Automation",
-    Research: "Research",
-    Data: "Data",
-    Productivity: "Productivity",
-    Prompting: "Prompting",
-    Deployment: "Deployment",
-  },
-  ru: {
-    All: "Все",
-    Frontend: "Фронтенд",
-    Backend: "Бэкенд",
-    Design: "Дизайн",
-    Testing: "Тестинг",
-    Security: "Безопасность",
-    Docs: "Документы",
-    Automation: "Автоматизация",
-    Research: "Исследования",
-    Data: "Данные",
-    Productivity: "Продуктивность",
-    Prompting: "Промптинг",
-    Deployment: "Деплой",
-  },
+  en: { All: "All", Frontend: "Frontend", Backend: "Backend", Design: "Design", Testing: "Testing", Security: "Security", Docs: "Docs", Automation: "Automation", Research: "Research", Data: "Data", Productivity: "Productivity", Prompting: "Prompting", Deployment: "Deployment" },
+  ru: { All: "Все", Frontend: "Фронтенд", Backend: "Бэкенд", Design: "Дизайн", Testing: "Тестинг", Security: "Безопасность", Docs: "Документы", Automation: "Автоматизация", Research: "Исследования", Data: "Данные", Productivity: "Продуктивность", Prompting: "Промптинг", Deployment: "Деплой" },
 };
 
 export const difficultyLabels: Record<Locale, Record<Difficulty, string>> = {
@@ -555,7 +191,7 @@ export function skillSummary(skill: Skill, locale: Locale) {
 }
 
 export function skillDescription(skill: Skill, locale: Locale) {
-  return locale === "ru" ? skill.ru.description : skill.description;
+  return locale === "ru" ? skill.ru.description : skill.longDescription;
 }
 
 export function skillTags(skill: Skill, locale: Locale) {
@@ -571,7 +207,7 @@ export function skillUseCases(skill: Skill, locale: Locale) {
 }
 
 export function getSkill(slug: string) {
-  return skills.find((skill) => skill.slug === slug);
+  return skills.find((skill) => skill.slug === slug || skill.id === slug);
 }
 
 export function relatedSkills(skill: Skill) {

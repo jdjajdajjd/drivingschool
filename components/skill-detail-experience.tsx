@@ -84,8 +84,8 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
   const { locale, setLocale } = useLocale();
   const t = detailCopy[locale];
   const related = relatedSkills(skill).slice(0, 6);
-  const hasReferences = ["Docs", "Research", "Security", "Deployment", "Testing"].includes(skill.category);
-  const hasAssets = ["Design", "Frontend"].includes(skill.category);
+  const hasReferences = skill.hasReferences;
+  const hasAssets = skill.hasAssets;
 
   return (
     <main className="relative min-h-screen overflow-hidden pb-20">

@@ -159,6 +159,10 @@ export function CatalogExperience() {
         skill.title,
         skill.summary,
         skill.description,
+        skill.longDescription,
+        skill.id,
+        skill.telegramPayload,
+        skill.installCommand,
         skill.ru.title,
         skill.ru.summary,
         skill.ru.description,
@@ -175,6 +179,7 @@ export function CatalogExperience() {
         ...skill.ru.useCases,
         ...skill.examples,
         ...skill.ru.examples,
+        ...skill.safetyNotes,
       ].join(" ").toLowerCase();
       const textMatch = !q || searchable.includes(q);
       return categoryMatch && compatibilityMatch && difficultyMatch && riskMatch && scriptsMatch && freeMatch && textMatch;
