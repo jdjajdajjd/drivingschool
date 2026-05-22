@@ -6,9 +6,15 @@ export type Category =
   | "Security"
   | "Docs"
   | "Automation"
-  | "Productivity"
   | "Research"
-  | "Data";
+  | "Data"
+  | "Productivity"
+  | "Prompting"
+  | "Deployment";
+
+export type Difficulty = "Easy" | "Medium" | "Advanced";
+export type Risk = "Low" | "Medium" | "High";
+export type Compatibility = "Codex" | "ChatGPT" | "Claude" | "Universal";
 
 export type Skill = {
   slug: string;
@@ -16,12 +22,19 @@ export type Skill = {
   summary: string;
   description: string;
   category: Category;
+  emoji: string;
   tags: string[];
-  compatibility: string[];
+  compatibility: Compatibility[];
   source: string;
   install: string;
   score: number;
-  difficulty: "Gentle" | "Focused" | "Advanced";
+  popularity: number;
+  addedAt: string;
+  featured: boolean;
+  difficulty: Difficulty;
+  risk: Risk;
+  hasScripts: boolean;
+  free: boolean;
   setup: "Zero config" | "Light setup" | "Scripted" | "Requires keys";
   marker: "Safe" | "Script" | "Advanced";
   examples: string[];
@@ -46,10 +59,16 @@ export const categories: Category[] = [
   "Security",
   "Docs",
   "Automation",
-  "Productivity",
   "Research",
   "Data",
+  "Productivity",
+  "Prompting",
+  "Deployment",
 ];
+
+export const compatibilityOptions: Compatibility[] = ["Codex", "ChatGPT", "Claude", "Universal"];
+export const difficultyOptions: Difficulty[] = ["Easy", "Medium", "Advanced"];
+export const riskOptions: Risk[] = ["Low", "Medium", "High"];
 
 export const skills: Skill[] = [
   {
@@ -59,12 +78,19 @@ export const skills: Skill[] = [
     description:
       "A design-focused workflow for building polished React, HTML, and app surfaces that feel intentional instead of templated.",
     category: "Design",
+    emoji: "◇",
     tags: ["UI", "visual systems", "React"],
     compatibility: ["Codex", "Claude", "ChatGPT"],
     source: "System skill",
     install: "codex skills install frontend-design",
     score: 98,
-    difficulty: "Focused",
+    popularity: 980,
+    addedAt: "2026-05-10",
+    featured: true,
+    difficulty: "Medium",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
     setup: "Zero config",
     marker: "Safe",
     examples: ["Redesign a product dashboard", "Create a refined landing page", "Polish a component library"],
@@ -85,12 +111,19 @@ export const skills: Skill[] = [
     description:
       "A pragmatic Playwright workflow for inspecting rendered pages, catching console errors, and verifying real user paths.",
     category: "Testing",
+    emoji: "◌",
     tags: ["Playwright", "screenshots", "QA"],
     compatibility: ["Codex", "Claude"],
     source: "System skill",
     install: "codex skills install webapp-testing",
     score: 95,
-    difficulty: "Gentle",
+    popularity: 910,
+    addedAt: "2026-05-11",
+    featured: true,
+    difficulty: "Easy",
+    risk: "Medium",
+    hasScripts: true,
+    free: true,
     setup: "Light setup",
     marker: "Script",
     examples: ["Capture mobile screenshots", "Test a checkout flow", "Find broken interactive states"],
@@ -111,12 +144,19 @@ export const skills: Skill[] = [
     description:
       "Keeps agent answers grounded in official OpenAI documentation when choosing models, upgrading prompts, or wiring API features.",
     category: "Docs",
+    emoji: "□",
     tags: ["API", "models", "official docs"],
     compatibility: ["Codex", "ChatGPT"],
     source: "System skill",
     install: "codex skills install openai-docs",
     score: 92,
-    difficulty: "Gentle",
+    popularity: 780,
+    addedAt: "2026-04-28",
+    featured: true,
+    difficulty: "Easy",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
     setup: "Zero config",
     marker: "Safe",
     examples: ["Pick a model for a coding tool", "Update a Responses API flow", "Check latest SDK guidance"],
@@ -137,12 +177,19 @@ export const skills: Skill[] = [
     description:
       "A focused AppSec pass for common coding risks, secure defaults, dependency hygiene, and practical remediation steps.",
     category: "Security",
+    emoji: "◈",
     tags: ["AppSec", "review", "secure defaults"],
     compatibility: ["Codex", "Claude", "ChatGPT"],
     source: "System skill",
     install: "codex skills install security-best-practices",
     score: 91,
-    difficulty: "Focused",
+    popularity: 720,
+    addedAt: "2026-04-30",
+    featured: true,
+    difficulty: "Medium",
+    risk: "Medium",
+    hasScripts: false,
+    free: true,
     setup: "Light setup",
     marker: "Advanced",
     examples: ["Review auth handlers", "Harden file uploads", "Audit API input validation"],
@@ -162,13 +209,20 @@ export const skills: Skill[] = [
     summary: "Publish Workers, Pages, and full-stack apps with clean defaults.",
     description:
       "A deployment workflow for taking local web projects to Cloudflare, including configuration, build commands, and checks.",
-    category: "Automation",
+    category: "Deployment",
+    emoji: "◒",
     tags: ["Cloudflare", "deploy", "Pages"],
     compatibility: ["Codex"],
     source: "Local skill",
     install: "codex skills install cloudflare-deploy",
     score: 89,
-    difficulty: "Focused",
+    popularity: 700,
+    addedAt: "2026-05-12",
+    featured: true,
+    difficulty: "Medium",
+    risk: "High",
+    hasScripts: true,
+    free: true,
     setup: "Requires keys",
     marker: "Script",
     examples: ["Deploy a Next.js app", "Configure Wrangler", "Publish a Worker API"],
@@ -189,12 +243,19 @@ export const skills: Skill[] = [
     description:
       "A structured authoring guide for creating skills with clear triggers, compact instructions, and useful local assets.",
     category: "Productivity",
+    emoji: "✦",
     tags: ["authoring", "workflows", "agents"],
     compatibility: ["Codex"],
     source: "System skill",
     install: "codex skills install skill-creator",
     score: 88,
-    difficulty: "Gentle",
+    popularity: 650,
+    addedAt: "2026-05-08",
+    featured: false,
+    difficulty: "Easy",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
     setup: "Zero config",
     marker: "Safe",
     examples: ["Package a review workflow", "Create a design QA skill", "Document a deployment routine"],
@@ -215,12 +276,19 @@ export const skills: Skill[] = [
     description:
       "A lightweight data skill for profiling datasets, drafting schemas, and producing chart-ready structures without heavy tooling.",
     category: "Data",
+    emoji: "▧",
     tags: ["CSV", "JSON", "charts"],
-    compatibility: ["Codex", "ChatGPT", "Claude"],
+    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
     source: "Curated pack",
     install: "codex skills install data-canvas",
     score: 84,
-    difficulty: "Gentle",
+    popularity: 520,
+    addedAt: "2026-04-24",
+    featured: false,
+    difficulty: "Easy",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
     setup: "Light setup",
     marker: "Safe",
     examples: ["Normalize a CSV export", "Draft a chart model", "Find malformed rows"],
@@ -241,12 +309,19 @@ export const skills: Skill[] = [
     description:
       "A research workflow that favors primary sources, dated claims, and short decision notes that engineers can act on.",
     category: "Research",
+    emoji: "◍",
     tags: ["sources", "briefs", "decisions"],
     compatibility: ["Codex", "ChatGPT"],
     source: "Curated pack",
     install: "codex skills install research-brief",
     score: 87,
-    difficulty: "Focused",
+    popularity: 560,
+    addedAt: "2026-05-02",
+    featured: false,
+    difficulty: "Medium",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
     setup: "Zero config",
     marker: "Safe",
     examples: ["Compare two libraries", "Summarize a new API", "Prepare a build-vs-buy note"],
@@ -267,12 +342,19 @@ export const skills: Skill[] = [
     description:
       "A backend implementation guide for focused route work, sane input parsing, and minimal-but-real coverage.",
     category: "Backend",
+    emoji: "▣",
     tags: ["API", "validation", "tests"],
     compatibility: ["Codex", "Claude"],
     source: "Curated pack",
     install: "codex skills install backend-routes",
     score: 86,
-    difficulty: "Focused",
+    popularity: 610,
+    addedAt: "2026-05-03",
+    featured: false,
+    difficulty: "Medium",
+    risk: "Medium",
+    hasScripts: true,
+    free: true,
     setup: "Light setup",
     marker: "Script",
     examples: ["Add a REST endpoint", "Validate request bodies", "Write contract tests"],
@@ -293,12 +375,19 @@ export const skills: Skill[] = [
     description:
       "A compact review workflow for keyboard paths, contrast, labels, focus states, and responsive readability.",
     category: "Frontend",
+    emoji: "◎",
     tags: ["a11y", "keyboard", "contrast"],
-    compatibility: ["Codex", "ChatGPT", "Claude"],
+    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
     source: "Curated pack",
     install: "codex skills install accessibility-pass",
     score: 90,
-    difficulty: "Gentle",
+    popularity: 690,
+    addedAt: "2026-05-05",
+    featured: false,
+    difficulty: "Easy",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
     setup: "Zero config",
     marker: "Safe",
     examples: ["Audit a settings page", "Fix focus rings", "Check mobile forms"],
@@ -310,6 +399,105 @@ export const skills: Skill[] = [
       tags: ["a11y", "keyboard", "contrast"],
       examples: ["Проверить settings page", "Исправить focus rings", "Проверить mobile forms"],
       useCases: ["UI reviews", "Design systems", "Release polish"],
+    },
+  },
+  {
+    slug: "prompt-shaper",
+    title: "Prompt Shaper",
+    summary: "Tight prompts, reusable briefs, and calmer agent instructions.",
+    description:
+      "A prompting workflow for turning loose requests into concise task briefs, guardrails, and reusable instruction patterns.",
+    category: "Prompting",
+    emoji: "◐",
+    tags: ["prompts", "briefs", "instructions"],
+    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
+    source: "Curated pack",
+    install: "codex skills install prompt-shaper",
+    score: 85,
+    popularity: 570,
+    addedAt: "2026-05-13",
+    featured: false,
+    difficulty: "Easy",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
+    setup: "Zero config",
+    marker: "Safe",
+    examples: ["Rewrite a vague feature request", "Draft agent guardrails", "Create a reusable bug-fix prompt"],
+    useCases: ["Prompt cleanup", "Team instructions", "Agent handoffs"],
+    ru: {
+      title: "Prompt Shaper",
+      summary: "Точные prompts, переиспользуемые briefs и спокойные инструкции для агентов.",
+      description: "Prompting workflow для превращения рыхлых запросов в компактные task briefs, guardrails и повторяемые instruction patterns.",
+      tags: ["prompts", "briefs", "instructions"],
+      examples: ["Переписать расплывчатый feature request", "Собрать guardrails для агента", "Создать bug-fix prompt"],
+      useCases: ["Prompt cleanup", "Team instructions", "Agent handoffs"],
+    },
+  },
+  {
+    slug: "docs-polish",
+    title: "Docs Polish",
+    summary: "Clear README, changelog, and release notes without filler.",
+    description:
+      "A documentation pass for tightening structure, examples, and release language so project docs stay useful under pressure.",
+    category: "Docs",
+    emoji: "▱",
+    tags: ["README", "release notes", "writing"],
+    compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
+    source: "Curated pack",
+    install: "codex skills install docs-polish",
+    score: 82,
+    popularity: 430,
+    addedAt: "2026-04-18",
+    featured: false,
+    difficulty: "Easy",
+    risk: "Low",
+    hasScripts: false,
+    free: true,
+    setup: "Zero config",
+    marker: "Safe",
+    examples: ["Rewrite a README", "Prepare release notes", "Clean setup instructions"],
+    useCases: ["Project handoff", "Open-source hygiene", "Launch notes"],
+    ru: {
+      title: "Docs Polish",
+      summary: "Понятные README, changelog и release notes без воды.",
+      description: "Documentation pass для структуры, примеров и release language, чтобы docs оставались полезными в рабочем ритме.",
+      tags: ["README", "release notes", "writing"],
+      examples: ["Переписать README", "Подготовить release notes", "Очистить setup instructions"],
+      useCases: ["Project handoff", "Open-source hygiene", "Launch notes"],
+    },
+  },
+  {
+    slug: "repo-automation",
+    title: "Repo Automation",
+    summary: "Small repository chores handled with scripts and checks.",
+    description:
+      "An automation skill for formatting passes, issue triage, generated reports, and safe mechanical repository work.",
+    category: "Automation",
+    emoji: "◆",
+    tags: ["scripts", "maintenance", "reports"],
+    compatibility: ["Codex"],
+    source: "Curated pack",
+    install: "codex skills install repo-automation",
+    score: 83,
+    popularity: 470,
+    addedAt: "2026-05-01",
+    featured: false,
+    difficulty: "Advanced",
+    risk: "Medium",
+    hasScripts: true,
+    free: true,
+    setup: "Scripted",
+    marker: "Script",
+    examples: ["Generate a dependency report", "Bulk-format files", "Summarize open issues"],
+    useCases: ["Maintenance", "Repository hygiene", "Repeatable checks"],
+    ru: {
+      title: "Repo Automation",
+      summary: "Небольшие repo chores через scripts и checks.",
+      description: "Automation skill для formatting passes, issue triage, generated reports и аккуратной mechanical repository work.",
+      tags: ["scripts", "maintenance", "reports"],
+      examples: ["Собрать dependency report", "Массово отформатировать files", "Суммировать open issues"],
+      useCases: ["Maintenance", "Repository hygiene", "Repeatable checks"],
     },
   },
 ];
@@ -324,9 +512,11 @@ export const categoryLabels: Record<Locale, Record<Category | "All", string>> = 
     Security: "Security",
     Docs: "Docs",
     Automation: "Automation",
-    Productivity: "Productivity",
     Research: "Research",
     Data: "Data",
+    Productivity: "Productivity",
+    Prompting: "Prompting",
+    Deployment: "Deployment",
   },
   ru: {
     All: "Все",
@@ -337,10 +527,22 @@ export const categoryLabels: Record<Locale, Record<Category | "All", string>> = 
     Security: "Безопасность",
     Docs: "Документы",
     Automation: "Автоматизация",
-    Productivity: "Продуктивность",
     Research: "Исследования",
     Data: "Данные",
+    Productivity: "Продуктивность",
+    Prompting: "Промптинг",
+    Deployment: "Деплой",
   },
+};
+
+export const difficultyLabels: Record<Locale, Record<Difficulty, string>> = {
+  en: { Easy: "Easy", Medium: "Medium", Advanced: "Advanced" },
+  ru: { Easy: "Легко", Medium: "Средне", Advanced: "Сложно" },
+};
+
+export const riskLabels: Record<Locale, Record<Risk, string>> = {
+  en: { Low: "Low", Medium: "Medium", High: "High" },
+  ru: { Low: "Низкий", Medium: "Средний", High: "Высокий" },
 };
 
 export function skillTitle(skill: Skill, locale: Locale) {

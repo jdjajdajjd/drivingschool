@@ -1,11 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion, useScroll, useTransform, type Variants } from "framer-motion";
-import { ArrowRight, Command, ExternalLink, Search, Send, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Command, ExternalLink, RotateCcw, Search, Send, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { categories, skills, type Category, type Skill } from "@/lib/skills";
-import { categoryLabels, skillSummary, skillTags, skillTitle } from "@/lib/skills";
+import { useMemo, useState, type ReactNode } from "react";
+import { categories, compatibilityOptions, difficultyOptions, riskOptions, skills, type Category, type Compatibility, type Difficulty, type Risk, type Skill } from "@/lib/skills";
+import { categoryLabels, difficultyLabels, riskLabels, skillSummary, skillTags, skillTitle } from "@/lib/skills";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/copy-button";
 import { Wordmark } from "@/components/brand";
@@ -13,6 +13,10 @@ import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { SiteFooter } from "@/components/site-footer";
 
 const all = "All";
+const any = "Any";
+const yesNoAll = "All";
+type SortKey = "Featured" | "Newest" | "Popular" | "Name" | "Score";
+type HasScriptsFilter = typeof yesNoAll | "Yes" | "No";
 
 const smooth = [0.22, 1, 0.36, 1] as const;
 
@@ -28,7 +32,7 @@ const copy = {
     h1a: "Codex",
     h1b: "Skills",
     subtitle: "A polished catalog of practical agent workflows. Browse, install, adapt.",
-    search: "Search skills, sources, workflows...",
+    search: "Search title, use case, tag, agent...",
     cta: "Browse skills",
     telegram: "Telegram bot",
     chips: ["Clean tools", "Useful workflows", "Agent-ready"],
@@ -37,8 +41,21 @@ const copy = {
     picksText: "A short shelf of skills that make agent work cleaner without adding ceremony.",
     catalogKicker: "Catalog",
     catalogTitle: "Browse the shelf.",
-    filter: "Filter instantly",
-    empty: "No matches. Try a source, category, or workflow name.",
+    filter: "Search inside catalog",
+    filters: "Filters",
+    sort: "Sort",
+    compatible: "Compatible with",
+    difficulty: "Difficulty",
+    risk: "Risk",
+    scripts: "Has scripts",
+    freeOnly: "Free only",
+    yes: "Yes",
+    no: "No",
+    any: "Any",
+    reset: "Reset filters",
+    countLabel: "Showing",
+    empty: "No matches for this set.",
+    emptyText: "Clear filters or try a simpler search term.",
     submitKicker: "Submit",
     submitTitle: "A clean place for useful workflows.",
     submitText: "Codex Skills favors skills that are clear, practical, easy to inspect, and calm in daily use.",
@@ -52,7 +69,8 @@ const copy = {
     compatibility: "Compatibility",
     setup: "Setup",
     sourceLabel: "Source",
-    open: "Open",
+    open: "Open details",
+    getTelegram: "Get via Telegram",
     copy: "Copy",
     telegramKicker: "Telegram",
     telegramTitle: "Follow updates in the bot.",
@@ -65,7 +83,7 @@ const copy = {
     h1a: "Codex",
     h1b: "Skills",
     subtitle: "Красивый каталог практичных agent workflows. Найти, установить, адаптировать.",
-    search: "Искать skills, источники, workflows...",
+    search: "Искать title, use case, tag, agent...",
     cta: "Смотреть skills",
     telegram: "Telegram bot",
     chips: ["Чистые инструменты", "Полезные workflows", "Готово для агентов"],
@@ -74,8 +92,21 @@ const copy = {
     picksText: "Короткая полка skills, которые делают работу агента чище без лишней церемонии.",
     catalogKicker: "Каталог",
     catalogTitle: "Просмотр коллекции.",
-    filter: "Фильтр мгновенно",
-    empty: "Ничего не найдено. Попробуй источник, категорию или workflow.",
+    filter: "Поиск внутри каталога",
+    filters: "Фильтры",
+    sort: "Сортировка",
+    compatible: "Совместимость",
+    difficulty: "Сложность",
+    risk: "Риск",
+    scripts: "Есть scripts",
+    freeOnly: "Только бесплатно",
+    yes: "Да",
+    no: "Нет",
+    any: "Любые",
+    reset: "Сбросить фильтры",
+    countLabel: "Показано",
+    empty: "Ничего не найдено для этих фильтров.",
+    emptyText: "Сбрось фильтры или попробуй более простой запрос.",
     submitKicker: "Отправить",
     submitTitle: "Чистое место для полезных workflows.",
     submitText: "Codex Skills выбирает skills, которые понятны, практичны, легко проверяются и спокойны в ежедневной работе.",
@@ -89,7 +120,8 @@ const copy = {
     compatibility: "Совместимость",
     setup: "Настройка",
     sourceLabel: "Источник",
-    open: "Открыть",
+    open: "Подробнее",
+    getTelegram: "В Telegram",
     copy: "Копировать",
     telegramKicker: "Telegram",
     telegramTitle: "Следить за обновлениями в боте.",
@@ -101,6 +133,12 @@ const copy = {
 export function CatalogExperience() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Category | typeof all>(all);
+  const [compatible, setCompatible] = useState<Compatibility | typeof any>(any);
+  const [difficulty, setDifficulty] = useState<Difficulty | typeof any>(any);
+  const [risk, setRisk] = useState<Risk | typeof any>(any);
+  const [hasScripts, setHasScripts] = useState<HasScriptsFilter>(yesNoAll);
+  const [freeOnly, setFreeOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>("Featured");
   const { locale, setLocale } = useLocale();
   const t = copy[locale];
   const { scrollYProgress } = useScroll();
@@ -109,18 +147,59 @@ export function CatalogExperience() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return skills.filter((skill) => {
+    const result = skills.filter((skill) => {
       const categoryMatch = active === all || skill.category === active;
-      const textMatch = !q || [skill.title, skill.summary, skill.ru.title, skill.ru.summary, skill.category, skill.source, ...skill.tags, ...skill.ru.tags, ...skill.compatibility]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-      return categoryMatch && textMatch;
+      const compatibilityMatch = compatible === any || skill.compatibility.includes(compatible);
+      const difficultyMatch = difficulty === any || skill.difficulty === difficulty;
+      const riskMatch = risk === any || skill.risk === risk;
+      const scriptsMatch = hasScripts === yesNoAll || skill.hasScripts === (hasScripts === "Yes");
+      const freeMatch = !freeOnly || skill.free;
+      const searchable = [
+        skill.title,
+        skill.summary,
+        skill.description,
+        skill.ru.title,
+        skill.ru.summary,
+        skill.ru.description,
+        skill.category,
+        categoryLabels.en[skill.category],
+        categoryLabels.ru[skill.category],
+        skill.source,
+        skill.difficulty,
+        skill.risk,
+        ...skill.tags,
+        ...skill.ru.tags,
+        ...skill.compatibility,
+        ...skill.useCases,
+        ...skill.ru.useCases,
+        ...skill.examples,
+        ...skill.ru.examples,
+      ].join(" ").toLowerCase();
+      const textMatch = !q || searchable.includes(q);
+      return categoryMatch && compatibilityMatch && difficultyMatch && riskMatch && scriptsMatch && freeMatch && textMatch;
     });
-  }, [query, active]);
+    return [...result].sort((a, b) => {
+      if (sort === "Featured") return Number(b.featured) - Number(a.featured) || b.score - a.score;
+      if (sort === "Newest") return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
+      if (sort === "Popular") return b.popularity - a.popularity;
+      if (sort === "Name") return skillTitle(a, locale).localeCompare(skillTitle(b, locale));
+      return b.score - a.score;
+    });
+  }, [query, active, compatible, difficulty, risk, hasScripts, freeOnly, sort, locale]);
 
-  const featured = skills.filter((skill) => skill.score >= 90).slice(0, 4);
+  const featured = skills.filter((skill) => skill.featured).slice(0, 4);
   const updateQuery = (event: React.FormEvent<HTMLInputElement>) => setQuery(event.currentTarget.value);
+  const hasActiveFilters = query.trim() !== "" || active !== all || compatible !== any || difficulty !== any || risk !== any || hasScripts !== yesNoAll || freeOnly;
+  const resetFilters = () => {
+    setQuery("");
+    setActive(all);
+    setCompatible(any);
+    setDifficulty(any);
+    setRisk(any);
+    setHasScripts(yesNoAll);
+    setFreeOnly(false);
+    setSort("Featured");
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden pb-24">
@@ -205,18 +284,18 @@ export function CatalogExperience() {
 
       <section id="catalog" className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8">
         <div className="codex-panel overflow-hidden rounded-[36px] p-4 sm:p-6 lg:p-8">
-          <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]"><SlidersHorizontal size={15} /> {t.catalogKicker}</div>
               <h2 className="font-display text-4xl font-semibold sm:text-5xl">{t.catalogTitle}</h2>
             </div>
-            <div className="relative max-w-xl flex-1 rounded-full border border-black/10 bg-white/68 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]">
+            <div className="relative max-w-xl flex-1 rounded-[24px] border border-black/10 bg-white/68 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#8e95a3]" size={18} />
               <input value={query} onChange={updateQuery} onInput={updateQuery} onKeyUp={updateQuery} className="w-full bg-transparent pl-8 text-sm font-semibold outline-none placeholder:text-[#8e95a3]" placeholder={t.filter} />
             </div>
           </div>
 
-          <div className="scrollbar-hide -mx-1 mb-8 flex gap-2 overflow-x-auto px-1 pb-2">
+          <div className="scrollbar-hide -mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2">
             {([all, ...categories] as Array<Category | typeof all>).map((category) => {
               const selected = active === category;
               return (
@@ -228,12 +307,72 @@ export function CatalogExperience() {
             })}
           </div>
 
+          <div className="mb-8 grid gap-3 rounded-[30px] border border-black/10 bg-white/42 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.72)] lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <FilterGroup label={t.compatible}>
+                <PillRow>
+                  <FilterPill selected={compatible === any} onClick={() => setCompatible(any)}>{t.any}</FilterPill>
+                  {compatibilityOptions.map((item) => <FilterPill key={item} selected={compatible === item} onClick={() => setCompatible(item)}>{item}</FilterPill>)}
+                </PillRow>
+              </FilterGroup>
+              <FilterGroup label={t.difficulty}>
+                <PillRow>
+                  <FilterPill selected={difficulty === any} onClick={() => setDifficulty(any)}>{t.any}</FilterPill>
+                  {difficultyOptions.map((item) => <FilterPill key={item} selected={difficulty === item} onClick={() => setDifficulty(item)}>{difficultyLabels[locale][item]}</FilterPill>)}
+                </PillRow>
+              </FilterGroup>
+              <FilterGroup label={t.risk}>
+                <PillRow>
+                  <FilterPill selected={risk === any} onClick={() => setRisk(any)}>{t.any}</FilterPill>
+                  {riskOptions.map((item) => <FilterPill key={item} selected={risk === item} onClick={() => setRisk(item)}>{riskLabels[locale][item]}</FilterPill>)}
+                </PillRow>
+              </FilterGroup>
+              <FilterGroup label={t.scripts}>
+                <PillRow>
+                  <FilterPill selected={hasScripts === yesNoAll} onClick={() => setHasScripts(yesNoAll)}>{t.any}</FilterPill>
+                  <FilterPill selected={hasScripts === "Yes"} onClick={() => setHasScripts("Yes")}>{t.yes}</FilterPill>
+                  <FilterPill selected={hasScripts === "No"} onClick={() => setHasScripts("No")}>{t.no}</FilterPill>
+                </PillRow>
+              </FilterGroup>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <label className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition", freeOnly ? "border-[#111] bg-[#111] text-white shadow-[0_14px_36px_rgba(17,17,17,.14)]" : "border-black/10 bg-white/56 text-[#5f6470] hover:bg-white")}>
+                <input type="checkbox" checked={freeOnly} onChange={(event) => setFreeOnly(event.currentTarget.checked)} className="sr-only" />
+                {freeOnly && <Check size={14} />} {t.freeOnly}
+              </label>
+              <div className="flex items-center gap-2 rounded-full border border-black/10 bg-white/58 p-1">
+                <span className="pl-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8e95a3]">{t.sort}</span>
+                <select value={sort} onChange={(event) => setSort(event.currentTarget.value as SortKey)} className="rounded-full border-0 bg-transparent px-2 py-2 text-sm font-bold text-[#111] outline-none">
+                  {(["Featured", "Newest", "Popular", "Name", "Score"] as SortKey[]).map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+              {hasActiveFilters && (
+                <button onClick={resetFilters} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/10 bg-white/58 px-4 text-sm font-bold text-[#5f6470] transition hover:bg-white hover:text-[#111]">
+                  <RotateCcw size={14} /> {t.reset}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-5 flex items-center justify-between gap-3 px-1 text-sm font-semibold text-[#8e95a3]">
+            <span>{t.countLabel} {filtered.length} / {skills.length}</span>
+            <span className="hidden sm:inline">{t.filters}</span>
+          </div>
+
           <motion.div layout className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {filtered.map((skill, index) => <SkillCard key={skill.slug} skill={skill} index={index} locale={locale} t={t} />)}
             </AnimatePresence>
           </motion.div>
-          {filtered.length === 0 && <div className="rounded-[28px] border border-dashed border-black/10 bg-white/54 p-10 text-center text-[#5f6470]">{t.empty}</div>}
+          {filtered.length === 0 && (
+            <div className="rounded-[28px] border border-black/10 bg-white/58 p-7 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
+              <p className="font-display text-2xl font-semibold text-[#111]">{t.empty}</p>
+              <p className="mt-2 text-sm font-medium text-[#5f6470]">{t.emptyText}</p>
+              <button onClick={resetFilters} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#23252a]">
+                <RotateCcw size={14} /> {t.reset}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -309,7 +448,7 @@ function FeatureTile({ skill, index, locale }: { skill: Skill; index: number; lo
   return (
     <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ delay: index * 0.06, duration: 0.55 }} className="group rounded-[28px] border border-black/10 bg-white/58 p-5 shadow-[0_18px_55px_rgba(30,35,45,.07)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/82">
       <div className="mb-5 flex items-center justify-between">
-        <span className="ink-button rounded-full bg-[#111] px-3 py-1 text-xs font-bold text-white">{categoryLabels[locale][skill.category]}</span>
+        <span className="ink-button rounded-full bg-[#111] px-3 py-1 text-xs font-bold text-white">{skill.emoji} {categoryLabels[locale][skill.category]}</span>
         <span className="text-sm font-bold text-[#7b8392]">{skill.score}</span>
       </div>
       <h3 className="font-display text-3xl font-semibold">{skillTitle(skill, locale)}</h3>
@@ -318,34 +457,77 @@ function FeatureTile({ skill, index, locale }: { skill: Skill; index: number; lo
   );
 }
 
+function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-[24px] border border-black/10 bg-white/48 p-3">
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#8e95a3]">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function PillRow({ children }: { children: ReactNode }) {
+  return <div className="scrollbar-hide flex gap-1.5 overflow-x-auto pb-0.5">{children}</div>;
+}
+
+function FilterPill({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button onClick={onClick} className={cn("relative shrink-0 rounded-full px-3 py-2 text-xs font-bold transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50", selected ? "text-white" : "border border-black/10 bg-white/58 text-[#5f6470] hover:bg-white hover:text-[#111]") }>
+      {selected && <motion.span className="absolute inset-0 rounded-full bg-[#111] shadow-[0_10px_26px_rgba(17,17,17,.14)]" transition={{ type: "spring", stiffness: 430, damping: 34 }} />}
+      <span className="relative">{children}</span>
+    </button>
+  );
+}
+
 function SkillCard({ skill, index, locale, t }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru }) {
   return (
-    <motion.article layout initial={{ opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }} transition={{ duration: 0.34, delay: Math.min(index * 0.025, 0.18) }} whileHover={{ y: -6, rotateX: 1.5, rotateY: -1.5 }} className="group rounded-[30px] border border-black/10 bg-white/62 p-5 shadow-[0_20px_60px_rgba(30,35,45,.07)] backdrop-blur-xl transition-colors duration-300 hover:bg-white/86">
+    <motion.article layout initial={{ opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }} transition={{ duration: 0.34, delay: Math.min(index * 0.025, 0.18) }} whileHover={{ y: -6, rotateX: 1, rotateY: -1 }} className="group rounded-[30px] border border-black/10 bg-white/62 p-5 shadow-[0_20px_60px_rgba(30,35,45,.07)] backdrop-blur-xl transition-colors duration-300 hover:bg-white/86">
       <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <div className="mb-3 flex flex-wrap gap-2">
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="grid size-10 place-items-center rounded-full border border-black/10 bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#b8c0cc)] text-lg font-black text-[#111] shadow-[inset_0_1px_8px_rgba(255,255,255,.82)]">{skill.emoji}</span>
             <span className="rounded-full bg-[#f2f3f0] px-3 py-1 text-xs font-bold text-[#5f6470]">{categoryLabels[locale][skill.category]}</span>
-            <span className="rounded-full border border-black/10 px-3 py-1 text-xs font-bold text-[#7b8392]">{skill.marker}</span>
+            <span className="rounded-full border border-black/10 px-3 py-1 text-xs font-bold text-[#7b8392]">{skill.hasScripts ? "Script" : "Safe"}</span>
           </div>
           <h3 className="font-display text-3xl font-semibold tracking-normal">{skillTitle(skill, locale)}</h3>
         </div>
-        <div className="grid size-12 shrink-0 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#b8c0cc)] text-sm font-black text-[#111] shadow-[inset_0_1px_8px_rgba(255,255,255,.82)]">{skill.score}</div>
+        <div className="shrink-0 rounded-[18px] border border-black/10 bg-white/70 px-3 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.8)]">
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8e95a3]">Score</div>
+          <div className="font-display text-2xl font-semibold leading-none">{skill.score}</div>
+        </div>
       </div>
       <p className="min-h-14 text-sm leading-6 text-[#5f6470]">{skillSummary(skill, locale)}</p>
       <div className="mt-5 flex flex-wrap gap-2">
-        {skillTags(skill, locale).map((tag) => <span key={tag} className="rounded-full border border-black/10 bg-white/42 px-3 py-1 text-xs font-semibold text-[#5f6470]">{tag}</span>)}
+        {skillTags(skill, locale).slice(0, 3).map((tag) => <span key={tag} className="rounded-full border border-black/10 bg-white/42 px-3 py-1 text-xs font-semibold text-[#5f6470]">{tag}</span>)}
       </div>
-      <div className="mt-6 grid gap-2 rounded-[22px] border border-black/10 bg-[#f7f7f4]/62 p-3 text-xs font-semibold text-[#5f6470]">
-        <div className="flex items-center justify-between gap-3"><span>{t.compatibility}</span><span className="text-right text-[#111]">{skill.compatibility.join(", ")}</span></div>
-        <div className="flex items-center justify-between gap-3"><span>{t.setup}</span><span className="text-right text-[#111]">{skill.setup}</span></div>
-        <div className="flex items-center justify-between gap-3"><span>{t.sourceLabel}</span><span className="text-right text-[#111]">{skill.source}</span></div>
+      <div className="mt-6 grid gap-3 rounded-[22px] border border-black/10 bg-[#f7f7f4]/62 p-3 text-xs font-semibold text-[#5f6470]">
+        <div className="flex flex-wrap gap-1.5">
+          {skill.compatibility.map((item) => <span key={item} className="rounded-full bg-white/70 px-2.5 py-1 text-[#111]">{item}</span>)}
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <MiniStat label={t.difficulty} value={difficultyLabels[locale][skill.difficulty]} />
+          <MiniStat label={t.risk} value={riskLabels[locale][skill.risk]} />
+          <MiniStat label={t.sourceLabel} value={skill.source.replace(" skill", "")} />
+        </div>
       </div>
-      <div className="mt-5 flex items-center gap-2">
-        <Link href={`/skills/${skill.slug}`} className="ink-button inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
+      <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <a href="https://t.me/vroomleadsbot" className="ink-button inline-flex items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
+          <Send size={15} /> {t.getTelegram}
+        </a>
+        <Link href={`/skills/${skill.slug}`} className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 py-2.5 text-sm font-semibold text-[#111] transition duration-300 hover:bg-white">
           {t.open} <ArrowRight size={15} />
         </Link>
         <CopyButton value={skill.install} label={t.copy} />
       </div>
     </motion.article>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-[16px] bg-white/58 px-2 py-2">
+      <div className="truncate text-[10px] uppercase tracking-[0.12em] text-[#8e95a3]">{label}</div>
+      <div className="mt-0.5 truncate font-bold text-[#111]">{value}</div>
+    </div>
   );
 }
