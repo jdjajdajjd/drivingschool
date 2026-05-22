@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SimplePage, TextStack } from "@/components/simple-page";
+import { SimplePage } from "@/components/simple-page";
 
 export const metadata: Metadata = {
   title: "Terms / Disclaimer",
@@ -8,14 +8,31 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <SimplePage eyebrow="Terms / Disclaimer" title="Use skills with review." summary="Codex Skills is a curated catalog, not a guarantee that every workflow fits every codebase.">
-      <TextStack>
-        <p>Skills can change files, run tools, or guide agents through complex work. Review instructions and commands before using them in sensitive projects.</p>
-        <h2>No warranty</h2>
-        <p>The catalog is provided as-is. Test workflows in your own environment and verify results before shipping.</p>
-        <h2>Security</h2>
-        <p>Do not paste secrets into untrusted tools or repositories. Prefer inspectable sources and keep agent permissions scoped to the task.</p>
-      </TextStack>
-    </SimplePage>
+    <SimplePage content={{
+      en: {
+        eyebrow: "Terms / Disclaimer",
+        title: "Use skills with review.",
+        summary: "Codex Skills is a curated catalog, not a guarantee that every workflow fits every codebase.",
+        blocks: [
+          { type: "p", text: "Skills can change files, run tools, or guide agents through complex work. Review instructions and commands before using them in sensitive projects." },
+          { type: "h2", text: "No warranty" },
+          { type: "p", text: "The catalog is provided as-is. Test workflows in your own environment and verify results before shipping." },
+          { type: "h2", text: "Security" },
+          { type: "p", text: "Do not paste secrets into untrusted tools or repositories. Prefer inspectable sources and keep agent permissions scoped to the task." },
+        ],
+      },
+      ru: {
+        eyebrow: "Условия",
+        title: "Используйте skills с проверкой.",
+        summary: "Codex Skills — это curated catalog, а не гарантия, что каждый workflow подойдёт любому проекту.",
+        blocks: [
+          { type: "p", text: "Skills могут менять файлы, запускать инструменты или вести агента через сложную работу. Перед использованием в чувствительных проектах проверяйте инструкции и команды." },
+          { type: "h2", text: "Без гарантий" },
+          { type: "p", text: "Каталог предоставляется как есть. Тестируйте workflows в своём окружении и проверяйте результат перед релизом." },
+          { type: "h2", text: "Безопасность" },
+          { type: "p", text: "Не вставляйте secrets в непроверенные tools или repositories. Предпочитайте проверяемые источники и ограничивайте permissions агента задачей." },
+        ],
+      },
+    }} />
   );
 }

@@ -45,7 +45,7 @@ const detailCopy = {
     compatibility: "Совместимость",
     difficulty: "Сложность",
     risk: "Риск",
-    get: "Получить skill в Telegram",
+    get: "Получить в Telegram",
     copy: "Скопировать команду",
     install: "Команда установки",
     installNote: "Запускай из окружения агента. Перед scripts и credentials лучше быстро проверить текст skill.",

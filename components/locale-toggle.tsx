@@ -13,12 +13,22 @@ export function useLocale() {
       setLocaleState(saved);
       document.documentElement.lang = saved;
     }
+    const syncLocale = (event: Event) => {
+      const next = (event as CustomEvent<Locale>).detail;
+      if (next === "ru" || next === "en") {
+        setLocaleState(next);
+        document.documentElement.lang = next;
+      }
+    };
+    window.addEventListener("codex-skills-locale", syncLocale);
+    return () => window.removeEventListener("codex-skills-locale", syncLocale);
   }, []);
 
   function setLocale(next: Locale) {
     setLocaleState(next);
     window.localStorage.setItem("codex-skills-locale", next);
     document.documentElement.lang = next;
+    window.dispatchEvent(new CustomEvent("codex-skills-locale", { detail: next }));
   }
 
   return { locale, setLocale };

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { CopyButton } from "@/components/copy-button";
-import { SimplePage, TextStack } from "@/components/simple-page";
+import { SimplePage } from "@/components/simple-page";
 
 export const metadata: Metadata = {
   title: "Submit Skill",
@@ -9,23 +8,29 @@ export const metadata: Metadata = {
 
 export default function SubmitPage() {
   return (
-    <SimplePage eyebrow="Submit Skill" title="Send a useful workflow." summary="Submissions should be practical, inspectable, and easy to adapt.">
-      <TextStack>
-        <p>Good skills solve a narrow problem clearly. They should explain when to use them, what files or tools they touch, and any setup needed before running.</p>
-        <h2>Submission checklist</h2>
-        <ul>
-          <li>Clear title and short summary.</li>
-          <li>Compatibility notes for Codex, ChatGPT, Claude, or local agents.</li>
-          <li>Install or copy command.</li>
-          <li>Examples and practical use cases.</li>
-          <li>Source link or repository path.</li>
-        </ul>
-        <div className="mt-8 rounded-[26px] bg-[#111] p-4 text-white">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-white/52">Command</p>
-          <code className="block overflow-x-auto whitespace-nowrap rounded-2xl bg-white/8 px-4 py-3 text-sm text-white/92">codex skills submit ./my-skill</code>
-          <div className="mt-4"><CopyButton value="codex skills submit ./my-skill" label="Copy command" /></div>
-        </div>
-      </TextStack>
-    </SimplePage>
+    <SimplePage content={{
+      en: {
+        eyebrow: "Submit Skill",
+        title: "Send a useful workflow.",
+        summary: "Submissions should be practical, inspectable, and easy to adapt.",
+        blocks: [
+          { type: "p", text: "Good skills solve a narrow problem clearly. They should explain when to use them, what files or tools they touch, and any setup needed before running." },
+          { type: "h2", text: "Submission checklist" },
+          { type: "ul", items: ["Clear title and short summary.", "Compatibility notes for Codex, ChatGPT, Claude, or local agents.", "Install or copy command.", "Examples and practical use cases.", "Source link or repository path."] },
+          { type: "command", label: "Command", command: "codex skills submit ./my-skill", copyLabel: "Copy command" },
+        ],
+      },
+      ru: {
+        eyebrow: "Отправить skill",
+        title: "Предложите полезный workflow.",
+        summary: "Заявка должна быть практичной, проверяемой и простой для адаптации.",
+        blocks: [
+          { type: "p", text: "Хороший skill решает узкую задачу понятно. В нём должно быть ясно, когда его использовать, какие файлы или инструменты он затрагивает и какая настройка нужна перед запуском." },
+          { type: "h2", text: "Что указать" },
+          { type: "ul", items: ["Понятное название и короткое описание.", "Совместимость с Codex, ChatGPT, Claude или локальными агентами.", "Команда установки или копирования.", "Примеры и реальные сценарии.", "Ссылка на источник или путь к репозиторию."] },
+          { type: "command", label: "Команда", command: "codex skills submit ./my-skill", copyLabel: "Скопировать команду" },
+        ],
+      },
+    }} />
   );
 }
