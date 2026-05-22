@@ -1,4 +1,4 @@
-const fallbackBotUsername = "vroomleadsbot";
+const fallbackBotUsername = "codexskillsbot";
 
 function cleanUsername(value: string | undefined) {
   return (value || fallbackBotUsername).replace(/^@/, "").trim();
