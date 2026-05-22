@@ -26,6 +26,7 @@ export type Skill = {
   tags: string[];
   compatibility: Compatibility[];
   source: string;
+  sourceUrl?: string;
   install: string;
   score: number;
   popularity: number;
@@ -581,5 +582,5 @@ export function relatedSkills(skill: Skill) {
       const bScore = (b.category === skill.category ? 2 : 0) + b.tags.filter((tag) => skill.tags.includes(tag)).length;
       return bScore - aScore || b.score - a.score;
     })
-    .slice(0, 3);
+    .slice(0, 6);
 }
