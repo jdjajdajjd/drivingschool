@@ -12,6 +12,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { SiteFooter } from "@/components/site-footer";
+import { track } from "@/lib/analytics";
 
 const all = "All";
 const any = "Any";
@@ -55,6 +56,7 @@ const copy = {
     any: "Any",
     reset: "Reset filters",
     countLabel: "Showing",
+    total: "total",
     empty: "No matches for this set.",
     emptyText: "Clear filters or try a simpler search term.",
     submitKicker: "Submit",
@@ -77,6 +79,7 @@ const copy = {
     telegramTitle: "Follow updates in the bot.",
     telegramText: "Get catalog updates, send skill ideas, or keep a quick install note close by.",
     telegramOpen: "Open Telegram bot",
+    showMore: "Show more skills",
   },
   ru: {
     nav: ["Каталог", "О проекте", "Отправить"],
@@ -106,6 +109,7 @@ const copy = {
     any: "Любые",
     reset: "Сбросить фильтры",
     countLabel: "Показано",
+    total: "всего",
     empty: "Ничего не найдено для этих фильтров.",
     emptyText: "Сбрось фильтры или попробуй более простой запрос.",
     submitKicker: "Отправить",
@@ -128,6 +132,7 @@ const copy = {
     telegramTitle: "Следить за обновлениями в боте.",
     telegramText: "Получай обновления каталога, отправляй идеи skills или держи быстрые команды рядом.",
     telegramOpen: "Открыть Telegram bot",
+    showMore: "Показать ещё skills",
   },
 } as const;
 
@@ -140,7 +145,8 @@ export function CatalogExperience() {
   const [hasScripts, setHasScripts] = useState<HasScriptsFilter>(yesNoAll);
   const [freeOnly, setFreeOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("Featured");
-  const [loadingPreview, setLoadingPreview] = useState(true);
+  const [loadingPreview] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(24);
   const { locale, setLocale } = useLocale();
   const t = copy[locale];
   const { scrollYProgress } = useScroll();
@@ -148,8 +154,7 @@ export function CatalogExperience() {
   const glow = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.62, 0.42]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setLoadingPreview(false), 360);
-    return () => window.clearTimeout(timeout);
+    track("page_view", { page: "catalog" });
   }, []);
 
   const filtered = useMemo(() => {
@@ -199,7 +204,19 @@ export function CatalogExperience() {
     });
   }, [query, active, compatible, difficulty, risk, hasScripts, freeOnly, sort, locale]);
 
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [query, active, compatible, difficulty, risk, hasScripts, freeOnly, sort]);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const timeout = window.setTimeout(() => track("search_query", { query: trimmed, results: filtered.length }), 550);
+    return () => window.clearTimeout(timeout);
+  }, [query, filtered.length]);
+
   const featured = skills.filter((skill) => skill.featured).slice(0, 4);
+  const visibleSkills = filtered.slice(0, visibleCount);
   const updateQuery = (event: React.FormEvent<HTMLInputElement>) => setQuery(event.currentTarget.value);
   const hasActiveFilters = query.trim() !== "" || active !== all || compatible !== any || difficulty !== any || risk !== any || hasScripts !== yesNoAll || freeOnly;
   const resetFilters = () => {
@@ -254,6 +271,7 @@ export function CatalogExperience() {
               <label className="relative flex min-h-16 flex-1 items-center rounded-[24px] bg-white/76 px-5 shadow-[inset_0_1px_0_rgba(255,255,255,.9)] transition focus-within:bg-white focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_0_0_4px_rgba(143,183,255,.16)]">
                 <Search size={22} className="mr-3 text-[#8e95a3]" />
                 <input
+                  aria-label={t.search}
                   value={query}
                   onChange={updateQuery}
                   onInput={updateQuery}
@@ -268,7 +286,7 @@ export function CatalogExperience() {
               <motion.a whileTap={{ scale: 0.985 }} href="#catalog" className="ink-button shine-layer relative inline-flex min-h-16 items-center justify-center gap-2 overflow-hidden rounded-[24px] bg-[#111] px-6 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#23252a] focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50">
                 {t.cta} <ArrowRight size={17} />
               </motion.a>
-              <motion.a whileTap={{ scale: 0.985 }} href={telegramBotUrl("catalog")} className="shine-layer relative inline-flex min-h-16 items-center justify-center gap-2 overflow-hidden rounded-[24px] border border-black/10 bg-white/62 px-6 text-sm font-semibold text-[#111] shadow-[0_16px_45px_rgba(30,35,45,.07)] transition duration-300 hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50 sm:min-w-40">
+              <motion.a whileTap={{ scale: 0.985 }} href={telegramBotUrl("catalog")} onClick={() => track("telegram_click", { source: "hero", payload: "catalog" })} aria-label={t.telegram} className="shine-layer relative inline-flex min-h-16 items-center justify-center gap-2 overflow-hidden rounded-[24px] border border-black/10 bg-white/62 px-6 text-sm font-semibold text-[#111] shadow-[0_16px_45px_rgba(30,35,45,.07)] transition duration-300 hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50 sm:min-w-40">
                 <Send size={17} /> {t.telegram}
               </motion.a>
             </div>
@@ -306,7 +324,7 @@ export function CatalogExperience() {
             </div>
             <div className="relative max-w-xl flex-1 rounded-[24px] border border-black/10 bg-white/72 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,.86),0_14px_44px_rgba(30,35,45,.06)] transition focus-within:bg-white focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_0_0_4px_rgba(143,183,255,.14)]">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#8e95a3]" size={18} />
-              <input value={query} onChange={updateQuery} onInput={updateQuery} onKeyUp={updateQuery} className="w-full bg-transparent pl-8 text-sm font-semibold outline-none placeholder:text-[#8e95a3]" placeholder={t.filter} />
+              <input aria-label={t.filter} value={query} onChange={updateQuery} onInput={updateQuery} onKeyUp={updateQuery} className="w-full bg-transparent pl-8 text-sm font-semibold outline-none placeholder:text-[#8e95a3]" placeholder={t.filter} />
             </div>
           </div>
 
@@ -314,7 +332,7 @@ export function CatalogExperience() {
             {([all, ...categories] as Array<Category | typeof all>).map((category) => {
               const selected = active === category;
               return (
-                <button key={category} onClick={() => setActive(category as Category | typeof all)} className={cn("relative shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50", selected ? "ink-button text-white" : "border border-black/10 bg-white/58 text-[#5f6470] hover:bg-white hover:text-[#111]") }>
+                <button key={category} onClick={() => { setActive(category as Category | typeof all); track("category_click", { category }); }} className={cn("relative shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50", selected ? "ink-button text-white" : "border border-black/10 bg-white/58 text-[#5f6470] hover:bg-white hover:text-[#111]") }>
                   {selected && <motion.span layoutId="active-pill" className="absolute inset-0 rounded-full bg-[#111] shadow-[0_14px_36px_rgba(17,17,17,.16)]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
                   <span className="relative">{categoryLabels[locale][category]}</span>
                 </button>
@@ -357,7 +375,7 @@ export function CatalogExperience() {
               </label>
               <div className="flex items-center gap-2 rounded-full border border-black/10 bg-white/58 p-1">
                 <span className="pl-3 text-xs font-bold uppercase tracking-[0.14em] text-[#8e95a3]">{t.sort}</span>
-                <select value={sort} onChange={(event) => setSort(event.currentTarget.value as SortKey)} className="rounded-full border-0 bg-transparent px-2 py-2 text-sm font-bold text-[#111] outline-none">
+                <select aria-label={t.sort} value={sort} onChange={(event) => setSort(event.currentTarget.value as SortKey)} className="rounded-full border-0 bg-transparent px-2 py-2 text-sm font-bold text-[#111] outline-none">
                   {(["Featured", "Newest", "Popular", "Name", "Score"] as SortKey[]).map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
@@ -370,7 +388,7 @@ export function CatalogExperience() {
           </div>
 
           <div className="mb-5 flex items-center justify-between gap-3 px-1 text-sm font-semibold text-[#8e95a3]">
-            <span>{t.countLabel} {filtered.length} / {skills.length}</span>
+            <span>{t.countLabel} {visibleSkills.length} / {filtered.length} · {skills.length} {t.total}</span>
             <span className="hidden sm:inline">{t.filters}</span>
           </div>
 
@@ -378,9 +396,16 @@ export function CatalogExperience() {
             <AnimatePresence mode="popLayout">
               {loadingPreview
                 ? Array.from({ length: 6 }).map((_, index) => <SkillSkeleton key={index} />)
-                : filtered.map((skill, index) => <SkillCard key={skill.slug} skill={skill} index={index} locale={locale} t={t} />)}
+                : visibleSkills.map((skill, index) => <SkillCard key={skill.slug} skill={skill} index={index} locale={locale} t={t} />)}
             </AnimatePresence>
           </motion.div>
+          {!loadingPreview && visibleSkills.length < filtered.length && (
+            <div className="mt-8 flex justify-center">
+              <button type="button" onClick={() => setVisibleCount((count) => count + 24)} className="shine-layer relative overflow-hidden rounded-full border border-black/10 bg-white/70 px-5 py-3 text-sm font-bold text-[#111] shadow-[0_16px_45px_rgba(30,35,45,.07)] transition hover:-translate-y-0.5 hover:bg-white">
+                {t.showMore}
+              </button>
+            </div>
+          )}
           {!loadingPreview && filtered.length === 0 && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-[28px] border border-black/10 bg-white/58 p-7 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
               <p className="font-display text-2xl font-semibold text-[#111]">{t.empty}</p>
@@ -401,7 +426,7 @@ export function CatalogExperience() {
             <h2 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">{t.submitTitle}</h2>
             <p className="mt-4 text-lg leading-8 text-[#5f6470]">{t.submitText}</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <CopyButton value="codex skills submit ./my-skill" label={t.submitCopy} />
+              <CopyButton value="codex skills submit ./my-skill" label={t.submitCopy} onCopied={() => track("copy_command", { source: "submit_cta" })} />
               <Link href="/submit" className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white/56 px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-white">
                 {t.submitPage} <ArrowRight size={15} />
               </Link>
@@ -418,7 +443,7 @@ export function CatalogExperience() {
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.telegramKicker}</p>
           <h2 className="mt-2 max-w-2xl font-display text-4xl font-semibold sm:text-5xl">{t.telegramTitle}</h2>
           <p className="mt-4 max-w-xl text-lg leading-8 text-[#5f6470]">{t.telegramText}</p>
-          <motion.a whileTap={{ scale: 0.985 }} href={telegramBotUrl("catalog")} className="ink-button shine-layer relative mt-7 inline-flex items-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#23252a]">
+          <motion.a whileTap={{ scale: 0.985 }} href={telegramBotUrl("catalog")} onClick={() => track("telegram_click", { source: "telegram_cta", payload: "catalog" })} className="ink-button shine-layer relative mt-7 inline-flex items-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#23252a]">
             <Send size={16} /> {t.telegramOpen}
           </motion.a>
         </div>
@@ -529,10 +554,10 @@ function SkillCard({ skill, index, locale, t }: { skill: Skill; index: number; l
         </div>
       </div>
       <div className="mt-5 grid grid-cols-[1fr_auto] items-center gap-2">
-        <motion.a whileTap={{ scale: 0.985 }} href={telegramSkillUrl(skill.slug)} className="ink-button shine-layer relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
+        <motion.a whileTap={{ scale: 0.985 }} href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "skill_card", slug: skill.slug })} aria-label={`${t.getTelegram}: ${skillTitle(skill, locale)}`} className="ink-button shine-layer relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
           <Send size={15} /> {t.getTelegram}
         </motion.a>
-        <Link href={`/skills/${skill.slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 py-2.5 text-sm font-semibold text-[#111] transition duration-300 hover:bg-white">
+        <Link href={`/skills/${skill.slug}`} onClick={() => track("skill_open", { slug: skill.slug, source: "card" })} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 py-2.5 text-sm font-semibold text-[#111] transition duration-300 hover:bg-white">
           {t.open} <ArrowRight size={15} />
         </Link>
       </div>

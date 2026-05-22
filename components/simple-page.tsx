@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { ArrowLeft, Send } from "lucide-react";
+import { useEffect } from "react";
 import { CopyButton } from "@/components/copy-button";
 import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { telegramBotUrl } from "@/lib/site-config";
 import type { Locale } from "@/lib/skills";
+import { track } from "@/lib/analytics";
 
 type TextBlock =
   | { type: "p"; text: string }
@@ -44,6 +46,10 @@ export function SimplePage({ content }: { content: SimplePageContent }) {
   const page = content[locale];
   const t = sideCopy[locale];
 
+  useEffect(() => {
+    track("page_view", { page: window.location.pathname });
+  }, []);
+
   return (
     <main className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] overflow-hidden">
@@ -72,7 +78,7 @@ export function SimplePage({ content }: { content: SimplePageContent }) {
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.telegram}</p>
           <h2 className="mt-3 font-display text-3xl font-semibold">{t.title}</h2>
           <p className="mt-3 text-sm leading-6 text-[#5f6470]">{t.text}</p>
-          <a href={telegramBotUrl("catalog")} className="ink-button mt-6 inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23252a]">
+          <a href={telegramBotUrl("catalog")} onClick={() => track("telegram_click", { source: "simple_page", payload: "catalog" })} className="ink-button mt-6 inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23252a]">
             <Send size={16} /> {t.open}
           </a>
         </aside>
@@ -93,7 +99,7 @@ export function TextStack({ blocks }: { blocks: TextBlock[] }) {
             <div key={index} className="mt-8 rounded-[26px] bg-[#111] p-4 text-white">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-white/52">{block.label}</p>
               <code className="block overflow-x-auto whitespace-nowrap rounded-2xl bg-white/8 px-4 py-3 text-sm text-white/92">{block.command}</code>
-              <div className="mt-4"><CopyButton value={block.command} label={block.copyLabel} /></div>
+              <div className="mt-4"><CopyButton value={block.command} label={block.copyLabel} onCopied={() => track("copy_command", { source: "simple_page" })} /></div>
             </div>
           );
         }

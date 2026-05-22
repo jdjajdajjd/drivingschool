@@ -4,6 +4,13 @@ import { SimplePage } from "@/components/simple-page";
 export const metadata: Metadata = {
   title: "Submit Skill",
   description: "Submit a practical skill for Codex Skills.",
+  alternates: { canonical: "/submit" },
+  openGraph: {
+    title: "Submit Skill — Codex Skills",
+    description: "Submit a practical skill for Codex Skills.",
+    url: "/submit",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Codex Skills" }],
+  },
 };
 
 export default function SubmitPage() {

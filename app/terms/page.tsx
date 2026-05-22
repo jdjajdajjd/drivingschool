@@ -4,6 +4,13 @@ import { SimplePage } from "@/components/simple-page";
 export const metadata: Metadata = {
   title: "Terms / Disclaimer",
   description: "Terms and disclaimer for Codex Skills.",
+  alternates: { canonical: "/terms" },
+  openGraph: {
+    title: "Terms / Disclaimer — Codex Skills",
+    description: "Terms and disclaimer for Codex Skills.",
+    url: "/terms",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Codex Skills" }],
+  },
 };
 
 export default function TermsPage() {

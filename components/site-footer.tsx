@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { useLocale } from "@/components/locale-toggle";
 import { telegramBotUrl } from "@/lib/site-config";
+import { track } from "@/lib/analytics";
 
 const copy = {
   en: {
@@ -51,7 +52,7 @@ export function SiteFooter() {
                 {label}
               </Link>
             ))}
-            <motion.a whileTap={{ scale: 0.985 }} href={telegramBotUrl("catalog")} className="ink-button shine-layer relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#23252a]">
+            <motion.a whileTap={{ scale: 0.985 }} href={telegramBotUrl("catalog")} onClick={() => track("telegram_click", { source: "footer", payload: "catalog" })} className="ink-button shine-layer relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#23252a]">
               <Send size={15} /> {t.telegram}
             </motion.a>
           </div>

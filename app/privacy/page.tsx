@@ -4,6 +4,13 @@ import { SimplePage } from "@/components/simple-page";
 export const metadata: Metadata = {
   title: "Privacy",
   description: "Privacy notes for Codex Skills.",
+  alternates: { canonical: "/privacy" },
+  openGraph: {
+    title: "Privacy — Codex Skills",
+    description: "Privacy notes for Codex Skills.",
+    url: "/privacy",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Codex Skills" }],
+  },
 };
 
 export default function PrivacyPage() {

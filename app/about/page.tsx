@@ -4,6 +4,13 @@ import { SimplePage } from "@/components/simple-page";
 export const metadata: Metadata = {
   title: "About",
   description: "About Codex Skills, a curated catalog of practical workflows for coding agents.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About — Codex Skills",
+    description: "About Codex Skills, a curated catalog of practical workflows for coding agents.",
+    url: "/about",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Codex Skills" }],
+  },
 };
 
 export default function AboutPage() {

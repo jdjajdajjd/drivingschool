@@ -9,6 +9,8 @@ import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { categoryLabels, difficultyLabels, relatedSkills, riskLabels, skillDescription, skillExamples, skillSummary, skillTags, skillTitle, skillUseCases, type Locale, type Risk, type Skill } from "@/lib/skills";
 import { telegramSkillUrl } from "@/lib/site-config";
+import { track } from "@/lib/analytics";
+import { useEffect } from "react";
 
 const smooth = [0.22, 1, 0.36, 1] as const;
 
@@ -92,6 +94,11 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
   const hasReferences = skill.hasReferences;
   const hasAssets = skill.hasAssets;
 
+  useEffect(() => {
+    track("page_view", { page: "skill", slug: skill.slug });
+    track("skill_open", { slug: skill.slug, source: "page_view" });
+  }, [skill.slug]);
+
   return (
     <main className="relative min-h-screen overflow-hidden pb-20">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[760px] overflow-hidden">
@@ -141,10 +148,10 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
               <div className="grid size-14 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#8fb7ff)] text-2xl shadow-[inset_0_1px_10px_rgba(255,255,255,.9)]">{skill.emoji}</div>
             </div>
             <div className="grid gap-2">
-              <motion.a whileTap={{ scale: 0.985 }} href={telegramSkillUrl(skill.slug)} className="ink-button shine-layer relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
+              <motion.a whileTap={{ scale: 0.985 }} href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "skill_detail", slug: skill.slug })} aria-label={`${t.get}: ${skillTitle(skill, locale)}`} className="ink-button shine-layer relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
                 <Send size={16} /> {t.get}
               </motion.a>
-              <CopyButton value={skill.install} label={t.copy} />
+              <CopyButton value={skill.install} label={t.copy} onCopied={() => track("copy_command", { source: "skill_detail", slug: skill.slug })} />
             </div>
           </div>
 
@@ -191,7 +198,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
           <div className="rounded-[24px] border border-black/10 bg-white/58 p-5">
             <p className="font-display text-3xl font-semibold">{skill.source}</p>
             {skill.sourceUrl ? (
-              <a href={skill.sourceUrl} className="mt-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/72 px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-white">
+              <a href={skill.sourceUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/72 px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-white">
                 {t.source} <ArrowUpRight size={16} />
               </a>
             ) : (
@@ -210,7 +217,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {related.map((item) => (
-            <Link key={item.slug} href={`/skills/${item.slug}`} className="pearl-surface group rounded-[30px] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/86">
+            <Link key={item.slug} href={`/skills/${item.slug}`} onClick={() => track("skill_open", { slug: item.slug, source: "related" })} className="pearl-surface group rounded-[30px] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/86">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <h3 className="font-display text-3xl font-semibold leading-none"><span className="mr-2 text-2xl">{item.emoji}</span>{skillTitle(item, locale)}</h3>
                 <ArrowRight size={18} className="mt-1 shrink-0 text-[#8e95a3] transition group-hover:text-[#111]" />

@@ -36,7 +36,7 @@ export function useLocale() {
 
 export function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (locale: Locale) => void }) {
   return (
-    <div className="relative inline-flex items-center rounded-full border border-black/10 bg-white/58 p-1 shadow-[0_14px_42px_rgba(30,35,45,.06)] backdrop-blur-xl" aria-label="Language switcher">
+    <div role="group" className="relative inline-flex items-center rounded-full border border-black/10 bg-white/58 p-1 shadow-[0_14px_42px_rgba(30,35,45,.06)] backdrop-blur-xl" aria-label="Language switcher">
       {(["en", "ru"] as Locale[]).map((item) => {
         const active = locale === item;
         return (
@@ -46,6 +46,7 @@ export function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale:
             onClick={() => setLocale(item)}
             className={`relative min-w-11 rounded-full px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition ${active ? "ink-button text-white" : "text-[#7b8392] hover:text-[#111]"}`}
             aria-pressed={active}
+            aria-label={`Switch language to ${item.toUpperCase()}`}
           >
             {active && <motion.span layoutId="locale-pill" className="absolute inset-0 rounded-full bg-[#111]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
             <span className="relative">{item}</span>

@@ -4,11 +4,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
-export function CopyButton({ value, label = "Copy", copiedLabel = "Copied to clipboard" }: { value: string; label?: string; copiedLabel?: string }) {
+export function CopyButton({ value, label = "Copy", copiedLabel = "Copied to clipboard", onCopied }: { value: string; label?: string; copiedLabel?: string; onCopied?: () => void }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
     await navigator.clipboard.writeText(value);
+    onCopied?.();
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   }

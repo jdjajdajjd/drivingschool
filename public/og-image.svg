@@ -1,0 +1,43 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F7F7F4"/>
+  <rect width="1200" height="630" fill="url(#milk)"/>
+  <path d="M-61 380C143 225 238 512 430 344C619 178 720 148 909 252C1045 327 1117 292 1280 170" stroke="#AEB7C4" stroke-opacity="0.34"/>
+  <path d="M-42 440C163 282 279 555 462 388C645 221 745 191 936 294C1072 367 1148 337 1286 233" stroke="#AEB7C4" stroke-opacity="0.26"/>
+  <circle cx="945" cy="140" r="74" fill="url(#orb)" filter="url(#softShadow)"/>
+  <circle cx="101" cy="106" r="37" fill="url(#orb2)" filter="url(#softShadow)"/>
+  <rect x="84" y="83" width="1032" height="464" rx="42" fill="white" fill-opacity="0.52" stroke="#111827" stroke-opacity="0.08"/>
+  <circle cx="147" cy="151" r="23" fill="url(#mark)"/>
+  <circle cx="147" cy="151" r="8" fill="white" fill-opacity="0.82"/>
+  <text x="192" y="145" fill="#111111" font-family="Inter, Arial, sans-serif" font-size="31" font-weight="700">Codex Skills</text>
+  <text x="193" y="180" fill="#7B8392" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="5">CURATED WORKFLOWS</text>
+  <text x="116" y="324" fill="#111111" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700">Curated skills</text>
+  <text x="116" y="421" fill="#111111" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700">for coding agents.</text>
+  <text x="120" y="478" fill="#5F6470" font-family="Inter, Arial, sans-serif" font-size="26">Browse practical skills for Codex, ChatGPT, Claude and AI coding agents.</text>
+  <rect x="846" y="379" width="204" height="54" rx="27" fill="#111111"/>
+  <text x="887" y="414" fill="white" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Browse skills</text>
+  <defs>
+    <radialGradient id="milk" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(925 69) rotate(133) scale(527 719)">
+      <stop stop-color="#DDE9FF" stop-opacity="0.9"/>
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.44"/>
+      <stop offset="1" stop-color="#F2F3F0" stop-opacity="0.88"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(916 115) rotate(54) scale(116)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.5" stop-color="#D9DDE5"/>
+      <stop offset="1" stop-color="#8FB7FF" stop-opacity="0.72"/>
+    </radialGradient>
+    <radialGradient id="orb2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(87 93) rotate(54) scale(61)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#D9DDE5"/>
+      <stop offset="1" stop-color="#C9C2FF"/>
+    </radialGradient>
+    <radialGradient id="mark" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(139 143) rotate(52) scale(37)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.46" stop-color="#D9DDE5"/>
+      <stop offset="1" stop-color="#8FB7FF"/>
+    </radialGradient>
+    <filter id="softShadow" x="0" y="0" width="1200" height="630" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="42" flood-color="#5F6470" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+</svg>
