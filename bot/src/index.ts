@@ -138,8 +138,10 @@ async function handleSkillRequest(ctx: BotContext, slug: string) {
 
 async function isSubscribed(userId: number) {
   if (config.adminUserIds.includes(userId)) return true;
+  const chatId = channelChatId(config);
+  if (!chatId) return true;
   try {
-    const member = await bot.api.getChatMember(channelChatId(config), userId);
+    const member = await bot.api.getChatMember(chatId, userId);
     return activeStatuses.has(member.status);
   } catch (error) {
     console.warn("Subscription check failed. Is the bot an admin of the channel?", error);
@@ -174,6 +176,8 @@ await bot.api.setMyCommands([
   { command: "lang", description: "Change language" },
   { command: "help", description: "Help" },
 ]);
+
+await bot.api.deleteWebhook({ drop_pending_updates: false });
 
 console.log(`@${config.username} is running. Catalog has ${skills.length} skills.`);
 await bot.start();

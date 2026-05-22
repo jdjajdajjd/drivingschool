@@ -3,8 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, FileText, FolderGit2, PackageCheck, Send, ShieldCheck, Terminal } from "lucide-react";
-import { CopyButton } from "@/components/copy-button";
+import { ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, FileText, FolderGit2, PackageCheck, Send, ShieldCheck } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { categoryLabels, difficultyLabels, relatedSkills, riskLabels, skillDescription, skillExamples, skillSummary, skillTags, skillTitle, skillUseCases, type Locale, type Risk, type Skill } from "@/lib/skills";
@@ -27,9 +26,7 @@ const detailCopy = {
     difficulty: "Difficulty",
     risk: "Risk",
     get: "Get skill via Telegram",
-    copy: "Copy install command",
-    install: "Install command",
-    installNote: "Run this from your agent environment. Review the skill text before using scripts or credentials.",
+    deliveryNote: "The bot sends the skill, install command, source link, and short instructions.",
     helps: "What it helps with",
     useCases: "Use cases",
     contents: "Skill contents",
@@ -53,9 +50,7 @@ const detailCopy = {
     difficulty: "Сложность",
     risk: "Риск",
     get: "Получить в Telegram",
-    copy: "Скопировать команду",
-    install: "Команда установки",
-    installNote: "Запускай из окружения агента. Перед scripts и credentials лучше быстро проверить текст skill.",
+    deliveryNote: "Бот отправит skill, команду установки, источник и короткую инструкцию.",
     helps: "С чем помогает",
     useCases: "Сценарии",
     contents: "Состав skill",
@@ -151,15 +146,9 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
               <motion.a whileTap={{ scale: 0.985 }} href={telegramSkillUrl(skill.slug)} onClick={() => track("telegram_click", { source: "skill_detail", slug: skill.slug })} aria-label={`${t.get}: ${skillTitle(skill, locale)}`} className="ink-button shine-layer relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
                 <Send size={16} /> {t.get}
               </motion.a>
-              <CopyButton value={skill.install} label={t.copy} onCopied={() => track("copy_command", { source: "skill_detail", slug: skill.slug })} />
             </div>
           </div>
-
-          <div className="mt-4 rounded-[26px] bg-[#111] p-4 text-white shadow-[0_18px_55px_rgba(17,17,17,.18)]">
-            <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/52"><Terminal size={15} /> {t.install}</div>
-            <code className="block overflow-x-auto whitespace-nowrap rounded-2xl bg-white/8 px-4 py-3 text-sm text-white/92">{skill.install}</code>
-            <p className="mt-3 text-sm leading-6 text-white/62">{t.installNote}</p>
-          </div>
+          <p className="mt-4 rounded-[24px] border border-black/10 bg-white/54 p-4 text-sm font-semibold leading-6 text-[#5f6470]">{t.deliveryNote}</p>
         </motion.aside>
       </section>
 

@@ -21,7 +21,7 @@ const copy = {
     subtitle: "A polished shelf of practical workflows for Codex, ChatGPT, Claude, and local coding agents.",
     browse: "Browse catalog",
     telegram: "Telegram bot",
-    chips: ["Browse", "Install", "Adapt"],
+    chips: ["Browse", "Get in Telegram", "Adapt"],
     picksKicker: "Featured skills",
     picksTitle: "Useful from the first run.",
     picksText: "A small selection from the catalog. The full shelf is built for fast search and Telegram delivery.",

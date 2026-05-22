@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         blocks: [
           { type: "p", text: "This version does not include user accounts, payments, or a backend database for visitors. Basic hosting logs may be processed by Cloudflare Pages as part of serving the site." },
           { type: "h2", text: "Clipboard actions" },
-          { type: "p", text: "Copy buttons only write the selected install command to your clipboard after you click them." },
+          { type: "p", text: "The public site does not expose install commands. Skill delivery happens through the Telegram bot." },
           { type: "h2", text: "External links" },
           { type: "p", text: "Telegram, source links, and future skill repositories are external destinations. Their own privacy practices apply once you leave this site." },
         ],
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
         blocks: [
           { type: "p", text: "В этой версии нет пользовательских аккаунтов, платежей или backend-базы для посетителей. Базовые hosting logs могут обрабатываться Cloudflare Pages для работы сайта." },
           { type: "h2", text: "Clipboard" },
-          { type: "p", text: "Кнопки копирования записывают выбранную команду в буфер обмена только после вашего клика." },
+          { type: "p", text: "Публичный сайт не показывает команды установки. Выдача skills происходит через Telegram bot." },
           { type: "h2", text: "Внешние ссылки" },
           { type: "p", text: "Telegram, source links и будущие skill repositories являются внешними страницами. После перехода действуют их собственные правила." },
         ],

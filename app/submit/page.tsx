@@ -23,8 +23,7 @@ export default function SubmitPage() {
         blocks: [
           { type: "p", text: "Good skills solve a narrow problem clearly. They should explain when to use them, what files or tools they touch, and any setup needed before running." },
           { type: "h2", text: "Submission checklist" },
-          { type: "ul", items: ["Clear title and short summary.", "Compatibility notes for Codex, ChatGPT, Claude, or local agents.", "Install or copy command.", "Examples and practical use cases.", "Source link or repository path."] },
-          { type: "command", label: "Command", command: "codex skills submit ./my-skill", copyLabel: "Copy command" },
+          { type: "ul", items: ["Clear title and short summary.", "Compatibility notes for Codex, ChatGPT, Claude, or local agents.", "Examples and practical use cases.", "Source link or repository path.", "Any setup notes the bot should send after delivery."] },
         ],
       },
       ru: {
@@ -34,8 +33,7 @@ export default function SubmitPage() {
         blocks: [
           { type: "p", text: "Хороший skill решает узкую задачу понятно. В нём должно быть ясно, когда его использовать, какие файлы или инструменты он затрагивает и какая настройка нужна перед запуском." },
           { type: "h2", text: "Что указать" },
-          { type: "ul", items: ["Понятное название и короткое описание.", "Совместимость с Codex, ChatGPT, Claude или локальными агентами.", "Команда установки или копирования.", "Примеры и реальные сценарии.", "Ссылка на источник или путь к репозиторию."] },
-          { type: "command", label: "Команда", command: "codex skills submit ./my-skill", copyLabel: "Скопировать команду" },
+          { type: "ul", items: ["Понятное название и короткое описание.", "Совместимость с Codex, ChatGPT, Claude или локальными агентами.", "Примеры и реальные сценарии.", "Ссылка на источник или путь к репозиторию.", "Заметки по настройке, которые бот должен отправлять после выдачи."] },
         ],
       },
     }} />
