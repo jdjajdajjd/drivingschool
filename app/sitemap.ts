@@ -4,7 +4,7 @@ import { siteConfig } from "@/lib/site-config";
 
 export const dynamic = "force-static";
 
-const staticPages = ["", "about", "submit", "privacy", "terms"];
+const staticPages = ["", "catalog", "about", "submit", "privacy", "terms"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

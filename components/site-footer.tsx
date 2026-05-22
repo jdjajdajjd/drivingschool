@@ -13,7 +13,7 @@ const copy = {
     text: "Curated skills for coding agents. Practical workflows for Codex, ChatGPT, Claude, and local agent setups.",
     telegram: "Telegram bot",
     links: [
-      ["Catalog", "/#catalog"],
+      ["Catalog", "/catalog"],
       ["About", "/about"],
       ["Submit Skill", "/submit"],
       ["Privacy", "/privacy"],
@@ -24,7 +24,7 @@ const copy = {
     text: "Подборка skills для Codex и AI-агентов. Практичные workflows для разработки, тестов, документации и деплоя.",
     telegram: "Telegram bot",
     links: [
-      ["Каталог", "/#catalog"],
+      ["Каталог", "/catalog"],
       ["О проекте", "/about"],
       ["Отправить skill", "/submit"],
       ["Privacy", "/privacy"],
