@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Send } from "lucide-react";
 import { Wordmark } from "@/components/brand";
+import { telegramBotUrl } from "@/lib/site-config";
 
 const links = [
   ["Catalog", "/#catalog"],
@@ -27,7 +28,7 @@ export function SiteFooter() {
                 {label}
               </Link>
             ))}
-            <a href="https://t.me/vroomleadsbot" className="inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#23252a]">
+            <a href={telegramBotUrl("catalog")} className="inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#23252a]">
               <Send size={15} /> Telegram bot
             </a>
           </div>

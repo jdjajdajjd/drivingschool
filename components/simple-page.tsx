@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Send } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { SiteFooter } from "@/components/site-footer";
+import { telegramBotUrl } from "@/lib/site-config";
 
 export function SimplePage({ eyebrow, title, summary, children }: { eyebrow: string; title: string; summary: string; children: ReactNode }) {
   return (
@@ -30,7 +31,7 @@ export function SimplePage({ eyebrow, title, summary, children }: { eyebrow: str
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">Telegram</p>
           <h2 className="mt-3 font-display text-3xl font-semibold">Updates and submissions.</h2>
           <p className="mt-3 text-sm leading-6 text-[#5f6470]">Use the bot for quick notes, skill ideas, and catalog updates.</p>
-          <a href="https://t.me/vroomleadsbot" className="ink-button mt-6 inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23252a]">
+          <a href={telegramBotUrl("catalog")} className="ink-button mt-6 inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23252a]">
             <Send size={16} /> Open Telegram bot
           </a>
         </aside>

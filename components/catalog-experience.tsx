@@ -7,6 +7,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { categories, compatibilityOptions, difficultyOptions, riskOptions, skills, type Category, type Compatibility, type Difficulty, type Risk, type Skill } from "@/lib/skills";
 import { categoryLabels, difficultyLabels, riskLabels, skillSummary, skillTags, skillTitle } from "@/lib/skills";
 import { cn } from "@/lib/utils";
+import { telegramBotUrl, telegramSkillUrl } from "@/lib/site-config";
 import { CopyButton } from "@/components/copy-button";
 import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
@@ -253,7 +254,7 @@ export function CatalogExperience() {
               <a href="#catalog" className="ink-button inline-flex min-h-16 items-center justify-center gap-2 rounded-[24px] bg-[#111] px-6 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#23252a] focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50">
                 {t.cta} <ArrowRight size={17} />
               </a>
-              <a href="https://t.me/vroomleadsbot" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-[24px] border border-black/10 bg-white/62 px-6 text-sm font-semibold text-[#111] shadow-[0_16px_45px_rgba(30,35,45,.07)] transition duration-300 hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50 sm:min-w-40">
+              <a href={telegramBotUrl("catalog")} className="inline-flex min-h-16 items-center justify-center gap-2 rounded-[24px] border border-black/10 bg-white/62 px-6 text-sm font-semibold text-[#111] shadow-[0_16px_45px_rgba(30,35,45,.07)] transition duration-300 hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50 sm:min-w-40">
                 <Send size={17} /> {t.telegram}
               </a>
             </div>
@@ -401,7 +402,7 @@ export function CatalogExperience() {
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.telegramKicker}</p>
           <h2 className="mt-2 max-w-2xl font-display text-4xl font-semibold sm:text-5xl">{t.telegramTitle}</h2>
           <p className="mt-4 max-w-xl text-lg leading-8 text-[#5f6470]">{t.telegramText}</p>
-          <a href="https://t.me/vroomleadsbot" className="ink-button mt-7 inline-flex items-center gap-2 rounded-full bg-[#111] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#23252a]">
+          <a href={telegramBotUrl("catalog")} className="ink-button mt-7 inline-flex items-center gap-2 rounded-full bg-[#111] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#23252a]">
             <Send size={16} /> {t.telegramOpen}
           </a>
         </div>
@@ -512,7 +513,7 @@ function SkillCard({ skill, index, locale, t }: { skill: Skill; index: number; l
         </div>
       </div>
       <div className="mt-5 grid grid-cols-[1fr_auto] items-center gap-2">
-        <a href="https://t.me/vroomleadsbot" className="ink-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
+        <a href={telegramSkillUrl(skill.slug)} className="ink-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
           <Send size={15} /> {t.getTelegram}
         </a>
         <Link href={`/skills/${skill.slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 py-2.5 text-sm font-semibold text-[#111] transition duration-300 hover:bg-white">

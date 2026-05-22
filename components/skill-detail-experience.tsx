@@ -8,6 +8,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
 import { categoryLabels, difficultyLabels, relatedSkills, riskLabels, skillDescription, skillExamples, skillSummary, skillTags, skillTitle, skillUseCases, type Locale, type Risk, type Skill } from "@/lib/skills";
+import { telegramSkillUrl } from "@/lib/site-config";
 
 const smooth = [0.22, 1, 0.36, 1] as const;
 
@@ -133,7 +134,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
               <div className="grid size-14 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#8fb7ff)] text-2xl shadow-[inset_0_1px_10px_rgba(255,255,255,.9)]">{skill.emoji}</div>
             </div>
             <div className="grid gap-2">
-              <a href="https://t.me/vroomleadsbot" className="ink-button inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
+              <a href={telegramSkillUrl(skill.slug)} className="ink-button inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
                 <Send size={16} /> {t.get}
               </a>
               <CopyButton value={skill.install} label={t.copy} />
