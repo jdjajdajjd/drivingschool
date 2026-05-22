@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Building, LogOut, Menu, Plus, ShieldCheck as Shield } from 'iconoir-react'
+import { Building, LogOut, Menu, Plus, ShieldCheck as Shield } from '@/components/icons/lucide'
 import { cn } from '../../lib/utils'
 import { SUPERADMIN_BASE_PATH, WORKSPACE_ADMIN_LOGIN_PATH, clearAccess, getAccessSecret } from '../../services/accessControl'
 import { closeSupabaseStaffSession } from '../../services/staffSessionService'

@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CalendarPlus, Student as UserRound } from '@phosphor-icons/react'
+import { CalendarPlus, Student as UserRound } from '@/components/icons/lucide'
 import { motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
 import { StateView } from '../components/ui/StateView'

@@ -1,4 +1,4 @@
-import { ArrowRight, BuildingOffice as Building2, GraduationCap, LockKey, ShieldCheck } from '@phosphor-icons/react'
+import { ArrowRight, BuildingOffice as Building2, GraduationCap, LockKey, ShieldCheck } from '@/components/icons/lucide'
 const LockKeyhole = LockKey
 import { useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/layout/BrandMark'

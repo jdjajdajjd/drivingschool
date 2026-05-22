@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, BuildingOffice as Building, CheckCircle as Check, SignIn as Login, Student as UserRound } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, BuildingOffice as Building, CheckCircle as Check, SignIn as Login, Student as UserRound } from '@/components/icons/lucide'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'

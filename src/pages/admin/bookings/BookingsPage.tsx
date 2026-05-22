@@ -16,6 +16,8 @@ import {
 } from '../../../services/bookingService'
 import { getAvailableSlots } from '../../../services/slotService'
 import { db } from '../../../services/storage'
+import { InstructorAvatarName } from '../../../components/admin/InstructorAvatarName'
+import { Funnel, Search } from '@/components/icons/lucide'
 
 type Tab = 'all' | 'today' | 'future' | 'attention' | 'cancelled'
 
@@ -158,9 +160,7 @@ export default function BookingsPage() {
 
         {/* Search */}
         <div className="relative mb-3">
-          <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9EA3A8]" strokeWidth={2} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -193,9 +193,7 @@ export default function BookingsPage() {
             onClick={() => setFilterOpen(true)}
             className="ml-auto shrink-0 px-2 pb-2.5 text-[12px] font-bold text-[#9EA3A8]"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#9EA3A8]">
-              <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-            </svg>
+            <Funnel width={16} height={16} className="text-[#9EA3A8]" strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -225,11 +223,11 @@ export default function BookingsPage() {
                       </span>
                       <StatusPill label={pill.label} status={pill.status} size="sm" />
                     </div>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#9EA3A8]">
-                      {entry.slot ? formatHumanDate(entry.slot.date, false) : '—'}
-                      {entry.instructor ? ` · ${formatInstructorName(entry.instructor.name)}` : ''}
-                      {entry.branch ? ` · ${entry.branch.name}` : ''}
-                    </p>
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-[#9EA3A8]">
+                      <span>{entry.slot ? formatHumanDate(entry.slot.date, false) : '—'}</span>
+                      {entry.instructor ? <InstructorAvatarName instructor={entry.instructor} name={formatInstructorName(entry.instructor.name)} compact /> : null}
+                      {entry.branch ? <span>{entry.branch.name}</span> : null}
+                    </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-[14px] font-black text-ink">{entry.booking.studentName}</p>

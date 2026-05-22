@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { OpenNewWindow, Link as LinkIcon, NavArrowRight as ChevronRight } from 'iconoir-react'
+import { OpenNewWindow, Link as LinkIcon, NavArrowRight as ChevronRight } from '@/components/icons/lucide'
 import { db } from '../../services/storage'
 import { adminSettings, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import type { SchoolSettings as SchoolSettingsType } from '../../types'

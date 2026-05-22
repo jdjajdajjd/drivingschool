@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Xmark as X } from 'iconoir-react'
+import { Xmark as X } from '@/components/icons/lucide'
 import { useEffect, useId } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'

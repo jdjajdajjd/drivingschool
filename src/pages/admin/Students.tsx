@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Archive, NavArrowRight as ChevronRight, Search, Upload, UserPlus } from 'iconoir-react'
+import { Archive, NavArrowRight as ChevronRight, Search, Upload, UserPlus } from '@/components/icons/lucide'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { db } from '../../services/storage'
@@ -16,6 +16,7 @@ import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { getPreference, setPreference } from '../../services/preferenceStorage'
 import { loadStudentRequests, refreshStudentRequestsFromSupabase, saveStudentProgressAdminConfirmed, studentRequestStatusLabels, updateStudentRequestStatusAdminConfirmed } from '../../services/studentProfile'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
 
 type FilterTab = 'all' | 'active' | 'problem' | 'debt' | 'no_docs' | 'no_instructor' | 'no_group' | 'ready_exam' | 'inactive'
 type ImportSource = 'ai' | 'manual'
@@ -855,7 +856,12 @@ export function AdminStudents() {
                     <ChevronRight aria-hidden="true" className="text-[#98A2B3]" width={17} height={17} />
                   </div>
                   <div className="mt-2 space-y-1 text-[13px] font-medium text-[#667085]">
-                    <p className="truncate">{data.next[student.id] ? `${formatStudentDate(data.next[student.id])} · ${instructor?.name ?? 'инструктор не назначен'}` : 'Ближайшей записи нет'}</p>
+                    {data.next[student.id] ? (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0">{formatStudentDate(data.next[student.id])}</span>
+                        <InstructorAvatarName instructor={instructor} name="инструктор не назначен" compact className="min-w-0" />
+                      </span>
+                    ) : <p className="truncate">Ближайшей записи нет</p>}
                     {debt > 0 ? <p className="text-[#C92820]">Долг: {debt.toLocaleString('ru-RU')} ₽</p> : null}
                   </div>
                 </button>
@@ -874,12 +880,12 @@ export function AdminStudents() {
             {filtered.map((student) => {
               const debt = getDebtForStudent(student.id)
               const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
-              const nextLesson = data.next[student.id] ? `${formatStudentDate(data.next[student.id])} · ${instructor?.name ?? 'инструктор не назначен'}` : 'нет ближайшей записи'
+              const nextLesson = data.next[student.id] ? formatStudentDate(data.next[student.id]) : 'нет ближайшей записи'
               return (
                 <button key={student.id} type="button" className="v-students-table-row" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
                   <strong>{student.name}</strong>
                   <span>{student.phone || 'телефон не указан'}</span>
-                  <span>{nextLesson}</span>
+                  <span className="flex min-w-0 items-center gap-2"><span className="shrink-0">{nextLesson}</span>{data.next[student.id] ? <InstructorAvatarName instructor={instructor} name="инструктор не назначен" compact className="min-w-0" /> : null}</span>
                   <span className={debt > 0 ? 'is-debt' : ''}>{debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : '0 ₽'}</span>
                   <span className="v-students-open">Открыть <ChevronRight aria-hidden="true" width={16} height={16} /></span>
                 </button>

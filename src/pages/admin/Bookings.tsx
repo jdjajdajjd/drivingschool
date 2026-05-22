@@ -19,6 +19,7 @@ import {
 import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { db } from '../../services/storage'
 import { getAvailableSlots } from '../../services/slotService'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
 
 type StatusFilter = 'all' | 'active' | 'cancelled' | 'completed'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
@@ -281,7 +282,11 @@ export function AdminBookings() {
                       </div>
                       <div className="min-w-0">
                         <a href={`${getAdminBasePathForLocation()}/students/${entry.student?.id ?? ''}`} className="text-[16px] font-black leading-5 text-[#0F172A]">{entry.booking.studentName}</a>
-                        <p className="mt-1 text-[13px] font-bold text-[#64748B]">{entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор'} · {entry.branch?.name ?? 'Филиал'} · {entry.booking.studentPhone}</p>
+                        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-bold text-[#64748B]">
+                          <InstructorAvatarName instructor={entry.instructor} name={entry.instructor ? formatInstructorName(entry.instructor.name) : 'Инструктор'} compact />
+                          <span>{entry.branch?.name ?? 'Филиал'}</span>
+                          <span>{entry.booking.studentPhone}</span>
+                        </div>
                         {entry.booking.comment || entry.booking.notes ? <p className="mt-2 border-l-2 border-[#CBD5E1] pl-2 text-[12px] font-bold text-[#475569]">{entry.booking.comment || entry.booking.notes}</p> : null}
                       </div>
                       <div className="space-y-2 md:text-right">

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { CheckCircle as CheckCircle2, XmarkCircle as XCircle, InfoCircle as Info, Xmark as X } from 'iconoir-react'
+import { CheckCircle as CheckCircle2, XmarkCircle as XCircle, InfoCircle as Info, Xmark as X } from '@/components/icons/lucide'
 import { cn } from '../../lib/utils'
 
 type ToastType = 'success' | 'error' | 'info'

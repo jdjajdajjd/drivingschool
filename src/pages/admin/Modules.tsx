@@ -1,4 +1,4 @@
-import { UserPlus, BellNotification as Bell, Book, Building as Building2, GraphUp as BarChart3, Code, Reports as FileSpreadsheet, SendMail as Send, MessageText as MessageSquare, Palette, Puzzle, Group as Users } from 'iconoir-react'
+import { UserPlus, BellNotification as Bell, Book, Building as Building2, GraphUp as BarChart3, Code, Reports as FileSpreadsheet, SendMail as Send, MessageText as MessageSquare, Palette, Puzzle, Group as Users } from '@/components/icons/lucide'
 const BookOpen = Book
 const Code2 = Code
 import { useMemo, useState, type ElementType } from 'react'

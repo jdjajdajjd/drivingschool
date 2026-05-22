@@ -1,4 +1,4 @@
-import { LogOut } from 'iconoir-react'
+import { LogOut } from '@/components/icons/lucide'
 
 export function SchoolRequiredState({ onSignOut }: { onSignOut: () => void }) {
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Xmark } from 'iconoir-react'
+import { Xmark } from '@/components/icons/lucide'
 
 interface BottomSheetProps {
   open: boolean

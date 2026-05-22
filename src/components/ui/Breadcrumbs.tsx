@@ -1,4 +1,4 @@
-import { NavArrowRight as ChevronRight } from 'iconoir-react'
+import { Check, NavArrowRight as ChevronRight } from '@/components/icons/lucide'
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 
@@ -47,9 +47,7 @@ export function Breadcrumbs({ steps, onStepClick, className }: BreadcrumbsProps)
                   className="flex h-4 w-4 items-center justify-center rounded-full"
                   style={{ background: 'rgba(21,128,61,0.15)', color: '#15803D' }}
                 >
-                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
-                    <path d="M1 4L3 6L7 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <Check width={10} height={10} strokeWidth={2.5} aria-hidden="true" />
                 </motion.span>
               )}
               {step.label}

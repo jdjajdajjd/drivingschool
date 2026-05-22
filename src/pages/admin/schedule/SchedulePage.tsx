@@ -7,49 +7,16 @@ import { useToast } from '../../../components/ui/Toast'
 import { db } from '../../../services/storage'
 import { getSlotsBySchool, createSlot, createBulkSlots, getSlotsByInstructor, type CreateSlotParams } from '../../../services/slotService'
 import type { SlotStatus, ResolvedSlot } from '../../../types'
+import { CalendarPlus, Funnel, ListChecks, NavArrowLeft, NavArrowRight, Plus, Xmark } from '@/components/icons/lucide'
+import { InstructorAvatarName } from '../../../components/admin/InstructorAvatarName'
 
-// Icons
-const ChevronLeft = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-  </svg>
-)
-
-const ChevronRight = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-  </svg>
-)
-
-const PlusIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-  </svg>
-)
-
-const FilterIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-  </svg>
-)
-
-const XIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-)
-
-const CalendarIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-  </svg>
-)
-
-const BulkIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-  </svg>
-)
+const ChevronLeft = () => <NavArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+const ChevronRight = () => <NavArrowRight className="h-5 w-5" strokeWidth={2.5} />
+const PlusIcon = () => <Plus className="h-4 w-4" strokeWidth={2.5} />
+const FilterIcon = () => <Funnel className="h-4 w-4" strokeWidth={2.5} />
+const XIcon = () => <Xmark className="h-4 w-4" strokeWidth={2.5} />
+const CalendarIcon = () => <CalendarPlus className="h-4 w-4" strokeWidth={2.5} />
+const BulkIcon = () => <ListChecks className="h-4 w-4" strokeWidth={2.5} />
 
 // Slot colors based on status
 const getSlotColor = (status: SlotStatus) => {
@@ -432,18 +399,20 @@ export function SchedulePage() {
                         <p className="truncate text-[13px] font-bold text-ink">
                           {student?.name || booking?.studentName || 'Ученик'}
                         </p>
-                        <p className="truncate text-[11px] text-text-muted">
-                          {instructor?.name || '—'} · {branch?.name || '—'}
-                        </p>
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-text-muted">
+                          <InstructorAvatarName instructor={instructor} name="—" compact className="min-w-0" />
+                          <span className="truncate">{branch?.name || '—'}</span>
+                        </div>
                       </>
                     ) : slot.status === 'available' ? (
                       <>
                         <p className="text-[13px] font-bold text-success">
                           Свободно
                         </p>
-                        <p className="text-[11px] text-text-muted">
-                          {instructor?.name || '—'} · {branch?.name || '—'}
-                        </p>
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-text-muted">
+                          <InstructorAvatarName instructor={instructor} name="—" compact className="min-w-0" />
+                          <span className="truncate">{branch?.name || '—'}</span>
+                        </div>
                       </>
                     ) : (
                       <p className="text-[13px] font-bold text-error">

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Calendar, ClipboardCheck, Dashboard, OpenNewWindow, MapPin, Settings, User, Group, Xmark as X } from 'iconoir-react'
+import { Calendar, ClipboardCheck, Dashboard, OpenNewWindow, MapPin, Settings, User, Group, Xmark as X } from '@/components/icons/lucide'
 import { cn } from '../../lib/utils'
 import { ADMIN_BASE_PATH, clearAccess } from '../../services/accessControl'
 import { db } from '../../services/storage'

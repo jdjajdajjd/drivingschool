@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { format, isSameDay } from 'date-fns'
-import { CalendarPlus, CheckCircle, Clock, NavArrowRight, Search, UserPlus, WarningTriangle } from 'iconoir-react'
+import { CalendarPlus, CheckCircle, Clock, NavArrowRight, Search, UserPlus, WarningTriangle } from '@/components/icons/lucide'
 import { db } from '../../services/storage'
 import { getSlotDateTime } from '../../services/bookingService'
 import { getAdminBasePathForLocation } from '../../services/accessControl'

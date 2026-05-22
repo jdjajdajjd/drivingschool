@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
+import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, UserBadgeCheck, Group, Wallet, Xmark, Clock, Inbox, CheckCircle } from '@/components/icons/lucide'
 const Award = Medal
 const BarChart3 = GraphUp
 const Building2 = Building
@@ -47,7 +47,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
     { id: 'slots', to: `${basePath}/slots`, label: 'Окна', description: 'Сборка сетки и контроль свободного времени.', icon: Clock, permission: permission('schedule.manage'), required: false },
     { id: 'students', to: `${basePath}/students`, label: 'Ученики', description: 'Кому доступна самостоятельная запись.', icon: Users, permission: permission('students.manage'), required: true },
     { id: 'schedule', to: `${basePath}/schedule`, label: 'Запись', description: 'Окна, занятия и переносы.', icon: CalendarDays, permission: permission('schedule.manage'), required: true },
-    { id: 'bookings', to: `${basePath}/bookings`, label: 'Заявки', description: 'Звонки, новые обращения и ручная запись.', icon: Headset, permission: permission('schedule.manage'), required: true },
+    { id: 'bookings', to: `${basePath}/bookings`, label: 'Заявки', description: 'Звонки, новые обращения и ручная запись.', icon: Inbox, permission: permission('schedule.manage'), required: true },
     { id: 'instructors', to: `${basePath}/instructors`, label: 'Инструкторы', description: 'Кто проводит занятия и открывает окна.', icon: UserCog, permission: permission('branches.manage'), required: true },
     { id: 'branches', to: `${basePath}/branches`, label: 'Филиалы', description: 'Где проходят занятия.', icon: Building2, permission: permission('branches.manage'), required: false },
     { id: 'cars', to: `${basePath}/cars`, label: 'Машины', description: 'Автопарк, статусы, страховки.', icon: Car, permission: permission('vehicles.manage'), required: false },

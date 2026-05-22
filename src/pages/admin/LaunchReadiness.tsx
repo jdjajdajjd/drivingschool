@@ -1,5 +1,5 @@
 import { addDays } from 'date-fns'
-import { NavArrowRight as ChevronRight, CheckCircle, WarningTriangle } from 'iconoir-react'
+import { NavArrowRight as ChevronRight, CheckCircle, WarningTriangle } from '@/components/icons/lucide'
 import { Link } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { getAdminBasePathForLocation } from '../../services/accessControl'

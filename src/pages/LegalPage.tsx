@@ -1,6 +1,6 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from '@phosphor-icons/react'
+import { ArrowLeft } from '@/components/icons/lucide'
 import { BrandMark } from '../components/layout/BrandMark'
 
 void React

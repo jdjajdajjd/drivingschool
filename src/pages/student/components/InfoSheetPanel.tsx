@@ -1,5 +1,5 @@
 ﻿import React from 'react'
-import { BellRinging as Bell, BookOpenText as BookOpen, Buildings as Building2, CalendarCheck as CalendarDays, CarProfile as CarFront, FileText, GraduationCap, Certificate as License, GearSix as Settings, Note as StickyNote, Student as UserRound } from '@phosphor-icons/react'
+import { BellRinging as Bell, BookOpenText as BookOpen, Buildings as Building2, CalendarCheck as CalendarDays, CarProfile as CarFront, FileText, GraduationCap, Certificate as License, GearSix as Settings, Note as StickyNote, Student as UserRound } from '@/components/icons/lucide'
 import { db } from '../../../services/storage'
 import { normalizePhone } from '../../../services/bookingService'
 import { loadStudentProgress, type StudentProfile } from '../../../services/studentProfile'

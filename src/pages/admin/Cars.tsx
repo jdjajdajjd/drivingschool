@@ -5,6 +5,7 @@ import { Modal } from '../../components/ui/Modal'
 import type { Car, CarStatus } from '../../types'
 import { filterBranches } from '../../services/staffScope'
 import { assertAdminPermission } from '../../services/adminAccess'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
 
 const STATUS_COLORS: Record<CarStatus, { bg: string; text: string; label: string }> = {
   working: { bg: 'bg-green-50', text: 'text-green-600', label: 'Работает' },
@@ -103,7 +104,7 @@ export function AdminCars() {
                     {instructor && (
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] font-semibold text-gray-400">Инструктор</span>
-                        <span className="text-[13px] font-semibold text-gray-700">{instructor.name}</span>
+                        <InstructorAvatarName instructor={instructor} compact />
                       </div>
                     )}
                     {car.insuranceExpiry && (

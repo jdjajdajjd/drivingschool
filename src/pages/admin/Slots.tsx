@@ -15,6 +15,7 @@ import {
 import { db } from '../../services/storage'
 import { filterBranches, filterInstructors, filterSlots } from '../../services/staffScope'
 import type { LessonType } from '../../types'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
 
 type SlotStatusFilter = 'all' | 'available' | 'booked' | 'cancelled'
 type PeriodFilter = 'all' | 'today' | 'tomorrow' | 'week' | 'future' | 'past'
@@ -326,7 +327,7 @@ export function AdminSlots() {
                       <div><span className="md:hidden text-[10px] font-black uppercase text-[#94A3B8]">Дата </span><strong>{formatHumanDate(entry.slot.date, false)}</strong></div>
                       <div className="text-[15px] font-black text-[#0F172A]">{formatTimeRange(entry.slot)}</div>
                       <div><StatusBadge status={entry.slot.status} kind="slot" /></div>
-                      <div className="min-w-0"><p className="truncate font-black text-[#0F172A]">{entry.instructor ? formatInstructorName(entry.instructor.name) : '—'}</p><p className="truncate text-[11px] font-bold text-[#64748B]">{entry.instructor?.phone || 'телефон не указан'}</p></div>
+                      <div className="min-w-0"><InstructorAvatarName instructor={entry.instructor} name={entry.instructor ? formatInstructorName(entry.instructor.name) : '—'} compact={false} /></div>
                       <div className="min-w-0"><p className="truncate font-bold text-[#334155]">{entry.branch?.name ?? '—'}</p>{entry.booking ? <p className="truncate text-[12px] font-black text-[#0F172A]">{entry.booking.studentName} · {entry.booking.studentPhone}</p> : <p className="text-[12px] font-bold text-[#94A3B8]">свободная линия</p>}</div>
                       <div className="text-[12px] font-black text-[#475569]">{lessonTypeLabels[entry.slot.lessonType ?? 'driving']} · {formatDuration(entry.slot.duration)}</div>
                       <div className="md:text-right">

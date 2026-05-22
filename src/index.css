@@ -5078,7 +5078,7 @@
     height: 24px;
     place-items: center;
     border: 1px solid var(--person-line);
-    border-radius: 9px;
+    border-radius: 999px;
     background: var(--person-bg);
     color: var(--person-ink);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
@@ -5087,6 +5087,13 @@
   .vroom-admin-shell .v-person-marker-icon svg {
     width: 15px;
     height: 15px;
+  }
+
+  .vroom-admin-shell .v-person-marker-icon img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
   }
 
   .vroom-admin-shell .v-person-marker-name,
@@ -5134,7 +5141,7 @@
   .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-icon {
     width: 20px;
     height: 20px;
-    border-radius: 7px;
+    border-radius: 999px;
   }
 
   .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-icon svg {
@@ -5148,6 +5155,86 @@
   }
 
   .vroom-admin-shell .v-person-marker.is-compact .v-person-marker-meta {
+    display: none;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-name {
+    display: inline-grid;
+    max-width: 100%;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    color: #111827;
+    vertical-align: middle;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(24,132,71,0.18);
+    border-radius: 999px;
+    background: #F1FAF4;
+    color: #188447;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+  }
+
+  .vroom-admin-shell .v-instructor-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-title,
+  .vroom-admin-shell .v-instructor-avatar-meta {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-meta {
+    margin-top: 2px;
+    color: #667085;
+    font-size: 12px;
+    font-weight: 560;
+    line-height: 1.25;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-name.is-compact {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-name.is-compact .v-instructor-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-name.is-compact .v-instructor-avatar svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-name.is-compact .v-instructor-avatar-title {
+    font-size: 12px;
+  }
+
+  .vroom-admin-shell .v-instructor-avatar-name.is-compact .v-instructor-avatar-meta {
     display: none;
   }
 
@@ -6059,7 +6146,7 @@
 
   .vroom-admin-shell .admin-mobile-nav > div {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+    grid-template-columns: repeat(5, minmax(0,1fr)) !important;
     gap: 0 !important;
     height: calc(62px + env(safe-area-inset-bottom)) !important;
     padding: 4px 6px env(safe-area-inset-bottom) !important;

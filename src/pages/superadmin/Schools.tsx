@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { OpenNewWindow as ExternalLink, Settings as Settings2, Trash } from 'iconoir-react'
+import { OpenNewWindow as ExternalLink, Settings as Settings2, Trash } from '@/components/icons/lucide'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'

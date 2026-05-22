@@ -8,6 +8,7 @@ import { getSchoolLifecycleStates } from '../../services/studentLifecycle'
 import { getAdminBasePathForLocation } from '../../services/accessControl'
 import { getPreference, setPreference } from '../../services/preferenceStorage'
 import type { AuditAction } from '../../types'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
 
 type AuditFilter = 'all' | AuditAction
 
@@ -585,12 +586,8 @@ export function AdminReports() {
             ) : instructorPayroll.map(({ instructor, completed, noShow, cancelled, totalHours, payout, risk }) => (
               <div key={instructor.id} className="grid gap-3 rounded-2xl border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[14px] font-black text-white" style={{ background: instructor.avatarColor }}>
-                    {instructor.avatarInitials}
-                  </div>
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-gray-900">{instructor.name}</p>
-                    <p className="mt-0.5 truncate text-[12px] font-semibold text-gray-400">{instructor.categories.join(', ') || 'категории не указаны'}</p>
+                    <InstructorAvatarName instructor={instructor} meta={instructor.categories.join(', ') || 'категории не указаны'} />
                     <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${risk === 'Норма' ? 'bg-[#EAF7EF] text-[#157347]' : risk === 'Много срывов' ? 'bg-[#FFF7D6] text-[#8A6100]' : 'bg-[#FFF3F2] text-[#B42318]'}`}>{risk}</span>
                   </div>
                 </div>

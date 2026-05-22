@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'iconoir-react'
+import { ShieldAlert } from '@/components/icons/lucide'
 import { Link } from 'react-router-dom'
 
 export function AdminAccessDenied({ to }: { to: string }) {

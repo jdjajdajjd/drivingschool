@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Search, ShieldAlert } from 'iconoir-react'
-import { Spinner as Loader2 } from '@phosphor-icons/react'
+import { WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Search, ShieldAlert } from '@/components/icons/lucide'
+import { Spinner as Loader2 } from '@/components/icons/lucide'
 import { cn } from '../../lib/utils'
 
 type StateKind = 'empty' | 'no-results' | 'loading' | 'error' | 'success' | 'locked'

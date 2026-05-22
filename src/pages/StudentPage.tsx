@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft as ChevronLeft, ArrowRight as ChevronRight, BellRinging as Bell, Buildings as Building2, CalendarCheck as CalendarDays, Camera, CarProfile as CarFront, CheckCircle, FileText, Funnel as Filter, Gift, House as Home, SignOut as LogOut, ChatCircleText as MessageCircle, PencilSimple as Pencil, Phone, GearSix as Settings, Student as UserRound, Lightning as Zap } from '@phosphor-icons/react'
+import { ArrowLeft as ChevronLeft, ArrowRight as ChevronRight, BellRinging as Bell, Buildings as Building2, CalendarCheck as CalendarDays, Camera, CarProfile as CarFront, CheckCircle, FileText, Funnel as Filter, Gift, House as Home, SignOut as LogOut, ChatCircleText as MessageCircle, PencilSimple as Pencil, Phone, GearSix as Settings, Student as UserRound, Lightning as Zap } from '@/components/icons/lucide'
 import { addDays, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { BottomNav } from '../components/ui/BottomNav'

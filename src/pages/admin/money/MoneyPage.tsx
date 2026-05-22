@@ -6,6 +6,7 @@ import { getBookingsBySchool, getSlotDateTime } from '../../../services/bookingS
 import { getStudentsBySchool, getStudentStats } from '../../../services/studentService'
 import { getInstructorsBySchool } from '../../../services/instructorService'
 import { db } from '../../../services/storage'
+import { InstructorAvatarName } from '../../../components/admin/InstructorAvatarName'
 
 /* Mock price: 1 lesson = 1500₽ */
 const LESSON_PRICE = 1500
@@ -127,7 +128,7 @@ export default function MoneyPage() {
               <div key={instructor.id} className="flex items-center justify-between gap-3 bg-surface px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-black text-ink">{instructor.name}</span>
+                    <InstructorAvatarName instructor={instructor} meta={instructor.categories?.join(', ') ?? 'B'} compact className="min-w-0" />
                     {!instructor.isActive && <StatusPill label="Неактивен" status="error" size="sm" />}
                   </div>
                   <p className="text-[11px] font-semibold text-[#9EA3A8]">

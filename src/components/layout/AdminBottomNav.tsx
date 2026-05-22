@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Calendar, ClipboardCheck, Dashboard, Group, Settings } from 'iconoir-react'
+import { CalendarClock, ClipboardCheck, Dashboard, Group, Settings } from '@/components/icons/lucide'
 import { cn } from '../../lib/utils'
 import { ADMIN_BASE_PATH } from '../../services/accessControl'
 import { BrandMark } from './BrandMark'
@@ -19,7 +19,7 @@ interface Tab {
 const TABS: Tab[] = [
   { key: 'today', to: ADMIN_BASE_PATH, label: 'Сегодня', icon: Home },
   { key: 'bookings', to: `${ADMIN_BASE_PATH}/bookings`, label: 'Записи', icon: Clipboard },
-  { key: 'slots', to: `${ADMIN_BASE_PATH}/schedule`, label: 'График', icon: Calendar },
+  { key: 'slots', to: `${ADMIN_BASE_PATH}/schedule`, label: 'График', icon: CalendarClock },
   { key: 'people', to: `${ADMIN_BASE_PATH}/students`, label: 'Ученики', icon: Users },
   { key: 'school', to: `${ADMIN_BASE_PATH}/settings`, label: 'Школа', icon: Settings },
 ]
@@ -38,7 +38,7 @@ export function AdminBottomNav() {
   const current = activeKey(location.pathname)
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E4E7EC] bg-white/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur md:hidden">
+    <nav className="admin-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t border-[#E4E7EC] bg-white/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur md:hidden">
       <div className="grid grid-cols-5 gap-1">
         {TABS.map((tab) => {
           const isActive = current === tab.key
@@ -48,7 +48,7 @@ export function AdminBottomNav() {
               to={tab.to}
               end={tab.key === 'today'}
               className={cn(
-                'flex min-h-[58px] flex-col items-center justify-center gap-0.5 rounded-[12px] text-center transition-colors',
+                'admin-mobile-nav-item flex min-h-[58px] flex-col items-center justify-center gap-0.5 rounded-[12px] text-center transition-colors',
                 isActive ? 'bg-[#111827] text-white' : 'text-[#667085] active:bg-[#F2F4F7]',
               )}
             >

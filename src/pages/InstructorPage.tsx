@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, XCircle, Clock, Calendar, PhoneCall as Call, ChatCircleText as Message, Note, CarProfile as Car, UserCircle as UserAccount } from '@phosphor-icons/react'
+import { ArrowLeft, XCircle, Clock, Calendar, PhoneCall as Call, ChatCircleText as Message, Note, CarProfile as Car, UserCircle as UserAccount } from '@/components/icons/lucide'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge, StatusBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'

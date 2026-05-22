@@ -1,6 +1,6 @@
 ﻿import React, { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, BuildingOffice as Building } from '@phosphor-icons/react'
+import { ArrowRight, BuildingOffice as Building } from '@/components/icons/lucide'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'

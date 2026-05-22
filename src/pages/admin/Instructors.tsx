@@ -8,6 +8,7 @@ import type { Transmission } from '../../types'
 import { createInstructorConfirmed } from '../../services/instructorService'
 import { filterBranches, filterInstructors } from '../../services/staffScope'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
 
 export function AdminInstructors() {
   const school = db.schools.currentAdmin()
@@ -79,16 +80,7 @@ export function AdminInstructors() {
                 onClick={() => navigate(`${getAdminBasePathForLocation()}/instructors/${instructor.id}`)}
               >
                 <div className="mb-4 flex min-w-0 items-center gap-3">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl text-[16px] font-black text-white"
-                    style={{ background: instructor.avatarColor }}
-                  >
-                    {instructor.avatarInitials}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold text-gray-900">{instructor.name}</p>
-                    <p className="text-[12px] font-semibold text-gray-400">{instructor.phone}</p>
-                  </div>
+                  <InstructorAvatarName instructor={instructor} className="min-w-0 flex-1" />
                   <span className={`v-admin-pill shrink-0 ${instructor.isActive ? 'v-tone-ok' : 'v-tone-muted'}`}>
                     {instructor.isActive ? 'Активен' : 'Неактивен'}
                   </span>

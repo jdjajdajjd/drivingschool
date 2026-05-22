@@ -1,4 +1,4 @@
-import { CheckCircle as CheckCircle2 } from 'iconoir-react'
+import { CheckCircle as CheckCircle2 } from '@/components/icons/lucide'
 import type { ReactNode } from 'react'
 
 export function SuccessStateBlock({ title, subtitle, children }: { title: string; subtitle?: string; children?: ReactNode }) {

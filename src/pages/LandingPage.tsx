@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarCheck, CheckCircle as CheckCircle2, Clock, GraduationCap, ChartLineUp, PaperPlaneTilt as Send, Sparkle, UserCheck, Spinner as Loader2 } from '@phosphor-icons/react'
+import { ArrowRight, CalendarCheck, CheckCircle as CheckCircle2, Clock, GraduationCap, ChartLineUp, PaperPlaneTilt as Send, Sparkle, UserCheck, Spinner as Loader2 } from '@/components/icons/lucide'
 const Clock3 = Clock
 const LayoutDashboard = ChartLineUp
 const Sparkles = Sparkle

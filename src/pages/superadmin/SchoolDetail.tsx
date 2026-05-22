@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Copy, OpenNewWindow as ExternalLink, Key, MessageText, EditPencil, FloppyDiskArrowIn, Xmark } from 'iconoir-react'
+import { Copy, OpenNewWindow as ExternalLink, Key, MessageText, EditPencil, FloppyDiskArrowIn, Xmark } from '@/components/icons/lucide'
 const KeyRound = Key
 const MessageSquareText = MessageText
 const Pencil = EditPencil

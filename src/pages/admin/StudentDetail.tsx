@@ -14,6 +14,8 @@ import { saveStudentProgressAdminConfirmed } from '../../services/studentProfile
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { openStudentPrintForm, openStudentPrintPacket } from '../../services/documentTemplates'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
+import { NavArrowLeft } from '@/components/icons/lucide'
 
 function generateStudentPassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -275,9 +277,7 @@ export function AdminStudentDetail() {
       <div className="sticky top-0 z-10 border-b border-[#E5EAF1] bg-white/95 px-3 py-3 backdrop-blur md:px-6">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(`${getAdminBasePathForLocation()}/students`)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E5EAF1] bg-[#F8FAFC] hover:bg-white">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <NavArrowLeft width={16} height={16} />
           </button>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#667085]">карточка ученика</p>
@@ -310,7 +310,10 @@ export function AdminStudentDetail() {
                       <span className={`v-admin-pill ${admissionTone}`}>{admissionLabel}</span>
                     </div>
                     <p className="mt-1 text-[13px] font-semibold text-[#667085]">{student.phone}{student.email ? ` · ${student.email}` : ''}</p>
-                    <p className="mt-1 text-[13px] font-semibold text-[#667085]">{instructor?.name ?? 'Инструктор не назначен'} · {branch?.name ?? 'Филиал не назначен'}</p>
+                    <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[#667085]">
+                      <InstructorAvatarName instructor={instructor} name="Инструктор не назначен" compact />
+                      <span>{branch?.name ?? 'Филиал не назначен'}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">

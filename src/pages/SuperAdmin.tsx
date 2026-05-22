@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addDays, format, isAfter, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { WarningTriangle as AlertTriangle, Building as Building2, Calendar, GraphUp as BarChart3, CheckCircle, Phone, Puzzle, Refresh, Send } from 'iconoir-react'
+import { WarningTriangle as AlertTriangle, Building as Building2, Calendar, GraphUp as BarChart3, CheckCircle, Phone, Puzzle, Refresh, Send } from '@/components/icons/lucide'
 const CalendarDays = Calendar
 const RefreshCw = Refresh
 import { PageHeader } from '../components/ui/PageHeader'

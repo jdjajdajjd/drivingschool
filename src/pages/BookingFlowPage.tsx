@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, CalendarPlus, CarProfile as Car, CheckCircle as CheckCircle2, Clock as Clock3, ArrowCounterClockwise as RefreshCw } from '@phosphor-icons/react'
+import { ArrowLeft, CalendarPlus, CarProfile as Car, CheckCircle as CheckCircle2, Clock as Clock3, ArrowCounterClockwise as RefreshCw } from '@/components/icons/lucide'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PhoneInput } from '../components/ui/PhoneInput'

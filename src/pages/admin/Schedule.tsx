@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { addDays, eachDayOfInterval, format, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { NavArrowDown, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from 'iconoir-react'
+import { NavArrowDown, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from '@/components/icons/lucide'
 import { useLocation } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirmed, getSlotDateTime, markBookingNoShowConfirmed, rescheduleBookingConfirmed } from '../../services/bookingService'
@@ -16,6 +16,7 @@ import type { Booking, Branch, Instructor, Slot, Student } from '../../types'
 import { assertAdminPermission } from '../../services/adminAccess'
 import { formatDuration } from '../../lib/utils'
 import { getPreference, setPreference } from '../../services/preferenceStorage'
+import { getInstructorPhoto } from '../../services/instructorPhotos'
 
 type ViewMode = 'day' | 'week'
 type ScheduleFilter = 'all' | 'booked' | 'available' | 'cancelled'
@@ -111,9 +112,7 @@ function TimeGroupRow({
   const freeInstructors = new Set(group.free.map((entry) => entry.slot.instructorId)).size
   const firstBusy = group.busy[0]
   const dotClass = hasProblem ? statusDotClass('cancelled') : hasBooked ? statusDotClass('booked') : 'bg-[#34C759]'
-  const meta = firstBusy
-    ? `${shortPersonName(firstBusy.instructor?.name ?? 'Инструктор')} · ${firstBusy.branch?.name ?? 'Филиал'}`
-    : `${freeInstructors} ${plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · ${formatDuration(group.free[0]?.slot.duration ?? 90)}`
+  const meta = `${freeInstructors} ${plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · ${formatDuration(group.free[0]?.slot.duration ?? 90)}`
 
   return (
     <div className="v-route-free-group">
@@ -122,7 +121,9 @@ function TimeGroupRow({
         <span className={'v-route-dot ' + dotClass} aria-hidden="true" />
         <span className="v-route-main">
           <strong>{getTimeGroupTitle(group)}</strong>
-          <small>{meta}</small>
+          {firstBusy ? (
+            <small><PersonMarker role="instructor" name={shortPersonName(firstBusy.instructor?.name ?? 'Инструктор')} avatarUrl={getInstructorPhoto(firstBusy.instructor)} compact /></small>
+          ) : <small>{meta}</small>}
         </span>
         {expanded ? <NavArrowDown width={16} height={16} aria-hidden="true" /> : <ChevronRight width={16} height={16} aria-hidden="true" />}
       </button>
@@ -133,14 +134,14 @@ function TimeGroupRow({
             return (
               <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-route-expanded-row">
                 <span>{entry.booking ? shortPersonName(entry.booking.studentName) : lessonLabel}</span>
-                <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'}</small>
+                <small><PersonMarker role="instructor" name={shortPersonName(entry.instructor?.name ?? 'Инструктор')} meta={entry.branch?.name ?? 'Филиал'} avatarUrl={getInstructorPhoto(entry.instructor)} compact /></small>
               </button>
             )
           })}
           {group.free.map((entry) => (
             <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-route-expanded-row is-free-row">
               <span>Свободно</span>
-              <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'}</small>
+              <small><PersonMarker role="instructor" name={shortPersonName(entry.instructor?.name ?? 'Инструктор')} meta={entry.branch?.name ?? 'Филиал'} avatarUrl={getInstructorPhoto(entry.instructor)} compact /></small>
             </button>
           ))}
         </div>
@@ -253,7 +254,7 @@ function DesktopScheduleDay({
                   <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-desktop-detail-row">
                     <span>
                       <strong>{entry.booking ? shortPersonName(entry.booking.studentName) : lessonLabel}</strong>
-                      <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'}</small>
+                      <small><PersonMarker role="instructor" name={shortPersonName(entry.instructor?.name ?? 'Инструктор')} meta={entry.branch?.name ?? 'Филиал'} avatarUrl={getInstructorPhoto(entry.instructor)} compact /></small>
                     </span>
                     <ChevronRight width={16} height={16} aria-hidden="true" />
                   </button>
@@ -263,7 +264,7 @@ function DesktopScheduleDay({
                 <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-desktop-detail-row is-free-row">
                   <span>
                     <strong>Свободно</strong>
-                    <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'} · {formatDuration(entry.slot.duration)}</small>
+                    <small><PersonMarker role="instructor" name={shortPersonName(entry.instructor?.name ?? 'Инструктор')} meta={`${entry.branch?.name ?? 'Филиал'} · ${formatDuration(entry.slot.duration)}`} avatarUrl={getInstructorPhoto(entry.instructor)} compact /></small>
                   </span>
                   <ChevronRight width={16} height={16} aria-hidden="true" />
                 </button>
@@ -671,7 +672,7 @@ export function AdminSchedule() {
                                       <span>{format(getSlotDateTime(slot), 'HH:mm')}</span>
                                       <span>{lessonLabel}</span>
                                     </span>
-                                    <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор'} compact className="mt-1 opacity-90" />
+                                    <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор'} avatarUrl={getInstructorPhoto(instructor)} compact className="mt-1 opacity-90" />
                                   </button>
                                 )
                               })}
@@ -729,7 +730,7 @@ export function AdminSchedule() {
             </div>
             <div className="grid gap-3 text-[14px] font-medium">
               <div className="flex justify-between gap-4"><span className="text-[#687381]">Статус</span><span className={`v-admin-pill ${selectedSlot.status === 'available' ? 'v-tone-ok' : selectedSlot.status === 'cancelled' ? 'v-tone-muted' : 'v-tone-info'}`}>{getSlotStatusLabel(selectedSlot.status)}</span></div>
-              <div className="flex justify-between gap-4"><span className="text-[#687381]">Инструктор</span><span className="text-right text-[#111315]">{selectedInstructor?.name ?? 'Не назначен'}</span></div>
+              <div className="flex justify-between gap-4"><span className="text-[#687381]">Инструктор</span><PersonMarker role="instructor" name={selectedInstructor?.name ?? 'Не назначен'} avatarUrl={getInstructorPhoto(selectedInstructor)} compact /></div>
               <div className="flex justify-between gap-4"><span className="text-[#687381]">Филиал</span><span className="text-right text-[#111315]">{selectedBranch?.name ?? 'Не указан'}</span></div>
               {selectedBooking ? (
                 <>

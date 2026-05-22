@@ -1,4 +1,4 @@
-import { CheckCircle as Check } from 'iconoir-react'
+import { CheckCircle as Check } from '@/components/icons/lucide'
 import { cn } from '../../lib/utils'
 
 interface StepperProps {

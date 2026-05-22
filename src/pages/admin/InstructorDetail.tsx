@@ -12,6 +12,8 @@ import { filterBookings, filterBranches, filterInstructors, filterSlots } from '
 import { normalizePersonName } from '../../lib/nameFormat'
 import { formatRussianPhoneInput } from '../../lib/phoneFormat'
 import { updateInstructorConfirmed } from '../../services/instructorService'
+import { InstructorAvatarName } from '../../components/admin/InstructorAvatarName'
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/lucide'
 
 export function AdminInstructorDetail() {
   const { id } = useParams()
@@ -61,17 +63,9 @@ export function AdminInstructorDetail() {
       <div className="border-b border-gray-100 bg-white px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(`${getAdminBasePathForLocation()}/instructors`)} className="rounded-lg p-2 hover:bg-gray-100">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <NavArrowLeft width={16} height={16} />
           </button>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-[18px] font-black text-white" style={{ background: instructor.avatarColor }}>
-            {instructor.avatarInitials}
-          </div>
-          <div className="flex-1">
-            <h1 className="text-[22px] font-black text-gray-900">{instructor.name}</h1>
-            <p className="text-[13px] font-semibold text-gray-400">{instructor.phone}</p>
-          </div>
+          <InstructorAvatarName instructor={instructor} className="flex-1" />
           <button onClick={copyPhone} className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50">
             Копировать телефон
           </button>
@@ -93,13 +87,13 @@ export function AdminInstructorDetail() {
             <h2 className="text-[18px] font-bold text-gray-900">Расписание на неделю</h2>
             <div className="flex items-center gap-2">
               <button onClick={() => setWeekStart((d) => addDays(d, -7))} className="rounded-lg p-2 hover:bg-gray-100">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <NavArrowLeft width={16} height={16} />
               </button>
               <span className="text-[13px] font-semibold text-gray-500">
                 {format(weekDays[0], 'd MMM', { locale: ru })} — {format(weekDays[6], 'd MMM yyyy', { locale: ru })}
               </span>
               <button onClick={() => setWeekStart((d) => addDays(d, 7))} className="rounded-lg p-2 hover:bg-gray-100">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#6F747A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <NavArrowRight width={16} height={16} />
               </button>
             </div>
           </div>

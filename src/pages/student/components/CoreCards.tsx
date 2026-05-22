@@ -1,5 +1,5 @@
 ﻿import React from 'react'
-import { X, ListChecks, Student as Male, Buildings as Building2 } from '@phosphor-icons/react'
+import { X, ListChecks, Student as Male, Buildings as Building2 } from '@/components/icons/lucide'
 import { Button } from '../../../components/ui/Button'
 import { cn, formatInstructorName } from '../../../lib/utils'
 import { getInstructorPhoto } from '../../../services/instructorPhotos'

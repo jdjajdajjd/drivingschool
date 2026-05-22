@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from 'iconoir-react'
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from '@/components/icons/lucide'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { CreditCard, Plus } from 'iconoir-react'
+import { CreditCard, Plus } from '@/components/icons/lucide'
 import { db } from '../../services/storage'
 import { adminPayments, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'

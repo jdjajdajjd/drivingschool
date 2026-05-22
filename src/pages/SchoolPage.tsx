@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, BuildingOffice as Building, MapPin as Location, Phone, Student as User } from '@phosphor-icons/react'
+import { ArrowRight, BuildingOffice as Building, MapPin as Location, Phone, Student as User } from '@/components/icons/lucide'
 import { LoadingScreen } from '../components/ui/loader'
 import { StateView } from '../components/ui/StateView'
 import { findSchoolNamespaceBySlug } from '../services/storage'

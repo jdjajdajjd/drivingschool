@@ -1,4 +1,4 @@
-import { WarningTriangle as AlertTriangle } from 'iconoir-react'
+import { WarningTriangle as AlertTriangle } from '@/components/icons/lucide'
 import { Button } from './Button'
 import { Modal } from './Modal'
 

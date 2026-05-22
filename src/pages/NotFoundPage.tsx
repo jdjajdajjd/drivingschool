@@ -1,4 +1,4 @@
-import { Compass, House as Home } from '@phosphor-icons/react'
+import { Compass, House as Home } from '@/components/icons/lucide'
 import { useNavigate } from 'react-router-dom'
 import { PublicNav } from '../components/layout/PublicNav'
 import { Button } from '../components/ui/Button'

@@ -1,4 +1,4 @@
-import { ArrowRight, GraduationCap, ChartLineUp, PlayCircle, ArrowCounterClockwise as RotateCcw, ShieldCheck } from '@phosphor-icons/react'
+import { ArrowRight, GraduationCap, ChartLineUp, PlayCircle, ArrowCounterClockwise as RotateCcw, ShieldCheck } from '@/components/icons/lucide'
 const LayoutDashboard = ChartLineUp
 import { useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/layout/BrandMark'

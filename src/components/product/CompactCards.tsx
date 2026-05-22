@@ -1,4 +1,4 @@
-﻿import { ArrowRight, CalendarCheck, CheckCircle, GearSix, MapPin, MapTrifold, Phone, SignOut, Student } from '@phosphor-icons/react'
+﻿import { ArrowRight, CalendarCheck, CheckCircle, GearSix, MapPin, MapTrifold, Phone, SignOut, Student } from '@/components/icons/lucide'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '../ui/Avatar'

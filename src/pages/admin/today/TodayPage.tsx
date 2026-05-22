@@ -9,43 +9,15 @@ import { getTodayBookings, getSlotDateTime, getUpcomingBookings } from '../../..
 import { getAvailableSlots } from '../../../services/slotService'
 import type { ResolvedBooking } from '../../../types'
 import { formatDuration } from '../../../lib/utils'
+import { CalendarPlus, CheckCircle, Lightning, NavArrowRight, Phone, Refresh, Student, WarningTriangle } from '@/components/icons/lucide'
+import { InstructorAvatarName } from '../../../components/admin/InstructorAvatarName'
 
-// Icons
-const PhoneIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-  </svg>
-)
-
-const CalendarIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-  </svg>
-)
-
-const CheckIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-  </svg>
-)
-
-const AlertIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-  </svg>
-)
-
-const BoltIcon = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-  </svg>
-)
-
-const UserIcon = () => (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-  </svg>
-)
+const PhoneIcon = () => <Phone className="h-4 w-4" strokeWidth={2.5} />
+const CalendarIcon = () => <CalendarPlus className="h-4 w-4" strokeWidth={2.5} />
+const CheckIcon = () => <CheckCircle className="h-4 w-4" strokeWidth={2.5} />
+const AlertIcon = () => <WarningTriangle className="h-4 w-4" strokeWidth={2.5} />
+const BoltIcon = () => <Lightning className="h-4 w-4" strokeWidth={2.5} />
+const UserIcon = () => <Student className="h-5 w-5" strokeWidth={2} />
 
 export function TodayPage() {
   const [, setRefreshKey] = useState(0)
@@ -159,9 +131,7 @@ export function TodayPage() {
               onClick={refresh}
               className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-surface text-text-muted transition hover:border-border-strong active:scale-95"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
+              <Refresh className="h-4 w-4" strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -281,9 +251,10 @@ export function TodayPage() {
                         <p className="truncate text-[14px] font-bold text-ink">
                           {student?.name || booking.studentName}
                         </p>
-                        <p className="truncate text-[12px] text-text-muted">
-                          {instructor?.name || '—'} · {branch?.name || '—'}
-                        </p>
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[12px] text-text-muted">
+                          <InstructorAvatarName instructor={instructor} name="—" compact className="min-w-0" />
+                          <span className="truncate">{branch?.name || '—'}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -331,9 +302,7 @@ export function TodayPage() {
             {/* No alerts state */}
             <div className="rounded-[14px] border border-success/20 bg-success-soft p-6 text-center">
               <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-[10px] bg-success/10">
-                <svg className="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <CheckCircle className="h-5 w-5 text-success" strokeWidth={2.5} />
               </div>
               <p className="text-[14px] font-bold text-success">Всё в порядке!</p>
               <p className="mt-1 text-[12px] text-text-muted">Нет проблем, требующих внимания</p>
@@ -360,9 +329,7 @@ export function TodayPage() {
                   <p className="text-[13px] font-bold text-ink">{alert.title}</p>
                   <p className="truncate text-[11px] text-text-muted">{alert.desc}</p>
                 </div>
-                <svg className="h-4 w-4 text-text-soft" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
+                <NavArrowRight className="h-4 w-4 text-text-soft" strokeWidth={2} />
               </button>
             ))}
           </div>
