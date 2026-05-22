@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useScroll, useTransform, type Variants } from "framer-motion";
-import { ArrowRight, CheckCircle2, Command, ExternalLink, Search, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
+import { ArrowRight, Command, ExternalLink, Search, Send, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { categories, skills, type Category, type Skill } from "@/lib/skills";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/copy-button";
 import { Wordmark } from "@/components/brand";
 import { LocaleToggle, useLocale } from "@/components/locale-toggle";
+import { SiteFooter } from "@/components/site-footer";
 
 const all = "All";
 
@@ -22,13 +23,14 @@ const fade: Variants = {
 
 const copy = {
   en: {
-    nav: ["Catalog", "Picks", "Submit"],
+    nav: ["Catalog", "About", "Submit"],
     eyebrow: "Curated skills for coding agents",
     h1a: "Codex",
     h1b: "Skills",
     subtitle: "A polished catalog of practical agent workflows. Browse, install, adapt.",
     search: "Search skills, sources, workflows...",
-    cta: "Explore catalog",
+    cta: "Browse skills",
+    telegram: "Telegram bot",
     chips: ["Clean tools", "Useful workflows", "Agent-ready"],
     picksKicker: "Editor picks",
     picksTitle: "Useful from the first run.",
@@ -41,6 +43,7 @@ const copy = {
     submitTitle: "A clean place for useful workflows.",
     submitText: "Codex Skills favors skills that are clear, practical, easy to inspect, and calm in daily use.",
     submitCopy: "Copy submit command",
+    submitPage: "Submit Skill",
     source: "Source link",
     shelf: "Curated shelf",
     skills: "skills",
@@ -51,15 +54,20 @@ const copy = {
     sourceLabel: "Source",
     open: "Open",
     copy: "Copy",
+    telegramKicker: "Telegram",
+    telegramTitle: "Follow updates in the bot.",
+    telegramText: "Get catalog updates, send skill ideas, or keep a quick install note close by.",
+    telegramOpen: "Open Telegram bot",
   },
   ru: {
-    nav: ["Каталог", "Подборка", "Отправить"],
+    nav: ["Каталог", "О проекте", "Отправить"],
     eyebrow: "Подобранные skills для coding agents",
     h1a: "Codex",
     h1b: "Skills",
     subtitle: "Красивый каталог практичных agent workflows. Найти, установить, адаптировать.",
     search: "Искать skills, источники, workflows...",
-    cta: "Открыть каталог",
+    cta: "Смотреть skills",
+    telegram: "Telegram bot",
     chips: ["Чистые инструменты", "Полезные workflows", "Готово для агентов"],
     picksKicker: "Выбор редакции",
     picksTitle: "Полезно с первого запуска.",
@@ -72,6 +80,7 @@ const copy = {
     submitTitle: "Чистое место для полезных workflows.",
     submitText: "Codex Skills выбирает skills, которые понятны, практичны, легко проверяются и спокойны в ежедневной работе.",
     submitCopy: "Скопировать команду",
+    submitPage: "Отправить skill",
     source: "Источник",
     shelf: "Подборка",
     skills: "skills",
@@ -82,6 +91,10 @@ const copy = {
     sourceLabel: "Источник",
     open: "Открыть",
     copy: "Копировать",
+    telegramKicker: "Telegram",
+    telegramTitle: "Следить за обновлениями в боте.",
+    telegramText: "Получай обновления каталога, отправляй идеи skills или держи быстрые команды рядом.",
+    telegramOpen: "Открыть Telegram bot",
   },
 } as const;
 
@@ -107,6 +120,7 @@ export function CatalogExperience() {
   }, [query, active]);
 
   const featured = skills.filter((skill) => skill.score >= 90).slice(0, 4);
+  const updateQuery = (event: React.FormEvent<HTMLInputElement>) => setQuery(event.currentTarget.value);
 
   return (
     <main className="relative min-h-screen overflow-hidden pb-24">
@@ -121,9 +135,9 @@ export function CatalogExperience() {
         <Wordmark />
         <div className="hidden items-center gap-2 rounded-full border border-black/10 bg-white/52 px-2 py-2 shadow-[0_16px_50px_rgba(30,35,45,.06)] backdrop-blur-xl md:flex">
           {t.nav.map((item, index) => (
-            <a key={item} href={index === 0 ? '#catalog' : index === 1 ? '#picks' : '#submit'} className="rounded-full px-4 py-2 text-sm font-medium text-[#5f6470] transition hover:bg-white hover:text-[#111]">
+            <Link key={item} href={index === 0 ? '/#catalog' : index === 1 ? '/about' : '/submit'} className="rounded-full px-4 py-2 text-sm font-medium text-[#5f6470] transition hover:bg-white hover:text-[#111]">
               {item}
-            </a>
+            </Link>
           ))}
         </div>
         <LocaleToggle locale={locale} setLocale={setLocale} />
@@ -147,7 +161,9 @@ export function CatalogExperience() {
                 <Search size={22} className="mr-3 text-[#8e95a3]" />
                 <input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={updateQuery}
+                  onInput={updateQuery}
+                  onKeyUp={updateQuery}
                   placeholder={t.search}
                   className="w-full bg-transparent text-base font-medium text-[#111] outline-none placeholder:text-[#8e95a3] sm:text-lg"
                 />
@@ -157,6 +173,9 @@ export function CatalogExperience() {
               </label>
               <a href="#catalog" className="ink-button inline-flex min-h-16 items-center justify-center gap-2 rounded-[24px] bg-[#111] px-6 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#23252a] focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50">
                 {t.cta} <ArrowRight size={17} />
+              </a>
+              <a href="https://t.me/vroomleadsbot" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-[24px] border border-black/10 bg-white/62 px-6 text-sm font-semibold text-[#111] shadow-[0_16px_45px_rgba(30,35,45,.07)] transition duration-300 hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8fb7ff]/50 sm:min-w-40">
+                <Send size={17} /> {t.telegram}
               </a>
             </div>
           </motion.div>
@@ -193,7 +212,7 @@ export function CatalogExperience() {
             </div>
             <div className="relative max-w-xl flex-1 rounded-full border border-black/10 bg-white/68 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#8e95a3]" size={18} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent pl-8 text-sm font-semibold outline-none placeholder:text-[#8e95a3]" placeholder={t.filter} />
+              <input value={query} onChange={updateQuery} onInput={updateQuery} onKeyUp={updateQuery} className="w-full bg-transparent pl-8 text-sm font-semibold outline-none placeholder:text-[#8e95a3]" placeholder={t.filter} />
             </div>
           </div>
 
@@ -227,6 +246,9 @@ export function CatalogExperience() {
             <p className="mt-4 text-lg leading-8 text-[#5f6470]">{t.submitText}</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <CopyButton value="codex skills submit ./my-skill" label={t.submitCopy} />
+              <Link href="/submit" className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white/56 px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-white">
+                {t.submitPage} <ArrowRight size={15} />
+              </Link>
               <a href="mailto:submit@codexskills.dev" className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white/56 px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-white">
                 {t.source} <ExternalLink size={15} />
               </a>
@@ -234,6 +256,18 @@ export function CatalogExperience() {
           </div>
         </div>
       </section>
+      <section className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8">
+        <div className="codex-panel relative overflow-hidden rounded-[36px] p-8 sm:p-12">
+          <div className="absolute right-8 top-8 hidden size-24 rounded-full bg-[radial-gradient(circle_at_30%_25%,#fff,#d9dde5_42%,#c9c2ff_100%)] opacity-70 shadow-[0_20px_70px_rgba(143,183,255,.18)] md:block" />
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8e95a3]">{t.telegramKicker}</p>
+          <h2 className="mt-2 max-w-2xl font-display text-4xl font-semibold sm:text-5xl">{t.telegramTitle}</h2>
+          <p className="mt-4 max-w-xl text-lg leading-8 text-[#5f6470]">{t.telegramText}</p>
+          <a href="https://t.me/vroomleadsbot" className="ink-button mt-7 inline-flex items-center gap-2 rounded-full bg-[#111] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#23252a]">
+            <Send size={16} /> {t.telegramOpen}
+          </a>
+        </div>
+      </section>
+      <SiteFooter />
     </main>
   );
 }

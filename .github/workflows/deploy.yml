@@ -35,7 +35,7 @@ jobs:
       - name: Smoke local build
         shell: bash
         run: |
-          npm run preview -- --listen 127.0.0.1:4173 > /tmp/preview.log 2>&1 &
+          npm run preview -- --listen tcp://127.0.0.1:4173 > /tmp/preview.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
           for i in {1..30}; do
