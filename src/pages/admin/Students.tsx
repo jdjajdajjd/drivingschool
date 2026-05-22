@@ -7,7 +7,6 @@ import { db } from '../../services/storage'
 import { adminDocuments, adminPayments, createCurrentStaffAuditEntry, getDebtForStudent, studentProgress } from '../../services/adminStorage'
 import { getAdminBasePathForLocation, getAccessSecret, getWorkspaceStaffContext } from '../../services/accessControl'
 import { Modal } from '../../components/ui/Modal'
-import { PersonMarker } from '../../components/admin/PersonMarker'
 import type { Payment, Student, StudentProgress, StudentRequestStatus, TrainingStage } from '../../types'
 import { filterStudents } from '../../services/staffScope'
 import { assertAdminPermission, canUseAdminPermission } from '../../services/adminAccess'
@@ -53,15 +52,6 @@ const STAGE_LABELS: Partial<Record<TrainingStage, string>> = {
   archived: 'Архив',
   refused: 'Отказ',
   frozen: 'Пауза',
-}
-
-function stageTone(stage?: TrainingStage) {
-  if (!stage) return 'v-tone-muted'
-  if (stage === 'has_debt' || stage === 'missing_documents' || stage === 'refused') return 'v-tone-danger'
-  if (stage === 'new_request' || stage === 'awaiting_contract' || stage === 'no_bookings' || stage === 'frozen') return 'v-tone-warning'
-  if (stage === 'ready_for_internal_exam' || stage === 'ready_for_gibdd' || stage === 'exam') return 'v-tone-info'
-  if (stage === 'training_completed' || stage === 'completed' || stage === 'archived') return 'v-tone-muted'
-  return 'v-tone-ok'
 }
 
 function formatStudentDate(value: string): string {
@@ -712,6 +702,7 @@ export function AdminStudents() {
   }
 
   void toggleVisible
+  void toggleSelected
   void exportStudentsCsv
   void compactTable
   void toggleCompactTable
@@ -727,11 +718,11 @@ export function AdminStudents() {
   if (!school) return null
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col vroom-students-minimal">
       <div className="v-admin-toolbar v-action-toolbar">
         <div>
           <h1 className="v-admin-heading">Ученики</h1>
-          <p className="v-admin-note mt-1">{filtered.length} в списке</p>
+          <p className="v-admin-note mt-1">Список учеников</p>
         </div>
         <div className="v-toolbar-actions v-students-actions ml-auto flex min-w-0 flex-wrap items-center gap-3">
           <label className="relative min-w-[220px] flex-1 sm:w-[320px] sm:flex-none"><span className="sr-only">Поиск ученика</span>
@@ -785,7 +776,7 @@ export function AdminStudents() {
           </div>
         ) : null}
         {openRequests.length > 0 ? (
-          <section className="mb-3 rounded-[18px] border border-[#D7E2EC] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.04)]">
+          <section className="hidden mb-3 rounded-[18px] border border-[#D7E2EC] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.04)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-[14px] font-black text-[#111827]">Запросы учеников</p>
@@ -817,7 +808,7 @@ export function AdminStudents() {
           </section>
         ) : null}
         {selectedIds.length > 0 ? (
-          <div className="mb-3 rounded-[14px] border border-[#DCE2E8] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.05)]">
+          <div className="hidden mb-3 rounded-[14px] border border-[#DCE2E8] bg-white p-3 shadow-[0_10px_24px_rgba(16,20,24,0.05)]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <strong className="text-[14px] font-black text-[#111418]">Выбрано: {selectedIds.length}</strong>
               <button type="button" onClick={() => setSelectedIds([])} className="text-[12px] font-black text-[#66717D] hover:text-[#111418]">Снять</button>
@@ -845,75 +836,52 @@ export function AdminStudents() {
           </div>
         ) : (
           <>
-          <div className="grid gap-3 md:hidden">
+          <div className="v-students-mobile-list md:hidden">
             {filtered.map((student) => {
               const debt = getDebtForStudent(student.id)
-              const missingDocs = data.docs[student.id] ?? 0
-              const hours = data.hours[student.id] ?? 0
               const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
-              const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
-              const stage = student.trainingStage
               return (
                 <button
                   key={student.id}
                   type="button"
                   onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}
-                  className="v-human-card w-full min-w-0 overflow-hidden p-3 text-left"
+                  className="v-student-simple-card w-full min-w-0 text-left"
                 >
-                  <div className="flex min-w-0 items-start gap-3">
-                    <input
-                      type="checkbox"
-                      name={`select-${student.id}`}
-                      aria-label={`Выбрать ученика ${student.name}`}
-                      checked={selectedIds.includes(student.id)}
-                      onChange={(event) => { event.stopPropagation(); toggleSelected(student.id) }}
-                      onClick={(event) => event.stopPropagation()}
-                      className="mt-2 h-5 w-5 shrink-0 accent-[#0A84FF]"
-                    />
-                    <span className="v-person-avatar shrink-0">{initials}</span>
-                    <PersonMarker role="student" name={student.name} meta={student.phone} className="min-w-0 flex-1" />
-                    <span className={`v-admin-pill max-w-[118px] shrink-0 truncate ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span>
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_18px] items-center gap-3">
+                    <span className="min-w-0">
+                      <strong className="block truncate text-[15px] font-semibold text-[#111827]">{student.name}</strong>
+                      <small className="mt-0.5 block truncate text-[13px] font-medium text-[#667085]">{student.phone || 'телефон не указан'}</small>
+                    </span>
+                    <ChevronRight aria-hidden="true" className="text-[#98A2B3]" width={17} height={17} />
                   </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
-                      <strong className="block text-[16px] font-semibold text-[#111827]">{hours}ч</strong>
-                      <span className="text-[11px] font-medium text-[#667085]">практика</span>
-                    </span>
-                    <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
-                      <strong className={`block text-[16px] font-semibold ${debt > 0 ? 'text-[#C92820]' : 'text-[#1F8F3F]'}`}>{debt > 0 ? debt.toLocaleString('ru-RU') : 'нет'}</strong>
-                      <span className="text-[11px] font-medium text-[#667085]">остаток</span>
-                    </span>
-                    <span className="rounded-[16px] bg-[#F8FAFC] p-2 text-center">
-                      <strong className={`block text-[16px] font-semibold ${missingDocs > 0 ? 'text-[#315A7C]' : 'text-[#1F8F3F]'}`}>{missingDocs || 'ок'}</strong>
-                      <span className="text-[11px] font-medium text-[#667085]">доки</span>
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-3 text-[12px] font-medium text-[#667085]">
-                    {instructor ? <PersonMarker role="instructor" name={instructor.name} compact className="min-w-0" /> : <span className="v-admin-pill v-tone-warning">нет инструктора</span>}
-                    <ChevronRight aria-hidden="true" className="shrink-0 text-[#98A2B3]" width={17} height={17} />
+                  <div className="mt-2 space-y-1 text-[13px] font-medium text-[#667085]">
+                    <p className="truncate">{data.next[student.id] ? `${formatStudentDate(data.next[student.id])} · ${instructor?.name ?? 'инструктор не назначен'}` : 'Ближайшей записи нет'}</p>
+                    {debt > 0 ? <p className="text-[#C92820]">Долг: {debt.toLocaleString('ru-RU')} ₽</p> : null}
                   </div>
                 </button>
               )
             })}
           </div>
 
-          <div className="hidden gap-3 md:grid">
+          <div className="v-students-table hidden md:block">
+            <div className="v-students-table-head">
+              <span>Ученик</span>
+              <span>Телефон</span>
+              <span>Ближайшее занятие</span>
+              <span>Долг</span>
+              <span>Действие</span>
+            </div>
             {filtered.map((student) => {
               const debt = getDebtForStudent(student.id)
               const instructor = db.instructors.byId(student.assignedInstructorId ?? '')
-              const initials = student.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
-              const stage = student.trainingStage
+              const nextLesson = data.next[student.id] ? `${formatStudentDate(data.next[student.id])} · ${instructor?.name ?? 'инструктор не назначен'}` : 'нет ближайшей записи'
               return (
-                <button key={student.id} type="button" className="grid w-full grid-cols-[40px_minmax(240px,1fr)_minmax(160px,.6fr)_minmax(220px,.9fr)_minmax(120px,.45fr)_28px] items-center gap-4 rounded-[20px] border border-[#E5EAF1] bg-white p-4 text-left shadow-[0_10px_24px_rgba(16,20,24,0.035)] transition hover:-translate-y-0.5 hover:border-[#B8D8FF]" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
-                  <span className="v-person-avatar shrink-0">{initials}</span>
-                  <PersonMarker role="student" name={student.name} meta={student.phone || 'телефон не указан'} className="min-w-0" />
-                  <span><span className={`v-admin-pill ${stageTone(stage)}`}>{STAGE_LABELS[stage ?? 'new_request'] ?? 'Новый'}</span></span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[13px] font-semibold text-[#111827]">{data.next[student.id] ? formatStudentDate(data.next[student.id]) : 'нет ближайшей записи'}</span>
-                    {instructor ? <PersonMarker role="instructor" name={instructor.name} compact className="mt-1" /> : <span className="mt-1 block truncate text-[12px] font-medium text-[#667085]">инструктор не назначен</span>}
-                  </span>
-                  <span>{debt > 0 ? <span className="v-admin-pill v-tone-danger">{debt.toLocaleString('ru-RU')} ₽</span> : <span className="v-admin-pill v-tone-ok">ок</span>}</span>
-                  <ChevronRight aria-hidden="true" className="justify-self-end text-[#98A2B3]" width={18} height={18} />
+                <button key={student.id} type="button" className="v-students-table-row" onClick={() => navigate(`${getAdminBasePathForLocation()}/students/${student.id}`)}>
+                  <strong>{student.name}</strong>
+                  <span>{student.phone || 'телефон не указан'}</span>
+                  <span>{nextLesson}</span>
+                  <span className={debt > 0 ? 'is-debt' : ''}>{debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : '0 ₽'}</span>
+                  <span className="v-students-open">Открыть <ChevronRight aria-hidden="true" width={16} height={16} /></span>
                 </button>
               )
             })}

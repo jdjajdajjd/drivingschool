@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, Search, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
+import { Medal, GraphUp, Building, Calendar, Car, OpenNewWindow, Page, Dashboard, LogOut, Menu, Settings, ShieldCheck, UserBadgeCheck, Group, Wallet, Xmark, Clock, Headset, CheckCircle } from 'iconoir-react'
 const Award = Medal
 const BarChart3 = GraphUp
 const Building2 = Building
@@ -31,7 +31,6 @@ import { BrandMark } from './BrandMark'
 import { AdminAccessDenied } from './AdminAccessDenied'
 import { SchoolRequiredState } from './SchoolRequiredState'
 import { AdminContentLoader, LoadingScreen } from '../ui/loader'
-import { filterBranches, filterInstructors, filterStudents } from '../../services/staffScope'
 
 function permission(value: StaffPermission): StaffPermission {
   return value
@@ -57,7 +56,7 @@ function buildNavItems(basePath: string): AdminNavItem[] {
     { id: 'exams', to: `${basePath}/exams`, label: 'Экзамены', description: 'Внутренние и ГИБДД экзамены.', icon: Award, permission: permission('exams.manage'), required: false },
     { id: 'reports', to: `${basePath}/reports`, label: 'Отчёты', description: 'Сводки и показатели школы.', icon: BarChart3, permission: permission('reports.view'), required: false },
     { id: 'launch', to: `${basePath}/launch`, label: 'Запуск', description: 'Готовность школы к работе.', icon: CheckCircle, permission: permission('reports.view'), required: false },
-    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки записи', description: 'Инструкторы, филиалы, часы и ссылка для учеников.', icon: Settings, permission: permission('settings.manage'), required: true },
+    { id: 'settings', to: `${basePath}/settings`, label: 'Настройки', description: 'Инструкторы, филиалы, часы и ссылка для учеников.', icon: Settings, permission: permission('settings.manage'), required: true },
     { id: 'users', to: `${basePath}/users`, label: 'Команда', description: 'Сотрудники, роли и филиалы.', icon: ShieldCheck, permission: permission('staff.manage'), required: false },
   ]
 }
@@ -65,12 +64,13 @@ function buildNavItems(basePath: string): AdminNavItem[] {
 type NavItem = ReturnType<typeof buildNavItems>[number]
 
 function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePath: string; onClose?: () => void }) {
+  const coreItems = navItems.filter((item) => ['today', 'schedule', 'students', 'settings'].includes(item.id))
   return (
-    <div className="flex h-full flex-col border-r border-white/70 bg-[rgba(255,255,255,0.72)] text-[#111315] shadow-[var(--shadow-card)] backdrop-blur-2xl">
-      <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.06] px-4 py-4">
+    <div className="flex h-full flex-col border-r border-[#E5EAF1] bg-white text-[#111315]">
+      <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F6] px-4 py-4">
         <Link to={basePath} onClick={onClose} className="flex min-w-0 flex-col items-start text-left" aria-label="На главный экран кабинета">
           <BrandMark variant="dark" size="md" />
-          <span className="mt-1 text-[12px] font-medium text-[#687381]">админка</span>
+          <span className="mt-1 text-[12px] font-medium text-[#667085]">кабинет записи</span>
         </Link>
         {onClose ? (
           <button
@@ -85,9 +85,8 @@ function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePat
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-2 text-[11px] font-medium text-[#9AA6B2]">Запись учеников</p>
         <div className="space-y-1">
-          {navItems.map((item) => {
+          {coreItems.map((item) => {
             const Icon = item.icon
             return (
               <NavLink
@@ -96,10 +95,10 @@ function Sidebar({ navItems, basePath, onClose }: { navItems: NavItem[]; basePat
                 end={item.to === basePath}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `admin-sidebar-link flex min-h-11 items-center gap-3 rounded-2xl px-3 text-[14px] font-medium transition ${
+                  `admin-sidebar-link flex min-h-11 items-center gap-3 rounded-[14px] px-3 text-[14px] font-medium transition ${
                     isActive
-                      ? 'is-active bg-[#EAF3FF] text-[#111315] shadow-[inset_0_0_0_1px_rgba(17,24,39,0.06)]'
-                      : 'text-[#667381] hover:bg-white/70 hover:text-[#111315]'
+                      ? 'is-active bg-[#EAF3FF] text-[#111827] shadow-[inset_0_0_0_1px_rgba(10,132,255,0.12)]'
+                      : 'text-[#667085] hover:bg-[#F5F7FA] hover:text-[#111827]'
                   }`
                 }
               >
@@ -156,7 +155,6 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
   const location = useLocation()
   const [ready, setReady] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [quickSearch, setQuickSearch] = useState('')
   const staffContext = getWorkspaceStaffContext()
   const branchScoped = mode === 'workspace' && isBranchAdminContext()
   const allNavItems = buildNavItems(basePath)
@@ -217,32 +215,6 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
     .sort((left, right) => right.to.length - left.to.length)
     .find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
   const pageTitle = currentNavItem?.label ?? currentRouteItem?.label ?? 'Рабочий день'
-  const setupSteps = school ? [
-    { label: 'Филиал', done: db.branches.bySchool(school.id).length > 0, to: `${basePath}/branches` },
-    { label: 'Инструктор', done: db.instructors.bySchool(school.id).some((item) => item.isActive), to: `${basePath}/instructors` },
-    { label: 'Окна', done: db.slots.bySchool(school.id).some((slot) => slot.status === 'available' && new Date(`${slot.date}T${slot.time}:00`) > new Date()), to: `${basePath}/schedule` },
-    { label: 'Ученик', done: db.students.bySchool(school.id).length > 0, to: `${basePath}/students` },
-  ] : []
-  const nextSetupStep = setupSteps.find((step) => !step.done)
-  const quickResults = (() => {
-    if (!school || quickSearch.trim().length < 2) return []
-    const query = quickSearch.trim().toLowerCase()
-    return [
-      ...filterStudents(db.students.bySchool(school.id))
-        .filter((student) => student.name.toLowerCase().includes(query) || student.phone.includes(query) || student.email.toLowerCase().includes(query))
-        .slice(0, 4)
-        .map((student) => ({ id: `student-${student.id}`, label: student.name, meta: student.phone, to: `${basePath}/students/${student.id}` })),
-      ...filterInstructors(db.instructors.bySchool(school.id))
-        .filter((instructor) => instructor.name.toLowerCase().includes(query) || instructor.phone.includes(query))
-        .slice(0, 3)
-        .map((instructor) => ({ id: `instructor-${instructor.id}`, label: instructor.name, meta: 'Инструктор', to: `${basePath}/instructors/${instructor.id}` })),
-      ...filterBranches(db.branches.bySchool(school.id))
-        .filter((branch) => branch.name.toLowerCase().includes(query) || branch.address.toLowerCase().includes(query))
-        .slice(0, 2)
-        .map((branch) => ({ id: `branch-${branch.id}`, label: branch.name, meta: 'Филиал', to: `${basePath}/branches` })),
-    ].slice(0, 8)
-  })()
-
   const signOut = async () => {
     const sessionToken = getAccessSecret('admin')
     await closeSupabaseStaffSession(staffContext.role, sessionToken)
@@ -311,65 +283,12 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
               to={publicPath}
               target="_blank"
               rel="noreferrer"
-              className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white xl:inline-flex"
+              className="hidden min-h-10 items-center gap-2 rounded-full border border-[#111827]/[0.07] bg-white/70 px-3 text-[13px] font-medium text-[#2A2D2F] hover:border-[#111827]/[0.14] hover:bg-white md:inline-flex"
             >
               <ExternalLink width={16} height={16} aria-hidden="true" />
-              Сайт
+              Ссылка ученика
             </Link>
           ) : null}
-          {school && nextSetupStep ? (
-            <button
-              type="button"
-              onClick={() => navigate(nextSetupStep.to)}
-              className="hidden min-h-10 items-center gap-2 rounded-full border border-[#315A7C]/15 bg-[#EAF3FF]/80 px-3 text-[13px] font-medium text-[#315A7C] hover:bg-white lg:inline-flex"
-              title="Открыть следующий шаг настройки"
-            >
-              {setupSteps.filter((step) => step.done).length}/{setupSteps.length} · {nextSetupStep.label}
-            </button>
-          ) : null}
-          <div className="relative hidden min-w-[220px] max-w-[360px] flex-[0_1_360px] md:block">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D98A4]" />
-            <label htmlFor="admin-quick-search" className="sr-only">Поиск по кабинету</label>
-            <input
-              id="admin-quick-search"
-              name="admin-quick-search"
-              autoComplete="off"
-              spellCheck={false}
-              value={quickSearch}
-              onChange={(event) => setQuickSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') setQuickSearch('')
-                if (event.key === 'Enter' && quickResults[0]) {
-                  navigate(quickResults[0].to)
-                  setQuickSearch('')
-                }
-              }}
-              placeholder="Поиск…"
-              className="h-10 w-full rounded-full border border-[#111827]/[0.07] bg-white/70 pl-9 pr-9 text-[13px] font-medium text-[#111315] outline-none focus:border-[#111827]/[0.2] focus:bg-white"
-            />
-            {quickSearch ? (
-              <button type="button" onClick={() => setQuickSearch('')} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-[#8D98A4] hover:bg-[#EEF2F5] hover:text-[#111315]" aria-label="Очистить поиск">×</button>
-            ) : null}
-            {quickSearch.trim().length >= 2 ? (
-              <div className="absolute right-0 top-12 z-30 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-[22px] border border-white/70 bg-white/90 shadow-[var(--shadow-dark)] backdrop-blur-2xl">
-                {quickResults.length === 0 ? (
-                  <div className="p-3 text-[13px] font-medium text-[#687381]">Ничего не найдено</div>
-                ) : (
-                  quickResults.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => { navigate(item.to); setQuickSearch('') }}
-                      className="block w-full border-b border-[#111827]/[0.06] px-3 py-3 text-left last:border-b-0 hover:bg-[#EAF3FF]/60"
-                    >
-                      <span className="block truncate text-[14px] font-semibold text-[#111315]">{item.label}</span>
-                      <span className="mt-0.5 block truncate text-[12px] font-medium text-[#687381]">{item.meta}</span>
-                    </button>
-                  ))
-                )}
-              </div>
-            ) : null}
-          </div>
           <button
             type="button"
             onClick={signOut}
@@ -404,7 +323,7 @@ export function AdminLayout({ mode = 'workspace', basePath = ADMIN_BASE_PATH }: 
                   end={item.to === basePath}
                   className={({ isActive }) =>
                     `admin-mobile-nav-item flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[10px] font-medium transition ${
-                      isActive ? 'is-active bg-[#EAF3FF] text-[#111315]' : 'text-[#7A8490]'
+                      isActive ? 'text-[#0A84FF]' : 'text-[#7A8490]'
                     }`
                   }
                 >

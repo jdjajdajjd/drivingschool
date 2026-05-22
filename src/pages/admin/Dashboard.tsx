@@ -249,7 +249,7 @@ export function AdminDashboard() {
             <div className="border-b border-[#E4E7EC] p-4"><h2 className="text-[18px] font-black text-[#111827]">Быстрые действия</h2></div>
             <div className="grid divide-y divide-[#E4E7EC]">
               <button onClick={() => navigate(`${getAdminBasePathForLocation()}/bookings`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Записать ученика</strong><span className="text-[13px] font-semibold text-[#667085]">Звонок → окно → запись</span></button>
-              <button onClick={() => navigate(`${getAdminBasePathForLocation()}/slots`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Создать окна</strong><span className="text-[13px] font-semibold text-[#667085]">Собрать неделю инструктору</span></button>
+              <button onClick={() => navigate(`${getAdminBasePathForLocation()}/slots`)} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Создать окно</strong><span className="text-[13px] font-semibold text-[#667085]">Собрать неделю инструктору</span></button>
               <button onClick={() => { window.location.href = firstInstructor ? `/instructor/${firstInstructor.token}` : `${getAdminBasePathForLocation()}/instructors` }} className="min-h-[62px] p-4 text-left hover:bg-[#F9FAFB]"><strong className="block text-[14px] font-black text-[#111827]">Открыть инструктора</strong><span className="text-[13px] font-semibold text-[#667085]">Мобильный день занятий</span></button>
             </div>
           </section> : null}

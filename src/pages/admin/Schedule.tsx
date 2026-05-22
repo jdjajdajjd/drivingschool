@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { addDays, eachDayOfInterval, format, isBefore, isSameDay, startOfDay, startOfWeek } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from 'iconoir-react'
+import { NavArrowDown, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Trash } from 'iconoir-react'
 import { useLocation } from 'react-router-dom'
 import { db } from '../../services/storage'
 import { cancelBookingConfirmed, completeBookingConfirmed, createBookingConfirmed, getSlotDateTime, markBookingNoShowConfirmed, rescheduleBookingConfirmed } from '../../services/bookingService'
@@ -19,16 +19,15 @@ import { getPreference, setPreference } from '../../services/preferenceStorage'
 
 type ViewMode = 'day' | 'week'
 type ScheduleFilter = 'all' | 'booked' | 'available' | 'cancelled'
+type ScheduleSlotEntry = {
+  slot: Slot
+  booking: Booking | null
+  instructor: Instructor | null
+  branch: Branch | null
+}
 
 const HOURS = Array.from({ length: 17 }, (_, index) => `${String(index + 7).padStart(2, '0')}:00`)
 const DURATION_OPTIONS = [45, 60, 90, 120]
-
-const FILTER_LABELS: Record<ScheduleFilter, string> = {
-  all: 'Все',
-  booked: 'Занятые',
-  available: 'Свободные',
-  cancelled: 'Отмененные',
-}
 
 const LESSON_LABELS: Partial<Record<NonNullable<Slot['lessonType']>, string>> = {
   driving: 'Вождение',
@@ -68,16 +67,227 @@ function plural(value: number, one: string, few: string, many: string): string {
   return many
 }
 
+function shortPersonName(name: string): string {
+  const [lastName = name, firstName = ''] = name.trim().split(/\s+/)
+  return [lastName, firstName].filter(Boolean).join(' ')
+}
+
+function groupEntriesByTime(entries: ScheduleSlotEntry[]) {
+  const groups = new Map<string, ScheduleSlotEntry[]>()
+  entries.forEach((entry) => groups.set(entry.slot.time, [...(groups.get(entry.slot.time) ?? []), entry]))
+  return Array.from(groups.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([time, groupedEntries]) => ({
+      time,
+      busy: groupedEntries.filter((entry) => entry.slot.status !== 'available'),
+      free: groupedEntries.filter((entry) => entry.slot.status === 'available'),
+    }))
+}
+
+function getTimeGroupTitle(group: ReturnType<typeof groupEntriesByTime>[number]): string {
+  if (group.busy.length === 1 && group.free.length === 0) {
+    const entry = group.busy[0]
+    return entry.booking ? shortPersonName(entry.booking.studentName) : LESSON_LABELS[entry.slot.lessonType ?? 'driving'] ?? 'Занятие'
+  }
+  const parts: string[] = []
+  if (group.busy.length) parts.push(`${group.busy.length} ${plural(group.busy.length, 'занятие', 'занятия', 'занятий')}`)
+  if (group.free.length) parts.push(`${group.free.length} ${plural(group.free.length, 'свободное окно', 'свободных окна', 'свободных окон')}`)
+  return parts.join(' · ')
+}
+
+function TimeGroupRow({
+  group,
+  expanded,
+  onToggle,
+  onOpenSlot,
+}: {
+  group: ReturnType<typeof groupEntriesByTime>[number]
+  expanded: boolean
+  onToggle: () => void
+  onOpenSlot: (slotId: string) => void
+}) {
+  const hasProblem = group.busy.some((entry) => entry.slot.status === 'cancelled')
+  const hasBooked = group.busy.some((entry) => entry.slot.status === 'booked')
+  const freeInstructors = new Set(group.free.map((entry) => entry.slot.instructorId)).size
+  const firstBusy = group.busy[0]
+  const dotClass = hasProblem ? statusDotClass('cancelled') : hasBooked ? statusDotClass('booked') : 'bg-[#34C759]'
+  const meta = firstBusy
+    ? `${shortPersonName(firstBusy.instructor?.name ?? 'Инструктор')} · ${firstBusy.branch?.name ?? 'Филиал'}`
+    : `${freeInstructors} ${plural(freeInstructors, 'инструктор', 'инструктора', 'инструкторов')} · ${formatDuration(group.free[0]?.slot.duration ?? 90)}`
+
+  return (
+    <div className="v-route-free-group">
+      <button type="button" onClick={onToggle} className={hasProblem ? 'v-route-node is-cancelled' : hasBooked ? 'v-route-node is-booked' : 'v-route-node is-free'}>
+        <span className="v-route-time">{group.time}</span>
+        <span className={'v-route-dot ' + dotClass} aria-hidden="true" />
+        <span className="v-route-main">
+          <strong>{getTimeGroupTitle(group)}</strong>
+          <small>{meta}</small>
+        </span>
+        {expanded ? <NavArrowDown width={16} height={16} aria-hidden="true" /> : <ChevronRight width={16} height={16} aria-hidden="true" />}
+      </button>
+      {expanded ? (
+        <div className="v-route-expanded">
+          {group.busy.map((entry) => {
+            const lessonLabel = LESSON_LABELS[entry.slot.lessonType ?? 'driving'] ?? 'Занятие'
+            return (
+              <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-route-expanded-row">
+                <span>{entry.booking ? shortPersonName(entry.booking.studentName) : lessonLabel}</span>
+                <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'}</small>
+              </button>
+            )
+          })}
+          {group.free.map((entry) => (
+            <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-route-expanded-row is-free-row">
+              <span>Свободно</span>
+              <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'}</small>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function ScheduleRouteDay({
+  date,
+  entries,
+  expandedFreeTime,
+  onToggleFree,
+  onOpenSlot,
+  desktop = false,
+}: {
+  date: Date
+  entries: ScheduleSlotEntry[]
+  expandedFreeTime: string | null
+  onToggleFree: (time: string) => void
+  onOpenSlot: (slotId: string) => void
+  desktop?: boolean
+}) {
+  const booked = entries.filter((entry) => entry.slot.status === 'booked').length
+  const free = entries.filter((entry) => entry.slot.status === 'available').length
+  const groups = groupEntriesByTime(entries)
+  return (
+    <section className={desktop ? 'v-route-day v-route-day-desktop' : 'v-route-day'}>
+      <div className="v-route-day-head">
+        <span>
+          <small>{format(date, 'EEEE', { locale: ru })}</small>
+          <strong>{format(date, 'd MMMM', { locale: ru })}</strong>
+        </span>
+        <em>{booked} занято · {free} свободно</em>
+      </div>
+      {groups.length === 0 ? (
+        <div className="v-route-empty"><strong>Окон на этот день нет</strong><span>Создайте свободное время, чтобы ученики могли записаться.</span></div>
+      ) : (
+        <div className="v-route-timeline">
+          {groups.map((group) => (
+            <TimeGroupRow
+              key={group.time}
+              group={group}
+              expanded={expandedFreeTime === group.time}
+              onToggle={() => onToggleFree(group.time)}
+              onOpenSlot={onOpenSlot}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function DesktopScheduleDay({
+  date,
+  entries,
+  selectedTime,
+  onSelectTime,
+  onOpenSlot,
+}: {
+  date: Date
+  entries: ScheduleSlotEntry[]
+  selectedTime: string | null
+  onSelectTime: (time: string) => void
+  onOpenSlot: (slotId: string) => void
+}) {
+  const groups = groupEntriesByTime(entries)
+  const activeGroup = groups.find((group) => group.time === selectedTime) ?? groups[0]
+
+  return (
+    <section className="v-desktop-schedule-day">
+      <div className="v-desktop-schedule-list">
+        <div className="v-route-day-head">
+          <span>
+            <small>{format(date, 'EEEE', { locale: ru })}</small>
+            <strong>{format(date, 'd MMMM', { locale: ru })}</strong>
+          </span>
+          <em>{entries.filter((entry) => entry.slot.status === 'booked').length} занято · {entries.filter((entry) => entry.slot.status === 'available').length} свободно</em>
+        </div>
+        {groups.length === 0 ? (
+          <div className="v-route-empty"><strong>Окон на этот день нет</strong></div>
+        ) : (
+          <div className="v-desktop-time-list">
+            {groups.map((group) => {
+              const active = activeGroup?.time === group.time
+              return (
+                <button key={group.time} type="button" onClick={() => onSelectTime(group.time)} className={active ? 'v-desktop-time-row is-active' : 'v-desktop-time-row'}>
+                  <strong>{group.time}</strong>
+                  <span>{getTimeGroupTitle(group)}</span>
+                  <ChevronRight width={16} height={16} aria-hidden="true" />
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      <aside className="v-desktop-schedule-detail">
+        {activeGroup ? (
+          <>
+            <div className="v-desktop-detail-head">
+              <strong>{activeGroup.time}</strong>
+              <span>{getTimeGroupTitle(activeGroup)}</span>
+            </div>
+            <div className="v-desktop-detail-list">
+              {activeGroup.busy.map((entry) => {
+                const lessonLabel = LESSON_LABELS[entry.slot.lessonType ?? 'driving'] ?? 'Занятие'
+                return (
+                  <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-desktop-detail-row">
+                    <span>
+                      <strong>{entry.booking ? shortPersonName(entry.booking.studentName) : lessonLabel}</strong>
+                      <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'}</small>
+                    </span>
+                    <ChevronRight width={16} height={16} aria-hidden="true" />
+                  </button>
+                )
+              })}
+              {activeGroup.free.map((entry) => (
+                <button key={entry.slot.id} type="button" onClick={() => onOpenSlot(entry.slot.id)} className="v-desktop-detail-row is-free-row">
+                  <span>
+                    <strong>Свободно</strong>
+                    <small>{shortPersonName(entry.instructor?.name ?? 'Инструктор')} · {entry.branch?.name ?? 'Филиал'} · {formatDuration(entry.slot.duration)}</small>
+                  </span>
+                  <ChevronRight width={16} height={16} aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="v-route-empty"><strong>Выберите время</strong></div>
+        )}
+      </aside>
+    </section>
+  )
+}
+
 export function AdminSchedule() {
   const { showToast } = useToast()
   const location = useLocation()
   const school = db.schools.currentAdmin()
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window === 'undefined') return 'week'
-    return (getPreference('dd:admin_schedule_view') as ViewMode | null) ?? 'week'
+    if (typeof window === 'undefined') return 'day'
+    return (getPreference('dd:admin_schedule_view') as ViewMode | null) ?? 'day'
   })
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [slotFilter, setSlotFilter] = useState<ScheduleFilter>('all')
+  const slotFilter: ScheduleFilter = 'all'
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
@@ -88,6 +298,8 @@ export function AdminSchedule() {
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [showBookModal, setShowBookModal] = useState(false)
   const [actionPending, setActionPending] = useState(false)
+  const [expandedFreeTime, setExpandedFreeTime] = useState<string | null>(null)
+  const [selectedDesktopTime, setSelectedDesktopTime] = useState<string | null>(null)
 
   useEffect(() => {
     if (location.search.includes('create=slot')) setShowCreateModal(true)
@@ -126,27 +338,11 @@ export function AdminSchedule() {
       .sort((left, right) => left.time.localeCompare(right.time))
     : []
   const filteredSlots = slotFilter === 'all' ? data.slots : data.slots.filter((slot) => slot.status === slotFilter)
-  const visibleSummary = {
-    total: filteredSlots.length,
-    booked: filteredSlots.filter((slot) => slot.status === 'booked').length,
-    free: filteredSlots.filter((slot) => slot.status === 'available').length,
-  }
   const staleFreeSlots = data.slots.filter((slot) => slot.status === 'available' && getSlotDateTime(slot) < new Date())
   const staleActiveBookings = data.bookings
     .map((booking) => ({ booking, slot: db.slots.byId(booking.slotId) }))
     .filter((entry): entry is { booking: Booking; slot: Slot } => entry.booking.status === 'active' && entry.slot !== null && getSlotDateTime(entry.slot) < new Date())
 
-  const dailySummary = viewRange.map((date) => {
-    const dateKey = format(date, 'yyyy-MM-dd')
-    const slots = data.slots.filter((slot) => slot.date === dateKey)
-    return {
-      date,
-      total: slots.length,
-      booked: slots.filter((slot) => slot.status === 'booked').length,
-      free: slots.filter((slot) => slot.status === 'available').length,
-      cancelled: slots.filter((slot) => slot.status === 'cancelled').length,
-    }
-  })
   const mobileSourceDays = viewMode === 'day'
     ? [selectedDate]
     : viewRange.filter((date) => !isBefore(startOfDay(date), startOfDay(new Date())))
@@ -160,8 +356,19 @@ export function AdminSchedule() {
         instructor: data.instructors.find((instructor) => instructor.id === slot.instructorId) ?? null,
         branch: data.branches.find((branch) => branch.id === slot.branchId) ?? null,
       }))
+      .sort((left, right) => left.slot.time.localeCompare(right.slot.time))
     return { date, slots }
   })
+
+  const desktopDayEntries = mobileDays.find((day) => isSameDay(day.date, selectedDate))?.slots ?? []
+  const desktopDayGroups = useMemo(() => groupEntriesByTime(desktopDayEntries), [desktopDayEntries])
+
+  useEffect(() => {
+    setSelectedDesktopTime((current) => {
+      if (current && desktopDayGroups.some((group) => group.time === current)) return current
+      return desktopDayGroups[0]?.time ?? null
+    })
+  }, [desktopDayGroups])
 
   const getSlotsForCell = (date: Date, hour: string) => {
     const key = format(date, 'yyyy-MM-dd')
@@ -354,7 +561,7 @@ export function AdminSchedule() {
       <div className="v-admin-toolbar vroom-schedule-toolbar">
         <div>
           <h1 className="v-admin-heading">Расписание</h1>
-          <p className="v-admin-note mt-1">Календарь занятий, свободных окон и переносов</p>
+          <p className="v-admin-note mt-1">Занятые и свободные окна по времени</p>
         </div>
         <div className="v-schedule-toolbar-actions ml-auto flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setSelectedDate((date) => addDays(date, viewMode === 'day' ? -1 : -7))} className="v-admin-button-secondary px-3" aria-label="Назад">
@@ -373,36 +580,13 @@ export function AdminSchedule() {
           </div>
           <button type="button" onClick={() => setShowCreateModal(true)} className="v-admin-button is-blue">
             <Plus width={16} height={16} aria-hidden="true" />
-            Создать окна
+            Создать окно
           </button>
-          <button type="button" onClick={() => setShowTemplateModal(true)} className="v-admin-button-secondary">
-            Повторить неделю
-          </button>
-        </div>
-      </div>
-
-      <div className="vroom-schedule-filter mx-3 mt-3 hidden flex-wrap items-center gap-2 rounded-[24px] border border-[rgba(15,23,42,0.07)] bg-white px-3 py-3 shadow-[0_10px_26px_rgba(15,23,42,0.035)] md:mx-5 md:flex md:px-4">
-        <div className="flex overflow-x-auto rounded-full border border-[rgba(15,23,42,0.07)] bg-[#F8FAFC] p-1">
-          {(Object.keys(FILTER_LABELS) as ScheduleFilter[]).map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => setSlotFilter(filter)}
-              className={`whitespace-nowrap rounded-full px-3 py-2 text-[12px] font-medium ${slotFilter === filter ? 'bg-[#0F172A] text-white' : 'text-[#667085]'}`}
-            >
-              {FILTER_LABELS[filter]}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto flex flex-wrap gap-2 text-[12px] font-medium text-[#667085]">
-          <span className="rounded-full bg-[#F2F4F7] px-2.5 py-2">Показано: {visibleSummary.total}</span>
-          <span className="rounded-full bg-[rgba(10,132,255,0.10)] px-2.5 py-2 text-[#075EBC]">Занято: {visibleSummary.booked}</span>
-          <span className="rounded-full bg-[rgba(52,199,89,0.12)] px-2.5 py-2 text-[#1F8F3F]">Свободно: {visibleSummary.free}</span>
         </div>
       </div>
 
       {(staleFreeSlots.length || staleActiveBookings.length) ? (
-        <div className="mx-3 mt-2 flex flex-wrap items-center gap-2 rounded-[18px] border border-[#E5EAF1] bg-white px-3 py-2 text-[12px] font-medium text-[#667085] md:mx-5">
+        <div className="hidden">
           <span className="font-semibold text-[#111827]">Проверка прошедшего времени</span>
           {staleActiveBookings.length ? <button type="button" onClick={() => void completeStaleActiveBookings()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Отметить занятия: {staleActiveBookings.length}</button> : null}
           {staleFreeSlots.length ? <button type="button" onClick={() => void hideStaleFreeSlots()} disabled={actionPending} className="v-admin-button-secondary min-h-8 px-3 text-[12px] disabled:opacity-50">Скрыть окна: {staleFreeSlots.length}</button> : null}
@@ -410,87 +594,41 @@ export function AdminSchedule() {
       ) : null}
 
 
-      <div className="mx-3 mt-2 hidden gap-2 lg:mx-5 lg:grid lg:grid-cols-7">
-        {dailySummary.map((day) => (
-          <button
-            key={day.date.toISOString()}
-            type="button"
-            onClick={() => { setSelectedDate(day.date); setViewMode('day') }}
-            className={`vroom-day-card rounded-[14px] border p-2 text-left transition hover:-translate-y-0.5 ${isSameDay(day.date, new Date()) ? 'is-today border-[rgba(10,132,255,0.28)] bg-[#EAF4FF]' : 'border-[rgba(15,23,42,0.07)] bg-white'}`}
-          >
-            <span className="block text-[11px] font-medium text-[#667085]">{format(day.date, 'EEEEEE', { locale: ru })}</span>
-            <strong className="mt-0.5 block text-[18px] font-semibold text-[#111827]">{format(day.date, 'd MMM', { locale: ru })}</strong>
-            <span className="mt-1 flex gap-2 text-[11px] font-medium">
-              <span className="text-[#075EBC]">{day.booked} занято</span>
-              <span className="text-[#1F8F3F]">{day.free} свободно</span>
-            </span>
-            <span className="mt-2 block h-1 overflow-hidden rounded-full bg-[#EEF2F7]">
-              <span className="block h-full rounded-full bg-[#0A84FF]" style={{ width: `${day.total ? Math.round((day.booked / day.total) * 100) : 0}%` }} />
-            </span>
-          </button>
-        ))}
-      </div>
-
 
       <div className="flex-1 overflow-auto p-3 pb-24 md:p-5 lg:pt-3">
         {filteredSlots.length === 0 ? (
           <div className="v-admin-empty mb-3">
             <div>
-              <h2 className="text-[18px] font-semibold text-[#111418]">Окон не найдено</h2>
-              <p className="mt-1 text-[13px] font-medium text-[#66717D]">Создайте свободное время или смените фильтр.</p>
+              <h2 className="text-[18px] font-semibold text-[#111418]">Нет свободных окон</h2>
+              <button type="button" onClick={() => setShowCreateModal(true)} className="v-admin-button is-blue mt-4">Создать окно</button>
             </div>
           </div>
         ) : null}
         <div className="grid gap-3 lg:hidden">
-          {mobileDays.map(({ date, slots }) => {
-            const booked = slots.filter((entry) => entry.slot.status === 'booked').length
-            const free = slots.filter((entry) => entry.slot.status === 'available').length
-            return (
-              <section key={date.toISOString()} className="overflow-hidden rounded-[24px] border border-[#D7E2EC] bg-white shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-                <div className="flex items-center justify-between gap-3 border-b border-[#111827]/[0.07] px-4 py-3">
-                  <div>
-                    <p className="text-[12px] font-medium text-[#667085]">{format(date, 'EEEE', { locale: ru })}</p>
-                    <h2 className="text-[20px] font-semibold text-[#111827]">{format(date, 'd MMMM', { locale: ru })}</h2>
-                  </div>
-                  <span className="v-admin-pill v-tone-muted">{booked} занято · {free} свободно</span>
-                </div>
-                <div className="grid gap-2 p-3">
-                  {slots.length === 0 ? (
-                    <div className="v-admin-empty m-0">
-                      <strong>Окон на этот день нет</strong>
-                      <span>Создайте свободное время, чтобы ученики могли записаться.</span>
-                    </div>
-                  ) : slots.map(({ slot, booking, instructor, branch }) => {
-                    const lessonLabel = LESSON_LABELS[slot.lessonType ?? 'driving'] ?? 'Занятие'
-                    const isFree = slot.status === 'available'
-                    const isCancelled = slot.status === 'cancelled'
-                    const rowClass = isFree
-                      ? 'border-[rgba(52,199,89,0.22)] bg-[#F1FAF4]'
-                      : isCancelled
-                        ? 'border-[#E5EAF1] bg-[#F8FAFC] opacity-80'
-                        : 'border-[rgba(10,132,255,0.20)] bg-[#EAF4FF]'
-                    const statusClassName = isFree ? 'text-[#188447]' : isCancelled ? 'text-[#667085]' : 'text-[#075EBC]'
-                    return (
-                      <button key={slot.id} type="button" onClick={() => setSelectedSlotId(slot.id)} className={
-                        'v-mobile-slot-row grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] border p-3 text-left transition hover:-translate-y-0.5 ' + rowClass
-                      }>
-                        <strong className="text-[17px] font-semibold tabular-nums text-[#111827]">{slot.time}</strong>
-                        <span className="min-w-0">
-                          {booking ? <PersonMarker role="student" name={booking.studentName} compact /> : <span className="block truncate text-[14px] font-semibold text-[#188447]">Свободное окно</span>}
-                          <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{lessonLabel} · {branch?.name ?? 'Филиал'}</span>
-                          <PersonMarker role="instructor" name={instructor?.name ?? 'Инструктор'} compact className="mt-1" />
-                        </span>
-                        <span className={'text-[12px] font-semibold ' + statusClassName}>{getSlotStatusLabel(slot.status)}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-            )
-          })}
+          {mobileDays.map(({ date, slots }) => (
+            <ScheduleRouteDay
+              key={date.toISOString()}
+              date={date}
+              entries={slots}
+              expandedFreeTime={expandedFreeTime}
+              onToggleFree={(time) => setExpandedFreeTime((current) => current === time ? null : time)}
+              onOpenSlot={setSelectedSlotId}
+            />
+          ))}
         </div>
+        {viewMode === 'day' ? (
+          <div className="hidden lg:block">
+            <DesktopScheduleDay
+              date={selectedDate}
+              entries={desktopDayEntries}
+              selectedTime={selectedDesktopTime}
+              onSelectTime={setSelectedDesktopTime}
+              onOpenSlot={setSelectedSlotId}
+            />
+          </div>
+        ) : (
         <div className="v-admin-panel vroom-calendar-grid hidden overflow-hidden lg:block">
-          <div className="grid bg-[#F2F6FA]" style={{ gridTemplateColumns: viewMode === 'day' ? '66px minmax(0,1fr)' : '66px repeat(7,minmax(0,1fr))' }}>
+          <div className="grid bg-[#F2F6FA]" style={{ gridTemplateColumns: '66px repeat(7,minmax(0,1fr))' }}>
             <div className="border-b border-r border-[#111827]/[0.07]" />
             {viewRange.map((date) => (
               <div key={date.toISOString()} className={`border-b border-r border-[#111827]/[0.07] p-3 text-center ${isSameDay(date, new Date()) ? 'bg-[#EAF3FF]' : ''}`}>
@@ -561,6 +699,7 @@ export function AdminSchedule() {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="Создать окно" size="md">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { OpenNewWindow, UserBadgeCheck, Building, Clock, CalendarPlus, Link as LinkIcon } from 'iconoir-react'
+import { OpenNewWindow, Link as LinkIcon, NavArrowRight as ChevronRight } from 'iconoir-react'
 import { db } from '../../services/storage'
 import { adminSettings, createCurrentStaffAuditEntry } from '../../services/adminStorage'
 import type { SchoolSettings as SchoolSettingsType } from '../../types'
@@ -21,12 +21,17 @@ function plural(value: number, one: string, few: string, many: string): string {
   return many
 }
 
-function SetupCard({ done, index, title, text, to }: { done: boolean; index: number; title: string; text: string; to: string }) {
+function SettingsListItem({ done, title, text, to }: { done: boolean; title: string; text: string; to: string }) {
   return (
-    <Link to={to} className={`rounded-[20px] border p-4 transition hover:-translate-y-0.5 ${done ? 'border-[rgba(52,199,89,0.20)] bg-[#F1FAF4]' : 'border-[#D7E2EC] bg-white'}`}>
-      <span className={`grid h-8 w-8 place-items-center rounded-full text-[13px] font-semibold ${done ? 'bg-[#188447] text-white' : 'bg-[#EAF4FF] text-[#075EBC]'}`}>{done ? '✓' : index}</span>
-      <strong className="mt-4 block text-[15px] font-semibold text-[#111827]">{title}</strong>
-      <span className="mt-1 block text-[13px] font-medium leading-5 text-[#667085]">{text}</span>
+    <Link to={to} className="v-settings-row">
+      <span className="min-w-0">
+        <strong className="block truncate text-[14px] font-semibold text-[#111827]">{title}</strong>
+        <span className="mt-0.5 block truncate text-[12px] font-medium text-[#667085]">{text}</span>
+      </span>
+      <span className="v-settings-row-action">
+        <span className={done ? 'v-settings-status is-done' : 'v-settings-status'}>{done ? 'Настроено' : 'Не настроено'}</span>
+        <ChevronRight width={16} height={16} aria-hidden="true" />
+      </span>
     </Link>
   )
 }
@@ -57,13 +62,11 @@ export function AdminSettings() {
   const freeSlots = db.slots.bySchool(school.id).filter((slot) => slot.status === 'available' && new Date(`${slot.date}T${slot.time}:00`) > new Date())
   const publicUrl = `${window.location.origin}/school/${school.slug}`
   const setupItems = [
-    { done: activeInstructors.length > 0, title: 'Добавьте инструктора', text: activeInstructors.length ? `${activeInstructors.length} ${plural(activeInstructors.length, 'инструктор активен', 'инструктора активны', 'инструкторов активны')}` : 'Без инструктора ученикам нечего выбирать.', to: `${basePath}/instructors` },
-    { done: branches.length > 0, title: 'Укажите филиал', text: branches.length ? `${branches.length} ${plural(branches.length, 'филиал', 'филиала', 'филиалов')} в базе` : 'Нужно место, где проходит занятие.', to: `${basePath}/branches` },
-    { done: freeSlots.length > 0, title: 'Создайте свободные окна', text: freeSlots.length ? `${freeSlots.length} окон доступно ученикам` : 'Окна появляются на публичной странице.', to: `${basePath}/schedule?create=slot` },
-    { done: true, title: 'Отправьте ссылку ученикам', text: 'Ученик сам выберет дату и время.', to: `/school/${school.slug}` },
+    { done: activeInstructors.length > 0, title: 'Инструкторы', text: activeInstructors.length ? `${activeInstructors.length} ${plural(activeInstructors.length, 'инструктор активен', 'инструктора активны', 'инструкторов активны')}` : 'Не настроено', to: `${basePath}/instructors` },
+    { done: settings.workStartHour < settings.workEndHour && branches.length > 0, title: 'Рабочие часы', text: `${settings.workStartHour}:00–${settings.workEndHour}:00 · ${branches.length || 'нет'} ${plural(branches.length, 'филиал', 'филиала', 'филиалов')}`, to: `${basePath}/settings` },
+    { done: freeSlots.length > 0, title: 'Типы занятий', text: `По умолчанию: ${formatDuration(settings.defaultLessonDuration)}`, to: `${basePath}/schedule?create=slot` },
+    { done: true, title: 'Ссылка для учеников', text: 'Готова', to: `/school/${school.slug}` },
   ]
-  const doneCount = setupItems.filter((item) => item.done).length
-  const setupDone = doneCount === setupItems.length
 
   const copyPublicUrl = async () => {
     try {
@@ -115,39 +118,28 @@ export function AdminSettings() {
   }
 
   return (
-    <div className="min-h-full overflow-y-auto bg-[#F5F7FA] pb-24 md:pb-6">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#E5EAF1] bg-white/95 px-4 py-3 backdrop-blur md:px-6">
+    <div className="min-h-full overflow-y-auto bg-[#F5F7FA] pb-24 md:pb-6 vroom-settings-minimal">
+      <div className="v-admin-toolbar mx-3 mt-3 md:mx-5 md:mt-5">
         <div className="min-w-0">
-          <p className="text-[12px] font-medium text-[#667085]">Что нужно, чтобы ученики записывались сами</p>
-          <h1 className="truncate text-[24px] font-semibold text-[#111827]">Настройки записи</h1>
+          <h1 className="v-admin-heading">Настройки</h1>
         </div>
         <button type="button" onClick={() => void handleSave()} disabled={!canManageSettings || saving} className="v-admin-button is-blue min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50">
           {saving ? 'Сохраняем…' : saved ? 'Сохранено' : 'Сохранить'}
         </button>
       </div>
 
-      <div className="mx-auto max-w-5xl space-y-4 p-3 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-5xl space-y-3 p-3 md:p-5 lg:p-6">
         {saveError ? <div aria-live="polite" className="rounded-[18px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-semibold text-[#B42318]">{saveError}</div> : null}
 
-        <section className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <span className={`v-admin-pill ${setupDone ? 'v-tone-ok' : 'v-tone-info'}`}>Настройка {doneCount}/{setupItems.length}</span>
-              <h2 className="mt-3 text-[20px] font-semibold text-[#111827]">Базовый запуск записи</h2>
-              <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-[#667085]">После этих шагов школа может отправить ссылку ученикам, а записи будут появляться в расписании.</p>
-            </div>
-            <Link to={`${basePath}/schedule?create=slot`} className="v-admin-button-secondary justify-center">
-              <CalendarPlus width={16} height={16} aria-hidden="true" />
-              Создать окна
-            </Link>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-4">
-            {setupItems.map((item, index) => <SetupCard key={item.title} index={index + 1} {...item} />)}
+        <section className="v-admin-panel p-4 md:p-5">
+          <h2 className="text-[18px] font-semibold text-[#111827]">Настройки</h2>
+          <div className="v-settings-list mt-3">
+            {setupItems.map((item) => <SettingsListItem key={item.title} {...item} />)}
           </div>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+          <div className="v-admin-panel p-4 md:p-5">
             <h2 className="text-[18px] font-semibold text-[#111827]">Правила записи</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
@@ -194,9 +186,8 @@ export function AdminSettings() {
             </div>
           </div>
 
-          <aside className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
+          <aside className="v-admin-panel p-4 md:p-5">
             <h2 className="text-[18px] font-semibold text-[#111827]">Ссылка для учеников</h2>
-            <p className="mt-1 text-[13px] font-medium leading-5 text-[#667085]">Отправьте ее в чат ученику. Он выберет дату и время с телефона.</p>
             <div className="mt-4 rounded-[16px] border border-[#D7E2EC] bg-[#F8FAFC] px-3 py-2 text-[13px] font-semibold text-[#111827] break-all">{publicUrl}</div>
             <div className="mt-3 grid gap-2">
               <button type="button" onClick={() => void copyPublicUrl()} className="v-admin-button-secondary justify-center"><LinkIcon width={16} height={16} aria-hidden="true" />{copied ? 'Скопировано' : 'Скопировать ссылку'}</button>
@@ -205,14 +196,6 @@ export function AdminSettings() {
           </aside>
         </section>
 
-        <section className="rounded-[24px] border border-[#D7DEE8] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:p-5">
-          <h2 className="text-[18px] font-semibold text-[#111827]">База для записи</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <Link to={`${basePath}/instructors`} className="v-admin-button-secondary min-h-14 justify-start"><UserBadgeCheck width={18} height={18} aria-hidden="true" />Инструкторы</Link>
-            <Link to={`${basePath}/branches`} className="v-admin-button-secondary min-h-14 justify-start"><Building width={18} height={18} aria-hidden="true" />Филиалы</Link>
-            <Link to={`${basePath}/schedule`} className="v-admin-button-secondary min-h-14 justify-start"><Clock width={18} height={18} aria-hidden="true" />Расписание</Link>
-          </div>
-        </section>
       </div>
     </div>
   )
