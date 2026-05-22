@@ -78,7 +78,7 @@ export const skills: Skill[] = [
     description:
       "A design-focused workflow for building polished React, HTML, and app surfaces that feel intentional instead of templated.",
     category: "Design",
-    emoji: "◇",
+    emoji: "🎨",
     tags: ["UI", "visual systems", "React"],
     compatibility: ["Codex", "Claude", "ChatGPT"],
     source: "System skill",
@@ -111,7 +111,7 @@ export const skills: Skill[] = [
     description:
       "A pragmatic Playwright workflow for inspecting rendered pages, catching console errors, and verifying real user paths.",
     category: "Testing",
-    emoji: "◌",
+    emoji: "🧪",
     tags: ["Playwright", "screenshots", "QA"],
     compatibility: ["Codex", "Claude"],
     source: "System skill",
@@ -144,7 +144,7 @@ export const skills: Skill[] = [
     description:
       "Keeps agent answers grounded in official OpenAI documentation when choosing models, upgrading prompts, or wiring API features.",
     category: "Docs",
-    emoji: "□",
+    emoji: "📚",
     tags: ["API", "models", "official docs"],
     compatibility: ["Codex", "ChatGPT"],
     source: "System skill",
@@ -177,7 +177,7 @@ export const skills: Skill[] = [
     description:
       "A focused AppSec pass for common coding risks, secure defaults, dependency hygiene, and practical remediation steps.",
     category: "Security",
-    emoji: "◈",
+    emoji: "🛡️",
     tags: ["AppSec", "review", "secure defaults"],
     compatibility: ["Codex", "Claude", "ChatGPT"],
     source: "System skill",
@@ -210,7 +210,7 @@ export const skills: Skill[] = [
     description:
       "A deployment workflow for taking local web projects to Cloudflare, including configuration, build commands, and checks.",
     category: "Deployment",
-    emoji: "◒",
+    emoji: "🚀",
     tags: ["Cloudflare", "deploy", "Pages"],
     compatibility: ["Codex"],
     source: "Local skill",
@@ -243,7 +243,7 @@ export const skills: Skill[] = [
     description:
       "A structured authoring guide for creating skills with clear triggers, compact instructions, and useful local assets.",
     category: "Productivity",
-    emoji: "✦",
+    emoji: "🛠️",
     tags: ["authoring", "workflows", "agents"],
     compatibility: ["Codex"],
     source: "System skill",
@@ -276,7 +276,7 @@ export const skills: Skill[] = [
     description:
       "A lightweight data skill for profiling datasets, drafting schemas, and producing chart-ready structures without heavy tooling.",
     category: "Data",
-    emoji: "▧",
+    emoji: "📊",
     tags: ["CSV", "JSON", "charts"],
     compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
     source: "Curated pack",
@@ -309,7 +309,7 @@ export const skills: Skill[] = [
     description:
       "A research workflow that favors primary sources, dated claims, and short decision notes that engineers can act on.",
     category: "Research",
-    emoji: "◍",
+    emoji: "🔍",
     tags: ["sources", "briefs", "decisions"],
     compatibility: ["Codex", "ChatGPT"],
     source: "Curated pack",
@@ -342,7 +342,7 @@ export const skills: Skill[] = [
     description:
       "A backend implementation guide for focused route work, sane input parsing, and minimal-but-real coverage.",
     category: "Backend",
-    emoji: "▣",
+    emoji: "🧩",
     tags: ["API", "validation", "tests"],
     compatibility: ["Codex", "Claude"],
     source: "Curated pack",
@@ -375,7 +375,7 @@ export const skills: Skill[] = [
     description:
       "A compact review workflow for keyboard paths, contrast, labels, focus states, and responsive readability.",
     category: "Frontend",
-    emoji: "◎",
+    emoji: "♿",
     tags: ["a11y", "keyboard", "contrast"],
     compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
     source: "Curated pack",
@@ -408,7 +408,7 @@ export const skills: Skill[] = [
     description:
       "A prompting workflow for turning loose requests into concise task briefs, guardrails, and reusable instruction patterns.",
     category: "Prompting",
-    emoji: "◐",
+    emoji: "✍️",
     tags: ["prompts", "briefs", "instructions"],
     compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
     source: "Curated pack",
@@ -441,7 +441,7 @@ export const skills: Skill[] = [
     description:
       "A documentation pass for tightening structure, examples, and release language so project docs stay useful under pressure.",
     category: "Docs",
-    emoji: "▱",
+    emoji: "📝",
     tags: ["README", "release notes", "writing"],
     compatibility: ["Codex", "ChatGPT", "Claude", "Universal"],
     source: "Curated pack",
@@ -474,7 +474,7 @@ export const skills: Skill[] = [
     description:
       "An automation skill for formatting passes, issue triage, generated reports, and safe mechanical repository work.",
     category: "Automation",
-    emoji: "◆",
+    emoji: "⚙️",
     tags: ["scripts", "maintenance", "reports"],
     compatibility: ["Codex"],
     source: "Curated pack",

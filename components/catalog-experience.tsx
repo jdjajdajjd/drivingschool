@@ -69,8 +69,8 @@ const copy = {
     compatibility: "Compatibility",
     setup: "Setup",
     sourceLabel: "Source",
-    open: "Open details",
-    getTelegram: "Get via Telegram",
+    open: "Details",
+    getTelegram: "Get skill",
     copy: "Copy",
     telegramKicker: "Telegram",
     telegramTitle: "Follow updates in the bot.",
@@ -120,8 +120,8 @@ const copy = {
     compatibility: "Совместимость",
     setup: "Настройка",
     sourceLabel: "Источник",
-    open: "Подробнее",
-    getTelegram: "В Telegram",
+    open: "Details",
+    getTelegram: "Get skill",
     copy: "Копировать",
     telegramKicker: "Telegram",
     telegramTitle: "Следить за обновлениями в боте.",
@@ -482,42 +482,42 @@ function FilterPill({ selected, onClick, children }: { selected: boolean; onClic
 function SkillCard({ skill, index, locale, t }: { skill: Skill; index: number; locale: "en" | "ru"; t: typeof copy.en | typeof copy.ru }) {
   return (
     <motion.article layout initial={{ opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }} transition={{ duration: 0.34, delay: Math.min(index * 0.025, 0.18) }} whileHover={{ y: -6, rotateX: 1, rotateY: -1 }} className="group rounded-[30px] border border-black/10 bg-white/62 p-5 shadow-[0_20px_60px_rgba(30,35,45,.07)] backdrop-blur-xl transition-colors duration-300 hover:bg-white/86">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="grid size-10 place-items-center rounded-full border border-black/10 bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#b8c0cc)] text-lg font-black text-[#111] shadow-[inset_0_1px_8px_rgba(255,255,255,.82)]">{skill.emoji}</span>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-start gap-3 font-display text-[1.72rem] font-semibold leading-[1.02] tracking-normal">
+            <span aria-hidden="true" className="mt-0.5 shrink-0 text-[1.45rem] leading-none">{skill.emoji}</span>
+            <span>{skillTitle(skill, locale)}</span>
+          </h3>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#f2f3f0] px-3 py-1 text-xs font-bold text-[#5f6470]">{categoryLabels[locale][skill.category]}</span>
-            <span className="rounded-full border border-black/10 px-3 py-1 text-xs font-bold text-[#7b8392]">{skill.hasScripts ? "Script" : "Safe"}</span>
+            <span className="rounded-full border border-black/10 bg-white/46 px-3 py-1 text-xs font-bold text-[#7b8392]">{skill.hasScripts ? "Script" : "Safe"}</span>
           </div>
-          <h3 className="font-display text-3xl font-semibold tracking-normal">{skillTitle(skill, locale)}</h3>
         </div>
-        <div className="shrink-0 rounded-[18px] border border-black/10 bg-white/70 px-3 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.8)]">
+        <div className="shrink-0 rounded-[18px] border border-black/10 bg-white/70 px-3 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.8)]" aria-label={`Curated score ${skill.score}`}>
           <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8e95a3]">Score</div>
           <div className="font-display text-2xl font-semibold leading-none">{skill.score}</div>
         </div>
       </div>
-      <p className="min-h-14 text-sm leading-6 text-[#5f6470]">{skillSummary(skill, locale)}</p>
-      <div className="mt-5 flex flex-wrap gap-2">
+      <p className="line-clamp-2 min-h-12 text-sm leading-6 text-[#5f6470]">{skillSummary(skill, locale)}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
         {skillTags(skill, locale).slice(0, 3).map((tag) => <span key={tag} className="rounded-full border border-black/10 bg-white/42 px-3 py-1 text-xs font-semibold text-[#5f6470]">{tag}</span>)}
       </div>
-      <div className="mt-6 grid gap-3 rounded-[22px] border border-black/10 bg-[#f7f7f4]/62 p-3 text-xs font-semibold text-[#5f6470]">
+      <div className="mt-5 grid gap-3 rounded-[22px] border border-black/10 bg-[#f7f7f4]/62 p-3 text-xs font-semibold text-[#5f6470]">
         <div className="flex flex-wrap gap-1.5">
           {skill.compatibility.map((item) => <span key={item} className="rounded-full bg-white/70 px-2.5 py-1 text-[#111]">{item}</span>)}
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-2 gap-2 text-center">
           <MiniStat label={t.difficulty} value={difficultyLabels[locale][skill.difficulty]} />
           <MiniStat label={t.risk} value={riskLabels[locale][skill.risk]} />
-          <MiniStat label={t.sourceLabel} value={skill.source.replace(" skill", "")} />
         </div>
       </div>
-      <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <a href="https://t.me/vroomleadsbot" className="ink-button inline-flex items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
+      <div className="mt-5 grid grid-cols-[1fr_auto] items-center gap-2">
+        <a href="https://t.me/vroomleadsbot" className="ink-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#111] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#23252a]">
           <Send size={15} /> {t.getTelegram}
         </a>
-        <Link href={`/skills/${skill.slug}`} className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 py-2.5 text-sm font-semibold text-[#111] transition duration-300 hover:bg-white">
+        <Link href={`/skills/${skill.slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/62 px-4 py-2.5 text-sm font-semibold text-[#111] transition duration-300 hover:bg-white">
           {t.open} <ArrowRight size={15} />
         </Link>
-        <CopyButton value={skill.install} label={t.copy} />
       </div>
     </motion.article>
   );
