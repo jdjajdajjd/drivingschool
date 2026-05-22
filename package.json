@@ -1,7 +1,7 @@
 {
-  "name": "vroom",
+  "name": "clean-slate",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.0",
   "type": "module",
   "engines": {
     "node": ">=20.19"
@@ -9,40 +9,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:prod": "node scripts/build-production.mjs",
     "preview": "vite preview",
-    "telegram:opencode": "node scripts/telegram-opencode-bot.mjs",
-    "typecheck": "tsc --noEmit",
-    "launch:check": "node scripts/launch-live-check.mjs",
-    "smoke:vroom": "node scripts/smoke-vroom.mjs",
-    "smoke:multitenant": "node scripts/smoke-multitenant-local.mjs",
-    "qa:product": "node scripts/qa-product-flows.mjs",
-    "qa:local": "node scripts/run-local-qa.mjs",
-    "supabase:apply": "node scripts/apply-supabase-sql.mjs",
-    "deploy": "npm run build:prod && npx wrangler@latest pages deploy dist --project-name=drivingschool --branch=main"
+    "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.104.1",
-    "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
-    "dotenv": "^17.4.2",
-    "framer-motion": "^11.2.4",
-    "lucide-react": "^1.16.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.1",
-    "read-excel-file": "^9.0.9",
-    "tailwind-merge": "^2.3.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.4.19",
-    "pg": "^8.20.0",
-    "playwright": "^1.56.0",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5",
     "vite": "^8.0.12"
   }

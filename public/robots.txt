@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin-panel
-Disallow: /superadmin
-Disallow: /operator
-Disallow: /workspace-admin
-Disallow: /api/
-
-Sitemap: https://vroom.today/sitemap.xml

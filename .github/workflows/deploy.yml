@@ -1,7 +1,4 @@
-name: Build and Deploy to Cloudflare Pages
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+name: Build and Deploy
 
 on:
   push:
@@ -29,60 +26,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
       - name: Typecheck
         run: npm run typecheck
 
       - name: Build
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Smoke local build
         shell: bash
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/vroom-preview.log 2>&1 &
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/preview.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
-          READY=0
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:4173 >/dev/null; then
-              READY=1
-              break
+              exit 0
             fi
             sleep 1
           done
-          if [ "$READY" -ne 1 ]; then
-            cat /tmp/vroom-preview.log
-            exit 1
-          fi
-          SMOKE_BASE_URL=http://127.0.0.1:4173 npm run smoke:vroom
-
-      - name: Sync Pages function secrets
-        shell: bash
-        run: |
-          printf '%s' "$SUPABASE_URL" | npx wrangler@latest pages secret put SUPABASE_URL --project-name=drivingschool
-          printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler@latest pages secret put SUPABASE_SERVICE_ROLE_KEY --project-name=drivingschool
-          printf '%s' "$TELEGRAM_BOT_TOKEN" | npx wrangler@latest pages secret put TELEGRAM_BOT_TOKEN --project-name=drivingschool
-          printf '%s' "$TELEGRAM_LEADS_CHAT_ID" | npx wrangler@latest pages secret put TELEGRAM_LEADS_CHAT_ID --project-name=drivingschool
-          printf '%s' "$DEEPSEEK_API_KEY" | npx wrangler@latest pages secret put DEEPSEEK_API_KEY --project-name=drivingschool
-          printf '%s' "$DEEPSEEK_BASE_URL" | npx wrangler@latest pages secret put DEEPSEEK_BASE_URL --project-name=drivingschool
-          printf '%s' "$DEEPSEEK_MODEL" | npx wrangler@latest pages secret put DEEPSEEK_MODEL --project-name=drivingschool
-          printf '%s' "$DEEPSEEK_VISION_MODEL" | npx wrangler@latest pages secret put DEEPSEEK_VISION_MODEL --project-name=drivingschool
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_LEADS_CHAT_ID: ${{ secrets.TELEGRAM_LEADS_CHAT_ID }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
-          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
-          DEEPSEEK_VISION_MODEL: ${{ secrets.DEEPSEEK_VISION_MODEL }}
+          cat /tmp/preview.log
+          exit 1
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler@latest pages deploy dist --project-name=drivingschool --branch=main
