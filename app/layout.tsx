@@ -16,13 +16,13 @@ const ui = Geist({
 
 export const metadata: Metadata = {
   title: {
-    default: "Pearl Index - Curated skills for coding agents",
-    template: "%s - Pearl Index",
+    default: "Codex Skills - Curated skills for coding agents",
+    template: "%s - Codex Skills",
   },
   description: "A polished catalog of practical skills for Codex, ChatGPT, Claude, and AI coding agents.",
-  metadataBase: new URL("https://pearl-index.local"),
+  metadataBase: new URL("https://drivingschool-6wy.pages.dev"),
   openGraph: {
-    title: "Pearl Index",
+    title: "Codex Skills",
     description: "Curated skills for coding agents. Browse, install, adapt.",
     type: "website",
   },

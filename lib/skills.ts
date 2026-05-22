@@ -26,7 +26,17 @@ export type Skill = {
   marker: "Safe" | "Script" | "Advanced";
   examples: string[];
   useCases: string[];
+  ru: {
+    title: string;
+    summary: string;
+    description: string;
+    tags: string[];
+    examples: string[];
+    useCases: string[];
+  };
 };
+
+export type Locale = "en" | "ru";
 
 export const categories: Category[] = [
   "Frontend",
@@ -59,6 +69,14 @@ export const skills: Skill[] = [
     marker: "Safe",
     examples: ["Redesign a product dashboard", "Create a refined landing page", "Polish a component library"],
     useCases: ["Brand-led UI", "High-touch prototypes", "Design QA before shipping"],
+    ru: {
+      title: "Frontend Design",
+      summary: "Интерфейсы production-уровня с ясным визуальным характером.",
+      description: "Дизайн-ориентированный workflow для React, HTML и app surfaces, которые выглядят собранно, а не шаблонно.",
+      tags: ["UI", "визуальные системы", "React"],
+      examples: ["Переделать product dashboard", "Собрать утонченный landing page", "Отполировать component library"],
+      useCases: ["Брендовый UI", "Прототипы высокого качества", "Design QA перед релизом"],
+    },
   },
   {
     slug: "webapp-testing",
@@ -77,6 +95,14 @@ export const skills: Skill[] = [
     marker: "Script",
     examples: ["Capture mobile screenshots", "Test a checkout flow", "Find broken interactive states"],
     useCases: ["Visual QA", "Regression checks", "Local product reviews"],
+    ru: {
+      title: "Webapp Testing",
+      summary: "Браузерные проверки, скриншоты и interaction tests для локальных приложений.",
+      description: "Практичный Playwright workflow для проверки отрисованных страниц, console errors и реальных пользовательских сценариев.",
+      tags: ["Playwright", "скриншоты", "QA"],
+      examples: ["Снять mobile screenshots", "Проверить checkout flow", "Найти сломанные интерактивные состояния"],
+      useCases: ["Visual QA", "Regression checks", "Локальные product reviews"],
+    },
   },
   {
     slug: "openai-docs",
@@ -95,6 +121,14 @@ export const skills: Skill[] = [
     marker: "Safe",
     examples: ["Pick a model for a coding tool", "Update a Responses API flow", "Check latest SDK guidance"],
     useCases: ["API planning", "Migration notes", "Documentation-backed answers"],
+    ru: {
+      title: "OpenAI Docs",
+      summary: "Актуальные официальные материалы по OpenAI APIs и моделям.",
+      description: "Удерживает ответы агента в рамках официальной документации OpenAI при выборе моделей, обновлении prompts и API-интеграций.",
+      tags: ["API", "модели", "официальные docs"],
+      examples: ["Выбрать модель для coding tool", "Обновить Responses API flow", "Проверить свежие SDK рекомендации"],
+      useCases: ["API planning", "Migration notes", "Ответы с опорой на документацию"],
+    },
   },
   {
     slug: "security-best-practices",
@@ -113,6 +147,14 @@ export const skills: Skill[] = [
     marker: "Advanced",
     examples: ["Review auth handlers", "Harden file uploads", "Audit API input validation"],
     useCases: ["Pre-release checks", "Secure refactors", "Risk-focused reviews"],
+    ru: {
+      title: "Security Best Practices",
+      summary: "Security review с учетом framework для JS, Python и Go.",
+      description: "Сфокусированный AppSec проход по типовым рискам, secure defaults, зависимостям и практичным исправлениям.",
+      tags: ["AppSec", "review", "secure defaults"],
+      examples: ["Проверить auth handlers", "Усилить file uploads", "Проверить input validation в API"],
+      useCases: ["Pre-release checks", "Secure refactors", "Risk-focused reviews"],
+    },
   },
   {
     slug: "cloudflare-deploy",
@@ -131,6 +173,14 @@ export const skills: Skill[] = [
     marker: "Script",
     examples: ["Deploy a Next.js app", "Configure Wrangler", "Publish a Worker API"],
     useCases: ["Production previews", "Static sites", "Edge functions"],
+    ru: {
+      title: "Cloudflare Deploy",
+      summary: "Публикация Workers, Pages и full-stack apps с чистыми defaults.",
+      description: "Deployment workflow для вывода локальных web projects в Cloudflare: config, build commands и проверки.",
+      tags: ["Cloudflare", "deploy", "Pages"],
+      examples: ["Задеплоить Next.js app", "Настроить Wrangler", "Опубликовать Worker API"],
+      useCases: ["Production previews", "Static sites", "Edge functions"],
+    },
   },
   {
     slug: "skill-creator",
@@ -149,6 +199,14 @@ export const skills: Skill[] = [
     marker: "Safe",
     examples: ["Package a review workflow", "Create a design QA skill", "Document a deployment routine"],
     useCases: ["Team workflows", "Personal automation", "Agent memory"],
+    ru: {
+      title: "Skill Creator",
+      summary: "Превращает повторяемые agent workflows в переиспользуемые skills.",
+      description: "Структурный guide для создания skills с ясными triggers, компактными инструкциями и полезными локальными assets.",
+      tags: ["authoring", "workflows", "agents"],
+      examples: ["Упаковать review workflow", "Создать design QA skill", "Описать deployment routine"],
+      useCases: ["Team workflows", "Personal automation", "Agent memory"],
+    },
   },
   {
     slug: "data-canvas",
@@ -167,6 +225,14 @@ export const skills: Skill[] = [
     marker: "Safe",
     examples: ["Normalize a CSV export", "Draft a chart model", "Find malformed rows"],
     useCases: ["Internal tools", "Reports", "Product analytics"],
+    ru: {
+      title: "Data Canvas",
+      summary: "Превращает raw CSV или JSON в читаемые product-facing views.",
+      description: "Легкий data skill для профилирования datasets, черновиков schemas и chart-ready структур без тяжелого tooling.",
+      tags: ["CSV", "JSON", "charts"],
+      examples: ["Нормализовать CSV export", "Собрать chart model", "Найти malformed rows"],
+      useCases: ["Internal tools", "Reports", "Product analytics"],
+    },
   },
   {
     slug: "research-brief",
@@ -185,6 +251,14 @@ export const skills: Skill[] = [
     marker: "Safe",
     examples: ["Compare two libraries", "Summarize a new API", "Prepare a build-vs-buy note"],
     useCases: ["Technical planning", "Vendor checks", "Architecture notes"],
+    ru: {
+      title: "Research Brief",
+      summary: "Короткие source-backed briefs для технических решений.",
+      description: "Research workflow, который предпочитает primary sources, датированные claims и короткие decision notes для инженеров.",
+      tags: ["sources", "briefs", "decisions"],
+      examples: ["Сравнить две библиотеки", "Кратко разобрать новый API", "Подготовить build-vs-buy note"],
+      useCases: ["Technical planning", "Vendor checks", "Architecture notes"],
+    },
   },
   {
     slug: "backend-routes",
@@ -203,6 +277,14 @@ export const skills: Skill[] = [
     marker: "Script",
     examples: ["Add a REST endpoint", "Validate request bodies", "Write contract tests"],
     useCases: ["API slices", "Service cleanup", "Integration work"],
+    ru: {
+      title: "Backend Routes",
+      summary: "Небольшие надежные API endpoints с validation и tests.",
+      description: "Backend guide для аккуратной route work, нормального input parsing и минимального, но реального test coverage.",
+      tags: ["API", "validation", "tests"],
+      examples: ["Добавить REST endpoint", "Проверить request bodies", "Написать contract tests"],
+      useCases: ["API slices", "Service cleanup", "Integration work"],
+    },
   },
   {
     slug: "accessibility-pass",
@@ -221,8 +303,69 @@ export const skills: Skill[] = [
     marker: "Safe",
     examples: ["Audit a settings page", "Fix focus rings", "Check mobile forms"],
     useCases: ["UI reviews", "Design systems", "Release polish"],
+    ru: {
+      title: "Accessibility Pass",
+      summary: "Практичные accessibility checks для product UI.",
+      description: "Компактный review workflow для keyboard paths, contrast, labels, focus states и responsive readability.",
+      tags: ["a11y", "keyboard", "contrast"],
+      examples: ["Проверить settings page", "Исправить focus rings", "Проверить mobile forms"],
+      useCases: ["UI reviews", "Design systems", "Release polish"],
+    },
   },
 ];
+
+export const categoryLabels: Record<Locale, Record<Category | "All", string>> = {
+  en: {
+    All: "All",
+    Frontend: "Frontend",
+    Backend: "Backend",
+    Design: "Design",
+    Testing: "Testing",
+    Security: "Security",
+    Docs: "Docs",
+    Automation: "Automation",
+    Productivity: "Productivity",
+    Research: "Research",
+    Data: "Data",
+  },
+  ru: {
+    All: "Все",
+    Frontend: "Фронтенд",
+    Backend: "Бэкенд",
+    Design: "Дизайн",
+    Testing: "Тестинг",
+    Security: "Безопасность",
+    Docs: "Документы",
+    Automation: "Автоматизация",
+    Productivity: "Продуктивность",
+    Research: "Исследования",
+    Data: "Данные",
+  },
+};
+
+export function skillTitle(skill: Skill, locale: Locale) {
+  return locale === "ru" ? skill.ru.title : skill.title;
+}
+
+export function skillSummary(skill: Skill, locale: Locale) {
+  return locale === "ru" ? skill.ru.summary : skill.summary;
+}
+
+export function skillDescription(skill: Skill, locale: Locale) {
+  return locale === "ru" ? skill.ru.description : skill.description;
+}
+
+export function skillTags(skill: Skill, locale: Locale) {
+  return locale === "ru" ? skill.ru.tags : skill.tags;
+}
+
+export function skillExamples(skill: Skill, locale: Locale) {
+  return locale === "ru" ? skill.ru.examples : skill.examples;
+}
+
+export function skillUseCases(skill: Skill, locale: Locale) {
+  return locale === "ru" ? skill.ru.useCases : skill.useCases;
+}
 
 export function getSkill(slug: string) {
   return skills.find((skill) => skill.slug === slug);
