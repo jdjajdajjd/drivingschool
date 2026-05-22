@@ -35,7 +35,7 @@ jobs:
       - name: Smoke local build
         shell: bash
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/preview.log 2>&1 &
+          npm run preview -- --listen 127.0.0.1:4173 > /tmp/preview.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
           for i in {1..30}; do
@@ -48,7 +48,7 @@ jobs:
           exit 1
 
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler@latest pages deploy dist --project-name=drivingschool --branch=main
+        run: npx wrangler@latest pages deploy out --project-name=drivingschool --branch=main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
