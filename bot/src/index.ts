@@ -137,6 +137,7 @@ async function handleSkillRequest(ctx: BotContext, slug: string) {
 }
 
 async function isSubscribed(userId: number) {
+  if (config.adminUserIds.includes(userId)) return true;
   try {
     const member = await bot.api.getChatMember(channelChatId(config), userId);
     return activeStatuses.has(member.status);

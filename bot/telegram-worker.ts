@@ -4,6 +4,8 @@ type Env = {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_BOT_USERNAME: string;
   TELEGRAM_CHANNEL_USERNAME: string;
+  TELEGRAM_ADMIN_IDS?: string;
+  TELEGRAM_ADMIN_ID?: string;
   SITE_URL: string;
 };
 
@@ -47,6 +49,27 @@ async function handleUpdate(update: TelegramUpdate, env: Env) {
   if (!message?.text || !message.from) return;
 
   const startMatch = message.text.match(/^\/start(?:\s+(.+))?/);
+  const skillMatch = message.text.match(/^\/skill(?:\s+(.+))?/);
+  if (skillMatch) {
+    const slug = skillMatch[1]?.trim();
+    if (!slug) {
+      await sendMessage(env, message.chat.id, "Use /skill <slug>. Example: /skill frontend-design");
+      return;
+    }
+    await deliverOrAskToJoin(env, message.chat.id, message.from.id, slug.replace(/^skill_/, ""));
+    return;
+  }
+
+  if (/^\/catalog/.test(message.text)) {
+    await sendMessage(env, message.chat.id, `Open the catalog: ${env.SITE_URL}/#catalog`);
+    return;
+  }
+
+  if (/^\/help/.test(message.text)) {
+    await sendMessage(env, message.chat.id, "Open a skill from the site, or use /skill <slug>. Commands: /catalog, /skill, /help.");
+    return;
+  }
+
   if (!startMatch) {
     await sendMessage(env, message.chat.id, "Send /start skill_<slug> or open a skill from Codex Skills.");
     return;
@@ -91,6 +114,7 @@ async function deliverOrAskToJoin(env: Env, chatId: number, userId: number, slug
 }
 
 async function isSubscribed(env: Env, userId: number) {
+  if (adminIds(env).includes(userId)) return true;
   try {
     const response = await telegram(env, "getChatMember", {
       chat_id: normalizeChannel(env.TELEGRAM_CHANNEL_USERNAME),
@@ -132,6 +156,13 @@ function normalizeChannel(username: string) {
 
 function channelUrl(env: Env) {
   return `https://t.me/${env.TELEGRAM_CHANNEL_USERNAME.replace(/^@/, "")}`;
+}
+
+function adminIds(env: Env) {
+  return (env.TELEGRAM_ADMIN_IDS || env.TELEGRAM_ADMIN_ID || "")
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isSafeInteger(item) && item > 0);
 }
 
 function escapeMarkdown(value: string) {

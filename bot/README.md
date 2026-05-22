@@ -33,9 +33,12 @@ The delivery layer is isolated in `bot/src/delivery.ts`, so later it can send `.
 TELEGRAM_BOT_USERNAME=your_bot_username
 TELEGRAM_BOT_TOKEN=123456:telegram-token
 TELEGRAM_CHANNEL_USERNAME=your_channel_username
+TELEGRAM_ADMIN_IDS=778851427
 SITE_URL=https://drivingschool-6wy.pages.dev
 BOT_ANALYTICS_PATH=bot/data/analytics.json
 ```
+
+`TELEGRAM_ADMIN_IDS` is a comma-separated allowlist. Admin users can test skill delivery even when the channel subscription gate is not ready yet.
 
 For static site links, set public build env when changing the bot username:
 

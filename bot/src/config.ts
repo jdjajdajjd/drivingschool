@@ -4,6 +4,7 @@ export type BotConfig = {
   channelUsername: string;
   siteUrl: string;
   analyticsPath: string;
+  adminUserIds: number[];
 };
 
 function required(name: string) {
@@ -16,6 +17,13 @@ function cleanUsername(value: string) {
   return value.replace(/^@/, "").trim();
 }
 
+function parseAdminIds(value: string | undefined) {
+  return (value || "")
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isSafeInteger(item) && item > 0);
+}
+
 export function loadConfig(): BotConfig {
   return {
     token: required("TELEGRAM_BOT_TOKEN"),
@@ -23,6 +31,7 @@ export function loadConfig(): BotConfig {
     channelUsername: cleanUsername(required("TELEGRAM_CHANNEL_USERNAME")),
     siteUrl: process.env.SITE_URL || "https://drivingschool-6wy.pages.dev",
     analyticsPath: process.env.BOT_ANALYTICS_PATH || "bot/data/analytics.json",
+    adminUserIds: parseAdminIds(process.env.TELEGRAM_ADMIN_IDS || process.env.TELEGRAM_ADMIN_ID),
   };
 }
 
