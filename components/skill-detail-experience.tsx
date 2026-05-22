@@ -12,6 +12,11 @@ import { telegramSkillUrl } from "@/lib/site-config";
 
 const smooth = [0.22, 1, 0.36, 1] as const;
 
+const fadeIn = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: smooth } },
+};
+
 const detailCopy = {
   en: {
     catalog: "Catalog",
@@ -92,7 +97,9 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[760px] overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[600px] w-[980px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,.92),rgba(217,221,229,.3)_45%,transparent_72%)] blur-3xl" />
         <div className="soft-ring right-[11%] top-24 h-28 w-28 animate-[float_8s_ease-in-out_infinite]" />
+        <div className="pearl-orb left-[8%] top-56 h-20 w-20 opacity-65 animate-[float_10s_ease-in-out_infinite_reverse]" />
         <div className="contour-lines absolute inset-x-0 top-44 h-96 opacity-50" />
+        <div className="contour-fine absolute right-0 top-[520px] h-60 w-[620px] opacity-30" />
       </div>
 
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-5 sm:px-8">
@@ -124,7 +131,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
           </div>
         </motion.header>
 
-        <motion.aside initial={{ opacity: 0, y: 22, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.75, delay: 0.08, ease: smooth }} className="codex-panel h-fit rounded-[34px] p-5 lg:sticky lg:top-6">
+        <motion.aside initial={{ opacity: 0, y: 22, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.75, delay: 0.08, ease: smooth }} className="pearl-surface h-fit rounded-[34px] p-5 lg:sticky lg:top-6">
           <div className="rounded-[26px] border border-black/10 bg-white/68 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
@@ -134,9 +141,9 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
               <div className="grid size-14 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_20%,#fff,#d9dde5_58%,#8fb7ff)] text-2xl shadow-[inset_0_1px_10px_rgba(255,255,255,.9)]">{skill.emoji}</div>
             </div>
             <div className="grid gap-2">
-              <a href={telegramSkillUrl(skill.slug)} className="ink-button inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
+              <motion.a whileTap={{ scale: 0.985 }} href={telegramSkillUrl(skill.slug)} className="ink-button shine-layer relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#111] px-5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(17,17,17,.18)] transition hover:bg-[#23252a]">
                 <Send size={16} /> {t.get}
-              </a>
+              </motion.a>
               <CopyButton value={skill.install} label={t.copy} />
             </div>
           </div>
@@ -149,10 +156,10 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
         </motion.aside>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_1fr_.9fr]">
+      <motion.section initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.08 } } }} className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_1fr_.9fr]">
         <InfoBlock icon={<PackageCheck size={20} />} title={t.helps} items={skillExamples(skill, locale).slice(0, 5)} />
         <InfoBlock icon={<CheckCircle2 size={20} />} title={t.useCases} items={skillUseCases(skill, locale).slice(0, 5)} />
-        <div className="codex-panel rounded-[30px] p-6">
+        <motion.div variants={fadeIn} className="pearl-surface rounded-[30px] p-6">
           <SectionTitle icon={<FileText size={18} />} title={t.contents} />
           <div className="space-y-2">
             <ContentRow label={t.skillMd} included includedLabel={t.included} missingLabel={t.notListed} />
@@ -163,11 +170,11 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
           <div className="mt-5 flex flex-wrap gap-2">
             {skillTags(skill, locale).map((tag) => <span key={tag} className="rounded-full border border-black/10 bg-white/58 px-3 py-1.5 text-sm font-semibold text-[#5f6470]">{tag}</span>)}
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       <section className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-8 sm:px-8 lg:grid-cols-[1.05fr_.95fr]">
-        <div className="codex-panel rounded-[30px] p-6">
+        <div className="pearl-surface rounded-[30px] p-6">
           <SectionTitle icon={<ShieldCheck size={18} />} title={t.safety} />
           <div className="mb-5 flex flex-wrap gap-2">
             <Pill dark>{riskLabels[locale][skill.risk]}</Pill>
@@ -179,7 +186,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
           </div>
         </div>
 
-        <div className="codex-panel rounded-[30px] p-6">
+        <div className="pearl-surface rounded-[30px] p-6">
           <SectionTitle icon={<FolderGit2 size={18} />} title={t.source} />
           <div className="rounded-[24px] border border-black/10 bg-white/58 p-5">
             <p className="font-display text-3xl font-semibold">{skill.source}</p>
@@ -203,7 +210,7 @@ export function SkillDetailExperience({ skill }: { skill: Skill }) {
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {related.map((item) => (
-            <Link key={item.slug} href={`/skills/${item.slug}`} className="group rounded-[30px] border border-black/10 bg-white/58 p-5 shadow-[0_18px_55px_rgba(30,35,45,.07)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/86">
+            <Link key={item.slug} href={`/skills/${item.slug}`} className="pearl-surface group rounded-[30px] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/86">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <h3 className="font-display text-3xl font-semibold leading-none"><span className="mr-2 text-2xl">{item.emoji}</span>{skillTitle(item, locale)}</h3>
                 <ArrowRight size={18} className="mt-1 shrink-0 text-[#8e95a3] transition group-hover:text-[#111]" />
@@ -230,7 +237,7 @@ function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
 }
 
 function InfoBlock({ icon, title, items }: { icon: ReactNode; title: string; items: string[] }) {
-  return <div className="codex-panel rounded-[30px] p-6"><SectionTitle icon={icon} title={title} /><div className="space-y-3">{items.map((item) => <Note key={item}>{item}</Note>)}</div></div>;
+  return <motion.div variants={fadeIn} className="pearl-surface rounded-[30px] p-6"><SectionTitle icon={icon} title={title} /><div className="space-y-3">{items.map((item) => <Note key={item}>{item}</Note>)}</div></motion.div>;
 }
 
 function Note({ children }: { children: ReactNode }) {
